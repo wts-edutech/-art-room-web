@@ -20,23 +20,33 @@ export default function LoginPage() {
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!guestEmail.trim()) return;
+    setIsLoading(true);
+    setErrorMsg("");
     
     try {
       const res = await fetch('/api/auth/guest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ emailOrProvider: guestEmail })
+        body: JSON.stringify({ guestName: guestEmail.trim(), emailOrProvider: guestEmail.trim() })
       });
       
+      const data = await res.json();
+      
       if (res.ok) {
-        localStorage.setItem("artroom_author_name", `ผู้เยี่ยมชม (${guestEmail})`);
-        localStorage.setItem("artroom_role", "guest"); // Set role for restrictions
+        localStorage.setItem("artroom_author_name", guestEmail.split('@')[0] || guestEmail);
+        localStorage.setItem("artroom_author_email", guestEmail);
+        localStorage.setItem("artroom_role", "guest");
         
-        const redirectPath = new URLSearchParams(window.location.search).get('redirect') || '/materials';
+        const redirectPath = new URLSearchParams(window.location.search).get('redirect') || '/';
         router.push(redirectPath);
+      } else {
+        setErrorMsg(data.error || "เกิดข้อผิดพลาดในการเข้าสู่ระบบ");
       }
     } catch (error) {
       console.error(error);
+      setErrorMsg("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -76,23 +86,33 @@ export default function LoginPage() {
 
   const handleGuestLogin = async (e: React.MouseEvent, provider: string) => {
     e.preventDefault();
+    setIsLoading(true);
+    setErrorMsg("");
     
     try {
+      const displayName = `ผู้เยี่ยมชม (${provider})`;
       const res = await fetch('/api/auth/guest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ emailOrProvider: provider })
+        body: JSON.stringify({ guestName: displayName, emailOrProvider: provider })
       });
       
+      const data = await res.json();
+      
       if (res.ok) {
-        localStorage.setItem("artroom_author_name", `ผู้เยี่ยมชม (${provider})`);
-        localStorage.setItem("artroom_role", "guest"); // Set role for restrictions
+        localStorage.setItem("artroom_author_name", displayName);
+        localStorage.setItem("artroom_role", "guest");
         
-        const redirectPath = new URLSearchParams(window.location.search).get('redirect') || '/materials';
+        const redirectPath = new URLSearchParams(window.location.search).get('redirect') || '/';
         router.push(redirectPath);
+      } else {
+        setErrorMsg(data.error || "เกิดข้อผิดพลาดในการเข้าสู่ระบบ");
       }
     } catch (error) {
       console.error(error);
+      setErrorMsg("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -207,6 +227,11 @@ export default function LoginPage() {
           ) : (
             <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 py-2">
               <form onSubmit={handleEmailLogin} className="space-y-4 mb-6">
+                {errorMsg && (
+                  <div className="bg-red-50 border border-red-200 text-red-600 text-sm font-medium p-3 rounded-xl flex items-center justify-center">
+                    {errorMsg}
+                  </div>
+                )}
                 <div className="relative">
                   <input 
                     type="email" 
@@ -226,9 +251,10 @@ export default function LoginPage() {
                 </div>
                 <Button 
                   type="submit" 
+                  disabled={isLoading}
                   className="w-full h-12 rounded-xl text-md bg-[#ED2128] hover:bg-[#D11A20] text-white transition-all font-bold"
                 >
-                  ถัดไป
+                  {isLoading ? "กำลังเข้าสู่ระบบ..." : "ถัดไป"}
                 </Button>
               </form>
               

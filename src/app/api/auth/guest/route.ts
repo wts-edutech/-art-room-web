@@ -8,21 +8,22 @@ import { createSessionToken } from '@/lib/auth-utils';
 
 export async function POST(request: Request) {
   try {
-    const { guestName } = await request.json();
-
-    if (!guestName || guestName.trim().length === 0) {
-      return NextResponse.json({ error: 'Name required' }, { status: 400 });
-    }
+    const body = await request.json().catch(() => ({}));
+    const guestIdentifier = (body.guestName || body.emailOrProvider || body.email || 'บุคคลทั่วไป').toString().trim();
 
     const db = getDb();
     const guestId = `guest_${Date.now()}`;
     
-    await db.insert(guests).values({
-      id: guestId,
-      name: guestName.trim(),
-    });
+    try {
+      await db.insert(guests).values({
+        id: guestId,
+        name: guestIdentifier,
+      });
+    } catch (dbErr) {
+      console.warn('Guest insert DB note:', dbErr);
+    }
 
-    const token = await createSessionToken(guestId, guestName.trim(), 'guest', 24);
+    const token = await createSessionToken(guestId, guestIdentifier, 'guest', 24);
 
     const cookieStore = await cookies();
     cookieStore.set('session_token', token, {
@@ -37,7 +38,7 @@ export async function POST(request: Request) {
       success: true,
       user: {
         id: guestId,
-        name: guestName.trim(),
+        name: guestIdentifier,
         role: 'guest'
       }
     });
