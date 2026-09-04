@@ -22,6 +22,26 @@ const nextConfig = {
       },
     ],
   },
+  async rewrites() {
+    return [
+      {
+        source: '/ideas/:id((?!new|detail).+)',
+        destination: '/ideas/detail?id=:id',
+      },
+      {
+        source: '/materials/:id((?!m3|m4|detail).+)',
+        destination: '/materials/detail?id=:id',
+      },
+      {
+        source: '/materials/m3/:id((?!detail).+)',
+        destination: '/materials/m3/detail?id=:id',
+      },
+      {
+        source: '/materials/m4/:id((?!detail).+)',
+        destination: '/materials/m4/detail?id=:id',
+      },
+    ];
+  },
 };
 
 export default nextConfig;

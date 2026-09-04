@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -9,8 +9,10 @@ import { ArrowLeft, Download, MessageSquare, Send, User, Video, Gamepad2, FileTe
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 export default function IdeaDetailPage() {
+  const searchParams = useSearchParams();
   const params = useParams();
   const router = useRouter();
+  const id = searchParams.get("id") || (params?.id as string);
   const [idea, setIdea] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -35,8 +37,8 @@ export default function IdeaDetailPage() {
     if (name) setAuthorName(name);
     if (role) setUserRole(role);
 
-    if (params.id) {
-      fetch(`/api/ideas/${params.id}`)
+    if (id) {
+      fetch(`/api/ideas/${id}`)
         .then((res) => {
           if (!res.ok) throw new Error("Not found");
           return res.json();
@@ -49,7 +51,7 @@ export default function IdeaDetailPage() {
           router.push("/ideas");
         });
     }
-  }, [params.id, router]);
+  }, [id, router]);
 
   const handlePostComment = async (e: React.FormEvent) => {
     e.preventDefault();

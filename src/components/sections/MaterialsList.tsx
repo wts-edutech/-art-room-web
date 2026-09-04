@@ -151,7 +151,7 @@ export default function MaterialsList({ initialLessons, basePath = "/materials" 
                   <h3 className="text-lg font-bold font-heading text-gray-900 mb-2 line-clamp-2">{lesson.title}</h3>
                   <p className="text-gray-500 mb-4 line-clamp-2 text-sm">{lesson.description}</p>
                   <div className="mt-auto pt-4 border-t border-gray-100">
-                    <Link href={`${basePath}/${lesson.id}`} className="text-[#1da1f2] font-bold hover:underline inline-flex items-center justify-center w-full min-h-[44px] gap-1 text-sm bg-blue-50/50 rounded-xl border border-blue-100/50 hover:bg-blue-50 transition-colors">
+                    <Link href={`${basePath}/detail?id=${lesson.id}`} className="text-[#1da1f2] font-bold hover:underline inline-flex items-center justify-center w-full min-h-[44px] gap-1 text-sm bg-blue-50/50 rounded-xl border border-blue-100/50 hover:bg-blue-50 transition-colors">
                       เข้าสู่บทเรียน <span className="text-lg leading-none">&rarr;</span>
                     </Link>
                   </div>

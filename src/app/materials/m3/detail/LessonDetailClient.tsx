@@ -6,12 +6,13 @@ import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { User, MessageSquare, ArrowLeft, Eye, Star, Mail, Download } from "lucide-react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 export default function LessonDetailPage() {
+  const searchParams = useSearchParams();
   const params = useParams();
-  const id = params.id as string;
+  const id = (searchParams.get("id") || params?.id || "") as string;
   const router = useRouter();
 
   const [lesson, setLesson] = useState<any>(null);
@@ -41,7 +42,7 @@ export default function LessonDetailPage() {
     const fetchData = async () => {
       try {
         // Fetch lesson details
-        const lessonsRes = await fetch("/api/m4-lessons");
+        const lessonsRes = await fetch("/api/m3-lessons");
         const lessonsData = await lessonsRes.json();
         const foundLesson = lessonsData.find((l: any) => l.id === id);
         
@@ -57,7 +58,7 @@ export default function LessonDetailPage() {
         setComments(commentsData);
 
         // Record View
-        fetch('/api/m4-lessons/interact', {
+        fetch('/api/m3-lessons/interact', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ lessonId: id, action: 'view' })
@@ -118,7 +119,7 @@ export default function LessonDetailPage() {
     setHasRated(true);
     
     try {
-      const res = await fetch("/api/m4-lessons/interact", {
+      const res = await fetch("/api/m3-lessons/interact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -165,7 +166,7 @@ export default function LessonDetailPage() {
             
             {/* Breadcrumb */}
             <div className="mb-6 flex items-center gap-2 text-sm font-medium text-gray-500">
-              <Link href="/materials/m4" className="hover:text-(--color-primary-500) flex items-center gap-1">
+              <Link href="/materials/m3" className="hover:text-(--color-primary-500) flex items-center gap-1">
                 <ArrowLeft className="w-4 h-4" /> สื่อการสอนทั้งหมด
               </Link>
               <span className="mx-2">/</span>

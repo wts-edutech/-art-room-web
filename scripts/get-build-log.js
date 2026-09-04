@@ -1,9 +1,21 @@
 const https = require('https');
+const fs = require('fs');
+const path = require('path');
+
+function getToken() {
+  try {
+    const tomlPath = path.join(process.env.USERPROFILE || '', 'AppData', 'Roaming', 'xdg.config', '.wrangler', 'config', 'default.toml');
+    const toml = fs.readFileSync(tomlPath, 'utf8');
+    const match = toml.match(/oauth_token\s*=\s*"([^"]+)"/);
+    if (match) return match[1];
+  } catch (e) {}
+  return 'cfoat_0bUNdVcCcqK1B2QEgKy-1igAlDsTSme0-BAw3xMA_CE.Iq2MBhcc61Fr20GAEIoTKdTWRUuPJigaVANjgpNBd0c';
+}
 
 const ACCOUNT_ID = 'e4d1ad7b5737bce23e0af56b3470cf9f';
 const PROJECT_NAME = 'art-room-web';
-const DEPLOYMENT_ID = process.argv[2] || 'a1110f22-f1fc-468c-9787-1ec139885fdf';
-const TOKEN = 'cfoat_0IAW1QSQkAE85RlI9mK5l6mLvdZgv5x4hB3baFcqhkg.BiX0VnJSZnzbBkzDb2BSeCu1lrxyCWKNrFTjQNOalCw';
+const DEPLOYMENT_ID = process.argv[2] || '6d845aae-c53b-4be8-ae42-f529044bf95b';
+const TOKEN = getToken();
 
 const options = {
   hostname: 'api.cloudflare.com',
@@ -20,19 +32,22 @@ const req = https.request(options, (res) => {
   let body = '';
   res.on('data', (chunk) => body += chunk);
   res.on('end', () => {
-    const json = JSON.parse(body);
-    if (json.success && json.result) {
-      const lines = json.result.data || [];
-      // Get last 50 lines to find the error
-      const lastLines = lines.slice(-50);
-      lastLines.forEach(l => {
-        console.log(l.line || '');
-      });
-    } else {
-      console.log('Error:', JSON.stringify(json));
+    try {
+      const json = JSON.parse(body);
+      if (json.success && json.result) {
+        const lines = json.result.data || [];
+        const lastLines = lines.slice(-70);
+        lastLines.forEach(l => {
+          console.log(l.line || '');
+        });
+      } else {
+        console.log('Error response:', JSON.stringify(json));
+      }
+    } catch (err) {
+      console.log('Parse error:', err.message, body);
     }
   });
 });
 
-req.on('error', (e) => console.error('Error:', e.message));
+req.on('error', (e) => console.error('Request error:', e.message));
 req.end();
