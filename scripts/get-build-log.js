@@ -2,7 +2,7 @@ const https = require('https');
 
 const ACCOUNT_ID = 'e4d1ad7b5737bce23e0af56b3470cf9f';
 const PROJECT_NAME = 'art-room-web';
-const DEPLOYMENT_ID = '935106d7-7d31-434d-a144-523c0c952088';
+const DEPLOYMENT_ID = process.argv[2] || 'a1110f22-f1fc-468c-9787-1ec139885fdf';
 const TOKEN = 'cfoat_0IAW1QSQkAE85RlI9mK5l6mLvdZgv5x4hB3baFcqhkg.BiX0VnJSZnzbBkzDb2BSeCu1lrxyCWKNrFTjQNOalCw';
 
 const options = {
