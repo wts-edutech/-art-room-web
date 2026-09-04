@@ -36,7 +36,8 @@ const req = https.request(options, (res) => {
       const json = JSON.parse(body);
       if (json.success && json.result) {
         const lines = json.result.data || [];
-        const lastLines = lines.slice(-70);
+        console.log(`Total log lines: ${lines.length}`);
+        const lastLines = lines.slice(-40);
         lastLines.forEach(l => {
           console.log(l.line || '');
         });

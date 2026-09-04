@@ -34,27 +34,12 @@ const req = https.request(options, (res) => {
     try {
       const json = JSON.parse(body);
       if (json.success && json.result && json.result.length > 0) {
-        const latest = json.result[0];
-        console.log('=== Latest Deployment ===');
-        console.log('ID:', latest.id);
-        console.log('Status:', latest.latest_stage?.name, '-', latest.latest_stage?.status);
-        console.log('URL:', latest.url);
-        console.log('Created:', latest.created_on);
-        
-        if (latest.stages) {
-          console.log('\n=== Build Stages ===');
-          latest.stages.forEach(s => {
-            console.log(`  ${s.name}: ${s.status} ${s.ended_on ? '(done)' : s.started_on ? '(running)' : '(pending)'}`);
-          });
-        }
-        
-        if (latest.build_config) {
-          console.log('\nBuild command:', latest.build_config.build_command);
-        }
-      } else if (json.success && json.result && json.result.length === 0) {
-        console.log('No deployments yet.');
+        console.log(`Found ${json.result.length} deployments:`);
+        json.result.slice(0, 5).forEach((d, idx) => {
+          console.log(`[${idx + 1}] ID: ${d.id} | Stage: ${d.latest_stage?.name} (${d.latest_stage?.status}) | URL: ${d.url} | Created: ${d.created_on}`);
+        });
       } else {
-        console.log('Error:', JSON.stringify(json.errors));
+        console.log('Error:', JSON.stringify(json.errors || json));
       }
     } catch (err) {
       console.log('Parse error:', err.message, body);
