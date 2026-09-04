@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     }
 
     if (password === adminPassword) {
-      const token = createAdminToken(24); // expires in 24 hours
+      const token = await createAdminToken(24); // expires in 24 hours
 
       const cookieStore = await cookies();
       cookieStore.set('admin_token', token, {

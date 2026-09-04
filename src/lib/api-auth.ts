@@ -16,7 +16,7 @@ export async function getSession(): Promise<SessionInfo | null> {
   const token = cookieStore.get('session_token')?.value;
   if (!token) return null;
 
-  const payload = verifySessionToken(token);
+  const payload = await verifySessionToken(token);
   if (!payload) return null;
 
   return {
@@ -61,7 +61,7 @@ export async function requireAdmin(): Promise<void> {
   const cookieStore = await cookies();
   const token = cookieStore.get('admin_token')?.value;
 
-  if (!token || !verifyAdminToken(token)) {
+  if (!token || !(await verifyAdminToken(token))) {
     throw new Response(JSON.stringify({ error: 'Unauthorized — ไม่ใช่ผู้ดูแลระบบ' }), {
       status: 401,
       headers: { 'Content-Type': 'application/json' },

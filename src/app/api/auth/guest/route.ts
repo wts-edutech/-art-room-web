@@ -23,7 +23,7 @@ export async function POST(request: Request) {
       createdAt: new Date().toISOString()
     });
 
-    const token = createSessionToken(guestId, guestName.trim(), 'guest', 24);
+    const token = await createSessionToken(guestId, guestName.trim(), 'guest', 24);
 
     const cookieStore = await cookies();
     cookieStore.set('session_token', token, {

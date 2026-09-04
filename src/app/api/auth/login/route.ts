@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Student not found' }, { status: 404 });
     }
 
-    const token = createSessionToken(student.id, student.name, 'student', 72);
+    const token = await createSessionToken(student.id, student.name, 'student', 72);
 
     const cookieStore = await cookies();
     cookieStore.set('session_token', token, {
