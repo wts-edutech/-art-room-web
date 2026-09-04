@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #ffffff;
+  --color-foreground: #393536;
+  --color-primary-500: #ff3131;
+  --color-primary-400: #ff914d;
+  --color-accent-yellow: #fcd848;
+  --color-accent-blue: #3533cd;
+  --font-sans: var(--font-prompt), Arial, sans-serif;
+  --font-heading: var(--font-kanit), Arial, sans-serif;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    overflow-x: hidden; /* Prevent horizontal scroll */
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+  }
+  
+  html {
+    height: -webkit-fill-available;
+    scroll-behavior: smooth;
+  }
+
+  /* Support for iPhone safe areas */
+  .safe-pt { padding-top: env(safe-area-inset-top); }
+  .safe-pb { padding-bottom: env(safe-area-inset-bottom); }
+  .safe-pl { padding-left: env(safe-area-inset-left); }
+  .safe-pr { padding-right: env(safe-area-inset-right); }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+  }
+
+  /* Prevent iOS zoom on inputs */
+  input[type="text"], input[type="email"], input[type="number"], input[type="password"], textarea, select {
+    font-size: 16px !important;
+  }
+}
