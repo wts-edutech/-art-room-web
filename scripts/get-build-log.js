@@ -2,7 +2,7 @@ const https = require('https');
 
 const ACCOUNT_ID = 'e4d1ad7b5737bce23e0af56b3470cf9f';
 const PROJECT_NAME = 'art-room-web';
-const DEPLOYMENT_ID = '99ee0e95-2f49-4b5e-8c3c-29eda6d307fc';
+const DEPLOYMENT_ID = '935106d7-7d31-434d-a144-523c0c952088';
 const TOKEN = 'cfoat_0IAW1QSQkAE85RlI9mK5l6mLvdZgv5x4hB3baFcqhkg.BiX0VnJSZnzbBkzDb2BSeCu1lrxyCWKNrFTjQNOalCw';
 
 const options = {
@@ -22,11 +22,11 @@ const req = https.request(options, (res) => {
   res.on('end', () => {
     const json = JSON.parse(body);
     if (json.success && json.result) {
-      // Get last 80 lines
       const lines = json.result.data || [];
-      const lastLines = lines.slice(-80);
+      // Get last 50 lines to find the error
+      const lastLines = lines.slice(-50);
       lastLines.forEach(l => {
-        console.log(`${l.ts || ''} ${l.line || ''}`);
+        console.log(l.line || '');
       });
     } else {
       console.log('Error:', JSON.stringify(json));
