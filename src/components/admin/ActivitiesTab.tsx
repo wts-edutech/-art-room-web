@@ -224,7 +224,7 @@ export default function ActivitiesTab() {
                     <div className="text-center py-10 text-gray-400">ไม่มีข้อมูลกิจกรรม</div>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {activitiesList.map((activity) => (
+                      {(Array.isArray(activitiesList) ? activitiesList : []).map((activity) => (
                         <div key={activity.id} className="flex flex-col bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-all">
                           <div className="w-full h-40 bg-gray-100 relative">
                             {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -129,7 +129,7 @@ export default function IdeasPage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {filteredIdeas.map((idea) => (
+                  {(Array.isArray(filteredIdeas) ? filteredIdeas : []).map((idea) => (
                     <Link href={`/ideas/${idea.id}`} key={idea.id} className="group flex flex-col bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
                       <div className="relative aspect-[4/3] w-full bg-gray-100 overflow-hidden">
                         {/* eslint-disable-next-line @next/next/no-img-element */}

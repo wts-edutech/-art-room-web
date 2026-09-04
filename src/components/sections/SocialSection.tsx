@@ -54,7 +54,7 @@ export default function SocialSection() {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6 max-w-5xl mx-auto">
-          {socials.map((social, index) => (
+          {(Array.isArray(socials) ? socials : []).map((social, index) => (
             <Link
               key={index}
               href={social.url}

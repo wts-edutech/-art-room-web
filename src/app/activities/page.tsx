@@ -60,7 +60,7 @@ export default function ActivitiesPage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  {activities.map((activity: any, index: number) => (
+                  {(Array.isArray(activities) ? activities : []).map((activity: any, index: number) => (
                     <div key={activity.id} className={`group rounded-2xl overflow-hidden relative h-[300px] shadow-sm hover:shadow-xl transition-all duration-500 ${index % 3 === 2 ? 'md:col-span-2' : ''}`}>
                       <div className="absolute inset-0 bg-gray-200 group-hover:scale-105 transition-transform duration-700">
                         {/* eslint-disable-next-line @next/next/no-img-element */}

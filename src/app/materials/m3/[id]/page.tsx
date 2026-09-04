@@ -346,7 +346,7 @@ export default function LessonDetailPage() {
                 {comments.length === 0 ? (
                   <div className="text-center text-gray-400 py-8">ยังไม่มีความคิดเห็น เป็นคนแรกที่แสดงความคิดเห็นเลย!</div>
                 ) : (
-                  comments.map((comment) => (
+                  (Array.isArray(comments) ? comments : []).map((comment) => (
                     <div key={comment.id} className="flex gap-4">
                       <div className="w-12 h-12 rounded-full bg-blue-50 flex-shrink-0 flex items-center justify-center text-(--color-accent-blue) font-bold text-lg overflow-hidden">
                         {comment.authorImage ? (

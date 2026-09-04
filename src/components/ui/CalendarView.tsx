@@ -93,7 +93,7 @@ export default function CalendarView({ activities, onActivityClick, onDateClick 
       {/* Calendar Grid */}
       <div className="p-4 md:p-6">
         <div className="grid grid-cols-7 gap-2 md:gap-4 mb-4">
-          {dayNames.map((day, i) => (
+          {(Array.isArray(dayNames) ? dayNames : []).map((day, i) => (
             <div key={day} className={`text-center text-sm font-bold uppercase tracking-wider ${i === 0 || i === 6 ? 'text-red-400' : 'text-gray-400'}`}>
               {day}
             </div>

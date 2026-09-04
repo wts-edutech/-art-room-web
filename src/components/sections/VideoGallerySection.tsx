@@ -32,7 +32,7 @@ export default function VideoGallerySection() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {videos.map((video, index) => (
+          {(Array.isArray(videos) ? videos : []).map((video, index) => (
             <div key={index} className="group flex flex-col bg-gray-800 rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-gray-700">
               {/* Video Container */}
               <div className="relative w-full aspect-video bg-black">

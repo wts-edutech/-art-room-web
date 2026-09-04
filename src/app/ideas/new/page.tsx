@@ -213,7 +213,7 @@ export default function NewIdeaPage() {
 
                 {files.length > 0 && (
                   <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {files.map((file, index) => (
+                    {(Array.isArray(files) ? files : []).map((file, index) => (
                       <div key={index} className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl shadow-sm">
                         <div className="flex items-center gap-3 overflow-hidden">
                           <div className="w-8 h-8 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">

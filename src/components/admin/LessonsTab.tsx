@@ -251,7 +251,7 @@ export default function LessonsTab() {
                     <div className="text-center py-10 text-gray-400">ไม่มีข้อมูล</div>
                   ) : (
                     <div className="space-y-3">
-                      {lessons.map((lesson) => (
+                      {(Array.isArray(lessons) ? lessons : []).map((lesson) => (
                         <div key={lesson.id} className="flex gap-4 p-3 rounded-2xl border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-all group bg-gray-50/50">
                           <div className="w-32 h-20 bg-gray-200 rounded-xl overflow-hidden flex-shrink-0 relative border border-gray-200/50">
                             {/* eslint-disable-next-line @next/next/no-img-element */}

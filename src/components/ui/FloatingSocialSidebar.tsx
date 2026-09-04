@@ -60,7 +60,7 @@ export default function FloatingSocialSidebar() {
           </div>
 
           <div className="flex flex-col gap-2 pt-1 pb-1">
-            {socials.map((social, index) => (
+            {(Array.isArray(socials) ? socials : []).map((social, index) => (
               <Link
                 key={index}
                 href={social.url}
@@ -118,7 +118,7 @@ export default function FloatingSocialSidebar() {
             </div>
             
             <div className="grid grid-cols-3 gap-4">
-              {socials.map((social, index) => (
+              {(Array.isArray(socials) ? socials : []).map((social, index) => (
                 <Link
                   key={index}
                   href={social.url}

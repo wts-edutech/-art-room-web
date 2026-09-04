@@ -105,7 +105,7 @@ export default function AwardsTable() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-300">
-                  {artworks.map((artwork, idx) => (
+                  {(Array.isArray(artworks) ? artworks : []).map((artwork, idx) => (
                     <tr key={artwork.id} className="hover:bg-gray-50 transition-colors">
                       <td className="py-5 px-6 border-r border-gray-300 text-center text-gray-700 font-medium">
                         {artwork.date}

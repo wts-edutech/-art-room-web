@@ -80,7 +80,7 @@ export default function MaterialsList({ initialLessons, basePath = "/materials" 
           <div>
             <h2 className="text-xl font-bold font-heading text-gray-900 mb-4 border-b border-gray-200 pb-2">หมวดหมู่</h2>
             <ul className="space-y-1">
-              {categories.map((cat) => (
+              {(Array.isArray(categories) ? categories : []).map((cat) => (
                 <li key={cat.id}>
                   <button
                     onClick={() => {
@@ -132,7 +132,7 @@ export default function MaterialsList({ initialLessons, basePath = "/materials" 
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
-            {filteredLessons.map((lesson: any, index: number) => {
+            {(Array.isArray(filteredLessons) ? filteredLessons : []).map((lesson: any, index: number) => {
               const colorScheme = colors[index % colors.length];
               return (
                 <div key={lesson.id} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full group">

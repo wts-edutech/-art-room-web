@@ -79,7 +79,7 @@ export default function ArtworksGallery() {
       </div>
 
       <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-6 space-y-6">
-        {filteredArtworks.map((artwork) => (
+        {(Array.isArray(filteredArtworks) ? filteredArtworks : []).map((artwork) => (
           <div key={artwork.id} className="break-inside-avoid group cursor-pointer">
             <div className="bg-white/80 backdrop-blur-sm rounded-3xl overflow-hidden border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(236,72,153,0.15)] transition-all duration-500 group-hover:-translate-y-2 relative">
               

@@ -196,7 +196,7 @@ export default function ArtworksTab() {
                     <div className="text-center py-10 text-gray-400">ไม่มีข้อมูล</div>
                   ) : (
                     <div className="columns-1 sm:columns-2 gap-4 space-y-4">
-                      {artworks.map((artwork) => (
+                      {(Array.isArray(artworks) ? artworks : []).map((artwork) => (
                         <div key={artwork.id} className="break-inside-avoid flex flex-col bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-all">
                           <div className="w-full bg-gray-100 relative">
                             {/* eslint-disable-next-line @next/next/no-img-element */}

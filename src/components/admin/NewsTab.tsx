@@ -196,7 +196,7 @@ export default function NewsTab() {
                     <div className="text-center py-10 text-gray-400">ไม่มีข้อมูลข่าวสาร</div>
                   ) : (
                     <div className="space-y-4">
-                      {newsList.map((news) => (
+                      {(Array.isArray(newsList) ? newsList : []).map((news) => (
                         <div key={news.id} className="flex gap-4 p-4 bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-all">
                           <div className="w-40 h-28 bg-gray-100 relative rounded-xl overflow-hidden flex-shrink-0">
                             {/* eslint-disable-next-line @next/next/no-img-element */}

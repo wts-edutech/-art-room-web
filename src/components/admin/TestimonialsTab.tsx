@@ -192,7 +192,7 @@ export default function TestimonialsTab() {
                     <div className="text-center py-10 text-gray-400">ไม่มีข้อมูลรีวิว</div>
                   ) : (
                     <div className="divide-y divide-gray-100">
-                      {testimonials.map((testimonial) => (
+                      {(Array.isArray(testimonials) ? testimonials : []).map((testimonial) => (
                         <div key={testimonial.id} className="p-6 hover:bg-blue-50/30 transition-colors flex flex-col sm:flex-row gap-6 items-start">
                           <div className="w-20 h-20 bg-gray-100 rounded-full overflow-hidden flex-shrink-0 border-2 border-white shadow-sm self-center sm:self-start">
                             {testimonial.imageUrl ? (

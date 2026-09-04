@@ -33,7 +33,7 @@ export default async function NewsPage() {
               ข่าวสารอื่นๆ
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {otherNews.map((news: any) => (
+              {(Array.isArray(otherNews) ? otherNews : []).map((news: any) => (
                 <div key={news.id} className="bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm group hover:shadow-md transition-all flex flex-col h-full">
                   <div className="w-full h-48 bg-gray-200 relative overflow-hidden">
                     {/* eslint-disable-next-line @next/next/no-img-element */}

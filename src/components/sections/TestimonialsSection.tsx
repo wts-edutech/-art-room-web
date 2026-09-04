@@ -37,7 +37,7 @@ export default async function TestimonialsSection() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 lg:gap-10">
-          {testimonials.map((testimonial: any, index: number) => (
+          {(Array.isArray(testimonials) ? testimonials : []).map((testimonial: any, index: number) => (
             <Card key={index} className="group h-full border border-gray-100 shadow-md hover:shadow-2xl transition-all duration-300 rounded-[2rem] hover:-translate-y-1 bg-gradient-to-br from-white to-gray-50/50">
               <CardContent className="p-8 md:p-12 flex flex-col h-full relative overflow-hidden">
                 <Quote className="absolute top-8 right-8 w-24 h-24 text-gray-50 opacity-50 group-hover:scale-110 transition-transform duration-500 group-hover:text-red-50" />
