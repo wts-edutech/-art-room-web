@@ -16,24 +16,6 @@ export default function FloatingSocialSidebar() {
       color: "bg-[#1877F2]",
     },
     {
-      name: "Messenger",
-      url: "#", // Add real URL if provided
-      icon: <FaFacebookMessenger className="w-5 h-5" />,
-      color: "bg-[#00B2FF]",
-    },
-    {
-      name: "LINE",
-      url: "#", // Add real URL if provided
-      icon: <FaLine className="w-5 h-5" />,
-      color: "bg-[#00C300]",
-    },
-    {
-      name: "Instagram",
-      url: "#", // Add real URL if provided
-      icon: <FaInstagram className="w-5 h-5" />,
-      color: "bg-gradient-to-tr from-[#f09433] via-[#e6683c] to-[#bc1888]",
-    },
-    {
       name: "TikTok",
       url: "https://www.tiktok.com/@artroom253",
       icon: <FaTiktok className="w-5 h-5" />,
