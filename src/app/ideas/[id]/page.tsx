@@ -153,7 +153,7 @@ export default function IdeaDetailPage() {
                       <Download className="w-5 h-5 text-orange-500" /> ไฟล์แนบ ({idea.files.length})
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {idea.(Array.isArray(files) ? files : []).map((file: any, index: number) => (
+                      {(Array.isArray(idea.files) ? idea.files : []).map((file: any, index: number) => (
                         <a 
                           key={index} 
                           href={file.url} 
@@ -226,7 +226,7 @@ export default function IdeaDetailPage() {
 
                 <div className="space-y-6">
                   {idea.comments && idea.comments.length > 0 ? (
-                    idea.(Array.isArray(comments) ? comments : []).map((comment: any) => (
+                    (Array.isArray(idea.comments) ? idea.comments : []).map((comment: any) => (
                       <div key={comment.id} className="flex gap-4">
                         <div className="w-10 h-10 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center font-bold text-sm uppercase flex-shrink-0">
                           {comment.authorName.charAt(0)}
