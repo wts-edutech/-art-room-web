@@ -47,7 +47,8 @@ export async function POST(request: Request) {
       }
     });
 
-  } catch (error) {
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+  } catch (error: any) {
+    console.error('Login error:', error);
+    return NextResponse.json({ error: error?.message || 'Server error' }, { status: 500 });
   }
 }

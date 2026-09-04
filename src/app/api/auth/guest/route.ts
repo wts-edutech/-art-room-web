@@ -20,7 +20,6 @@ export async function POST(request: Request) {
     await db.insert(guests).values({
       id: guestId,
       name: guestName.trim(),
-      createdAt: new Date().toISOString()
     });
 
     const token = await createSessionToken(guestId, guestName.trim(), 'guest', 24);
@@ -43,7 +42,8 @@ export async function POST(request: Request) {
       }
     });
 
-  } catch (error) {
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+  } catch (error: any) {
+    console.error('Guest login error:', error);
+    return NextResponse.json({ error: error?.message || 'Server error' }, { status: 500 });
   }
 }
