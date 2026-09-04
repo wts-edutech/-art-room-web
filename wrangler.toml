@@ -1,15 +1,10 @@
-name = "art-room"
+name = "art-room-web"
 compatibility_date = "2026-09-04"
 compatibility_flags = ["nodejs_compat"]
-
-# Build settings for @cloudflare/next-on-pages
-[build]
-command = "npx @cloudflare/next-on-pages"
-watch_dir = "src"
+pages_build_output_dir = ".vercel/output/static"
 
 # D1 Database binding
 [[d1_databases]]
-binding = "DB" # Available in your Next.js app via process.env.DB or getRequestContext().env.DB
+binding = "DB"
 database_name = "art-room-db"
 database_id = "a6a5cb12-3c61-4927-9ba5-1ee7e9ce7e4b"
-migrations_dir = "drizzle"
