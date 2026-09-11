@@ -159,17 +159,22 @@ export default function IdeasPage() {
                           {idea.description}
                         </p>
                         
-                        <div className="mt-auto flex items-center justify-between pt-4 border-t border-gray-50">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-xs uppercase">
-                              {idea.authorName.charAt(0)}
+                        <div className="mt-auto flex flex-col gap-3">
+                          <div className="flex items-center justify-between pt-4 border-t border-gray-50">
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-xs uppercase">
+                                {idea.authorName.charAt(0)}
+                              </div>
+                              <div className="text-xs text-gray-500 font-medium truncate max-w-[120px]">
+                                {idea.authorName}
+                              </div>
                             </div>
-                            <div className="text-xs text-gray-500 font-medium truncate max-w-[120px]">
-                              {idea.authorName}
+                            <div className="text-xs text-gray-400 flex items-center gap-1">
+                              💬 {idea.comments ? idea.comments.length : 0}
                             </div>
                           </div>
-                          <div className="text-xs text-gray-400 flex items-center gap-1">
-                            💬 {idea.comments ? idea.comments.length : 0}
+                          <div className="w-full text-center py-2 bg-orange-50 text-orange-600 font-bold text-sm rounded-xl group-hover:bg-orange-500 group-hover:text-white transition-colors">
+                            ดูรายละเอียด
                           </div>
                         </div>
                       </div>

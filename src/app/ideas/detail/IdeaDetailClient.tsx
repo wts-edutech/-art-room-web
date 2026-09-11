@@ -107,7 +107,6 @@ export default function IdeaDetailPage() {
   return (
     <>
       <Navbar />
-      <ProtectedRoute>
         <main className="flex-1 flex flex-col pt-32 pb-24 min-h-screen bg-[#FDF9F1]">
           <div className="container mx-auto px-4 sm:px-6 max-w-4xl">
             {/* Header/Back button */}
@@ -158,11 +157,19 @@ export default function IdeaDetailPage() {
                       {(Array.isArray(idea.files) ? idea.files : []).map((file: any, index: number) => (
                         <a 
                           key={index} 
-                          href={file.url} 
-                          download
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 hover:border-orange-500 hover:bg-orange-50 transition-colors group"
+                          href={isLoggedIn ? file.url : '#'} 
+                          download={isLoggedIn}
+                          target={isLoggedIn ? "_blank" : undefined}
+                          rel={isLoggedIn ? "noopener noreferrer" : undefined}
+                          onClick={(e) => {
+                            if (!isLoggedIn) {
+                              e.preventDefault();
+                              if (confirm("กรุณาเข้าสู่ระบบก่อนดาวน์โหลดไฟล์ ต้องการไปหน้าเข้าสู่ระบบหรือไม่?")) {
+                                router.push(`/login?redirect=/ideas/detail?id=${idea.id}`);
+                              }
+                            }
+                          }}
+                          className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 hover:border-orange-500 hover:bg-orange-50 transition-colors group cursor-pointer"
                         >
                           <div className="w-10 h-10 rounded-lg bg-gray-100 group-hover:bg-white flex items-center justify-center text-gray-500 group-hover:text-orange-500 transition-colors">
                             {getFileIcon(file.name)}
@@ -254,7 +261,6 @@ export default function IdeaDetailPage() {
             </div>
           </div>
         </main>
-      </ProtectedRoute>
       <Footer />
     </>
   );

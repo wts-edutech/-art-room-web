@@ -14,11 +14,16 @@ export default function Navbar() {
   const [isArtworksOpen, setIsArtworksOpen] = useState(false);
   const [isOrgMediaOpen, setIsOrgMediaOpen] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
     const name = localStorage.getItem("artroom_author_name");
+    const role = localStorage.getItem("artroom_role");
     if (name) {
       setUserName(name);
+    }
+    if (role) {
+      setUserRole(role);
     }
   }, []);
 
@@ -69,11 +74,12 @@ export default function Navbar() {
             </Link>
             {/* Materials Dropdown Menu */}
             <div className="relative group h-full flex items-center">
-              <button 
+              <Link 
+                href="/materials"
                 className={`whitespace-nowrap flex items-center gap-1.5 px-1 h-full border-b-[3px] transition-colors focus:outline-none ${pathname.startsWith("/materials") ? "border-red-500 text-red-500" : "border-transparent hover:border-red-500 hover:text-red-500"}`}
               >
                 สื่อการสอน <ChevronDown className="w-4 h-4 transition-transform duration-300 group-hover:rotate-180" />
-              </button>
+              </Link>
               
               <div className="absolute top-full -left-4 pt-2 w-56 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                 <div className="bg-white rounded-2xl shadow-xl border border-gray-100 py-2 flex flex-col">
@@ -112,11 +118,12 @@ export default function Navbar() {
             </Link>
             {/* Artworks Dropdown Menu */}
             <div className="relative group h-full flex items-center">
-              <button 
+              <Link 
+                href="/artworks"
                 className={`whitespace-nowrap flex items-center gap-1.5 px-1 h-full border-b-[3px] transition-colors focus:outline-none ${pathname.startsWith("/artworks") || pathname.startsWith("/awards") ? "border-red-500 text-red-500" : "border-transparent hover:border-red-500 hover:text-red-500"}`}
               >
                 ผลงานนักเรียน <ChevronDown className="w-4 h-4 transition-transform duration-300 group-hover:rotate-180" />
-              </button>
+              </Link>
               
               <div className="absolute top-full -left-4 pt-2 w-48 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                 <div className="bg-white rounded-2xl shadow-xl border border-gray-100 py-2 flex flex-col">
@@ -138,11 +145,12 @@ export default function Navbar() {
             
             {/* Dropdown Menu */}
             <div className="relative group h-full flex items-center">
-              <button 
+              <Link 
+                href="/activities"
                 className={`whitespace-nowrap flex items-center gap-1.5 px-1 h-full border-b-[3px] transition-colors focus:outline-none ${pathname.startsWith("/activities") ? "border-red-500 text-red-500" : "border-transparent hover:border-red-500 hover:text-red-500"}`}
               >
                 กิจกรรมต่างๆ <ChevronDown className="w-4 h-4 transition-transform duration-300 group-hover:rotate-180" />
-              </button>
+              </Link>
               
               <div className="absolute top-full -left-4 pt-2 w-48 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                 <div className="bg-white rounded-2xl shadow-xl border border-gray-100 py-2 flex flex-col">
@@ -161,7 +169,7 @@ export default function Navbar() {
               <button 
                 className="whitespace-nowrap flex items-center gap-1.5 px-1 h-full border-b-[3px] border-transparent hover:border-red-500 hover:text-red-500 transition-colors focus:outline-none"
               >
-                คลังสือองค์กร <ChevronDown className="w-4 h-4 transition-transform duration-300 group-hover:rotate-180" />
+                คลังสื่อองค์กร <ChevronDown className="w-4 h-4 transition-transform duration-300 group-hover:rotate-180" />
               </button>
               
               <div className="absolute top-full -left-4 pt-2 w-64 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
@@ -199,6 +207,14 @@ export default function Navbar() {
 
             {userName ? (
               <div className="hidden sm:flex items-center gap-2">
+                {userRole === "teacher" || userRole === "admin" ? (
+                  <Link 
+                    href="/admin" 
+                    className="text-sm font-bold text-white bg-red-500 hover:bg-red-600 px-4 py-2 rounded-full shadow-sm transition-colors mr-1"
+                  >
+                    ระบบหลังบ้าน
+                  </Link>
+                ) : null}
                 <div 
                   className="text-sm font-bold text-orange-600 bg-orange-50 px-4 py-2 rounded-full border border-orange-100 shadow-sm max-w-[120px] truncate cursor-default"
                   title={userName}
@@ -358,6 +374,13 @@ export default function Navbar() {
                 <div className="px-4 py-3 bg-orange-50 rounded-xl text-orange-600 font-bold text-center border border-orange-100 truncate">
                   สวัสดี, {userName}
                 </div>
+                {(userRole === "teacher" || userRole === "admin") && (
+                  <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)}>
+                    <Button variant="outline" className="w-full rounded-xl h-[44px] border-red-500 text-red-500 hover:bg-red-50 font-bold transition-colors">
+                      เข้าระบบหลังบ้าน
+                    </Button>
+                  </Link>
+                )}
                 <button onClick={handleLogout} className="w-full rounded-xl h-[44px] border border-red-200 text-red-500 hover:bg-red-50 font-bold transition-colors flex items-center justify-center gap-2">
                   <LogOut className="w-4 h-4" /> ออกจากระบบ
                 </button>
