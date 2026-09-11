@@ -49,10 +49,7 @@ export default function AwardsTable({ awards }: { awards: any[] }) {
   const [filterMonth, setFilterMonth] = useState("");
   const [filterAwardLevel, setFilterAwardLevel] = useState("");
   const [filterCompLevel, setFilterCompLevel] = useState("");
-  const [filterOrg, setFilterOrg] = useState("");
 
-  // Extract unique organizations from data
-  const orgs = Array.from(new Set(awards.map(a => a.organization).filter(Boolean)));
 
   const filteredAwards = awards.filter(award => {
     const searchMatch = !searchTerm || 
@@ -63,7 +60,6 @@ export default function AwardsTable({ awards }: { awards: any[] }) {
     const yearMatch = !filterYear || award.year === filterYear;
     const awardLevelMatch = !filterAwardLevel || award.awardLevel === filterAwardLevel;
     const compLevelMatch = !filterCompLevel || award.competitionLevel === filterCompLevel;
-    const orgMatch = !filterOrg || award.organization === filterOrg;
     
     let monthMatch = true;
     if (filterMonth && award.date) {
@@ -76,7 +72,7 @@ export default function AwardsTable({ awards }: { awards: any[] }) {
       monthMatch = false;
     }
 
-    return searchMatch && yearMatch && monthMatch && awardLevelMatch && compLevelMatch && orgMatch;
+    return searchMatch && yearMatch && monthMatch && awardLevelMatch && compLevelMatch;
   });
 
   return (
@@ -141,15 +137,7 @@ export default function AwardsTable({ awards }: { awards: any[] }) {
             {COMPETITION_LEVELS.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
 
-          {/* Organization */}
-          <select 
-            value={filterOrg} 
-            onChange={(e) => setFilterOrg(e.target.value)}
-            className="h-12 px-4 rounded-xl border border-gray-200 focus:border-red-500 outline-none text-sm appearance-none bg-white cursor-pointer"
-          >
-            <option value="">-- ทุกหน่วยงานที่จัด --</option>
-            {orgs.map(o => <option key={o as string} value={o as string}>{o}</option>)}
-          </select>
+
         </div>
       </div>
 
@@ -163,7 +151,7 @@ export default function AwardsTable({ awards }: { awards: any[] }) {
                 <th className="p-4 font-semibold whitespace-nowrap">ประเภทผู้ได้รับรางวัล</th>
                 <th className="p-4 font-semibold whitespace-nowrap">ระดับรางวัล/ผลงาน</th>
                 <th className="p-4 font-semibold whitespace-nowrap">ระดับผลงาน/การแข่งขัน</th>
-                <th className="p-4 font-semibold whitespace-nowrap">หน่วยงานที่จัด</th>
+
                 <th className="p-4 font-semibold whitespace-nowrap min-w-[200px]">ชื่อกิจกรรม</th>
                 <th className="p-4 font-semibold whitespace-nowrap min-w-[250px]">รายละเอียดกิจกรรม</th>
                 <th className="p-4 font-semibold whitespace-nowrap">ภาพ</th>
@@ -181,7 +169,7 @@ export default function AwardsTable({ awards }: { awards: any[] }) {
                     <td className="p-4 align-top text-gray-700">นักเรียน<br/><span className="text-gray-500 text-xs">({award.student})</span></td>
                     <td className="p-4 align-top font-medium text-red-700">{award.awardLevel || '-'}</td>
                     <td className="p-4 align-top text-gray-600">{award.competitionLevel || '-'}</td>
-                    <td className="p-4 align-top text-gray-600">{award.organization || '-'}</td>
+
                     <td className="p-4 align-top font-bold text-gray-900">{award.title || '-'}</td>
                     <td className="p-4 align-top text-gray-600 whitespace-pre-wrap">{award.description || '-'}</td>
                     <td className="p-4 align-top">
@@ -195,7 +183,7 @@ export default function AwardsTable({ awards }: { awards: any[] }) {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={8} className="p-8 text-center text-gray-400">
+                  <td colSpan={7} className="p-8 text-center text-gray-400">
                     ไม่พบข้อมูลรางวัลที่ตรงกับเงื่อนไข
                   </td>
                 </tr>
