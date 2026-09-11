@@ -36,8 +36,22 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     
     const ideaComments = await db.select().from(comments).where(eq(comments.ideaId, id)).orderBy(desc(comments.time));
     
+    let safeFiles = [];
+    if (ideaData.files) {
+      if (typeof ideaData.files === 'string') {
+        if (ideaData.files.startsWith('data:')) {
+          safeFiles = [{ name: 'ไฟล์แนบ', url: ideaData.files }];
+        } else {
+          try { safeFiles = JSON.parse(ideaData.files); } catch(e) {}
+        }
+      } else if (Array.isArray(ideaData.files)) {
+        safeFiles = ideaData.files;
+      }
+    }
+    
     const ideaWithComments = {
       ...ideaData,
+      files: safeFiles,
       comments: ideaComments.map((c: any) => ({
         id: c.id,
         authorName: c.author,

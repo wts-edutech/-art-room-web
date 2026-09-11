@@ -18,8 +18,23 @@ export async function GET(request: Request) {
     } else {
       all = await db.select().from(ideas).where(eq(ideas.status, 'approved')).orderBy(desc(ideas.createdAt));
     }
+    const safeData = all.map(idea => {
+      let safeFiles = [];
+      if (idea.files) {
+        if (typeof idea.files === 'string') {
+          if (idea.files.startsWith('data:')) {
+            safeFiles = [{ name: 'ไฟล์แนบ', url: idea.files }];
+          } else {
+            try { safeFiles = JSON.parse(idea.files); } catch(e) {}
+          }
+        } else if (Array.isArray(idea.files)) {
+          safeFiles = idea.files;
+        }
+      }
+      return { ...idea, files: safeFiles };
+    });
     
-    return NextResponse.json(all);
+    return NextResponse.json(safeData);
   } catch (error) {
     console.error("GET /api/ideas error:", error);
     return NextResponse.json({ error: 'Failed to fetch' }, { status: 500 });
@@ -37,10 +52,21 @@ export async function POST(request: Request) {
       if (value instanceof File && value.size > 0) {
         const bytes = await value.arrayBuffer();
         const base64 = Buffer.from(bytes).toString('base64');
-        newEntry[key === 'image' || key === 'coverImage' ? (key === 'coverImage' ? 'coverImageUrl' : 'imageUrl') : key] = `data:${value.type};base64,${base64}`;
+        const url = `data:${value.type};base64,${base64}`;
+        
+        if (key === 'files') {
+          if (!newEntry.files) newEntry.files = [];
+          newEntry.files.push({ name: value.name, url });
+        } else {
+          newEntry[key === 'image' || key === 'coverImage' ? (key === 'coverImage' ? 'coverImageUrl' : 'imageUrl') : key] = url;
+        }
       } else if (typeof value === 'string' && key !== 'image' && key !== 'coverImage') {
         newEntry[key] = value;
       }
+    }
+    
+    if (newEntry.files) {
+      newEntry.files = JSON.stringify(newEntry.files);
     }
     
     if (!newEntry.createdAt) newEntry.createdAt = new Date().toISOString();

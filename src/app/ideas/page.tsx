@@ -139,9 +139,9 @@ export default function IdeasPage() {
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           onError={(e) => (e.currentTarget.src = "https://placehold.co/800x600/eeeeee/999999?text=No+Cover")}
                         />
-                        {idea.files && (typeof idea.files === 'string' ? JSON.parse(idea.files) : idea.files).length > 0 && (
+                        {idea.files && Array.isArray(idea.files) && idea.files.length > 0 && (
                           <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-lg text-xs font-bold text-gray-700 shadow-sm flex items-center gap-1">
-                            📎 {(typeof idea.files === 'string' ? JSON.parse(idea.files) : idea.files).length} ไฟล์
+                            📎 {idea.files.length} ไฟล์
                           </div>
                         )}
                         {idea.category && (
