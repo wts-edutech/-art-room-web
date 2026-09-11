@@ -155,12 +155,32 @@ export default function AwardsTab() {
               <input type="text" required value={awardStudent} onChange={(e) => setAwardStudent(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm" />
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-700 block mb-1">ระดับรางวัล/ผลงาน (เช่น เหรียญทองแดง)</label>
-              <input type="text" value={awardLevel} onChange={(e) => setAwardLevel(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm" />
+              <label className="text-sm font-medium text-gray-700 block mb-1">ระดับรางวัล/ผลงาน</label>
+              <select value={awardLevel} onChange={(e) => setAwardLevel(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm bg-white">
+                <option value="">-- เลือกระดับรางวัล --</option>
+                <option value="รางวัลชนะเลิศ">รางวัลชนะเลิศ</option>
+                <option value="รางวัลรองชนะเลิศอันดับที่ 1">รางวัลรองชนะเลิศอันดับที่ 1</option>
+                <option value="รางวัลรองชนะเลิศอันดับที่ 2">รางวัลรองชนะเลิศอันดับที่ 2</option>
+                <option value="รางวัลระดับเหรียญทอง">รางวัลระดับเหรียญทอง</option>
+                <option value="รางวัลระดับเหรียญเงิน">รางวัลระดับเหรียญเงิน</option>
+                <option value="รางวัลระดับเหรียญทองแดง">รางวัลระดับเหรียญทองแดง</option>
+                <option value="รางวัลชมเชย">รางวัลชมเชย</option>
+                <option value="รางวัลเข้าร่วม">รางวัลเข้าร่วม</option>
+                <option value="ผ่านการคัดเลือก">ผ่านการคัดเลือก</option>
+                <option value="อื่นๆ">อื่นๆ</option>
+              </select>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-700 block mb-1">ระดับการแข่งขัน (เช่น ระดับชาติ)</label>
-              <input type="text" value={competitionLevel} onChange={(e) => setCompetitionLevel(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm" />
+              <label className="text-sm font-medium text-gray-700 block mb-1">ระดับการแข่งขัน</label>
+              <select value={competitionLevel} onChange={(e) => setCompetitionLevel(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm bg-white">
+                <option value="">-- เลือกระดับการแข่งขัน --</option>
+                <option value="ระดับสถานศึกษา/กลุ่มโรงเรียนฯ">ระดับสถานศึกษา/กลุ่มโรงเรียนฯ</option>
+                <option value="ระดับเขตพื้นที่/ระดับจังหวัด">ระดับเขตพื้นที่/ระดับจังหวัด</option>
+                <option value="ระดับภาค/ระดับกลุ่มสถานศึกษา">ระดับภาค/ระดับกลุ่มสถานศึกษา</option>
+                <option value="ระดับชาติ/ประเทศ">ระดับชาติ/ประเทศ</option>
+                <option value="ระดับนานาชาติ">ระดับนานาชาติ</option>
+                <option value="อื่นๆ">อื่นๆ</option>
+              </select>
             </div>
             <div>
               <label className="text-sm font-medium text-gray-700 block mb-1">หน่วยงานที่จัด (เช่น EduPLOYS)</label>
