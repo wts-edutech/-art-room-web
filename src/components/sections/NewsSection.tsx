@@ -1,8 +1,19 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowRight, ExternalLink } from "lucide-react";
 
 export default function NewsSection({ featuredNews }: { featuredNews?: any }) {
-  if (!featuredNews) return null;
+  const defaultFeatured = {
+    title: "นิทรรศการศิลปกรรมนักเรียนประจำปี ART ROOM ANNUAL EXHIBITION 2026: ปลดปล่อยจินตนาการสู่โลกศิลปะร่วมสมัย",
+    excerpt: "กลุ่มสาระการเรียนรู้ศิลปะ โรงเรียนวชิรธรรมสาธิต ขอเชิญชวนครู นักเรียน และผู้ปกครอง ร่วมชมนิทรรศการแสดงผลงานศิลปะยอดเยี่ยมประจำปีการศึกษา 2569 รวบรวมผลงานภาพวาด จิตรกรรม และดิจิทัลอาร์ตกว่า 150 ชิ้น",
+    date: "10 พ.ย. 2569",
+    source: "กลุ่มสาระฯ ศิลปะ",
+    imageUrl: "/images/news/hero-exhibition.jpg",
+    url: "/news"
+  };
+
+  const item = featuredNews || defaultFeatured;
 
   return (
     <section className="py-24 bg-transparent">
@@ -28,17 +39,17 @@ export default function NewsSection({ featuredNews }: { featuredNews?: any }) {
             {/* Image Section - Supports 1.91:1 Banner, 3:4/4:5 Poster, and 1:1 Square */}
             <div className="relative w-full lg:w-1/2 min-h-[280px] sm:min-h-[340px] lg:h-[420px] overflow-hidden bg-gray-950 flex items-center justify-center p-2">
               {/* Ambient backdrop blur */}
-              {featuredNews.imageUrl && (
+              {item.imageUrl && (
                 <div 
                   className="absolute inset-0 bg-cover bg-center blur-xl opacity-40 scale-110 pointer-events-none"
-                  style={{ backgroundImage: `url(${featuredNews.imageUrl})` }}
+                  style={{ backgroundImage: `url(${item.imageUrl})` }}
                 />
               )}
               <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-500 z-10 pointer-events-none"></div>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img 
-                src={featuredNews.imageUrl} 
-                alt={featuredNews.title}
+                src={item.imageUrl} 
+                alt={item.title}
                 className="relative z-10 max-h-full max-w-full object-contain transform group-hover:scale-105 transition-transform duration-700 ease-out rounded-xl drop-shadow-md"
                 onError={(e) => (e.currentTarget.src = "https://placehold.co/1200x630/1e293b/ffffff?text=PR+News")}
               />
@@ -55,22 +66,22 @@ export default function NewsSection({ featuredNews }: { featuredNews?: any }) {
               <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-white/5 rounded-full blur-3xl group-hover:bg-white/10 transition-colors duration-500"></div>
 
               <div className="flex items-center gap-3 mb-6 text-gray-300 text-sm font-light relative z-10">
-                <span className="font-medium text-white">{featuredNews.source}</span>
+                <span className="font-medium text-white">{item.source}</span>
                 <span className="w-1.5 h-1.5 rounded-full bg-gray-500"></span>
-                <span>{featuredNews.date}</span>
+                <span>{item.date}</span>
               </div>
 
               <h3 className="text-2xl md:text-3xl lg:text-4xl font-bold font-heading mb-6 leading-snug group-hover:text-blue-400 transition-colors duration-300 relative z-10">
-                {featuredNews.title}
+                {item.title}
               </h3>
               
               <p className="text-gray-300 text-lg leading-relaxed font-light mb-8 line-clamp-4 relative z-10">
-                {featuredNews.excerpt}
+                {item.excerpt}
               </p>
 
-              {featuredNews.url && (
+              {item.url && (
                 <div className="relative z-10">
-                  <a href={featuredNews.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-6 py-3 bg-white text-gray-900 font-medium rounded-xl hover:bg-gray-100 transition-colors shadow-sm">
+                  <a href={item.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-6 py-3 bg-white text-gray-900 font-medium rounded-xl hover:bg-gray-100 transition-colors shadow-sm">
                     อ่านบทความต้นฉบับ <ExternalLink className="w-4 h-4" />
                   </a>
                 </div>
