@@ -4,9 +4,10 @@ import { NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { comments } from '@/db/schema';
 
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> | { id: string } }) {
   try {
-    const ideaId = params.id;
+    const resolvedParams = await params;
+    const ideaId = resolvedParams.id;
     const body = await request.json();
     const db = getDb();
     
@@ -22,7 +23,16 @@ export async function POST(request: Request, { params }: { params: { id: string 
     };
     
     await db.insert(comments).values(newComment);
-    return NextResponse.json(newComment, { status: 201 });
+    
+    // Map to frontend format
+    const mappedComment = {
+      id: newComment.id,
+      authorName: newComment.author,
+      text: newComment.text,
+      createdAt: newComment.time
+    };
+    
+    return NextResponse.json(mappedComment, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to add comment' }, { status: 500 });
   }
