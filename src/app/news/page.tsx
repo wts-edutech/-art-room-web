@@ -17,7 +17,7 @@ async function getNews() {
 }
 
 export default async function NewsPage() {
-  const newsList = getNews();
+  const newsList = await getNews();
   const featuredNews = newsList.length > 0 ? newsList[0] : null;
   const otherNews = newsList.length > 1 ? newsList.slice(1) : [];
 
@@ -35,12 +35,13 @@ export default async function NewsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {(Array.isArray(otherNews) ? otherNews : []).map((news: any) => (
                 <div key={news.id} className="bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm group hover:shadow-md transition-all flex flex-col h-full">
-                  <div className="w-full h-48 bg-gray-200 relative overflow-hidden">
+                  <div className="w-full h-52 bg-gray-100 relative overflow-hidden flex items-center justify-center">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img 
                       src={news.imageUrl} 
                       alt={news.title}
                       className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
+                      onError={(e) => (e.currentTarget.src = "https://placehold.co/600x315/f1f5f9/64748b?text=News")}
                     />
                   </div>
                   <div className="p-5 flex-1 flex flex-col">

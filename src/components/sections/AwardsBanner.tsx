@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Medal } from "lucide-react";
 
 export default function AwardsBanner({ awards }: { awards: any[] }) {
   const highlights = awards.filter(a => a.isHighlight);
@@ -30,26 +30,56 @@ export default function AwardsBanner({ awards }: { awards: any[] }) {
   return (
     <div className="w-full relative bg-[#FDF9F1] py-12 overflow-hidden">
       {/* Background blurred image */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center opacity-30 blur-xl scale-110"
-        style={{ backgroundImage: `url(${current.imageUrl})`, transition: 'background-image 0.5s ease-in-out' }}
-      />
+      {current.imageUrl && (
+        <div 
+          className="absolute inset-0 bg-cover bg-center opacity-25 blur-2xl scale-110"
+          style={{ backgroundImage: `url(${current.imageUrl})`, transition: 'background-image 0.5s ease-in-out' }}
+        />
+      )}
       
       {/* Background overlay */}
       <div className="absolute inset-0 bg-white/40 backdrop-blur-sm" />
 
       <div className="container mx-auto px-4 sm:px-6 relative z-10 max-w-6xl">
-        <div className="flex flex-col md:flex-row items-center gap-8 bg-white/80 backdrop-blur-md rounded-3xl p-6 sm:p-10 shadow-xl border border-white/50">
+        <div className="flex flex-col md:flex-row items-center gap-8 bg-white/85 backdrop-blur-md rounded-3xl p-6 sm:p-10 shadow-xl border border-white/60">
           
-          {/* Image */}
-          <div className="w-full md:w-1/2 rounded-2xl overflow-hidden shadow-lg border-4 border-red-700/10 bg-gray-50">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img 
-              src={current.imageUrl} 
-              alt={current.title}
-              className="w-full h-auto object-contain max-h-[500px]"
-              onError={(e) => (e.currentTarget.src = "https://placehold.co/800x600/eeeeee/999999?text=Image+Not+Found")}
-            />
+          {/* Image Container - Supports Banner (1.91:1), Poster (3:4, 4:5), and Square (1:1) without collapsing */}
+          <div className="w-full md:w-1/2 h-[340px] sm:h-[420px] rounded-2xl overflow-hidden shadow-lg border-4 border-red-700/10 bg-gradient-to-br from-red-50/40 via-white to-amber-50/40 relative flex items-center justify-center p-3">
+            {/* Ambient blur behind image */}
+            {current.imageUrl && (
+              <div 
+                className="absolute inset-0 bg-cover bg-center blur-md opacity-20 scale-110 pointer-events-none"
+                style={{ backgroundImage: `url(${current.imageUrl})` }}
+              />
+            )}
+            
+            {/* Actual image */}
+            {current.imageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img 
+                key={current.id || currentIndex}
+                src={current.imageUrl} 
+                alt={current.title}
+                className="relative z-10 max-h-full max-w-full object-contain rounded-xl drop-shadow-md transition-all duration-300"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  const fallback = e.currentTarget.parentElement?.querySelector('.img-fallback') as HTMLElement;
+                  if (fallback) fallback.style.display = 'flex';
+                }}
+              />
+            ) : null}
+
+            {/* Fallback Display if image is empty or fails to load */}
+            <div 
+              className="img-fallback flex flex-col items-center justify-center p-6 text-center relative z-10" 
+              style={{ display: current.imageUrl ? 'none' : 'flex' }}
+            >
+              <div className="w-20 h-20 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center shadow-inner mb-3">
+                <Medal className="w-10 h-10" />
+              </div>
+              <span className="text-base font-bold text-gray-800 mb-1">{current.awardLevel || "ผลงานนักเรียน"}</span>
+              <span className="text-xs text-gray-500 max-w-xs line-clamp-2">{current.title}</span>
+            </div>
           </div>
           
           {/* Content */}
@@ -124,14 +154,26 @@ export default function AwardsBanner({ awards }: { awards: any[] }) {
             {/* Duplicate items for seamless loop */}
             {[...highlights, ...highlights, ...highlights].map((award, idx) => (
               <div key={idx} className="inline-flex items-center gap-3 mx-4 flex-shrink-0 bg-white/70 backdrop-blur-sm rounded-2xl px-5 py-3 shadow-sm border border-white/50">
-                <div className="w-20 h-14 rounded-xl overflow-hidden border-2 border-red-200 shadow-sm flex-shrink-0 bg-gray-50">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img 
-                    src={award.imageUrl} 
-                    alt={award.student}
-                    className="w-full h-full object-contain"
-                    onError={(e) => (e.currentTarget.src = "https://placehold.co/100x70/eeeeee/999999?text=?")}
-                  />
+                <div className="w-14 h-14 rounded-xl overflow-hidden border-2 border-red-200 shadow-sm flex-shrink-0 bg-red-50 flex items-center justify-center">
+                  {award.imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img 
+                      src={award.imageUrl} 
+                      alt={award.student}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        const fallback = e.currentTarget.parentElement?.querySelector('.marquee-fallback') as HTMLElement;
+                        if (fallback) fallback.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div 
+                    className="marquee-fallback items-center justify-center w-full h-full text-red-600 bg-red-100"
+                    style={{ display: award.imageUrl ? 'none' : 'flex' }}
+                  >
+                    <Medal className="w-7 h-7" />
+                  </div>
                 </div>
                 <div className="flex flex-col">
                   <span className="font-bold text-gray-900 text-sm whitespace-nowrap">{award.student}</span>

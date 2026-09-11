@@ -25,17 +25,25 @@ export default function NewsSection({ featuredNews }: { featuredNews?: any }) {
           {/* Use a div if there is no external URL, otherwise Link */}
           <div className="bg-white rounded-[2rem] overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-500 border border-gray-100 flex flex-col lg:flex-row group-hover:-translate-y-1 relative group">
             
-            {/* Image Section */}
-            <div className="relative w-full lg:w-1/2 h-[300px] lg:h-[400px] overflow-hidden bg-gray-200">
-              <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-500 z-10"></div>
+            {/* Image Section - Supports 1.91:1 Banner, 3:4/4:5 Poster, and 1:1 Square */}
+            <div className="relative w-full lg:w-1/2 min-h-[280px] sm:min-h-[340px] lg:h-[420px] overflow-hidden bg-gray-950 flex items-center justify-center p-2">
+              {/* Ambient backdrop blur */}
+              {featuredNews.imageUrl && (
+                <div 
+                  className="absolute inset-0 bg-cover bg-center blur-xl opacity-40 scale-110 pointer-events-none"
+                  style={{ backgroundImage: `url(${featuredNews.imageUrl})` }}
+                />
+              )}
+              <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-500 z-10 pointer-events-none"></div>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img 
                 src={featuredNews.imageUrl} 
                 alt={featuredNews.title}
-                className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700 ease-out"
+                className="relative z-10 max-h-full max-w-full object-contain transform group-hover:scale-105 transition-transform duration-700 ease-out rounded-xl drop-shadow-md"
+                onError={(e) => (e.currentTarget.src = "https://placehold.co/1200x630/1e293b/ffffff?text=PR+News")}
               />
               <div className="absolute top-6 left-6 z-20">
-                <span className="px-4 py-1.5 bg-black/50 backdrop-blur-md text-white text-sm font-medium rounded-full border border-white/20">
+                <span className="px-4 py-1.5 bg-black/60 backdrop-blur-md text-white text-sm font-medium rounded-full border border-white/20 shadow-sm">
                   Featured
                 </span>
               </div>

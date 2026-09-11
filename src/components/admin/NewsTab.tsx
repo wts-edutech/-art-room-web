@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Trash2, Plus, Pencil, Newspaper } from "lucide-react";
+import PRImageGuide from "./PRImageGuide";
 
 
 export default function NewsTab() {
@@ -137,11 +138,15 @@ export default function NewsTab() {
                       <label className="text-sm font-medium text-gray-700 block mb-2">
                         รูปภาพปกข่าว {editingNewsId && <span className="text-xs font-normal text-gray-500">(ไม่ต้องเลือกหากใช้รูปเดิม)</span>}
                       </label>
+
+                      {/* PR Image Guidelines Box */}
+                      <PRImageGuide />
+
                       <div className="relative border-2 border-dashed border-gray-300 bg-gray-50/50 hover:bg-gray-50 transition-colors rounded-2xl p-6 text-center cursor-pointer overflow-hidden group">
                         <input 
                           id="newsImageInput"
                           type="file" 
-                          accept="image/jpeg, image/jpg, image/png"
+                          accept="image/jpeg, image/jpg, image/png, image/webp"
                           onChange={(e) => {
                             if (e.target.files && e.target.files[0]) {
                               setNewsImageFile(e.target.files[0]);
@@ -154,19 +159,20 @@ export default function NewsTab() {
                         <div className="flex flex-col items-center justify-center relative z-0">
                           <span className="text-2xl drop-shadow-sm mb-2">📰</span>
                           <p className="text-gray-600 font-medium text-sm mb-1 group-hover:text-gray-900 transition-colors">คลิกหรือลากไฟล์ภาพมาที่นี่</p>
+                          <p className="text-gray-400 text-xs">รองรับ JPG, PNG, WebP (Banner 1.91:1, โปสเตอร์ 3:4, จัตุรัส 1:1)</p>
                         </div>
                       </div>
                       
                       {newsImageFile ? (
-                        <div className="mt-3 relative w-full aspect-video bg-gray-100 rounded-xl overflow-hidden border border-gray-200 shadow-inner">
+                        <div className="mt-3 relative w-full min-h-[180px] max-h-[280px] flex items-center justify-center bg-gray-900/5 rounded-xl overflow-hidden border border-gray-200 p-2 shadow-inner">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={URL.createObjectURL(newsImageFile)} alt="preview" className="w-full h-full object-contain" />
+                          <img src={URL.createObjectURL(newsImageFile)} alt="preview" className="max-h-[260px] w-auto max-w-full object-contain rounded-lg" />
                         </div>
                       ) : editingNewsId && newsImageUrl ? (
-                        <div className="mt-3 relative w-full aspect-video bg-gray-100 rounded-xl overflow-hidden border border-gray-200 shadow-inner">
+                        <div className="mt-3 relative w-full min-h-[180px] max-h-[280px] flex items-center justify-center bg-gray-900/5 rounded-xl overflow-hidden border border-gray-200 p-2 shadow-inner">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={newsImageUrl} alt="preview" className="w-full h-full object-contain" onError={(e) => (e.currentTarget.src = "https://placehold.co/600x400/eeeeee/999999?text=Image+Not+Found")} />
-                          <div className="absolute top-2 left-2 bg-black/50 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-md">รูปเดิม</div>
+                          <img src={newsImageUrl} alt="preview" className="max-h-[260px] w-auto max-w-full object-contain rounded-lg" onError={(e) => (e.currentTarget.src = "https://placehold.co/600x400/eeeeee/999999?text=Image+Not+Found")} />
+                          <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-md">รูปเดิม</div>
                         </div>
                       ) : null}
                     </div>

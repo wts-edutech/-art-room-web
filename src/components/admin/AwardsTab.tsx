@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Trash2, Plus, Pencil, Award, Star } from "lucide-react";
+import PRImageGuide from "./PRImageGuide";
 
 
 export default function AwardsTab() {
@@ -209,11 +210,14 @@ export default function AwardsTab() {
                 รูปภาพแบนเนอร์/ผลงาน {editingAwardId && <span className="text-xs font-normal text-gray-500">(ไม่ต้องเลือกหากใช้รูปเดิม)</span>}
               </label>
               
-              <div className="relative border-2 border-dashed border-indigo-300 bg-indigo-50/50 hover:bg-indigo-50 transition-colors rounded-2xl p-8 text-center cursor-pointer overflow-hidden group">
+              {/* PR Image Guidelines Box */}
+              <PRImageGuide />
+
+              <div className="relative border-2 border-dashed border-indigo-300 bg-indigo-50/50 hover:bg-indigo-50 transition-colors rounded-2xl p-6 text-center cursor-pointer overflow-hidden group">
                 <input 
                   id="awardImageInput"
                   type="file" 
-                  accept="image/jpeg, image/jpg, image/png"
+                  accept="image/jpeg, image/jpg, image/png, image/webp"
                   onChange={(e) => {
                     if (e.target.files && e.target.files[0]) {
                       setAwardImageFile(e.target.files[0]);
@@ -224,28 +228,28 @@ export default function AwardsTab() {
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                 />
                 <div className="flex flex-col items-center justify-center relative z-0">
-                  <div className="flex items-center justify-center gap-2 mb-3">
-                    <span className="text-4xl drop-shadow-sm">☁️</span>
-                    <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center text-white shadow-md">
-                      <span className="text-2xl drop-shadow-sm leading-none pb-1">⬆️</span>
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <span className="text-3xl drop-shadow-sm">☁️</span>
+                    <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center text-white shadow-md">
+                      <span className="text-xl drop-shadow-sm leading-none pb-1">⬆️</span>
                     </div>
                   </div>
                   <p className="text-indigo-900 font-medium text-sm mb-1 group-hover:text-blue-700 transition-colors">คลิกหรือลากไฟล์ภาพมาที่นี่</p>
-                  <p className="text-indigo-400 text-xs">รองรับไฟล์ JPG, PNG (ไม่เกิน 10MB)</p>
+                  <p className="text-indigo-400 text-xs">รองรับ JPG, PNG, WebP (Banner 1.91:1, โปสเตอร์ 3:4, จัตุรัส 1:1)</p>
                 </div>
               </div>
               
               {/* Image Preview */}
               {awardImageFile ? (
-                <div className="mt-3 relative w-full aspect-video bg-gray-100 rounded-xl overflow-hidden border border-gray-200 shadow-inner">
+                <div className="mt-3 relative w-full min-h-[180px] max-h-[300px] flex items-center justify-center bg-gray-900/5 rounded-xl overflow-hidden border border-gray-200 p-2 shadow-inner">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={URL.createObjectURL(awardImageFile)} alt="preview" className="w-full h-full object-contain" />
+                  <img src={URL.createObjectURL(awardImageFile)} alt="preview" className="max-h-[280px] w-auto max-w-full object-contain rounded-lg" />
                 </div>
               ) : editingAwardId && awardImageUrl ? (
-                <div className="mt-3 relative w-full aspect-video bg-gray-100 rounded-xl overflow-hidden border border-gray-200 shadow-inner">
+                <div className="mt-3 relative w-full min-h-[180px] max-h-[300px] flex items-center justify-center bg-gray-900/5 rounded-xl overflow-hidden border border-gray-200 p-2 shadow-inner">
                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={awardImageUrl} alt="preview" className="w-full h-full object-contain" onError={(e) => (e.currentTarget.src = "https://placehold.co/600x400/eeeeee/999999?text=Image+Not+Found")} />
-                  <div className="absolute top-2 left-2 bg-black/50 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-md">รูปเดิม</div>
+                  <img src={awardImageUrl} alt="preview" className="max-h-[280px] w-auto max-w-full object-contain rounded-lg" onError={(e) => (e.currentTarget.src = "https://placehold.co/600x400/eeeeee/999999?text=Image+Not+Found")} />
+                  <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-md">รูปเดิม</div>
                 </div>
               ) : null}
             </div>
@@ -277,9 +281,9 @@ export default function AwardsTab() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {(Array.isArray(awards) ? awards : []).map((award) => (
                 <div key={award.id} className="flex flex-col bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-all">
-                  <div className="w-full bg-gray-50 relative">
+                  <div className="w-full aspect-[3/2] bg-gray-100 relative">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={award.imageUrl} alt={award.title} className="w-full h-auto object-contain max-h-[300px]" onError={(e) => (e.currentTarget.src = "https://placehold.co/600x400/eeeeee/999999?text=Image+Not+Found")} />
+                    <img src={award.imageUrl} alt={award.title} className="w-full h-full object-cover" onError={(e) => (e.currentTarget.src = "https://placehold.co/600x400/eeeeee/999999?text=Image+Not+Found")} />
                     {award.isHighlight && (
                       <div className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-1 rounded flex items-center gap-1 shadow-sm">
                         <Star className="w-3 h-3 fill-current" /> เด่น
