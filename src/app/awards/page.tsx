@@ -32,7 +32,7 @@ export default async function AwardsPage() {
         <div className="container mx-auto px-4 sm:px-6 py-12 max-w-7xl">
           
           {/* Stats Boxes */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12 max-w-3xl mx-auto md:mx-0">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12 max-w-2xl mx-auto">
             <div className="bg-white rounded-3xl p-6 shadow-sm border border-red-500/20 flex items-center justify-between border-l-4 border-l-red-500 relative overflow-hidden group">
               <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-red-50 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
               <div className="relative z-10">
