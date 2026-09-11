@@ -50,3 +50,21 @@ export async function GET(request: Request, { params }: { params: { id: string }
     return NextResponse.json({ error: 'Failed to fetch idea' }, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+  try {
+    const id = params.id;
+    const db = getDb();
+    
+    // First delete associated comments
+    await db.delete(comments).where(eq(comments.ideaId, id));
+    
+    // Then delete the idea
+    await db.delete(ideas).where(eq(ideas.id, id));
+    
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("DELETE /api/ideas/[id] error:", error);
+    return NextResponse.json({ error: 'Failed to delete idea' }, { status: 500 });
+  }
+}

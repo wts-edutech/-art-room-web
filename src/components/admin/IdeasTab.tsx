@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Trash2, Lightbulb, CheckCircle, XCircle, Image as ImageIcon, Upload } from "lucide-react";
+import { Trash2, Lightbulb, CheckCircle, XCircle, Image as ImageIcon, Upload, Eye } from "lucide-react";
 import * as XLSX from "xlsx";
 
 export default function IdeasTab() {
   const [ideasList, setIdeasList] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [previewIdea, setPreviewIdea] = useState<any | null>(null);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -36,6 +37,10 @@ export default function IdeasTab() {
       });
       if (res.ok) {
         fetchData();
+        // Update local state if preview modal is open
+        if (previewIdea && previewIdea.id === id) {
+          setPreviewIdea({ ...previewIdea, status });
+        }
       } else {
         alert("ไม่สามารถอัปเดตสถานะได้");
       }
@@ -220,6 +225,13 @@ export default function IdeasTab() {
                             </td>
                             <td className="p-4">
                               <div className="flex justify-end gap-2">
+                                <button 
+                                  onClick={() => setPreviewIdea(idea)} 
+                                  className="p-2 rounded-lg text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors"
+                                  title="ตรวจสอบรายละเอียด (Preview)"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </button>
                                 {idea.status === 'pending' && (
                                   <>
                                     <button 
@@ -273,5 +285,124 @@ export default function IdeasTab() {
                 </div>
               </div>
             </div>
+
+            {/* Preview Modal */}
+            {previewIdea && (
+              <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+                <div className="bg-white rounded-3xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                  <div className="p-6 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900">ตรวจสอบข้อมูลไอเดีย</h3>
+                      <p className="text-sm text-gray-500">ตรวจสอบรายละเอียด เนื้อหา และไฟล์แนบก่อนดำเนินการ</p>
+                    </div>
+                    <button 
+                      onClick={() => setPreviewIdea(null)}
+                      className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+                    >
+                      <XCircle className="w-6 h-6" />
+                    </button>
+                  </div>
+                  
+                  <div className="p-6 overflow-y-auto flex-1 bg-gray-50/30">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      {/* Left: Image */}
+                      <div>
+                        <div className="aspect-video bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
+                          {previewIdea.coverImageUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={previewIdea.coverImageUrl} alt="Cover" className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 gap-2">
+                              <ImageIcon className="w-10 h-10" />
+                              <span className="text-sm">ไม่มีรูปภาพหน้าปก</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Right: Info */}
+                      <div className="space-y-6">
+                        <div>
+                          <h2 className="text-2xl font-bold text-gray-900 leading-tight mb-2">{previewIdea.title}</h2>
+                          <div className="flex flex-wrap gap-2 text-sm">
+                            {previewIdea.category && (
+                              <span className="bg-orange-100 text-orange-700 px-3 py-1 rounded-full font-medium">
+                                {previewIdea.category}
+                              </span>
+                            )}
+                            <span className="text-gray-500 flex items-center bg-white border border-gray-200 px-3 py-1 rounded-full">
+                              ผู้แบ่งปัน: <span className="font-semibold text-gray-700 ml-1">{previewIdea.authorName}</span>
+                            </span>
+                          </div>
+                        </div>
+
+                        {previewIdea.description && (
+                          <div>
+                            <h4 className="text-sm font-bold text-gray-700 mb-2">รายละเอียด:</h4>
+                            <div className="bg-white p-4 rounded-xl border border-gray-200 text-gray-600 text-sm whitespace-pre-wrap leading-relaxed">
+                              {previewIdea.description}
+                            </div>
+                          </div>
+                        )}
+
+                        {previewIdea.files && previewIdea.files.length > 0 && (
+                          <div>
+                            <h4 className="text-sm font-bold text-gray-700 mb-2">ไฟล์แนบ ({previewIdea.files.length}):</h4>
+                            <div className="space-y-2">
+                              {previewIdea.files.map((file: any, index: number) => (
+                                <a 
+                                  key={index}
+                                  href={file.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-xl hover:border-orange-500 transition-colors group"
+                                >
+                                  <div className="w-8 h-8 rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center">
+                                    <Upload className="w-4 h-4" />
+                                  </div>
+                                  <div className="flex-1 truncate">
+                                    <div className="text-sm font-medium text-gray-700 group-hover:text-orange-600 truncate">{file.name}</div>
+                                  </div>
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-6 border-t border-gray-100 bg-white flex justify-between items-center shrink-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-gray-600">สถานะปัจจุบัน:</span>
+                      {previewIdea.status === 'pending' && <span className="px-3 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-800 border border-yellow-200">รอตรวจสอบ</span>}
+                      {previewIdea.status === 'approved' && <span className="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800 border border-green-200">อนุมัติแล้ว</span>}
+                      {previewIdea.status === 'rejected' && <span className="px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800 border border-red-200">ไม่อนุมัติ</span>}
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                      {previewIdea.status !== 'rejected' && (
+                        <Button 
+                          variant="outline" 
+                          onClick={() => handleUpdateIdeaStatus(previewIdea.id, 'rejected')}
+                          className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                        >
+                          <XCircle className="w-4 h-4 mr-2" /> ไม่อนุมัติ
+                        </Button>
+                      )}
+                      {previewIdea.status !== 'approved' && (
+                        <Button 
+                          onClick={() => handleUpdateIdeaStatus(previewIdea.id, 'approved')}
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                        >
+                          <CheckCircle className="w-4 h-4 mr-2" /> อนุมัติข้อมูลนี้
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+    </div>
   );
 }
