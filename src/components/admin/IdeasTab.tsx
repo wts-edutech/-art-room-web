@@ -133,8 +133,9 @@ export default function IdeasTab() {
   };
 
   return (
-    <div className="space-y-6">
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <>
+      <div className="space-y-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center text-orange-600 font-bold shadow-sm">
@@ -403,6 +404,6 @@ export default function IdeasTab() {
                 </div>
               </div>
             )}
-    </div>
+    </>
   );
 }
