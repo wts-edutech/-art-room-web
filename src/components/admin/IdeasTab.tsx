@@ -203,7 +203,7 @@ export default function IdeasTab() {
                             </td>
                             <td className="p-4">
                               <div className="text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded-md inline-block">
-                                {idea.files ? idea.files.length : 0} ไฟล์
+                                {idea.files ? (typeof idea.files === 'string' ? JSON.parse(idea.files) : idea.files).length : 0} ไฟล์
                               </div>
                             </td>
                             <td className="p-4">
