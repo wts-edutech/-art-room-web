@@ -66,11 +66,16 @@ export const artworks = sqliteTable('artworks', {
 
 export const awards = sqliteTable('awards', {
   id: text('id').primaryKey(),
-  title: text('title').notNull(),
+  title: text('title').notNull(), // Activity Name
   student: text('student').notNull(),
-  description: text('description'),
+  description: text('description'), // Details
   imageUrl: text('image_url'),
   year: text('year'),
+  date: text('date'), // YYYY-MM-DD
+  awardLevel: text('award_level'), // e.g., Gold Medal
+  competitionLevel: text('competition_level'), // e.g., National
+  organization: text('organization'), // Organizer
+  isHighlight: integer('is_highlight', { mode: 'boolean' }).default(false),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
