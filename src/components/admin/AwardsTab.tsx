@@ -277,9 +277,9 @@ export default function AwardsTab() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {(Array.isArray(awards) ? awards : []).map((award) => (
                 <div key={award.id} className="flex flex-col bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-all">
-                  <div className="w-full aspect-[3/2] bg-gray-100 relative">
+                  <div className="w-full bg-gray-50 relative">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={award.imageUrl} alt={award.title} className="w-full h-full object-cover" onError={(e) => (e.currentTarget.src = "https://placehold.co/600x400/eeeeee/999999?text=Image+Not+Found")} />
+                    <img src={award.imageUrl} alt={award.title} className="w-full h-auto object-contain max-h-[300px]" onError={(e) => (e.currentTarget.src = "https://placehold.co/600x400/eeeeee/999999?text=Image+Not+Found")} />
                     {award.isHighlight && (
                       <div className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-1 rounded flex items-center gap-1 shadow-sm">
                         <Star className="w-3 h-3 fill-current" /> เด่น

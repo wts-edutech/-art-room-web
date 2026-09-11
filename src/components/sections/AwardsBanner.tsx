@@ -42,12 +42,12 @@ export default function AwardsBanner({ awards }: { awards: any[] }) {
         <div className="flex flex-col md:flex-row items-center gap-8 bg-white/80 backdrop-blur-md rounded-3xl p-6 sm:p-10 shadow-xl border border-white/50">
           
           {/* Image */}
-          <div className="w-full md:w-1/2 aspect-[4/3] rounded-2xl overflow-hidden shadow-lg border-4 border-red-700/10">
+          <div className="w-full md:w-1/2 rounded-2xl overflow-hidden shadow-lg border-4 border-red-700/10 bg-gray-50">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img 
               src={current.imageUrl} 
               alt={current.title}
-              className="w-full h-full object-cover"
+              className="w-full h-auto object-contain max-h-[500px]"
               onError={(e) => (e.currentTarget.src = "https://placehold.co/800x600/eeeeee/999999?text=Image+Not+Found")}
             />
           </div>
