@@ -124,13 +124,13 @@ export default function AwardsBanner({ awards }: { awards: any[] }) {
             {/* Duplicate items for seamless loop */}
             {[...highlights, ...highlights, ...highlights].map((award, idx) => (
               <div key={idx} className="inline-flex items-center gap-3 mx-4 flex-shrink-0 bg-white/70 backdrop-blur-sm rounded-2xl px-5 py-3 shadow-sm border border-white/50">
-                <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-red-200 shadow-sm flex-shrink-0">
+                <div className="w-20 h-14 rounded-xl overflow-hidden border-2 border-red-200 shadow-sm flex-shrink-0 bg-gray-50">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img 
                     src={award.imageUrl} 
                     alt={award.student}
-                    className="w-full h-full object-cover"
-                    onError={(e) => (e.currentTarget.src = "https://placehold.co/100x100/eeeeee/999999?text=?")}
+                    className="w-full h-full object-contain"
+                    onError={(e) => (e.currentTarget.src = "https://placehold.co/100x70/eeeeee/999999?text=?")}
                   />
                 </div>
                 <div className="flex flex-col">
