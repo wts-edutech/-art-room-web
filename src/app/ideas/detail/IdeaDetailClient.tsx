@@ -5,7 +5,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import { ArrowLeft, Download, MessageSquare, Send, User, Video, Gamepad2, FileText, Image as ImageIcon, File } from "lucide-react";
+import { ArrowLeft, Download, MessageSquare, Send, User, Video, Gamepad2, FileText, Image as ImageIcon, File, Link as LinkIcon } from "lucide-react";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 export default function IdeaDetailPage() {
@@ -147,6 +147,22 @@ export default function IdeaDetailPage() {
                 <div className="prose max-w-none text-gray-600 mb-8 whitespace-pre-wrap">
                   {idea.description}
                 </div>
+
+                {idea.link && (
+                  <div className="mb-8">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <LinkIcon className="w-5 h-5 text-orange-500" /> ลิงก์ที่เกี่ยวข้อง
+                    </h3>
+                    <a 
+                      href={idea.link.startsWith('http') ? idea.link : `https://${idea.link}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-4 py-3 bg-orange-50 text-orange-600 rounded-xl hover:bg-orange-100 transition-colors font-medium break-all"
+                    >
+                      {idea.link}
+                    </a>
+                  </div>
+                )}
 
                 {idea.files && idea.files.length > 0 && (
                   <div className="mb-8">

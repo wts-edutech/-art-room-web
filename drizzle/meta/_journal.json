@@ -8,6 +8,13 @@
       "when": 1788490001154,
       "tag": "0000_warm_thunderbolt",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1789119840044,
+      "tag": "0001_clammy_blazing_skull",
+      "breakpoints": true
     }
   ]
 }

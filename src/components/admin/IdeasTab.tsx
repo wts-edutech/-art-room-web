@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Trash2, Lightbulb, CheckCircle, XCircle, Image as ImageIcon, Upload, Eye } from "lucide-react";
+import { Trash2, Lightbulb, CheckCircle, XCircle, Image as ImageIcon, Upload, Eye, Link as LinkIcon } from "lucide-react";
 import * as XLSX from "xlsx";
 
 export default function IdeasTab() {
@@ -343,6 +343,21 @@ export default function IdeasTab() {
                             <div className="bg-white p-4 rounded-xl border border-gray-200 text-gray-600 text-sm whitespace-pre-wrap leading-relaxed">
                               {previewIdea.description}
                             </div>
+                          </div>
+                        )}
+
+                        {previewIdea.link && (
+                          <div>
+                            <h4 className="text-sm font-bold text-gray-700 mb-2">ลิงก์ที่เกี่ยวข้อง:</h4>
+                            <a 
+                              href={previewIdea.link.startsWith('http') ? previewIdea.link : `https://${previewIdea.link}`} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 px-3 py-2 bg-orange-50 text-orange-600 rounded-lg border border-orange-100 hover:bg-orange-100 transition-colors text-sm font-medium break-all"
+                            >
+                              <LinkIcon className="w-4 h-4" />
+                              {previewIdea.link}
+                            </a>
                           </div>
                         )}
 

@@ -103,6 +103,7 @@ export const ideas = sqliteTable('ideas', {
   authorEmail: text('author_email'),
   coverImageUrl: text('cover_image_url'),
   files: text('files', { mode: 'json' }), // JSON string for files array
+  link: text('link'), // Optional external link/website
   status: text('status').notNull().default('pending'), // 'pending', 'approved', 'rejected'
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });

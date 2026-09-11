@@ -12,6 +12,7 @@ export default function NewIdeaPage() {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [link, setLink] = useState("");
   const [category, setCategory] = useState("ทั่วไป");
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [files, setFiles] = useState<File[]>([]);
@@ -65,6 +66,7 @@ export default function NewIdeaPage() {
     formData.append("title", title);
     formData.append("description", description);
     formData.append("category", category);
+    if (link) formData.append("link", link);
     formData.append("authorName", authorName);
     formData.append("authorEmail", localStorage.getItem("artroom_author_email") || "");
     formData.append("coverImage", coverImage);
@@ -161,6 +163,17 @@ export default function NewIdeaPage() {
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="อธิบายรายละเอียด วิธีการนำไปใช้ หรือเนื้อหาของไอเดียนี้..."
                   className="w-full h-40 p-4 rounded-xl border border-gray-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none transition-all resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">ลิงก์ / เว็บไซต์ที่เกี่ยวข้อง (ถ้ามี)</label>
+                <input 
+                  type="url" 
+                  value={link}
+                  onChange={(e) => setLink(e.target.value)}
+                  placeholder="เช่น https://www.canva.com/..."
+                  className="w-full h-12 px-4 rounded-xl border border-gray-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none transition-all"
                 />
               </div>
 
