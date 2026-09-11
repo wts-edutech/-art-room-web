@@ -5,10 +5,20 @@ import { getDb } from '@/db';
 import { ideas } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const isAdmin = searchParams.get('admin') === 'true';
+
     const db = getDb();
-    const all = await db.select().from(ideas).orderBy(desc(ideas.createdAt));
+    
+    let all;
+    if (isAdmin) {
+      all = await db.select().from(ideas).orderBy(desc(ideas.createdAt));
+    } else {
+      all = await db.select().from(ideas).where(eq(ideas.status, 'approved')).orderBy(desc(ideas.createdAt));
+    }
+    
     return NextResponse.json(all);
   } catch (error) {
     console.error("GET /api/ideas error:", error);
