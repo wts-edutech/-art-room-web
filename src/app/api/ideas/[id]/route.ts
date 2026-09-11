@@ -5,9 +5,10 @@ import { getDb } from '@/db';
 import { ideas, comments } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> | { id: string } }) {
   try {
-    const id = params.id;
+    const resolvedParams = await params;
+    const id = resolvedParams.id;
     const { status } = await request.json();
     if (!status) return NextResponse.json({ error: 'Status is required' }, { status: 400 });
 
@@ -20,9 +21,10 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> | { id: string } }) {
   try {
-    const id = params.id;
+    const resolvedParams = await params;
+    const id = resolvedParams.id;
     const db = getDb();
     const result = await db.select().from(ideas).where(eq(ideas.id, id));
     
@@ -51,9 +53,10 @@ export async function GET(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> | { id: string } }) {
   try {
-    const id = params.id;
+    const resolvedParams = await params;
+    const id = resolvedParams.id;
     const db = getDb();
     
     // First delete associated comments
