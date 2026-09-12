@@ -422,28 +422,6 @@ export default function NewsPageClient({ initialNews = [] }: { initialNews?: any
           </div>
         )}
 
-        {/* PR Admin Guidelines Box at Bottom */}
-        <div className="mt-16 bg-gradient-to-r from-red-900 via-stone-900 to-gray-900 rounded-3xl p-8 sm:p-10 text-white shadow-xl relative overflow-hidden">
-          <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-gradient-to-l from-white/5 to-transparent pointer-events-none" />
-          
-          <div className="relative z-10 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-red-300 text-xs font-semibold mb-3 border border-white/10">
-              <Info className="w-3.5 h-3.5" /> สำหรับผู้ดูแลระบบ (Admin)
-            </div>
-            <h3 className="text-2xl sm:text-3xl font-bold mb-3">
-              ระบบข่าวสารประชาสัมพันธ์รองรับสัดส่วนมาตรฐาน
-            </h3>
-            <p className="text-gray-300 text-sm font-light leading-relaxed mb-6">
-              สามารถเพิ่มหรือแก้ไขข่าวสารใหม่ผ่านระบบแอดมิน โดยหน้าระบบรองรับทั้งภาพ Banner แนวนอน 1.91:1, โปสเตอร์แนวตั้ง 3:4 / 4:5 และภาพจัตุรัส 1:1 ได้อย่างสมบูรณ์แบบ
-            </p>
-            <a 
-              href="/admin" 
-              className="inline-flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-xl transition-all shadow-md hover:shadow-red-600/30"
-            >
-              เข้าสู่ระบบจัดการข่าวสาร (Admin) <ChevronRight className="w-4 h-4" />
-            </a>
-          </div>
-        </div>
       </div>
 
       {/* News Detail Reading Modal */}
