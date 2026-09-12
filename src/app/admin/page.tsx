@@ -220,7 +220,7 @@ export default function AdminPage() {
               {activeTab === "news" && "จัดการข่าวสาร (News)"}
               {activeTab === "activities" && "จัดการกิจกรรม (Activities)"}
               {activeTab === "students" && "จัดการรายชื่อนักเรียน (Students)"}
-              {activeTab === "guests" && "สมุดเยี่ยมชม (Guests)"}
+              {activeTab === "guests" && "ฐานข้อมูลบุคคลทั่วไปและผู้ปกครอง (Guests)"}
               {activeTab === "testimonials" && "จัดการรีวิวรุ่นพี่ (Testimonials)"}
             </h1>
             <p className="text-gray-500 mt-2 font-light">
