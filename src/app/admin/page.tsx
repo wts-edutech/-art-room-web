@@ -101,7 +101,7 @@ export default function AdminPage() {
               }`}
             >
               <BookOpen className="w-5 h-5" />
-              จัดการบทเรียนทั่วไป
+              จัดการคลังสื่อ Art Room (ทั่วไป)
             </button>
             <button
               onClick={() => setActiveTab("m3Lessons")}
@@ -292,7 +292,7 @@ export default function AdminPage() {
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
               <LayoutDashboard className="w-8 h-8 text-blue-600" />
-              {activeTab === "lessons" && "จัดการบทเรียน (Lessons)"}
+              {activeTab === "lessons" && "จัดการคลังสื่อการสอน Art Room (Lessons)"}
               {activeTab === "m3Lessons" && "จัดการบทเรียน ม.3 (M3 Lessons)"}
               {activeTab === "m4Lessons" && "จัดการบทเรียน ม.4 (M4 Lessons)"}
               {activeTab === "awards" && "จัดการรางวัลที่ได้รับ (Awards)"}

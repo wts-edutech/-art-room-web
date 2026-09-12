@@ -181,7 +181,7 @@ export default function Navbar() {
                   href="/materials" 
                   className="px-4 py-2 hover:bg-gray-50 text-gray-700 hover:text-red-600 transition-colors whitespace-nowrap font-medium"
                 >
-                  คลังสื่อการสอน (ม.1 - ม.6)
+                  คลังสื่อ Art Room (ม.1 - ม.6)
                 </Link>
                 <Link 
                   href="/downloads" 
@@ -419,7 +419,7 @@ export default function Navbar() {
             <div className={`overflow-hidden transition-all duration-300 ${isMaterialsOpen ? "max-h-60 opacity-100 mt-1" : "max-h-0 opacity-0"}`}>
               <div className="ml-4 flex flex-col border-l-2 border-red-200 pl-2 space-y-1">
                 <Link href="/materials" className="px-3 py-2 text-gray-700 hover:text-red-600 font-medium text-sm rounded-lg hover:bg-red-50/50 cursor-pointer" onClick={() => setIsMobileMenuOpen(false)}>
-                  คลังสื่อการสอน (ม.1 - ม.6)
+                  คลังสื่อ Art Room (ม.1 - ม.6)
                 </Link>
                 <Link href="/downloads" className="px-3 py-2 text-emerald-600 hover:text-emerald-700 font-medium text-sm rounded-lg hover:bg-emerald-50/50 cursor-pointer flex items-center justify-between" onClick={() => setIsMobileMenuOpen(false)}>
                   <span>ศูนย์ดาวน์โหลดใบงาน</span>

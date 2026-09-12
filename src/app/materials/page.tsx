@@ -24,11 +24,14 @@ export default async function MaterialsPage() {
         <main className="flex-1 flex flex-col pt-32 pb-24 bg-white">
           <div className="container mx-auto px-4 sm:px-6 max-w-7xl">
             <div className="text-center mb-16">
-              <h1 className="text-4xl md:text-5xl font-bold font-heading text-gray-900 mb-6 tracking-tight">
-                Art Room by Students
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-100 text-red-800 text-xs sm:text-sm font-semibold mb-4 shadow-2xs">
+                <span>🎨 Art Room by Students</span>
+              </div>
+              <h1 className="text-4xl md:text-5xl font-bold font-heading text-gray-900 mb-4 tracking-tight">
+                คลังสื่อการสอน Art Room
               </h1>
-              <p className="text-xl text-gray-600 max-w-2xl mx-auto font-light">
-                รวบรวมสื่อการเรียนรู้ เทคนิค และแหล่งค้นคว้าเพิ่มเติมสำหรับนักเรียนที่สนใจพัฒนาทักษะทางศิลปะ
+              <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto font-light leading-relaxed">
+                รวบรวมสื่อการเรียนรู้ เทคนิค และแหล่งค้นคว้าเพิ่มเติมสำหรับนักเรียนที่สนใจพัฒนาทักษะทางศิลปะ (ม.1 - ม.6)
               </p>
             </div>
             
