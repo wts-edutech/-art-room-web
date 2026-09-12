@@ -1,12 +1,47 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import { Download, FileText, Search, Sparkles, Filter, CheckCircle2, GraduationCap } from "lucide-react";
+import { 
+  Download, 
+  FileText, 
+  Search, 
+  Sparkles, 
+  Filter, 
+  CheckCircle2, 
+  GraduationCap, 
+  Lock, 
+  Clock, 
+  BookOpen,
+  ArrowRight,
+  RefreshCw
+} from "lucide-react";
 
-// Default educational worksheets and download resources
-const DEFAULT_DOWNLOADS = [
+interface DownloadItem {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  grade: string;
+  fileName: string;
+  fileSize: string;
+  fileUrl: string;
+  downloadsCount: number;
+  orderIndex?: number;
+}
+
+interface GradeSettings {
+  m1: boolean;
+  m2: boolean;
+  m3: boolean;
+  m4: boolean;
+  m5: boolean;
+  m6: boolean;
+}
+
+// Default educational worksheets and download resources fallback
+const DEFAULT_DOWNLOADS: DownloadItem[] = [
   {
     id: "dl-1",
     title: "ใบงานที่ 1: การแรเงาและน้ำหนักแสงเงา (Shading Techniques & Value Scale)",
@@ -76,48 +111,104 @@ const DEFAULT_DOWNLOADS = [
 ];
 
 const CATEGORIES = ["ทั้งหมด", "แบบฝึกหัด", "ใบความรู้", "เกณฑ์การประเมิน", "คู่มือ"];
+
 const GRADES = [
-  { id: "all", label: "ทุกระดับชั้น" },
-  { id: "m1", label: "ม.1" },
-  { id: "m2", label: "ม.2" },
-  { id: "m3", label: "ม.3" },
-  { id: "m4", label: "ม.4" },
-  { id: "m5", label: "ม.5" },
-  { id: "m6", label: "ม.6" },
+  { id: "all", label: "ทุกระดับชั้น", full: "ทุกระดับชั้น" },
+  { id: "m1", label: "ม.1", full: "มัธยมศึกษาปีที่ 1" },
+  { id: "m2", label: "ม.2", full: "มัธยมศึกษาปีที่ 2" },
+  { id: "m3", label: "ม.3", full: "มัธยมศึกษาปีที่ 3" },
+  { id: "m4", label: "ม.4", full: "มัธยมศึกษาปีที่ 4" },
+  { id: "m5", label: "ม.5", full: "มัธยมศึกษาปีที่ 5" },
+  { id: "m6", label: "ม.6", full: "มัธยมศึกษาปีที่ 6" },
 ];
 
 export default function DownloadsPage() {
+  const [downloads, setDownloads] = useState<DownloadItem[]>(DEFAULT_DOWNLOADS);
+  const [gradeSettings, setGradeSettings] = useState<GradeSettings>({
+    m1: false,
+    m2: false,
+    m3: true,
+    m4: true,
+    m5: false,
+    m6: false,
+  });
+  const [isLoading, setIsLoading] = useState(true);
+
   const [selectedCategory, setSelectedCategory] = useState("ทั้งหมด");
   const [selectedGrade, setSelectedGrade] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Fetch dynamic downloads and grade availability settings
+  useEffect(() => {
+    fetch("/api/downloads")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data) {
+          if (Array.isArray(data.downloads) && data.downloads.length > 0) {
+            setDownloads(data.downloads);
+          }
+          if (data.gradeSettings) {
+            setGradeSettings(data.gradeSettings);
+          }
+        }
+      })
+      .catch((err) => {
+        console.warn("Failed to fetch dynamic downloads:", err);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, []);
+
+  // Check if current selected grade is toggled OFF by admin
+  const isSelectedGradeClosed = useMemo(() => {
+    if (selectedGrade === "all") return false;
+    const key = selectedGrade as keyof GradeSettings;
+    return gradeSettings[key] === false;
+  }, [selectedGrade, gradeSettings]);
+
+  // Filtered downloads
   const filteredDownloads = useMemo(() => {
-    return DEFAULT_DOWNLOADS.filter((item) => {
+    return downloads.filter((item) => {
       // Search filter
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
-        if (!item.title.toLowerCase().includes(q) && !item.description.toLowerCase().includes(q)) {
-          return false;
-        }
+        const matchTitle = item.title?.toLowerCase().includes(q);
+        const matchDesc = item.description?.toLowerCase().includes(q);
+        const matchCat = item.category?.toLowerCase().includes(q);
+        if (!matchTitle && !matchDesc && !matchCat) return false;
       }
       // Category filter
       if (selectedCategory !== "ทั้งหมด" && item.category !== selectedCategory) {
         return false;
       }
-      // Grade filter
-      if (selectedGrade !== "all" && item.grade !== "all" && item.grade !== selectedGrade) {
-        return false;
+      // Grade filter: if selectedGrade is "all", show everything.
+      // If a specific grade is selected, show items matching that grade OR items tagged for "all"
+      if (selectedGrade !== "all") {
+        if (item.grade !== selectedGrade && item.grade !== "all") {
+          return false;
+        }
       }
       return true;
     });
-  }, [searchQuery, selectedCategory, selectedGrade]);
+  }, [downloads, searchQuery, selectedCategory, selectedGrade]);
 
   const handleDownload = (id: string, url: string, fileName: string) => {
     // Record download event asynchronously
-    fetch(`/api/downloads?id=${id}`, { method: "PATCH" }).catch(() => {});
+    fetch(`/api/downloads?id=${encodeURIComponent(id)}`, { method: "PATCH" }).catch(() => {});
+    
+    // Update local download count
+    setDownloads((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, downloadsCount: (item.downloadsCount || 0) + 1 } : item
+      )
+    );
+
     // Open/download link
     window.open(url, "_blank");
   };
+
+  const selectedGradeObj = GRADES.find((g) => g.id === selectedGrade) || GRADES[0];
 
   return (
     <>
@@ -156,24 +247,41 @@ export default function DownloadsPage() {
         <section className="py-10">
           <div className="container mx-auto px-4 sm:px-6 max-w-5xl">
             
-            {/* Grade Pills */}
+            {/* Grade Pills with Closed/Active indicators */}
             <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-4 scrollbar-none">
               <span className="text-xs font-bold text-gray-600 whitespace-nowrap flex items-center gap-1 mr-2">
                 <GraduationCap className="w-4 h-4 text-red-500" /> ระดับชั้น:
               </span>
-              {GRADES.map((g) => (
-                <button
-                  key={g.id}
-                  onClick={() => setSelectedGrade(g.id)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-                    selectedGrade === g.id
-                      ? "bg-red-600 text-white shadow-xs"
-                      : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
-                  }`}
-                >
-                  {g.label}
-                </button>
-              ))}
+              {GRADES.map((g) => {
+                const isAll = g.id === "all";
+                const isGradeClosed = !isAll && gradeSettings[g.id as keyof GradeSettings] === false;
+                const isSelected = selectedGrade === g.id;
+
+                return (
+                  <button
+                    key={g.id}
+                    onClick={() => setSelectedGrade(g.id)}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer inline-flex items-center gap-1.5 ${
+                      isSelected
+                        ? "bg-red-600 text-white shadow-xs"
+                        : isGradeClosed
+                        ? "bg-gray-100/90 text-gray-400 hover:bg-gray-200/80 border border-gray-200"
+                        : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
+                    }`}
+                  >
+                    <span>{g.label}</span>
+                    {isGradeClosed && (
+                      <span className={`text-[9px] px-1 py-0.2 rounded font-normal ${
+                        isSelected 
+                          ? "bg-white/20 text-white" 
+                          : "bg-amber-100 text-amber-700"
+                      }`}>
+                        เร็วๆ นี้
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
 
             {/* Category Pills */}
@@ -196,14 +304,44 @@ export default function DownloadsPage() {
               ))}
             </div>
 
-            {/* Downloads List */}
-            {filteredDownloads.length === 0 ? (
+            {/* CASE 1: Grade is Closed / In Preparation */}
+            {isSelectedGradeClosed ? (
+              <div className="bg-white rounded-3xl p-8 sm:p-12 border border-amber-200 shadow-xs text-center max-w-2xl mx-auto my-6 animate-fadeIn">
+                <div className="w-16 h-16 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-4 border border-amber-100">
+                  <Clock className="w-8 h-8 animate-pulse" />
+                </div>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100/70 text-amber-800 text-xs font-bold mb-3">
+                  <Lock className="w-3 h-3 text-amber-700" />
+                  <span>ยังไม่เปิดให้บริการเอกสารสำหรับระดับชั้นนี้</span>
+                </div>
+                <h3 className="text-xl sm:text-2xl font-black text-gray-900 mb-2">
+                  เอกสารสำหรับชั้น {selectedGradeObj.full} กำลังอยู่ระหว่างจัดทำ
+                </h3>
+                <p className="text-sm text-gray-600 leading-relaxed font-light mb-6">
+                  ครูผู้สอนกำลังจัดเตรียมใบงานภาคปฏิบัติ แบบฝึกหัด และเกณฑ์การประเมินที่ตรงตามหลักสูตรของชั้น {selectedGradeObj.label} 
+                  เพื่อให้นักเรียนสามารถดาวน์โหลดและใช้งานได้อย่างสมบูรณ์ในเร็วๆ นี้
+                </p>
+
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                  <button
+                    onClick={() => setSelectedGrade("all")}
+                    className="w-full sm:w-auto px-5 py-2.5 bg-red-600 hover:bg-red-700 active:scale-95 text-white text-xs sm:text-sm font-bold rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <BookOpen className="w-4 h-4" />
+                    <span>ดูเอกสารและใบความรู้ทุกระดับชั้น</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ) : filteredDownloads.length === 0 ? (
+              /* CASE 2: No search results */
               <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-gray-200 p-6">
                 <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                 <h3 className="font-bold text-gray-800 text-base mb-1">ไม่พบเอกสารที่ค้นหา</h3>
                 <p className="text-xs text-gray-500">กรุณาลองเปลี่ยนคำค้นหาหรือตัวเลือกระดับชั้น</p>
               </div>
             ) : (
+              /* CASE 3: Downloads List */
               <div className="space-y-4">
                 {filteredDownloads.map((item) => (
                   <div 
@@ -217,21 +355,28 @@ export default function DownloadsPage() {
                       <div>
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <span className="bg-red-100 text-red-700 text-[10px] font-bold px-2 py-0.5 rounded-md">
-                            {item.grade === "all" ? "ทุกชั้น" : item.grade.toUpperCase()}
+                            {item.grade === "all" ? "ทุกระดับชั้น" : item.grade.toUpperCase()}
                           </span>
                           <span className="bg-gray-100 text-gray-600 text-[10px] font-medium px-2 py-0.5 rounded-md">
                             {item.category}
                           </span>
                           <span className="text-[11px] text-gray-400">
-                            {item.fileSize}
+                            {item.fileSize || "1.0 MB"}
                           </span>
+                          {item.downloadsCount > 0 && (
+                            <span className="text-[11px] text-emerald-600 font-medium">
+                              (ดาวน์โหลดแล้ว {item.downloadsCount} ครั้ง)
+                            </span>
+                          )}
                         </div>
                         <h4 className="text-sm sm:text-base font-bold text-gray-900 group-hover:text-red-600 transition-colors">
                           {item.title}
                         </h4>
-                        <p className="text-xs text-gray-500 mt-0.5 line-clamp-1 font-light">
-                          {item.description}
-                        </p>
+                        {item.description && (
+                          <p className="text-xs text-gray-500 mt-0.5 line-clamp-1 font-light">
+                            {item.description}
+                          </p>
+                        )}
                       </div>
                     </div>
 

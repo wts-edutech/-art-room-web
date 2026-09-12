@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { BookOpen, Award, Image as ImageIcon, Newspaper, Calendar, Users, LogOut, LayoutDashboard, Lightbulb, Info, ChevronRight, X, GraduationCap } from "lucide-react";
+import { BookOpen, Award, Image as ImageIcon, Newspaper, Calendar, Users, LogOut, LayoutDashboard, Lightbulb, Info, ChevronRight, X, GraduationCap, FolderDown } from "lucide-react";
 
 // Import tabs
 import LessonsTab from "@/components/admin/LessonsTab";
@@ -17,11 +17,12 @@ import GuestsTab from "@/components/admin/GuestsTab";
 import TestimonialsTab from "@/components/admin/TestimonialsTab";
 import IdeasTab from "@/components/admin/IdeasTab";
 import TeachersTab from "@/components/admin/TeachersTab";
+import DownloadsTab from "@/components/admin/DownloadsTab";
 
 export default function AdminPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<
-    "lessons" | "m3Lessons" | "m4Lessons" | "artworks" | "awards" | "news" | "activities" | "students" | "guests" | "testimonials" | "ideas" | "teachers"
+    "lessons" | "m3Lessons" | "m4Lessons" | "artworks" | "awards" | "news" | "activities" | "students" | "guests" | "testimonials" | "ideas" | "teachers" | "downloads"
   >("lessons");
   const [visitorStats, setVisitorStats] = useState({ total: 0, today: 0 });
   const [isPRBannerDismissed, setIsPRBannerDismissed] = useState(false);
@@ -212,6 +213,17 @@ export default function AdminPage() {
               <Lightbulb className="w-5 h-5" />
               จัดการไอเดีย
             </button>
+            <button
+              onClick={() => setActiveTab("downloads")}
+              className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${
+                activeTab === "downloads" 
+                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/20" 
+                  : "text-gray-400 hover:text-white hover:bg-gray-800"
+              }`}
+            >
+              <FolderDown className="w-5 h-5" />
+              จัดการคลังดาวน์โหลด
+            </button>
           </nav>
         </div>
 
@@ -254,6 +266,7 @@ export default function AdminPage() {
               {activeTab === "guests" && "ฐานข้อมูลบุคคลทั่วไปและผู้ปกครอง (Guests)"}
               {activeTab === "teachers" && "จัดการทำเนียบครูผู้สอน (Teachers)"}
               {activeTab === "testimonials" && "จัดการรีวิวรุ่นพี่ (Testimonials)"}
+              {activeTab === "downloads" && "จัดการคลังดาวน์โหลดและเปิด/ปิดระดับชั้น (Downloads)"}
             </h1>
             <p className="text-gray-500 mt-2 font-light">
               ระบบหลังบ้านสำหรับเพิ่ม ลบ และแก้ไขข้อมูลเว็บไซต์
@@ -376,6 +389,15 @@ export default function AdminPage() {
                 {isTeachersEnabled ? "เปิด" : "ปิด"}
               </span>
             </button>
+            <button
+              onClick={() => setActiveTab("downloads")}
+              className={`flex-1 flex-shrink-0 min-w-[100px] flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-colors ${
+                activeTab === "downloads" ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              <FolderDown className="w-3.5 h-3.5" />
+              <span>คลังดาวน์โหลด</span>
+            </button>
           </div>
 
           {/* Render Active Tab Content */}
@@ -391,6 +413,7 @@ export default function AdminPage() {
           {activeTab === "teachers" && <TeachersTab />}
           {activeTab === "testimonials" && <TestimonialsTab />}
           {activeTab === "ideas" && <IdeasTab />}
+          {activeTab === "downloads" && <DownloadsTab />}
 
         </div>
       </main>

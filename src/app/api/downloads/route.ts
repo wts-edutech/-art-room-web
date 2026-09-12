@@ -1,6 +1,8 @@
 export const runtime = 'edge';
 
 import { NextResponse } from 'next/server';
+import { checkIsAdmin } from '@/lib/api-auth';
+import { getRequestContext } from '@cloudflare/next-on-pages';
 
 const DEFAULT_DOWNLOADS = [
   {
@@ -13,6 +15,7 @@ const DEFAULT_DOWNLOADS = [
     fileSize: "1.4 MB",
     fileUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
     downloadsCount: 142,
+    orderIndex: 1
   },
   {
     id: "dl-2",
@@ -24,6 +27,7 @@ const DEFAULT_DOWNLOADS = [
     fileSize: "2.8 MB",
     fileUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
     downloadsCount: 310,
+    orderIndex: 2
   },
   {
     id: "dl-3",
@@ -35,6 +39,7 @@ const DEFAULT_DOWNLOADS = [
     fileSize: "3.1 MB",
     fileUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
     downloadsCount: 98,
+    orderIndex: 3
   },
   {
     id: "dl-4",
@@ -46,6 +51,7 @@ const DEFAULT_DOWNLOADS = [
     fileSize: "850 KB",
     fileUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
     downloadsCount: 75,
+    orderIndex: 4
   },
   {
     id: "dl-5",
@@ -57,6 +63,7 @@ const DEFAULT_DOWNLOADS = [
     fileSize: "1.9 MB",
     fileUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
     downloadsCount: 184,
+    orderIndex: 5
   },
   {
     id: "dl-6",
@@ -68,13 +75,313 @@ const DEFAULT_DOWNLOADS = [
     fileSize: "1.1 MB",
     fileUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
     downloadsCount: 220,
+    orderIndex: 6
   },
 ];
 
-export async function GET() {
-  return NextResponse.json(DEFAULT_DOWNLOADS);
+// Default grade availability: M.3 and M.4 are open, others without docs default to closed
+const DEFAULT_GRADE_SETTINGS: Record<string, boolean> = {
+  m1: false,
+  m2: false,
+  m3: true,
+  m4: true,
+  m5: false,
+  m6: false,
+};
+
+let memoryGradeSettings = { ...DEFAULT_GRADE_SETTINGS };
+
+async function getD1() {
+  try {
+    const ctx = getRequestContext();
+    return ctx?.env?.DB || null;
+  } catch {
+    return null;
+  }
 }
 
-export async function PATCH() {
-  return NextResponse.json({ success: true });
+async function ensureTables(d1: any) {
+  if (!d1) return;
+  try {
+    await d1.prepare(`
+      CREATE TABLE IF NOT EXISTS downloads (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        description TEXT,
+        category TEXT NOT NULL DEFAULT 'แบบฝึกหัด',
+        grade TEXT NOT NULL DEFAULT 'all',
+        file_name TEXT,
+        file_size TEXT,
+        file_url TEXT NOT NULL,
+        downloads_count INTEGER DEFAULT 0,
+        order_index INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )
+    `).run();
+
+    await d1.prepare(`
+      CREATE TABLE IF NOT EXISTS site_settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )
+    `).run();
+  } catch (err) {
+    console.warn("ensureTables downloads note:", err);
+  }
+}
+
+export async function GET() {
+  try {
+    const d1 = await getD1();
+    let gradeSettings = { ...memoryGradeSettings };
+
+    if (!d1) {
+      return NextResponse.json({
+        downloads: DEFAULT_DOWNLOADS,
+        gradeSettings
+      });
+    }
+
+    await ensureTables(d1);
+
+    // Fetch grade settings
+    const settingsRow = await d1.prepare(`
+      SELECT value FROM site_settings WHERE key = 'downloads_grade_settings'
+    `).get();
+
+    if (settingsRow?.value) {
+      try {
+        gradeSettings = { ...DEFAULT_GRADE_SETTINGS, ...JSON.parse(settingsRow.value) };
+        memoryGradeSettings = gradeSettings;
+      } catch {}
+    }
+
+    // Fetch downloads
+    const result = await d1.prepare(`
+      SELECT 
+        id, 
+        title, 
+        description, 
+        category, 
+        grade, 
+        file_name as fileName, 
+        file_size as fileSize, 
+        file_url as fileUrl, 
+        downloads_count as downloadsCount, 
+        order_index as orderIndex, 
+        created_at as createdAt
+      FROM downloads 
+      ORDER BY order_index ASC, created_at DESC
+    `).all();
+
+    if (!result || !result.results || result.results.length === 0) {
+      return NextResponse.json({
+        downloads: DEFAULT_DOWNLOADS,
+        gradeSettings
+      });
+    }
+
+    return NextResponse.json({
+      downloads: result.results,
+      gradeSettings
+    });
+
+  } catch (error) {
+    console.error("GET /api/downloads error:", error);
+    return NextResponse.json({
+      downloads: DEFAULT_DOWNLOADS,
+      gradeSettings: memoryGradeSettings
+    });
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    if (!(await checkIsAdmin())) {
+      return NextResponse.json({ error: 'Unauthorized — สำหรับผู้ดูแลระบบเท่านั้น' }, { status: 401 });
+    }
+
+    const d1 = await getD1();
+    if (!d1) {
+      return NextResponse.json({ error: 'Database binding not available' }, { status: 500 });
+    }
+
+    await ensureTables(d1);
+
+    const body = await request.json().catch(() => ({}));
+
+    // Action: Update Grade Availability Settings
+    if (body.action === 'update_grades') {
+      const newSettings = { ...memoryGradeSettings, ...(body.gradeSettings || {}) };
+      memoryGradeSettings = newSettings;
+
+      await d1.prepare(`
+        INSERT INTO site_settings (key, value, updated_at)
+        VALUES ('downloads_grade_settings', ?, ?)
+        ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
+      `).bind(JSON.stringify(newSettings), new Date().toISOString()).run();
+
+      return NextResponse.json({ success: true, gradeSettings: newSettings });
+    }
+
+    // Action: Seed default worksheets
+    if (body.action === 'seed') {
+      for (const item of DEFAULT_DOWNLOADS) {
+        await d1.prepare(`
+          INSERT OR REPLACE INTO downloads (id, title, description, category, grade, file_name, file_size, file_url, downloads_count, order_index, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          item.id,
+          item.title,
+          item.description || '',
+          item.category || 'แบบฝึกหัด',
+          item.grade || 'all',
+          item.fileName || '',
+          item.fileSize || '1.0 MB',
+          item.fileUrl,
+          item.downloadsCount || 0,
+          item.orderIndex || 0,
+          new Date().toISOString()
+        ).run();
+      }
+      return NextResponse.json({ success: true, message: 'Seeded downloads successfully' });
+    }
+
+    // Action: Create New Download Item
+    const id = body.id || `dl_${Date.now()}`;
+    const title = String(body.title || '').trim();
+    if (!title) {
+      return NextResponse.json({ error: 'กรุณาระบุชื่อเอกสารหรือใบงาน' }, { status: 400 });
+    }
+
+    const description = String(body.description || '').trim();
+    const category = String(body.category || 'แบบฝึกหัด').trim();
+    const grade = String(body.grade || 'all').trim();
+    const fileName = String(body.fileName || `${title}.pdf`).trim();
+    const fileSize = String(body.fileSize || '1.5 MB').trim();
+    const fileUrl = String(body.fileUrl || '').trim();
+    const orderIndex = Number(body.orderIndex) || 0;
+    const createdAt = new Date().toISOString();
+
+    if (!fileUrl) {
+      return NextResponse.json({ error: 'กรุณาระบุลิงก์ดาวน์โหลดไฟล์ (PDF หรือ Google Drive)' }, { status: 400 });
+    }
+
+    await d1.prepare(`
+      INSERT INTO downloads (id, title, description, category, grade, file_name, file_size, file_url, downloads_count, order_index, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
+    `).bind(id, title, description, category, grade, fileName, fileSize, fileUrl, orderIndex, createdAt).run();
+
+    return NextResponse.json({
+      id,
+      title,
+      description,
+      category,
+      grade,
+      fileName,
+      fileSize,
+      fileUrl,
+      downloadsCount: 0,
+      orderIndex,
+      createdAt
+    }, { status: 201 });
+
+  } catch (error: any) {
+    console.error("POST /api/downloads error:", error);
+    return NextResponse.json({ error: error?.message || 'Failed to process request' }, { status: 500 });
+  }
+}
+
+export async function PUT(request: Request) {
+  try {
+    if (!(await checkIsAdmin())) {
+      return NextResponse.json({ error: 'Unauthorized — สำหรับผู้ดูแลระบบเท่านั้น' }, { status: 401 });
+    }
+
+    const d1 = await getD1();
+    if (!d1) {
+      return NextResponse.json({ error: 'Database binding not available' }, { status: 500 });
+    }
+
+    const body = await request.json().catch(() => ({}));
+    const id = body.id;
+    if (!id) {
+      return NextResponse.json({ error: 'Document ID is required' }, { status: 400 });
+    }
+
+    const title = String(body.title || '').trim();
+    if (!title) {
+      return NextResponse.json({ error: 'กรุณาระบุชื่อเอกสารหรือใบงาน' }, { status: 400 });
+    }
+
+    const description = String(body.description || '').trim();
+    const category = String(body.category || 'แบบฝึกหัด').trim();
+    const grade = String(body.grade || 'all').trim();
+    const fileName = String(body.fileName || '').trim();
+    const fileSize = String(body.fileSize || '1.0 MB').trim();
+    const fileUrl = String(body.fileUrl || '').trim();
+    const orderIndex = Number(body.orderIndex) || 0;
+
+    await d1.prepare(`
+      UPDATE downloads 
+      SET title = ?, description = ?, category = ?, grade = ?, file_name = ?, file_size = ?, file_url = ?, order_index = ?
+      WHERE id = ?
+    `).bind(title, description, category, grade, fileName, fileSize, fileUrl, orderIndex, id).run();
+
+    return NextResponse.json({ success: true, id });
+
+  } catch (error: any) {
+    console.error("PUT /api/downloads error:", error);
+    return NextResponse.json({ error: error?.message || 'Failed to update document' }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    if (!(await checkIsAdmin())) {
+      return NextResponse.json({ error: 'Unauthorized — สำหรับผู้ดูแลระบบเท่านั้น' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+    }
+
+    const d1 = await getD1();
+    if (!d1) {
+      return NextResponse.json({ error: 'Database binding not available' }, { status: 500 });
+    }
+
+    await d1.prepare(`DELETE FROM downloads WHERE id = ?`).bind(id).run();
+    return NextResponse.json({ success: true });
+
+  } catch (error: any) {
+    console.error("DELETE /api/downloads error:", error);
+    return NextResponse.json({ error: error?.message || 'Failed to delete document' }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+    }
+
+    const d1 = await getD1();
+    if (d1) {
+      await d1.prepare(`
+        UPDATE downloads SET downloads_count = downloads_count + 1 WHERE id = ?
+      `).bind(id).run();
+    }
+
+    return NextResponse.json({ success: true });
+  } catch {
+    return NextResponse.json({ success: true });
+  }
 }
