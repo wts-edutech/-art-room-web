@@ -36,6 +36,16 @@
     font-family: var(--font-heading);
   }
 
+  /* iOS Safari Touch & Click Optimization */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  button, a, input, select, textarea, [role="button"], [tabindex] {
+    touch-action: manipulation;
+    cursor: pointer;
+  }
+
   /* Prevent iOS zoom on inputs */
   input[type="text"], input[type="email"], input[type="number"], input[type="password"], textarea, select {
     font-size: 16px !important;

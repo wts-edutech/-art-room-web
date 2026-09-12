@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Trash2, Plus, Pencil, Newspaper, Info, ExternalLink } from "lucide-react";
+import { Trash2, Plus, Pencil, Newspaper } from "lucide-react";
 import PRImageGuide from "./PRImageGuide";
 
 
@@ -107,45 +107,16 @@ export default function NewsTab() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* PR Guidelines Banner in Admin Backend */}
-      <div className="bg-gradient-to-r from-red-900 via-stone-900 to-gray-900 rounded-3xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
-        <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-gradient-to-l from-white/5 to-transparent pointer-events-none" />
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-red-300 text-xs font-semibold mb-3 border border-white/10">
-              <Info className="w-3.5 h-3.5" /> ระบบข่าวสารประชาสัมพันธ์ (PR Admin)
-            </div>
-            <h3 className="text-xl sm:text-2xl font-bold mb-2">
-              ระบบข่าวสารประชาสัมพันธ์รองรับสัดส่วนมาตรฐาน
-            </h3>
-            <p className="text-gray-300 text-sm font-light leading-relaxed">
-              สามารถเพิ่มหรือแก้ไขข่าวสารใหม่ผ่านระบบแอดมิน โดยหน้าระบบรองรับทั้งภาพ Banner แนวนอน 1.91:1, โปสเตอร์แนวตั้ง 3:4 / 4:5 และภาพจัตุรัส 1:1 ได้อย่างสมบูรณ์แบบ
-            </p>
-          </div>
-          <div className="flex-shrink-0">
-            <a 
-              href="/news" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm font-bold rounded-xl transition-all shadow-md hover:shadow-red-600/30"
-            >
-              ดูหน้าข่าวสาร (Frontend) <ExternalLink className="w-4 h-4" />
-            </a>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* News Form Section */}
-        <div className="lg:col-span-1">
-          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 sticky top-8">
-            <div className="flex items-center gap-2 mb-6 border-b border-gray-100 pb-4">
-              {editingNewsId ? <Pencil className="text-blue-600" /> : <Plus className="text-blue-600" />}
-              <h2 className="text-lg font-bold text-gray-900">
-                {editingNewsId ? "แก้ไขข่าวสาร" : "เพิ่มข่าวสารใหม่"}
-              </h2>
-            </div>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* News Form Section */}
+              <div className="lg:col-span-1">
+                <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 sticky top-8">
+                  <div className="flex items-center gap-2 mb-6 border-b border-gray-100 pb-4">
+                    {editingNewsId ? <Pencil className="text-blue-600" /> : <Plus className="text-blue-600" />}
+                    <h2 className="text-lg font-bold text-gray-900">
+                      {editingNewsId ? "แก้ไขข่าวสาร" : "เพิ่มข่าวสารใหม่"}
+                    </h2>
+                  </div>
                   <form onSubmit={handleAddNews} className="space-y-4">
                     <div>
                       <label className="text-sm font-medium text-gray-700 block mb-1">หัวข้อข่าวสาร</label>
@@ -257,6 +228,5 @@ export default function NewsTab() {
                 </div>
               </div>
             </div>
-    </div>
   );
 }

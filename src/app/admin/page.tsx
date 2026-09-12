@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { BookOpen, Award, Image as ImageIcon, Newspaper, Calendar, Users, LogOut, LayoutDashboard, Lightbulb } from "lucide-react";
+import { BookOpen, Award, Image as ImageIcon, Newspaper, Calendar, Users, LogOut, LayoutDashboard, Lightbulb, Info, ChevronRight, X } from "lucide-react";
 
 // Import tabs
 import LessonsTab from "@/components/admin/LessonsTab";
@@ -23,6 +23,7 @@ export default function AdminPage() {
     "lessons" | "m3Lessons" | "m4Lessons" | "artworks" | "awards" | "news" | "activities" | "students" | "guests" | "testimonials" | "ideas"
   >("lessons");
   const [visitorStats, setVisitorStats] = useState({ total: 0, today: 0 });
+  const [isPRBannerDismissed, setIsPRBannerDismissed] = useState(false);
 
   useEffect(() => {
     fetch("/api/visitors")
@@ -247,6 +248,45 @@ export default function AdminPage() {
               </div>
             </div>
           </div>
+
+          {/* PR Guidelines Overview Banner */}
+          {!isPRBannerDismissed && (
+            <div className="mb-8 bg-gradient-to-r from-red-900 via-stone-900 to-gray-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+              <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-gradient-to-l from-white/5 to-transparent pointer-events-none" />
+              
+              <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="max-w-2xl">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-red-300 text-xs font-semibold mb-3 border border-white/10">
+                    <Info className="w-3.5 h-3.5" /> สำหรับผู้ดูแลระบบ (Admin)
+                  </div>
+                  <h3 className="text-xl sm:text-2xl font-bold mb-2">
+                    ระบบข่าวสารประชาสัมพันธ์รองรับสัดส่วนมาตรฐาน
+                  </h3>
+                  <p className="text-gray-300 text-xs sm:text-sm font-light leading-relaxed">
+                    สามารถเพิ่มหรือแก้ไขข่าวสารใหม่ผ่านระบบแอดมิน โดยหน้าระบบรองรับทั้งภาพ Banner แนวนอน 1.91:1, โปสเตอร์แนวตั้ง 3:4 / 4:5 และภาพจัตุรัส 1:1 ได้อย่างสมบูรณ์แบบ
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  <button 
+                    onClick={() => {
+                      setActiveTab("news");
+                    }}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 active:scale-95 text-white text-xs sm:text-sm font-bold rounded-xl transition-all shadow-md hover:shadow-red-600/30 cursor-pointer"
+                  >
+                    ไปยังระบบจัดการข่าวสาร (NewsTab) <ChevronRight className="w-4 h-4" />
+                  </button>
+                  <button 
+                    onClick={() => setIsPRBannerDismissed(true)}
+                    className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-colors cursor-pointer"
+                    title="ปิดการแจ้งเตือน"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Mobile Tabs */}
           <div className="flex md:hidden space-x-2 mb-8 bg-white p-1 rounded-2xl shadow-sm border border-gray-100 overflow-x-auto">

@@ -32,7 +32,7 @@ export default function FloatingSocialSidebar() {
   return (
     <>
       {/* Desktop Floating Sidebar */}
-      <div className="hidden md:flex fixed right-0 top-1/2 -translate-y-1/2 z-50 flex-col items-end pointer-events-none">
+      <div className="hidden xl:flex fixed right-0 top-1/2 -translate-y-1/2 z-50 flex-col items-end pointer-events-none">
         <div className="bg-white/80 backdrop-blur-md shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.1)] rounded-l-2xl border border-r-0 border-gray-100 p-2 pointer-events-auto flex flex-col items-center gap-3 relative transition-all duration-300 hover:shadow-[-8px_0_25px_-5px_rgba(0,0,0,0.15)] group/sidebar">
           
           <div className="w-full flex justify-center py-2 border-b border-gray-200">
@@ -63,20 +63,20 @@ export default function FloatingSocialSidebar() {
         </div>
       </div>
 
-      {/* Mobile Floating Button */}
-      <div className="md:hidden fixed bottom-6 right-6 z-40">
+      {/* Mobile & Tablet Floating Button */}
+      <div className="xl:hidden fixed bottom-6 right-6 z-40">
         <button
           onClick={() => setIsMobileMenuOpen(true)}
-          className="w-14 h-14 bg-gradient-to-r from-orange-500 to-pink-500 rounded-full flex items-center justify-center text-white shadow-lg shadow-orange-500/30 hover:scale-105 active:scale-95 transition-all"
+          className="w-14 h-14 bg-gradient-to-r from-orange-500 to-pink-500 rounded-full flex items-center justify-center text-white shadow-lg shadow-orange-500/30 hover:scale-105 active:scale-95 transition-all cursor-pointer"
           aria-label="Share options"
         >
           <Share2 className="w-6 h-6" />
         </button>
       </div>
 
-      {/* Mobile Bottom Sheet Overlay */}
+      {/* Mobile & Tablet Bottom Sheet Overlay */}
       <div 
-        className={`md:hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${
+        className={`xl:hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${
           isMobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
         onClick={() => setIsMobileMenuOpen(false)}
