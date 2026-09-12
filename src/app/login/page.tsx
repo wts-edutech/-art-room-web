@@ -10,9 +10,13 @@ import {
   Mail, 
   Phone, 
   ShieldCheck, 
-  CheckCircle2, 
-  Sparkles,
-  Info
+  Info,
+  Eye,
+  EyeOff,
+  ShieldAlert,
+  Lock,
+  ChevronDown,
+  ChevronUp
 } from "lucide-react";
 
 interface SocialProvider {
@@ -84,6 +88,8 @@ export default function LoginPage() {
   // Student Login State
   const [studentId, setStudentId] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPasswordHint, setShowPasswordHint] = useState(false);
 
   // Guest Real Login State
   const [selectedProvider, setSelectedProvider] = useState<string>("Google");
@@ -92,72 +98,124 @@ export default function LoginPage() {
   const [guestRole, setGuestRole] = useState("ผู้ปกครองนักเรียน");
   const [guestPhone, setGuestPhone] = useState("");
 
+  // Anti-Bot Honeypot State
+  const [honeypot, setHoneypot] = useState("");
+
+  // Client-Side Anti-Brute-Force Lockout State
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [lockoutTimer, setLockoutTimer] = useState(0);
+
   useEffect(() => {
-    // Check if ?tab=guest was requested in URL
     const params = new URLSearchParams(window.location.search);
     if (params.get("tab") === "guest") {
       setActiveTab("guest");
     }
   }, []);
 
+  // Lockout countdown timer
+  useEffect(() => {
+    let interval: any = null;
+    if (lockoutTimer > 0) {
+      interval = setInterval(() => {
+        setLockoutTimer((prev) => {
+          if (prev <= 1) {
+            setFailedAttempts(0);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [lockoutTimer]);
+
   const getRedirectPath = () => {
     return new URLSearchParams(window.location.search).get("redirect") || "/materials";
   };
 
-  // Student Login Handler
+  // Student Login Handler with Security Hardening
   const handleStudentLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    if (isLoading || lockoutTimer > 0) return;
     setErrorMsg("");
+
+    const cleanId = studentId.trim();
+    const cleanPass = password.trim();
+
+    // Client-side strict validation
+    if (!/^\d{5}$/.test(cleanId)) {
+      setErrorMsg("รหัสประจำตัวนักเรียนต้องเป็นตัวเลข 5 หลักเท่านั้น");
+      return;
+    }
+
+    if (!cleanPass) {
+      setErrorMsg("กรุณากรอกรหัสผ่าน");
+      return;
+    }
+
+    setIsLoading(true);
     
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ studentId: studentId.trim(), password: password.trim() })
+        body: JSON.stringify({ 
+          studentId: cleanId, 
+          password: cleanPass,
+          hp_website: honeypot 
+        })
       });
       
       const data = await res.json();
       
       if (!res.ok) {
-        setErrorMsg(data.error || "เกิดข้อผิดพลาดในการตรวจสอบสิทธิ์");
+        const newFailCount = failedAttempts + 1;
+        setFailedAttempts(newFailCount);
+
+        // Lock out client if 5 consecutive failed attempts
+        if (newFailCount >= 5) {
+          setLockoutTimer(30);
+          setErrorMsg("คุณระบุข้อมูลไม่ถูกต้องเกิน 5 ครั้ง เพื่อความปลอดภัยระบบถูกระงับชั่วคราว 30 วินาที");
+        } else {
+          setErrorMsg(data.error || "รหัสนักเรียนหรือรหัสผ่านไม่ถูกต้อง");
+        }
+
         setIsLoading(false);
         return;
       }
       
-      // Save student session locally
+      // Success: Reset failure count and save student session
+      setFailedAttempts(0);
       localStorage.setItem("artroom_author_name", data.student.name);
-      localStorage.setItem("artroom_author_email", `${studentId.trim()}@wachiratham.ac.th`);
+      localStorage.setItem("artroom_author_email", `${cleanId}@wachiratham.ac.th`);
       localStorage.setItem("artroom_role", "student");
       
-      // Redirect
       window.location.href = getRedirectPath();
     } catch (error) {
       console.error(error);
-      setErrorMsg("เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้ง");
+      setErrorMsg("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์ กรุณาลองใหม่อีกครั้ง");
       setIsLoading(false);
     }
   };
 
-  // Real Guest Login Handler (Records genuine email, name, role, phone in DB)
+  // Real Guest Login Handler
   const handleGuestLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isLoading) return;
+    if (isLoading || lockoutTimer > 0) return;
     setErrorMsg("");
 
     const trimmedEmail = guestEmail.trim().toLowerCase();
     const trimmedName = guestName.trim();
 
-    // Validate email format
+    // Strict email format check
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!trimmedEmail || !emailRegex.test(trimmedEmail)) {
       setErrorMsg("กรุณาระบุที่อยู่อีเมลที่ถูกต้อง (ตัวอย่างเช่น yourname@gmail.com)");
       return;
     }
 
-    // Validate name
     if (!trimmedName || trimmedName.length < 2) {
-      setErrorMsg("กรุณาระบุชื่อ - นามสกุลจริงของท่าน เพื่อบันทึกการเข้าใช้งาน");
+      setErrorMsg("กรุณาระบุชื่อ - นามสกุลจริงของท่าน เพื่อยืนยันการเข้าใช้งาน");
       return;
     }
 
@@ -173,6 +231,7 @@ export default function LoginPage() {
           role: guestRole,
           phone: guestPhone.trim(),
           provider: selectedProvider,
+          hp_website: honeypot
         })
       });
 
@@ -184,7 +243,6 @@ export default function LoginPage() {
         localStorage.setItem("artroom_role", "guest");
         localStorage.setItem("artroom_user_role", guestRole);
 
-        // Redirect
         window.location.href = getRedirectPath();
       } else {
         setErrorMsg(data.error || "ไม่สามารถเข้าสู่ระบบได้ กรุณาลองใหม่อีกครั้ง");
@@ -201,10 +259,10 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50/70 p-4 relative py-12">
-      {/* Back Button */}
+      {/* Back to Home Button */}
       <Link 
         href="/" 
-        className="absolute top-6 left-6 z-20 flex items-center gap-2 px-4 py-2 bg-white rounded-full text-gray-600 font-medium shadow-sm border border-gray-200 hover:text-orange-500 hover:border-orange-300 hover:shadow-md transition-all group"
+        className="absolute top-6 left-6 z-20 flex items-center gap-2 px-4 py-2 bg-white rounded-full text-gray-600 font-medium shadow-sm border border-gray-200 hover:text-red-500 hover:border-red-300 hover:shadow-md transition-all group"
       >
         <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
         <span className="hidden sm:inline">กลับสู่หน้าแรก</span>
@@ -213,31 +271,29 @@ export default function LoginPage() {
       {/* Background Grid Pattern */}
       <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none"></div>
       
-      <div className="w-full max-w-lg relative z-10 bg-white rounded-3xl shadow-xl shadow-gray-200/60 p-7 sm:p-10 border border-gray-100 overflow-hidden">
+      <div className="w-full max-w-lg relative z-10 bg-white rounded-3xl shadow-xl shadow-gray-200/60 p-6 sm:p-9 border border-gray-100 overflow-hidden">
         
         {/* Header Section */}
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-block mb-4 hover:scale-105 transition-transform">
+        <div className="text-center mb-7">
+          <Link href="/" className="inline-block mb-3 hover:scale-105 transition-transform">
             <img 
               src="/school-logo.png" 
               alt="School Logo" 
-              className="w-20 h-20 sm:w-24 sm:h-24 object-contain mx-auto"
+              className="w-20 h-20 sm:w-22 sm:h-22 object-contain mx-auto"
             />
           </Link>
           <h1 className="text-2xl sm:text-3xl font-bold font-heading text-gray-900 tracking-tight">เข้าสู่ระบบห้องเรียนศิลปะ</h1>
-          <p className="text-gray-500 mt-2 font-light text-sm">
-            {activeTab === "student" 
-              ? "สำหรับนักเรียนโรงเรียนวชิรธรรมสาธิต" 
-              : "สำหรับผู้ปกครอง ศิษย์เก่า และบุคคลทั่วไป"}
+          <p className="text-gray-500 mt-1.5 font-light text-xs sm:text-sm">
+            กลุ่มสาระการเรียนรู้ศิลปะ โรงเรียนวชิรธรรมสาธิต
           </p>
         </div>
 
         {/* Tab Selection */}
-        <div className="flex bg-gray-100 p-1.5 rounded-2xl mb-7 shadow-inner">
+        <div className="flex bg-gray-100 p-1.5 rounded-2xl mb-6 shadow-inner">
           <button
             type="button"
             onClick={() => { setActiveTab("student"); setErrorMsg(""); }}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold rounded-xl transition-all cursor-pointer ${
+            className={`flex-1 flex items-center justify-center gap-2 py-3 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer ${
               activeTab === "student" 
                 ? "bg-white text-gray-900 shadow-md shadow-gray-200/50" 
                 : "text-gray-500 hover:text-gray-800 hover:bg-gray-200/50"
@@ -248,7 +304,7 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={() => { setActiveTab("guest"); setErrorMsg(""); }}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold rounded-xl transition-all cursor-pointer ${
+            className={`flex-1 flex items-center justify-center gap-2 py-3 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer ${
               activeTab === "guest" 
                 ? "bg-white text-gray-900 shadow-md shadow-gray-200/50" 
                 : "text-gray-500 hover:text-gray-800 hover:bg-gray-200/50"
@@ -258,9 +314,33 @@ export default function LoginPage() {
           </button>
         </div>
 
+        {/* Honeypot Invisible Anti-Bot Field */}
+        <input 
+          type="text" 
+          name="hp_website"
+          value={honeypot}
+          onChange={(e) => setHoneypot(e.target.value)}
+          className="hidden opacity-0 pointer-events-none absolute -left-[9999px]"
+          tabIndex={-1}
+          autoComplete="off"
+        />
+
+        {/* Lockout Security Warning */}
+        {lockoutTimer > 0 && (
+          <div className="bg-amber-50 border border-amber-300 text-amber-900 text-xs sm:text-sm font-semibold p-4 rounded-2xl flex items-center gap-3 mb-6 animate-pulse">
+            <Lock className="w-5 h-5 text-amber-600 flex-shrink-0" />
+            <div>
+              <span>ระบบระงับการเข้าสู่ระบบชั่วคราวเพื่อความปลอดภัย</span>
+              <div className="text-xs text-amber-700 font-normal mt-0.5">
+                กรุณารออีก <span className="font-bold text-amber-900 font-mono text-sm">{lockoutTimer}</span> วินาที ก่อนลองใหม่อีกครั้ง
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Error Notification Banner */}
-        {errorMsg && (
-          <div className="bg-red-50 border border-red-200 text-red-600 text-sm font-medium p-3.5 rounded-2xl flex items-start gap-2.5 mb-6 animate-in fade-in">
+        {errorMsg && lockoutTimer === 0 && (
+          <div className="bg-red-50 border border-red-200 text-red-600 text-xs sm:text-sm font-medium p-3.5 rounded-2xl flex items-start gap-2.5 mb-6 animate-in fade-in">
             <span className="font-bold flex-shrink-0">⚠️</span>
             <div className="leading-snug">{errorMsg}</div>
           </div>
@@ -269,55 +349,107 @@ export default function LoginPage() {
         {/* Tab 1: Student Login */}
         {activeTab === "student" ? (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <div className="text-center mb-6">
-              <h2 className="text-md font-bold text-gray-800">เข้าสู่ระบบด้วยรหัสประจำตัวนักเรียน</h2>
+            <div className="text-center mb-5">
+              <h2 className="text-sm sm:text-base font-bold text-gray-800">เข้าสู่ระบบด้วยรหัสประจำตัวนักเรียน</h2>
             </div>
+            
             <form onSubmit={handleStudentLogin} className="space-y-4">
+              
+              {/* Student ID */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-600 uppercase tracking-wider" htmlFor="studentId">
-                  รหัสนักเรียน (5 หลัก) *
+                <label className="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center justify-between" htmlFor="studentId">
+                  <span>รหัสนักเรียน (5 หลัก) <span className="text-red-500">*</span></span>
+                  <span className="text-[10px] text-gray-400 font-normal font-mono">{studentId.length}/5</span>
                 </label>
                 <input 
                   id="studentId"
                   type="text" 
+                  inputMode="numeric"
+                  pattern="\d*"
+                  maxLength={5}
                   required
+                  disabled={lockoutTimer > 0}
                   value={studentId}
-                  onChange={(e) => setStudentId(e.target.value)}
-                  placeholder="เช่น 12345"
-                  className="w-full h-12 px-4 rounded-xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:border-red-500 focus:ring-2 focus:ring-red-500/20 outline-none transition-all text-sm font-medium"
+                  onChange={(e) => setStudentId(e.target.value.replace(/\D/g, '').slice(0, 5))}
+                  placeholder="เช่น 38888"
+                  className="w-full h-12 px-4 rounded-xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:border-red-500 focus:ring-2 focus:ring-red-500/20 outline-none transition-all text-sm font-medium tracking-wide disabled:opacity-50"
                 />
               </div>
               
+              {/* Password with Show/Hide Toggle */}
               <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-gray-600 uppercase tracking-wider" htmlFor="password">
-                    รหัสผ่าน *
-                  </label>
+                <label className="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center justify-between" htmlFor="password">
+                  <span>รหัสผ่าน <span className="text-red-500">*</span></span>
+                </label>
+                <div className="relative">
+                  <input 
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    maxLength={50}
+                    required
+                    disabled={lockoutTimer > 0}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full h-12 pl-4 pr-11 rounded-xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:border-red-500 focus:ring-2 focus:ring-red-500/20 outline-none transition-all text-sm font-medium disabled:opacity-50"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+                    tabIndex={-1}
+                    aria-label="แสดงรหัสผ่าน"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
-                <input 
-                  id="password"
-                  type="password" 
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full h-12 px-4 rounded-xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:border-red-500 focus:ring-2 focus:ring-red-500/20 outline-none transition-all text-sm font-medium"
-                />
-                <div className="bg-orange-50 border border-orange-100 rounded-xl p-3 text-[11px] text-orange-900 leading-relaxed mt-2">
-                  <span className="font-bold text-orange-700">💡 คำแนะนำ:</span> รหัสผ่านคือ รหัสประจำตัวนักเรียนตามด้วย <code className="font-bold text-orange-800 bg-orange-200/60 px-1 py-0.5 rounded">@wts</code> (เช่น รหัส 12345 รหัสผ่านคือ <code className="font-bold">12345@wts</code>)
+
+                {/* Secure Collapsible Password Hint */}
+                <div className="mt-2.5 rounded-xl border border-orange-100 bg-orange-50/60 overflow-hidden transition-all">
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswordHint(!showPasswordHint)}
+                    className="w-full px-3.5 py-2.5 flex items-center justify-between text-[11px] font-semibold text-orange-800 hover:bg-orange-100/50 transition-colors text-left cursor-pointer"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <span>💡</span>
+                      <span>คำแนะนำสำหรับนักเรียนที่เข้าสู่ระบบครั้งแรก</span>
+                    </span>
+                    {showPasswordHint ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                  </button>
+
+                  {showPasswordHint && (
+                    <div className="px-3.5 pb-3 pt-1 text-[11px] text-orange-950/90 leading-relaxed border-t border-orange-100/80">
+                      <p>
+                        รหัสผ่านเริ่มต้นคือ รหัสประจำตัวนักเรียน 5 หลัก ตามด้วย <code className="font-bold text-orange-800 bg-orange-200/70 px-1 py-0.5 rounded">@wts</code><br/>
+                        <span className="text-gray-600">(ตัวอย่าง: รหัส 38888 รหัสผ่านคือ <code className="font-bold text-gray-800">38888@wts</code>)</span>
+                      </p>
+                      <p className="mt-1.5 text-[10px] text-red-600 font-medium">
+                        ⚠️ บัญชีนี้สำหรับนักเรียนเจ้าของรหัสเท่านั้น ระบบมีระบบบันทึกประวัติและ IP ห้ามนำรหัสของผู้อื่นมาสวมรอย
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
 
+              {/* Submit Button */}
               <Button 
                 type="submit" 
-                disabled={isLoading}
-                className="w-full h-12 rounded-xl text-md shadow-md shadow-red-500/20 hover:shadow-lg hover:shadow-red-500/30 bg-[#ff0f39] hover:bg-[#e00028] text-white transition-all mt-6 font-bold cursor-pointer"
+                disabled={isLoading || lockoutTimer > 0}
+                className="w-full h-12 rounded-xl text-md shadow-md shadow-red-500/20 hover:shadow-lg hover:shadow-red-500/30 bg-[#ff0f39] hover:bg-[#e00028] text-white transition-all mt-5 font-bold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? "กำลังตรวจสอบข้อมูล..." : "เข้าสู่ระบบนักเรียน"}
+                {isLoading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>กำลังตรวจสอบสิทธิ์...</span>
+                  </div>
+                ) : (
+                  "เข้าสู่ระบบนักเรียน"
+                )}
               </Button>
             </form>
             
-            <div className="mt-6 text-center text-gray-500 text-xs">
+            <div className="mt-5 text-center text-gray-500 text-xs">
               มีปัญหาการเข้าสู่ระบบ? <a href="https://line.me/R/ti/p/@137odaxl" target="_blank" rel="noopener noreferrer" className="text-red-600 font-bold hover:underline cursor-pointer">ติดต่อคุณครูผู้สอนผ่าน LINE</a>
             </div>
           </div>
@@ -358,7 +490,7 @@ export default function LoginPage() {
             <div className="bg-blue-50/70 border border-blue-100 rounded-2xl p-3 mb-5 flex items-start gap-2.5">
               <Info className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
               <p className="text-xs text-blue-900 leading-relaxed">
-                เข้าสู่ระบบผ่านช่องทาง <span className="font-bold text-blue-700">{currentProviderConfig.name}</span> — ระบบจะบันทึกอีเมลและชื่อจริงของท่านไว้ในระบบหลังบ้านของผู้ดูแลระบบเพื่อความปลอดภัย
+                เข้าสู่ระบบผ่านช่องทาง <span className="font-bold text-blue-700">{currentProviderConfig.name}</span> — ระบบจะบันทึกอีเมลและชื่อจริงของท่านไว้ในระบบหลังบ้านเพื่อความปลอดภัย
               </p>
             </div>
 
@@ -379,6 +511,7 @@ export default function LoginPage() {
                     id="guestEmail"
                     type="email" 
                     required
+                    maxLength={100}
                     autoComplete="email"
                     value={guestEmail}
                     onChange={(e) => setGuestEmail(e.target.value)}
@@ -402,6 +535,7 @@ export default function LoginPage() {
                     id="guestName"
                     type="text" 
                     required
+                    maxLength={100}
                     autoComplete="name"
                     value={guestName}
                     onChange={(e) => setGuestName(e.target.value)}
@@ -442,6 +576,7 @@ export default function LoginPage() {
                   <input 
                     id="guestPhone"
                     type="tel" 
+                    maxLength={20}
                     autoComplete="tel"
                     value={guestPhone}
                     onChange={(e) => setGuestPhone(e.target.value)}
@@ -454,8 +589,8 @@ export default function LoginPage() {
               {/* Submit Button */}
               <Button 
                 type="submit" 
-                disabled={isLoading}
-                className="w-full h-12 rounded-xl text-md shadow-md shadow-blue-600/20 hover:shadow-lg hover:shadow-blue-600/30 bg-blue-600 hover:bg-blue-700 text-white transition-all mt-6 font-bold cursor-pointer"
+                disabled={isLoading || lockoutTimer > 0}
+                className="w-full h-12 rounded-xl text-md shadow-md shadow-blue-600/20 hover:shadow-lg hover:shadow-blue-600/30 bg-blue-600 hover:bg-blue-700 text-white transition-all mt-6 font-bold cursor-pointer disabled:opacity-50"
               >
                 {isLoading ? (
                   <div className="flex items-center gap-2">
@@ -471,15 +606,30 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            {/* Legal and Privacy Notice */}
-            <div className="mt-6 pt-4 border-t border-gray-100 text-center">
+            {/* Legal Notice */}
+            <div className="mt-5 pt-3 text-center">
               <p className="text-gray-400 text-[11px] leading-relaxed">
                 การเข้าใช้งานถือว่าท่านยอมรับ <Link href="/privacy-policy" className="text-blue-600 hover:underline">นโยบายคุ้มครองข้อมูลส่วนบุคคล (PDPA)</Link> และ <Link href="/terms" className="text-blue-600 hover:underline">ข้อกำหนดการใช้งาน</Link> ของเว็บไซต์ Art Room
               </p>
             </div>
-
           </div>
         )}
+
+        {/* Anti-Scam & Fraud Prevention Official Notice */}
+        <div className="mt-6 pt-5 border-t border-gray-100">
+          <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200/70 text-amber-900">
+            <div className="flex items-center gap-2 font-bold text-xs text-amber-800 mb-1.5">
+              <ShieldAlert className="w-4 h-4 text-amber-600 flex-shrink-0" />
+              <span>ประกาศความปลอดภัย & แจ้งเตือนภัยมิจฉาชีพ</span>
+            </div>
+            <ul className="space-y-1 text-[11px] text-amber-800/90 leading-relaxed list-disc list-inside">
+              <li>เว็บไซต์ห้องเรียนศิลปะ <strong>ไม่มีการขอข้อมูลทางการเงิน บัตรเครดิต หรือให้โอนเงินใดๆ ทั้งสิ้น</strong></li>
+              <li>โปรดระวังมิจฉาชีพแอบอ้างเป็นโรงเรียน หากพบสิ่งผิดปกติให้ติดต่อครูผู้สอนผ่าน LINE ทันที</li>
+              <li>ระบบบันทึกประวัติการเข้าใช้งานตามมาตรฐานความปลอดภัยทางไซเบอร์</li>
+            </ul>
+          </div>
+        </div>
+
       </div>
     </div>
   );

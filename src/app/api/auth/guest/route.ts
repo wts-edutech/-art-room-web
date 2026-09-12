@@ -59,15 +59,35 @@ export async function GET() {
   }
 }
 
+import { checkRateLimit, getClientIp } from '@/lib/rate-limiter';
+
 export async function POST(request: Request) {
   try {
+    const clientIp = getClientIp(request);
+
+    // Rate Limiting Protection (Max 8 attempts per minute per IP)
+    const rateCheck = checkRateLimit(`guest_${clientIp}`, 8, 60000);
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        { 
+          error: `พยายามเข้าสู่ระบบบ่อยเกินไป เพื่อความปลอดภัยกรุณารออีก ${rateCheck.resetInSeconds} วินาที` 
+        }, 
+        { status: 429 }
+      );
+    }
+
     const body = await request.json().catch(() => ({}));
     
-    const email = String(body.email || body.emailOrProvider || '').trim();
-    const name = String(body.name || body.guestName || email.split('@')[0] || 'ผู้เข้าชม').trim();
-    const role = String(body.role || 'บุคคลทั่วไป').trim();
-    const phone = String(body.phone || '').trim();
-    const provider = String(body.provider || 'Email').trim();
+    // Honeypot trap check
+    if (body.hp_website || body.bot_trap) {
+      return NextResponse.json({ error: 'ตรวจพบบอทอัตโนมัติ คำขอถูกระงับ' }, { status: 400 });
+    }
+
+    const email = String(body.email || body.emailOrProvider || '').trim().slice(0, 100);
+    const name = String(body.name || body.guestName || email.split('@')[0] || 'ผู้เข้าชม').trim().slice(0, 100);
+    const role = String(body.role || 'บุคคลทั่วไป').trim().slice(0, 50);
+    const phone = String(body.phone || '').trim().slice(0, 25);
+    const provider = String(body.provider || 'Email').trim().slice(0, 30);
 
     // Basic email validation
     if (!email || !email.includes('@') || !email.includes('.')) {
