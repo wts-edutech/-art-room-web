@@ -16,6 +16,7 @@ export default function Navbar() {
   const [userName, setUserName] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [time, setTime] = useState<Date | null>(null);
+  const [isTeachersEnabled, setIsTeachersEnabled] = useState(false);
 
   useEffect(() => {
     setTime(new Date());
@@ -27,6 +28,16 @@ export default function Navbar() {
     const role = localStorage.getItem("artroom_role");
     if (name) setUserName(name);
     if (role) setUserRole(role);
+
+    // Check if teachers directory is enabled by admin
+    fetch('/api/teachers/status')
+      .then(res => res.json())
+      .then(data => {
+        if (data && typeof data.enabled === 'boolean') {
+          setIsTeachersEnabled(data.enabled);
+        }
+      })
+      .catch(() => {});
 
     return () => clearInterval(interval);
   }, []);
@@ -235,14 +246,14 @@ export default function Navbar() {
             </div>
           </div>
 
-          {/* ทำเนียบครู (ซ่อนไว้ก่อนตามคำสั่ง: จัดการในระบบหลังบ้าน ยังไม่เปิดแสดงในระบบหน้าบ้าน)
-          <Link 
-            href="/teachers" 
-            className={`h-full flex items-center px-1 border-b-[3px] transition-colors whitespace-nowrap flex-shrink-0 ${pathname === "/teachers" ? "border-red-500 text-red-500" : "border-transparent hover:border-red-500 hover:text-red-500"}`}
-          >
-            ทำเนียบครู
-          </Link>
-          */}
+          {isTeachersEnabled && (
+            <Link 
+              href="/teachers" 
+              className={`h-full flex items-center px-1 border-b-[3px] transition-colors whitespace-nowrap flex-shrink-0 ${pathname === "/teachers" ? "border-red-500 text-red-500" : "border-transparent hover:border-red-500 hover:text-red-500"}`}
+            >
+              ทำเนียบครู
+            </Link>
+          )}
 
           {/* Organization Media Dropdown Menu */}
           <div className="relative group h-full flex items-center flex-shrink-0">
@@ -453,15 +464,15 @@ export default function Navbar() {
             </div>
           </div>
 
-          {/* ทำเนียบครูผู้สอน (ซ่อนไว้ก่อนตามคำสั่ง: จัดการในระบบหลังบ้าน ยังไม่เปิดแสดงในระบบหน้าบ้าน)
-          <Link 
-            href="/teachers" 
-            className={`px-4 py-3 font-medium rounded-xl transition-colors cursor-pointer ${pathname === "/teachers" ? "bg-red-50 text-red-600 font-bold" : "text-gray-700 hover:bg-gray-50"}`} 
-            onClick={() => setIsMobileMenuOpen(false)}
-          >
-            ทำเนียบครูผู้สอน
-          </Link>
-          */}
+          {isTeachersEnabled && (
+            <Link 
+              href="/teachers" 
+              className={`px-4 py-3 font-medium rounded-xl transition-colors cursor-pointer ${pathname === "/teachers" ? "bg-red-50 text-red-600 font-bold" : "text-gray-700 hover:bg-gray-50"}`} 
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              ทำเนียบครูผู้สอน
+            </Link>
+          )}
 
           {/* Organization Media Mobile Dropdown */}
           <div className="flex flex-col">

@@ -5,6 +5,7 @@ import { ShieldCheck, Eye, Sparkles } from "lucide-react";
 
 export default function Footer() {
   const [visitorCount, setVisitorCount] = useState(0);
+  const [isTeachersEnabled, setIsTeachersEnabled] = useState(false);
 
   useEffect(() => {
     fetch("/api/visitors")
@@ -13,6 +14,15 @@ export default function Footer() {
         setVisitorCount(data.total || 0);
       })
       .catch(err => console.error("Failed to fetch visitors:", err));
+
+    fetch("/api/teachers/status")
+      .then(res => res.json())
+      .then(data => {
+        if (data && typeof data.enabled === "boolean") {
+          setIsTeachersEnabled(data.enabled);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   return (
@@ -71,11 +81,13 @@ export default function Footer() {
                   สตูดิโอไอเดียสร้างสรรค์
                 </Link>
               </li>
-              {/* <li>
-                <Link href="/teachers" className="hover:text-red-600 transition-colors">
-                  ทำเนียบครูผู้สอนศิลปะ
-                </Link>
-              </li> */}
+              {isTeachersEnabled && (
+                <li>
+                  <Link href="/teachers" className="hover:text-red-600 transition-colors">
+                    ทำเนียบครูผู้สอนศิลปะ
+                  </Link>
+                </li>
+              )}
             </ul>
           </div>
 

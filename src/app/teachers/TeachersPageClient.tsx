@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import { GraduationCap, Mail, MapPin, Sparkles, Palette } from "lucide-react";
+import { GraduationCap, Mail, MapPin, Sparkles, Palette, EyeOff, ShieldAlert, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface Teacher {
   id: string;
@@ -24,8 +26,28 @@ interface TeachersPageClientProps {
 
 export default function TeachersPageClient({ initialTeachers }: TeachersPageClientProps) {
   const [teachers, setTeachers] = useState<Teacher[]>(initialTeachers);
+  const [isTeachersEnabled, setIsTeachersEnabled] = useState<boolean | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
+    const role = localStorage.getItem("artroom_role");
+    if (role === "admin" || role === "teacher") {
+      setIsAdmin(true);
+    }
+
+    // Check visibility status
+    fetch("/api/teachers/status")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && typeof data.enabled === "boolean") {
+          setIsTeachersEnabled(data.enabled);
+        } else {
+          setIsTeachersEnabled(false);
+        }
+      })
+      .catch(() => setIsTeachersEnabled(false));
+
+    // Fetch teachers list
     fetch("/api/teachers")
       .then((res) => res.json())
       .then((data) => {
@@ -36,11 +58,64 @@ export default function TeachersPageClient({ initialTeachers }: TeachersPageClie
       .catch((err) => console.error("Failed to load teachers dynamically:", err));
   }, []);
 
+  // While checking status
+  if (isTeachersEnabled === null) {
+    return (
+      <>
+        <Navbar />
+        <main className="flex-1 flex items-center justify-center min-h-screen bg-[#FDF9F1] pt-24">
+          <div className="w-8 h-8 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+        </main>
+        <Footer />
+      </>
+    );
+  }
+
+  // If disabled and NOT admin -> Show maintenance/hidden placeholder
+  if (!isTeachersEnabled && !isAdmin) {
+    return (
+      <>
+        <Navbar />
+        <main className="flex-1 flex flex-col items-center justify-center min-h-screen bg-[#FDF9F1] pt-28 pb-16 px-4 text-center">
+          <div className="max-w-md w-full bg-white rounded-3xl p-8 sm:p-10 border border-gray-100 shadow-xl shadow-gray-200/50">
+            <div className="w-16 h-16 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto mb-5 shadow-inner">
+              <EyeOff className="w-8 h-8" />
+            </div>
+            
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
+              อยู่ระหว่างการจัดเตรียมข้อมูล
+            </h1>
+            
+            <p className="text-xs sm:text-sm text-gray-500 leading-relaxed mb-6">
+              กลุ่มสาระการเรียนรู้ศิลปะ โรงเรียนวชิรธรรมสาธิต กำลังปรับปรุงข้อมูลทำเนียบครูผู้สอนเพื่อความสมบูรณ์แบบ กรุณากลับมาใหม่อีกครั้งในเร็วๆ นี้
+            </p>
+
+            <Link href="/">
+              <Button className="w-full h-11 rounded-xl bg-gray-900 hover:bg-black text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md">
+                <ArrowLeft className="w-4 h-4" />
+                <span>กลับสู่หน้าแรก</span>
+              </Button>
+            </Link>
+          </div>
+        </main>
+        <Footer />
+      </>
+    );
+  }
+
   return (
     <>
       <Navbar />
       <main className="flex-1 flex flex-col pt-24 min-h-screen bg-[#FDF9F1]">
         
+        {/* Admin Preview Notice (Visible only when disabled but viewed by admin) */}
+        {!isTeachersEnabled && isAdmin && (
+          <div className="bg-amber-500 text-white px-4 py-2.5 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-md sticky top-16 z-30">
+            <ShieldAlert className="w-4 h-4 flex-shrink-0" />
+            <span>โหมดดูตัวอย่าง (Admin Preview): เมนูนี้ยังปิดการแสดงผลหน้าบ้านอยู่ เฉพาะผู้ดูแลระบบเท่านั้นที่มองเห็นหน้านี้ได้</span>
+          </div>
+        )}
+
         {/* Hero Header */}
         <section className="relative overflow-hidden pt-12 pb-10 border-b border-red-100/60 bg-gradient-to-b from-red-50/50 via-white to-transparent">
           <div className="container mx-auto px-4 sm:px-6 max-w-6xl text-center">

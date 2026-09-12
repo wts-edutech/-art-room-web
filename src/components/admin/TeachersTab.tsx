@@ -14,7 +14,11 @@ import {
   Search,
   X,
   Upload,
-  RefreshCw
+  RefreshCw,
+  Eye,
+  EyeOff,
+  Globe,
+  Lock
 } from "lucide-react";
 
 interface Teacher {
@@ -38,6 +42,10 @@ export default function TeachersTab() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Front-end Visibility Status State
+  const [isTeachersEnabled, setIsTeachersEnabled] = useState(false);
+  const [isTogglingStatus, setIsTogglingStatus] = useState(false);
 
   // Form State
   const [name, setName] = useState("");
@@ -67,9 +75,52 @@ export default function TeachersTab() {
     }
   };
 
+  const fetchStatus = async () => {
+    try {
+      const res = await fetch("/api/teachers/status");
+      const data = await res.json();
+      if (data && typeof data.enabled === "boolean") {
+        setIsTeachersEnabled(data.enabled);
+      }
+    } catch (e) {
+      console.error("Failed to fetch teachers status", e);
+    }
+  };
+
   useEffect(() => {
     fetchData();
+    fetchStatus();
   }, []);
+
+  const handleToggleStatus = async () => {
+    const nextState = !isTeachersEnabled;
+    const confirmMsg = nextState 
+      ? "คุณต้องการ 'เปิดใช้งาน' เมนูทำเนียบครู ให้แสดงผลบนหน้าเว็บไซต์สาธารณะใช่หรือไม่?" 
+      : "คุณต้องการ 'ปิด/ซ่อน' เมนูทำเนียบครู ออกจากหน้าเว็บไซต์ชั่วคราวใช่หรือไม่?";
+
+    if (!confirm(confirmMsg)) return;
+
+    setIsTogglingStatus(true);
+    try {
+      const res = await fetch("/api/teachers/status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: nextState })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setIsTeachersEnabled(nextState);
+        alert(data.message || (nextState ? "เปิดการแสดงผลในระบบหน้าบ้านเรียบร้อยแล้ว" : "ปิดการแสดงผลในระบบหน้าบ้านแล้ว"));
+      } else {
+        alert(data.error || "เกิดข้อผิดพลาดในการเปลี่ยนสถานะ");
+      }
+    } catch (e) {
+      console.error("Toggle error", e);
+      alert("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้");
+    } finally {
+      setIsTogglingStatus(false);
+    }
+  };
 
   const openAddModal = () => {
     setEditingId(null);
@@ -222,6 +273,68 @@ export default function TeachersTab() {
 
   return (
     <div className="space-y-8">
+      {/* Front-end Visibility Control Box (สวิตช์ เปิด-ปิด ระบบหน้าบ้าน) */}
+      <div className={`p-6 sm:p-7 rounded-3xl border transition-all shadow-xs ${
+        isTeachersEnabled 
+          ? "bg-emerald-50/70 border-emerald-200" 
+          : "bg-amber-50/70 border-amber-200"
+      }`}>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+          <div className="flex items-start gap-3.5">
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${
+              isTeachersEnabled 
+                ? "bg-emerald-600 text-white shadow-md shadow-emerald-500/30" 
+                : "bg-amber-500 text-white shadow-md shadow-amber-500/30"
+            }`}>
+              {isTeachersEnabled ? <Eye className="w-6 h-6" /> : <EyeOff className="w-6 h-6" />}
+            </div>
+            <div>
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h3 className="text-base sm:text-lg font-bold text-gray-900">
+                  {isTeachersEnabled ? "เปิดการแสดงผลในระบบหน้าบ้านแล้ว" : "ปิดการแสดงผลหน้าบ้านชั่วคราว (ซ่อนอยู่)"}
+                </h3>
+                <span className={`text-xs font-bold px-3 py-0.5 rounded-full ${
+                  isTeachersEnabled 
+                    ? "bg-emerald-100 text-emerald-800 border border-emerald-300" 
+                    : "bg-amber-100 text-amber-800 border border-amber-300"
+                }`}>
+                  {isTeachersEnabled ? "🟢 ออนไลน์สู่สาธารณะ" : "🔒 ซ่อนอยู่ (เฉพาะหลังบ้าน)"}
+                </span>
+              </div>
+              <p className="text-xs text-gray-600 mt-1 leading-relaxed max-w-2xl">
+                {isTeachersEnabled
+                  ? "ปุ่ม 'ทำเนียบครู' กำลังแสดงอยู่บนแถบเมนูด้านบนและส่วนท้ายเว็บไซต์ บุคคลทั่วไปและนักเรียนสามารถเข้าชมได้ตามปกติ"
+                  : "ปุ่ม 'ทำเนียบครู' ถูกซ่อนไว้จากหน้าเว็บหลัก บุคคลทั่วไปจะไม่เห็นเมนูนี้ คุณครูสามารถจัดการและเพิ่มข้อมูลได้ เมื่อพร้อมให้กดเปิดสวิตช์"}
+              </p>
+            </div>
+          </div>
+
+          {/* Big Toggle Switch Button */}
+          <button
+            type="button"
+            disabled={isTogglingStatus}
+            onClick={handleToggleStatus}
+            className={`h-12 px-6 rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center gap-3 transition-all cursor-pointer shadow-md self-start sm:self-center disabled:opacity-50 whitespace-nowrap flex-shrink-0 ${
+              isTeachersEnabled
+                ? "bg-red-600 hover:bg-red-700 text-white shadow-red-600/20"
+                : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20"
+            }`}
+          >
+            {isTogglingStatus ? (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>กำลังบันทึก...</span>
+              </div>
+            ) : (
+              <>
+                <div className={`w-3 h-3 rounded-full ${isTeachersEnabled ? "bg-white animate-pulse" : "bg-emerald-200 animate-pulse"}`}></div>
+                <span>{isTeachersEnabled ? "กดเพื่อปิด / ซ่อนหน้าบ้าน" : "กดเพื่อเปิดใช้งานหน้าบ้าน"}</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
       {/* Top Header & Search Bar */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-gray-100 flex flex-col md:flex-row items-center justify-between gap-4">
         <div>
