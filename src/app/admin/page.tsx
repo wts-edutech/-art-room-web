@@ -27,6 +27,8 @@ export default function AdminPage() {
   const [visitorStats, setVisitorStats] = useState({ total: 0, today: 0 });
   const [isPRBannerDismissed, setIsPRBannerDismissed] = useState(false);
   const [isTeachersEnabled, setIsTeachersEnabled] = useState(false);
+  const [isM3Enabled, setIsM3Enabled] = useState(true);
+  const [isM4Enabled, setIsM4Enabled] = useState(true);
 
   useEffect(() => {
     fetch("/api/visitors")
@@ -45,6 +47,24 @@ export default function AdminPage() {
       .then(data => {
         if (data && typeof data.enabled === "boolean") {
           setIsTeachersEnabled(data.enabled);
+        }
+      })
+      .catch(() => {});
+
+    fetch("/api/m3-lessons/status")
+      .then(res => res.json())
+      .then(data => {
+        if (data && typeof data.enabled === "boolean") {
+          setIsM3Enabled(data.enabled);
+        }
+      })
+      .catch(() => {});
+
+    fetch("/api/m4-lessons/status")
+      .then(res => res.json())
+      .then(data => {
+        if (data && typeof data.enabled === "boolean") {
+          setIsM4Enabled(data.enabled);
         }
       })
       .catch(() => {});
@@ -85,25 +105,43 @@ export default function AdminPage() {
             </button>
             <button
               onClick={() => setActiveTab("m3Lessons")}
-              className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${
+              className={`w-full flex items-center justify-between px-3 py-3 rounded-xl transition-all ${
                 activeTab === "m3Lessons" 
                   ? "bg-blue-600 text-white shadow-md shadow-blue-500/20" 
                   : "text-gray-400 hover:text-white hover:bg-gray-800"
               }`}
             >
-              <BookOpen className="w-5 h-5" />
-              จัดการบทเรียน ม.3
+              <div className="flex items-center gap-3">
+                <BookOpen className="w-5 h-5" />
+                <span>จัดการบทเรียน ม.3</span>
+              </div>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                isM3Enabled 
+                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40" 
+                  : "bg-gray-800 text-gray-400 border border-gray-700"
+              }`}>
+                {isM3Enabled ? "เปิด" : "ปิด"}
+              </span>
             </button>
             <button
               onClick={() => setActiveTab("m4Lessons")}
-              className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${
+              className={`w-full flex items-center justify-between px-3 py-3 rounded-xl transition-all ${
                 activeTab === "m4Lessons" 
                   ? "bg-blue-600 text-white shadow-md shadow-blue-500/20" 
                   : "text-gray-400 hover:text-white hover:bg-gray-800"
               }`}
             >
-              <BookOpen className="w-5 h-5" />
-              จัดการบทเรียน ม.4
+              <div className="flex items-center gap-3">
+                <BookOpen className="w-5 h-5" />
+                <span>จัดการบทเรียน ม.4</span>
+              </div>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                isM4Enabled 
+                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40" 
+                  : "bg-gray-800 text-gray-400 border border-gray-700"
+              }`}>
+                {isM4Enabled ? "เปิด" : "ปิด"}
+              </span>
             </button>
             <button
               onClick={() => setActiveTab("awards")}
@@ -342,6 +380,34 @@ export default function AdminPage() {
               }`}
             >
               <BookOpen className="w-4 h-4" /> บทเรียน
+            </button>
+            <button
+              onClick={() => setActiveTab("m3Lessons")}
+              className={`flex-1 flex-shrink-0 min-w-[100px] flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-colors ${
+                activeTab === "m3Lessons" ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              <span>ม.3</span>
+              <span className={`text-[9px] font-bold px-1 rounded ${
+                isM3Enabled ? "bg-emerald-100 text-emerald-700" : "bg-gray-200 text-gray-600"
+              }`}>
+                {isM3Enabled ? "เปิด" : "ปิด"}
+              </span>
+            </button>
+            <button
+              onClick={() => setActiveTab("m4Lessons")}
+              className={`flex-1 flex-shrink-0 min-w-[100px] flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-colors ${
+                activeTab === "m4Lessons" ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              <span>ม.4</span>
+              <span className={`text-[9px] font-bold px-1 rounded ${
+                isM4Enabled ? "bg-emerald-100 text-emerald-700" : "bg-gray-200 text-gray-600"
+              }`}>
+                {isM4Enabled ? "เปิด" : "ปิด"}
+              </span>
             </button>
             <button
               onClick={() => setActiveTab("awards")}
