@@ -38,7 +38,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'กรุณากรอกรหัสนักเรียนและรหัสผ่าน' }, { status: 400 });
     }
 
-    // Must strictly be 5 digits (e.g. 38888)
+    // Must strictly be 5 digits (e.g. 12345)
     if (!/^\d{5}$/.test(studentId)) {
       return NextResponse.json(
         { error: 'รหัสประจำตัวนักเรียนต้องเป็นตัวเลข 5 หลักเท่านั้น' }, 

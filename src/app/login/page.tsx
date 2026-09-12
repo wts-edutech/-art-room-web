@@ -371,7 +371,7 @@ export default function LoginPage() {
                   disabled={lockoutTimer > 0}
                   value={studentId}
                   onChange={(e) => setStudentId(e.target.value.replace(/\D/g, '').slice(0, 5))}
-                  placeholder="เช่น 38888"
+                  placeholder="เช่น 12345"
                   className="w-full h-12 px-4 rounded-xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:border-red-500 focus:ring-2 focus:ring-red-500/20 outline-none transition-all text-sm font-medium tracking-wide disabled:opacity-50"
                 />
               </div>
@@ -422,7 +422,7 @@ export default function LoginPage() {
                     <div className="px-3.5 pb-3 pt-1 text-[11px] text-orange-950/90 leading-relaxed border-t border-orange-100/80">
                       <p>
                         รหัสผ่านเริ่มต้นคือ รหัสประจำตัวนักเรียน 5 หลัก ตามด้วย <code className="font-bold text-orange-800 bg-orange-200/70 px-1 py-0.5 rounded">@wts</code><br/>
-                        <span className="text-gray-600">(ตัวอย่าง: รหัส 38888 รหัสผ่านคือ <code className="font-bold text-gray-800">38888@wts</code>)</span>
+                        <span className="text-gray-600">(ตัวอย่าง: รหัส 12345 รหัสผ่านคือ <code className="font-bold text-gray-800">12345@wts</code>)</span>
                       </p>
                       <p className="mt-1.5 text-[10px] text-red-600 font-medium">
                         ⚠️ บัญชีนี้สำหรับนักเรียนเจ้าของรหัสเท่านั้น ระบบมีระบบบันทึกประวัติและ IP ห้ามนำรหัสของผู้อื่นมาสวมรอย
