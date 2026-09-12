@@ -1,8 +1,5 @@
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import { getDb } from "@/db";
-import { teachers } from "@/db/schema";
-import { asc } from "drizzle-orm";
 import { GraduationCap, Mail, MapPin, Sparkles, Palette, Award } from "lucide-react";
 
 export const metadata = {
@@ -50,18 +47,8 @@ const DEFAULT_TEACHERS = [
   },
 ];
 
-async function getTeachers() {
-  try {
-    const db = getDb();
-    const data = await db.select().from(teachers).orderBy(asc(teachers.orderIndex));
-    return data && data.length > 0 ? data : DEFAULT_TEACHERS;
-  } catch (error) {
-    return DEFAULT_TEACHERS;
-  }
-}
-
-export default async function TeachersPage() {
-  const teacherList = await getTeachers();
+export default function TeachersPage() {
+  const teacherList = DEFAULT_TEACHERS;
 
   return (
     <>

@@ -23,9 +23,10 @@ export default function LessonsTab() {
     try {
       const res = await fetch("/api/lessons");
       const data = await res.json();
-      setLessons(data);
+      setLessons(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Failed to fetch", error);
+      setLessons([]);
     } finally {
       setIsLoading(false);
     }

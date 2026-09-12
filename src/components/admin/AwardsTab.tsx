@@ -27,9 +27,10 @@ export default function AwardsTab() {
     try {
       const res = await fetch("/api/awards");
       const data = await res.json();
-      setAwards(data);
+      setAwards(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Failed to fetch", error);
+      setAwards([]);
     } finally {
       setIsLoading(false);
     }

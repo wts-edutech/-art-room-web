@@ -20,9 +20,10 @@ export default function ArtworksTab() {
     try {
       const res = await fetch("/api/artworks");
       const data = await res.json();
-      setArtworks(data);
+      setArtworks(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Failed to fetch", error);
+      setArtworks([]);
     } finally {
       setIsLoading(false);
     }

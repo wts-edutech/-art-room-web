@@ -23,9 +23,10 @@ export default function M4LessonsTab() {
     try {
       const res = await fetch("/api/m4-lessons");
       const data = await res.json();
-      setM4Lessons(data);
+      setM4Lessons(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Failed to fetch", error);
+      setM4Lessons([]);
     } finally {
       setIsLoading(false);
     }

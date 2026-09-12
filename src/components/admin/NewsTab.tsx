@@ -22,9 +22,10 @@ export default function NewsTab() {
     try {
       const res = await fetch("/api/news");
       const data = await res.json();
-      setNewsList(data);
+      setNewsList(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Failed to fetch", error);
+      setNewsList([]);
     } finally {
       setIsLoading(false);
     }

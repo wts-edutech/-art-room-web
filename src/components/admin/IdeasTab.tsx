@@ -16,9 +16,10 @@ export default function IdeasTab() {
     try {
       const res = await fetch("/api/ideas?admin=true");
       const data = await res.json();
-      setIdeasList(data);
+      setIdeasList(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Failed to fetch", error);
+      setIdeasList([]);
     } finally {
       setIsLoading(false);
     }

@@ -9,33 +9,24 @@ import { checkIsAdmin } from '@/lib/api-auth';
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const grade = searchParams.get('grade');
-    const mediaType = searchParams.get('mediaType');
     const type = searchParams.get('type') || 'general';
 
     const db = getDb();
     let query = db.select().from(lessons);
 
-    // Build conditions
     const conditions = [];
     if (type && type !== 'all') {
       conditions.push(eq(lessons.type, type));
-    }
-    if (grade && grade !== 'all') {
-      conditions.push(eq(lessons.grade, grade));
-    }
-    if (mediaType && mediaType !== 'all') {
-      conditions.push(eq(lessons.mediaType, mediaType));
     }
 
     const all = conditions.length > 0
       ? await query.where(and(...conditions)).orderBy(desc(lessons.createdAt))
       : await query.orderBy(desc(lessons.createdAt));
 
-    return NextResponse.json(all);
+    return NextResponse.json(all || []);
   } catch (error) {
     console.error("GET /api/lessons error:", error);
-    return NextResponse.json({ error: 'Failed to fetch' }, { status: 500 });
+    return NextResponse.json([]);
   }
 }
 
@@ -49,14 +40,10 @@ export async function POST(request: Request) {
     const db = getDb();
     
     // Parse form data
-    const title = formData.get('title') as string;
+    const title = (formData.get('title') as string) || '';
     const description = (formData.get('description') as string) || '';
-    const category = (formData.get('category') as string) || 'ทั่วไป';
+    const category = (formData.get('category') as string) || 'สื่อวิดีทัศน์';
     const videoId = (formData.get('videoId') as string) || '';
-    const grade = (formData.get('grade') as string) || 'all';
-    const mediaType = (formData.get('mediaType') as string) || (videoId ? 'video' : 'pdf');
-    const fileUrl = (formData.get('fileUrl') as string) || '';
-    const attachmentName = (formData.get('attachmentName') as string) || '';
     const type = (formData.get('type') as string) || 'general';
 
     const image = formData.get('image') as File | null;
@@ -76,10 +63,6 @@ export async function POST(request: Request) {
       videoId,
       imageUrl,
       type,
-      grade,
-      mediaType,
-      fileUrl,
-      attachmentName,
       createdAt: new Date().toISOString(),
       views: 0,
       ratingSum: 0,

@@ -23,9 +23,10 @@ export default function M3LessonsTab() {
     try {
       const res = await fetch("/api/m3-lessons");
       const data = await res.json();
-      setM3Lessons(data);
+      setM3Lessons(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Failed to fetch", error);
+      setM3Lessons([]);
     } finally {
       setIsLoading(false);
     }

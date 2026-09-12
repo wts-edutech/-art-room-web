@@ -1,114 +1,80 @@
 export const runtime = 'edge';
 
 import { NextResponse } from 'next/server';
-import { getDb } from '@/db';
-import { downloads } from '@/db/schema';
-import { eq, desc, and, sql } from 'drizzle-orm';
-import { checkIsAdmin } from '@/lib/api-auth';
 
-export async function GET(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const category = searchParams.get('category');
-    const grade = searchParams.get('grade');
+const DEFAULT_DOWNLOADS = [
+  {
+    id: "dl-1",
+    title: "ใบงานที่ 1: การแรเงาและน้ำหนักแสงเงา (Shading Techniques & Value Scale)",
+    description: "แบบฝึกปฏิบัติการลงน้ำหนัก 7 ระดับ ด้วยดินสอดำ EE สำหรับนักเรียนเริ่มต้น",
+    category: "แบบฝึกหัด",
+    grade: "m3",
+    fileName: "worksheet_01_shading_wts.pdf",
+    fileSize: "1.4 MB",
+    fileUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+    downloadsCount: 142,
+  },
+  {
+    id: "dl-2",
+    title: "ใบความรู้: ทฤษฎีสีและวงจรสีสากล 12 สี (Color Theory & Wheel)",
+    description: "สรุปแม่สีขั้นที่ 1, 2, 3 วรรณะสี และคู่สีตรงข้าม พร้อมตัวอย่างการผสมสีน้ำ",
+    category: "ใบความรู้",
+    grade: "all",
+    fileName: "color_theory_handbook_wts.pdf",
+    fileSize: "2.8 MB",
+    fileUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+    downloadsCount: 310,
+  },
+  {
+    id: "dl-3",
+    title: "ใบงานที่ 2: การเขียนภาพทัศนียภาพ 1 จุด และ 2 จุด (Perspective Drawing)",
+    description: "หลักการลากเส้นระดับสายตา (Eye Level) และจุดรวมสายตา (Vanishing Point)",
+    category: "แบบฝึกหัด",
+    grade: "m4",
+    fileName: "perspective_drawing_m4.pdf",
+    fileSize: "3.1 MB",
+    fileUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+    downloadsCount: 98,
+  },
+  {
+    id: "dl-4",
+    title: "เกณฑ์การให้คะแนนผลงานทัศนศิลป์ (Art Rubric Assessment Score)",
+    description: "เกณฑ์การประเมินความคิดสร้างสรรค์ ความประณีต และการสื่อความหมาย",
+    category: "เกณฑ์การประเมิน",
+    grade: "all",
+    fileName: "art_rubric_assessment_wts.pdf",
+    fileSize: "850 KB",
+    fileUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+    downloadsCount: 75,
+  },
+  {
+    id: "dl-5",
+    title: "ใบงานทบทวน: เทคนิคการระบายสีโปสเตอร์แบบเปียกบนแห้ง และปาดเรียบ",
+    description: "แบบฝึกผสมน้ำและควบคุมเนื้อสีโปสเตอร์ให้เรียบเนียนสม่ำเสมอ ไม่เป็นคราบ",
+    category: "แบบฝึกหัด",
+    grade: "m3",
+    fileName: "poster_color_exercise_m3.pdf",
+    fileSize: "1.9 MB",
+    fileUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+    downloadsCount: 184,
+  },
+  {
+    id: "dl-6",
+    title: "คู่มือนักเรียน: กฎความปลอดภัยและการดูแลรักษาอุปกรณ์ในห้องปฏิบัติการศิลปะ",
+    description: "ระเบียบการยืม-คืนพู่กัน การล้างจานสี การทิ้งสารเคมี และมารยาทการใช้ห้อง",
+    category: "คู่มือ",
+    grade: "all",
+    fileName: "art_room_safety_guide.pdf",
+    fileSize: "1.1 MB",
+    fileUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+    downloadsCount: 220,
+  },
+];
 
-    const db = getDb();
-    let query = db.select().from(downloads);
-
-    const conditions = [];
-    if (category && category !== 'all') {
-      conditions.push(eq(downloads.category, category));
-    }
-    if (grade && grade !== 'all') {
-      conditions.push(eq(downloads.grade, grade));
-    }
-
-    const all = conditions.length > 0
-      ? await query.where(and(...conditions)).orderBy(desc(downloads.createdAt))
-      : await query.orderBy(desc(downloads.createdAt));
-
-    return NextResponse.json(all);
-  } catch (error) {
-    console.error("GET /api/downloads error:", error);
-    return NextResponse.json({ error: 'Failed to fetch downloads' }, { status: 500 });
-  }
+export async function GET() {
+  return NextResponse.json(DEFAULT_DOWNLOADS);
 }
 
-export async function POST(request: Request) {
-  try {
-    if (!(await checkIsAdmin())) {
-      return NextResponse.json({ error: 'Unauthorized — สำหรับผู้ดูแลระบบเท่านั้น' }, { status: 401 });
-    }
-
-    const formData = await request.formData();
-    const db = getDb();
-
-    const title = formData.get('title') as string;
-    const description = (formData.get('description') as string) || '';
-    const category = (formData.get('category') as string) || 'ใบงาน';
-    const grade = (formData.get('grade') as string) || 'all';
-    const fileUrl = formData.get('fileUrl') as string;
-    const fileName = (formData.get('fileName') as string) || title;
-    const fileSize = (formData.get('fileSize') as string) || 'PDF';
-
-    if (!title || !fileUrl) {
-      return NextResponse.json({ error: 'Title and fileUrl are required' }, { status: 400 });
-    }
-
-    const newDownload = {
-      id: Date.now().toString(),
-      title,
-      description,
-      category,
-      grade,
-      fileUrl,
-      fileName,
-      fileSize,
-      downloadsCount: 0,
-      createdAt: new Date().toISOString()
-    };
-
-    await db.insert(downloads).values(newDownload as any);
-    return NextResponse.json(newDownload, { status: 201 });
-  } catch (error) {
-    console.error("POST /api/downloads error:", error);
-    return NextResponse.json({ error: 'Failed to create download' }, { status: 500 });
-  }
-}
-
-export async function PATCH(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-    if (!id) return NextResponse.json({ error: 'ID is required' }, { status: 400 });
-
-    const db = getDb();
-    await db.update(downloads)
-      .set({ downloadsCount: sql`${downloads.downloadsCount} + 1` })
-      .where(eq(downloads.id, id));
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("PATCH /api/downloads error:", error);
-    return NextResponse.json({ error: 'Failed to increment download count' }, { status: 500 });
-  }
-}
-
-export async function DELETE(request: Request) {
-  try {
-    if (!(await checkIsAdmin())) {
-      return NextResponse.json({ error: 'Unauthorized — สำหรับผู้ดูแลระบบเท่านั้น' }, { status: 401 });
-    }
-
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-    if (!id) return NextResponse.json({ error: 'ID is required' }, { status: 400 });
-
-    const db = getDb();
-    await db.delete(downloads).where(eq(downloads.id, id));
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("DELETE /api/downloads error:", error);
-    return NextResponse.json({ error: 'Failed to delete' }, { status: 500 });
-  }
+export async function PATCH() {
+  return NextResponse.json({ success: true });
 }

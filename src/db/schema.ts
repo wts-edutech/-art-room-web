@@ -40,10 +40,6 @@ export const lessons = sqliteTable('lessons', {
   ratingSum: integer('rating_sum').default(0),
   ratingCount: integer('rating_count').default(0),
   type: text('type').notNull().default('general'), // 'general', 'm3', 'm4'
-  grade: text('grade').default('all'), // 'all', 'm1', 'm2', 'm3', 'm4', 'm5', 'm6'
-  mediaType: text('media_type').default('video'), // 'video', 'pdf', 'canva', 'slides'
-  fileUrl: text('file_url'),
-  attachmentName: text('attachment_name'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
@@ -128,33 +124,4 @@ export const testimonials = sqliteTable('testimonials', {
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
-// --- Teachers (Faculty) ---
-export const teachers = sqliteTable('teachers', {
-  id: text('id').primaryKey(),
-  name: text('name').notNull(),
-  role: text('role').notNull(), // e.g. 'หัวหน้ากลุ่มสาระการเรียนรู้ศิลปะ', 'ครูผู้สอนทัศนศิลป์'
-  position: text('position'), // e.g. 'ครูชำนาญการพิเศษ', 'ครูผู้ช่วย'
-  grades: text('grades'), // e.g. 'ม.1, ม.3'
-  specialties: text('specialties'), // e.g. 'จิตรกรรมสีน้ำ, วาดเส้น, ดิจิทัลอาร์ต'
-  bio: text('bio'),
-  imageUrl: text('image_url'),
-  email: text('email'),
-  roomLocation: text('room_location'), // e.g. 'ห้องปฏิบัติการศิลปะ อาคาร 2 ชั้น 3'
-  orderIndex: integer('order_index').default(0),
-  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
-});
-
-// --- Downloads (Worksheets & Guides) ---
-export const downloads = sqliteTable('downloads', {
-  id: text('id').primaryKey(),
-  title: text('title').notNull(),
-  description: text('description'),
-  category: text('category').notNull(), // 'ใบงาน', 'ใบความรู้', 'เกณฑ์การประเมิน', 'แบบฟอร์ม'
-  grade: text('grade').default('all'), // 'all', 'm1', 'm2', 'm3', 'm4', 'm5', 'm6'
-  fileUrl: text('file_url').notNull(),
-  fileName: text('file_name'),
-  fileSize: text('file_size'),
-  downloadsCount: integer('downloads_count').default(0),
-  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
-});
 

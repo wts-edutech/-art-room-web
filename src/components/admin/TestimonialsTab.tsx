@@ -20,9 +20,10 @@ export default function TestimonialsTab() {
     try {
       const res = await fetch("/api/testimonials");
       const data = await res.json();
-      setTestimonials(data);
+      setTestimonials(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Failed to fetch", error);
+      setTestimonials([]);
     } finally {
       setIsLoading(false);
     }

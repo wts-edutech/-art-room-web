@@ -21,9 +21,10 @@ export default function ActivitiesTab() {
     try {
       const res = await fetch("/api/activities");
       const data = await res.json();
-      setActivitiesList(data);
+      setActivitiesList(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Failed to fetch", error);
+      setActivitiesList([]);
     } finally {
       setIsLoading(false);
     }
