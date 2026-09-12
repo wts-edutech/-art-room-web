@@ -4,9 +4,13 @@ import { NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { awards } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { checkIsAdmin } from '@/lib/api-auth';
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> | { id: string } }) {
   try {
+    if (!(await checkIsAdmin())) {
+      return NextResponse.json({ error: 'Unauthorized — สำหรับผู้ดูแลระบบเท่านั้น' }, { status: 401 });
+    }
     const resolvedParams = await params;
     const id = resolvedParams.id;
     const formData = await request.formData();
@@ -40,6 +44,9 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> | { id: string } }) {
   try {
+    if (!(await checkIsAdmin())) {
+      return NextResponse.json({ error: 'Unauthorized — สำหรับผู้ดูแลระบบเท่านั้น' }, { status: 401 });
+    }
     const resolvedParams = await params;
     const id = resolvedParams.id;
     const db = getDb();

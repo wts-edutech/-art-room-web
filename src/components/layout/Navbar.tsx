@@ -146,19 +146,26 @@ export default function Navbar() {
               <div className="bg-white rounded-2xl shadow-xl border border-gray-100 py-2 flex flex-col">
                 <Link 
                   href="/materials" 
-                  className="px-4 py-2 hover:bg-gray-50 text-gray-700 hover:text-red-600 transition-colors whitespace-nowrap"
+                  className="px-4 py-2 hover:bg-gray-50 text-gray-700 hover:text-red-600 transition-colors whitespace-nowrap font-medium"
                 >
-                  Art Room by Students
+                  คลังสื่อการสอน (ม.1 - ม.6)
+                </Link>
+                <Link 
+                  href="/downloads" 
+                  className="px-4 py-2 hover:bg-gray-50 text-gray-700 hover:text-emerald-600 transition-colors whitespace-nowrap font-medium flex items-center justify-between"
+                >
+                  <span>ศูนย์ดาวน์โหลดใบงาน</span>
+                  <span className="bg-emerald-100 text-emerald-700 text-[10px] px-1.5 py-0.5 rounded font-bold">PDF</span>
                 </Link>
                 <Link 
                   href="/materials/m3" 
-                  className="px-4 py-2 hover:bg-gray-50 text-gray-700 hover:text-red-600 transition-colors whitespace-nowrap"
+                  className="px-4 py-2 hover:bg-gray-50 text-gray-700 hover:text-red-600 transition-colors whitespace-nowrap text-xs"
                 >
                   สื่อการสอน (ม.3)
                 </Link>
                 <Link 
                   href="/materials/m4" 
-                  className="px-4 py-2 hover:bg-gray-50 text-gray-700 hover:text-red-600 transition-colors whitespace-nowrap"
+                  className="px-4 py-2 hover:bg-gray-50 text-gray-700 hover:text-red-600 transition-colors whitespace-nowrap text-xs"
                 >
                   สื่อการสอน (ม.4)
                 </Link>
@@ -227,6 +234,13 @@ export default function Navbar() {
               </div>
             </div>
           </div>
+
+          <Link 
+            href="/teachers" 
+            className={`h-full flex items-center px-1 border-b-[3px] transition-colors whitespace-nowrap flex-shrink-0 ${pathname === "/teachers" ? "border-red-500 text-red-500" : "border-transparent hover:border-red-500 hover:text-red-500"}`}
+          >
+            ทำเนียบครู
+          </Link>
 
           {/* Organization Media Dropdown Menu */}
           <div className="relative group h-full flex items-center flex-shrink-0">
@@ -363,15 +377,19 @@ export default function Navbar() {
               <span>สื่อการสอน</span>
               <ChevronDown className={`w-4 h-4 transition-transform ${isMaterialsOpen ? "rotate-180 text-red-600" : ""}`} />
             </button>
-            <div className={`overflow-hidden transition-all duration-300 ${isMaterialsOpen ? "max-h-48 opacity-100 mt-1" : "max-h-0 opacity-0"}`}>
+            <div className={`overflow-hidden transition-all duration-300 ${isMaterialsOpen ? "max-h-60 opacity-100 mt-1" : "max-h-0 opacity-0"}`}>
               <div className="ml-4 flex flex-col border-l-2 border-red-200 pl-2 space-y-1">
-                <Link href="/materials" className="px-3 py-2 text-gray-600 hover:text-red-600 font-medium text-sm rounded-lg hover:bg-red-50/50 cursor-pointer" onClick={() => setIsMobileMenuOpen(false)}>
-                  Art Room by Students
+                <Link href="/materials" className="px-3 py-2 text-gray-700 hover:text-red-600 font-medium text-sm rounded-lg hover:bg-red-50/50 cursor-pointer" onClick={() => setIsMobileMenuOpen(false)}>
+                  คลังสื่อการสอน (ม.1 - ม.6)
                 </Link>
-                <Link href="/materials/m3" className="px-3 py-2 text-gray-600 hover:text-red-600 font-medium text-sm rounded-lg hover:bg-red-50/50 cursor-pointer" onClick={() => setIsMobileMenuOpen(false)}>
+                <Link href="/downloads" className="px-3 py-2 text-emerald-600 hover:text-emerald-700 font-medium text-sm rounded-lg hover:bg-emerald-50/50 cursor-pointer flex items-center justify-between" onClick={() => setIsMobileMenuOpen(false)}>
+                  <span>ศูนย์ดาวน์โหลดใบงาน</span>
+                  <span className="bg-emerald-100 text-emerald-700 text-[10px] px-1.5 py-0.5 rounded font-bold">PDF</span>
+                </Link>
+                <Link href="/materials/m3" className="px-3 py-2 text-gray-600 hover:text-red-600 font-medium text-xs rounded-lg hover:bg-red-50/50 cursor-pointer" onClick={() => setIsMobileMenuOpen(false)}>
                   สื่อการสอน (ม.3)
                 </Link>
-                <Link href="/materials/m4" className="px-3 py-2 text-gray-600 hover:text-red-600 font-medium text-sm rounded-lg hover:bg-red-50/50 cursor-pointer" onClick={() => setIsMobileMenuOpen(false)}>
+                <Link href="/materials/m4" className="px-3 py-2 text-gray-600 hover:text-red-600 font-medium text-xs rounded-lg hover:bg-red-50/50 cursor-pointer" onClick={() => setIsMobileMenuOpen(false)}>
                   สื่อการสอน (ม.4)
                 </Link>
               </div>
@@ -432,6 +450,14 @@ export default function Navbar() {
               </div>
             </div>
           </div>
+
+          <Link 
+            href="/teachers" 
+            className={`px-4 py-3 font-medium rounded-xl transition-colors cursor-pointer ${pathname === "/teachers" ? "bg-red-50 text-red-600 font-bold" : "text-gray-700 hover:bg-gray-50"}`} 
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            ทำเนียบครูผู้สอน
+          </Link>
 
           {/* Organization Media Mobile Dropdown */}
           <div className="flex flex-col">

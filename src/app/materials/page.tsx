@@ -5,17 +5,17 @@ import { getDb } from '@/db';
 import { lessons } from '@/db/schema';
 import { desc, eq } from 'drizzle-orm';
 // Helper to get lessons on server side
-async function getLessons(type) {
+async function getLessons() {
   try {
     const db = getDb();
-    return await db.select().from(lessons).where(eq(lessons.type, type)).orderBy(desc(lessons.createdAt));
+    return await db.select().from(lessons).orderBy(desc(lessons.createdAt));
   } catch (error) {
     return [];
   }
 }
 
 export default async function MaterialsPage() {
-  const lessons = await getLessons("general");
+  const allLessons = await getLessons();
 
   return (
     <>
@@ -32,7 +32,7 @@ export default async function MaterialsPage() {
               </p>
             </div>
             
-            <MaterialsList initialLessons={lessons} />
+            <MaterialsList initialLessons={allLessons} />
           </div>
         </main>
 

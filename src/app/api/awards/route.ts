@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { awards } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
+import { checkIsAdmin } from '@/lib/api-auth';
 
 export async function GET() {
   try {
@@ -18,6 +19,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    if (!(await checkIsAdmin())) {
+      return NextResponse.json({ error: 'Unauthorized — สำหรับผู้ดูแลระบบเท่านั้น' }, { status: 401 });
+    }
     const formData = await request.formData();
     const db = getDb();
     const newEntry: any = { id: Date.now().toString() };

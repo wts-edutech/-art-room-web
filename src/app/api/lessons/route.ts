@@ -3,33 +3,64 @@ export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { lessons } from '@/db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, and } from 'drizzle-orm';
+import { checkIsAdmin } from '@/lib/api-auth';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const grade = searchParams.get('grade');
+    const mediaType = searchParams.get('mediaType');
+    const type = searchParams.get('type') || 'general';
+
     const db = getDb();
-    const all = await db.select().from(lessons).where(eq(lessons.type, 'general')).orderBy(desc(lessons.createdAt));
+    let query = db.select().from(lessons);
+
+    // Build conditions
+    const conditions = [];
+    if (type && type !== 'all') {
+      conditions.push(eq(lessons.type, type));
+    }
+    if (grade && grade !== 'all') {
+      conditions.push(eq(lessons.grade, grade));
+    }
+    if (mediaType && mediaType !== 'all') {
+      conditions.push(eq(lessons.mediaType, mediaType));
+    }
+
+    const all = conditions.length > 0
+      ? await query.where(and(...conditions)).orderBy(desc(lessons.createdAt))
+      : await query.orderBy(desc(lessons.createdAt));
+
     return NextResponse.json(all);
   } catch (error) {
+    console.error("GET /api/lessons error:", error);
     return NextResponse.json({ error: 'Failed to fetch' }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
   try {
+    if (!(await checkIsAdmin())) {
+      return NextResponse.json({ error: 'Unauthorized — สำหรับผู้ดูแลระบบเท่านั้น' }, { status: 401 });
+    }
+
     const formData = await request.formData();
     const db = getDb();
     
     // Parse form data
     const title = formData.get('title') as string;
-    const description = formData.get('description') as string;
-    const categoryKey = 'category';
-    const videoKey = 'videoId';
-    
-    const category = formData.get(categoryKey) as string;
-    const videoId = formData.get(videoKey) as string;
+    const description = (formData.get('description') as string) || '';
+    const category = (formData.get('category') as string) || 'ทั่วไป';
+    const videoId = (formData.get('videoId') as string) || '';
+    const grade = (formData.get('grade') as string) || 'all';
+    const mediaType = (formData.get('mediaType') as string) || (videoId ? 'video' : 'pdf');
+    const fileUrl = (formData.get('fileUrl') as string) || '';
+    const attachmentName = (formData.get('attachmentName') as string) || '';
+    const type = (formData.get('type') as string) || 'general';
+
     const image = formData.get('image') as File | null;
-    let imageUrl = formData.get('imageUrl') as string || '';
+    let imageUrl = (formData.get('imageUrl') as string) || '';
     
     if (image && image.size > 0) {
       const bytes = await image.arrayBuffer();
@@ -44,7 +75,11 @@ export async function POST(request: Request) {
       category,
       videoId,
       imageUrl,
-      type: 'general',
+      type,
+      grade,
+      mediaType,
+      fileUrl,
+      attachmentName,
       createdAt: new Date().toISOString(),
       views: 0,
       ratingSum: 0,
@@ -53,19 +88,19 @@ export async function POST(request: Request) {
     
     await db.insert(lessons).values(newEntry as any);
     
-    // Send back the format the client expects
-    return NextResponse.json({
-      ...newEntry,
-      [categoryKey]: category,
-      [videoKey]: videoId
-    }, { status: 201 });
+    return NextResponse.json(newEntry, { status: 201 });
   } catch (error) {
+    console.error("POST /api/lessons error:", error);
     return NextResponse.json({ error: 'Failed to create' }, { status: 500 });
   }
 }
 
 export async function DELETE(request: Request) {
   try {
+    if (!(await checkIsAdmin())) {
+      return NextResponse.json({ error: 'Unauthorized — สำหรับผู้ดูแลระบบเท่านั้น' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     if (!id) return NextResponse.json({ error: 'ID is required' }, { status: 400 });
@@ -74,6 +109,7 @@ export async function DELETE(request: Request) {
     await db.delete(lessons).where(eq(lessons.id, id));
     return NextResponse.json({ success: true });
   } catch (error) {
+    console.error("DELETE /api/lessons error:", error);
     return NextResponse.json({ error: 'Failed to delete' }, { status: 500 });
   }
 }

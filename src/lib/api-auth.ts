@@ -57,11 +57,16 @@ export async function requireStudent(): Promise<SessionInfo> {
 /**
  * Checks if request has a valid admin token.
  */
-export async function requireAdmin(): Promise<void> {
+export async function checkIsAdmin(): Promise<boolean> {
   const cookieStore = await cookies();
   const token = cookieStore.get('admin_token')?.value;
+  if (!token) return false;
+  return await verifyAdminToken(token);
+}
 
-  if (!token || !(await verifyAdminToken(token))) {
+export async function requireAdmin(): Promise<void> {
+  const isAdmin = await checkIsAdmin();
+  if (!isAdmin) {
     throw new Response(JSON.stringify({ error: 'Unauthorized — ไม่ใช่ผู้ดูแลระบบ' }), {
       status: 401,
       headers: { 'Content-Type': 'application/json' },
