@@ -71,11 +71,11 @@ export default function Footer() {
                   สตูดิโอไอเดียสร้างสรรค์
                 </Link>
               </li>
-              <li>
+              {/* <li>
                 <Link href="/teachers" className="hover:text-red-600 transition-colors">
                   ทำเนียบครูผู้สอนศิลปะ
                 </Link>
-              </li>
+              </li> */}
             </ul>
           </div>
 

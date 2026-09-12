@@ -235,12 +235,14 @@ export default function Navbar() {
             </div>
           </div>
 
+          {/* ทำเนียบครู (ซ่อนไว้ก่อนตามคำสั่ง: จัดการในระบบหลังบ้าน ยังไม่เปิดแสดงในระบบหน้าบ้าน)
           <Link 
             href="/teachers" 
             className={`h-full flex items-center px-1 border-b-[3px] transition-colors whitespace-nowrap flex-shrink-0 ${pathname === "/teachers" ? "border-red-500 text-red-500" : "border-transparent hover:border-red-500 hover:text-red-500"}`}
           >
             ทำเนียบครู
           </Link>
+          */}
 
           {/* Organization Media Dropdown Menu */}
           <div className="relative group h-full flex items-center flex-shrink-0">
@@ -451,6 +453,7 @@ export default function Navbar() {
             </div>
           </div>
 
+          {/* ทำเนียบครูผู้สอน (ซ่อนไว้ก่อนตามคำสั่ง: จัดการในระบบหลังบ้าน ยังไม่เปิดแสดงในระบบหน้าบ้าน)
           <Link 
             href="/teachers" 
             className={`px-4 py-3 font-medium rounded-xl transition-colors cursor-pointer ${pathname === "/teachers" ? "bg-red-50 text-red-600 font-bold" : "text-gray-700 hover:bg-gray-50"}`} 
@@ -458,6 +461,7 @@ export default function Navbar() {
           >
             ทำเนียบครูผู้สอน
           </Link>
+          */}
 
           {/* Organization Media Mobile Dropdown */}
           <div className="flex flex-col">

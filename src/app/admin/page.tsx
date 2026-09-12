@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { BookOpen, Award, Image as ImageIcon, Newspaper, Calendar, Users, LogOut, LayoutDashboard, Lightbulb, Info, ChevronRight, X } from "lucide-react";
+import { BookOpen, Award, Image as ImageIcon, Newspaper, Calendar, Users, LogOut, LayoutDashboard, Lightbulb, Info, ChevronRight, X, GraduationCap } from "lucide-react";
 
 // Import tabs
 import LessonsTab from "@/components/admin/LessonsTab";
@@ -16,11 +16,12 @@ import StudentsTab from "@/components/admin/StudentsTab";
 import GuestsTab from "@/components/admin/GuestsTab";
 import TestimonialsTab from "@/components/admin/TestimonialsTab";
 import IdeasTab from "@/components/admin/IdeasTab";
+import TeachersTab from "@/components/admin/TeachersTab";
 
 export default function AdminPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<
-    "lessons" | "m3Lessons" | "m4Lessons" | "artworks" | "awards" | "news" | "activities" | "students" | "guests" | "testimonials" | "ideas"
+    "lessons" | "m3Lessons" | "m4Lessons" | "artworks" | "awards" | "news" | "activities" | "students" | "guests" | "testimonials" | "ideas" | "teachers"
   >("lessons");
   const [visitorStats, setVisitorStats] = useState({ total: 0, today: 0 });
   const [isPRBannerDismissed, setIsPRBannerDismissed] = useState(false);
@@ -160,6 +161,17 @@ export default function AdminPage() {
               ฐานข้อมูลบุคคลทั่วไป
             </button>
             <button
+              onClick={() => setActiveTab("teachers")}
+              className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${
+                activeTab === "teachers" 
+                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/20" 
+                  : "text-gray-400 hover:text-white hover:bg-gray-800"
+              }`}
+            >
+              <GraduationCap className="w-5 h-5" />
+              จัดการทำเนียบครู
+            </button>
+            <button
               onClick={() => setActiveTab("testimonials")}
               className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${
                 activeTab === "testimonials" 
@@ -221,6 +233,7 @@ export default function AdminPage() {
               {activeTab === "activities" && "จัดการกิจกรรม (Activities)"}
               {activeTab === "students" && "จัดการรายชื่อนักเรียน (Students)"}
               {activeTab === "guests" && "ฐานข้อมูลบุคคลทั่วไปและผู้ปกครอง (Guests)"}
+              {activeTab === "teachers" && "จัดการทำเนียบครูผู้สอน (Teachers)"}
               {activeTab === "testimonials" && "จัดการรีวิวรุ่นพี่ (Testimonials)"}
             </h1>
             <p className="text-gray-500 mt-2 font-light">
@@ -330,6 +343,14 @@ export default function AdminPage() {
             >
               <Calendar className="w-4 h-4" /> กิจกรรม
             </button>
+            <button
+              onClick={() => setActiveTab("teachers")}
+              className={`flex-1 flex-shrink-0 min-w-[100px] flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+                activeTab === "teachers" ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              <GraduationCap className="w-4 h-4" /> ทำเนียบครู
+            </button>
           </div>
 
           {/* Render Active Tab Content */}
@@ -342,6 +363,7 @@ export default function AdminPage() {
           {activeTab === "activities" && <ActivitiesTab />}
           {activeTab === "students" && <StudentsTab />}
           {activeTab === "guests" && <GuestsTab />}
+          {activeTab === "teachers" && <TeachersTab />}
           {activeTab === "testimonials" && <TestimonialsTab />}
           {activeTab === "ideas" && <IdeasTab />}
 
