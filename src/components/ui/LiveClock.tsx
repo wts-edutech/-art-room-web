@@ -54,9 +54,10 @@ export default function LiveClock() {
   }
   
   const isAdmin = pathname.startsWith("/admin");
+  if (!isAdmin) return null; // Public pages use unified header inside Navbar to prevent iOS overlap
   
   return (
-    <div className={`fixed top-0 left-0 right-0 w-full h-8 z-[60] transition-colors ${isAdmin ? "bg-white text-gray-800 border-b border-gray-200" : "bg-gradient-to-r from-orange-500 to-pink-500 text-white"}`}>
+    <div className="fixed top-0 left-0 right-0 w-full h-8 z-[60] bg-white text-gray-800 border-b border-gray-200">
       <div className="container mx-auto px-4 h-full flex items-center justify-center md:justify-end gap-3 text-[10px] sm:text-xs font-medium">
         <div className="flex items-center gap-1.5">
           <Calendar className={`w-3.5 h-3.5 ${isAdmin ? "text-gray-500" : "text-white/90"}`} />

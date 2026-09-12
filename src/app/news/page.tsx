@@ -35,7 +35,7 @@ export default async function NewsPage() {
   return (
     <>
       <Navbar />
-      <main className="flex-1 flex flex-col pt-16 min-h-screen bg-[#FDF9F1]">
+      <main className="flex-1 flex flex-col pt-24 min-h-screen bg-[#FDF9F1]">
         <NewsPageClient initialNews={newsList} />
       </main>
       <Footer />

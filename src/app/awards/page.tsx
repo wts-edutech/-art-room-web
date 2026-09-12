@@ -16,7 +16,7 @@ export default async function AwardsPage() {
   return (
     <>
       <Navbar />
-      <main className="flex-1 flex flex-col pt-20 min-h-screen bg-[#FDF9F1]">
+      <main className="flex-1 flex flex-col pt-24 min-h-screen bg-[#FDF9F1]">
         
         {/* Page Title */}
         <div className="text-center pt-10 pb-4">
