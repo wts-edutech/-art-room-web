@@ -15,9 +15,10 @@ export default function GuestsTab() {
     try {
       const res = await fetch("/api/auth/guest");
       const data = await res.json();
-      setGuests(data);
+      setGuests(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Failed to fetch", error);
+      setGuests([]);
     } finally {
       setIsLoading(false);
     }
@@ -99,7 +100,7 @@ export default function GuestsTab() {
                   </button>
                 </div>
                 
-                {guests.length === 0 ? (
+                {(Array.isArray(guests) ? guests : []).length === 0 ? (
                   <div className="p-12 text-center text-gray-400">
                     <Users className="w-12 h-12 mx-auto mb-3 opacity-20" />
                     <p>ยังไม่มีบุคคลทั่วไปลงทะเบียนเข้าระบบ</p>
@@ -116,10 +117,10 @@ export default function GuestsTab() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50">
-                        {guests
+                        {(Array.isArray(guests) ? guests : [])
                           .filter(g => 
-                            g.phone?.includes(searchGuestInput) || 
-                            g.name?.toLowerCase().includes(searchGuestInput.toLowerCase())
+                            (g.phone && String(g.phone).includes(searchGuestInput)) || 
+                            (g.name && String(g.name).toLowerCase().includes(searchGuestInput.toLowerCase()))
                           )
                           .map((guest) => (
                           <tr key={guest.id} className="hover:bg-blue-50/50 transition-colors group">

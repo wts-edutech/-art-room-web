@@ -17,9 +17,10 @@ export default function StudentsTab() {
     try {
       const res = await fetch("/api/students");
       const data = await res.json();
-      setStudents(data);
+      setStudents(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Failed to fetch", error);
+      setStudents([]);
     } finally {
       setIsLoading(false);
     }
@@ -235,7 +236,7 @@ export default function StudentsTab() {
                     </button>
                   </div>
                   
-                  {students.length === 0 ? (
+                  {(Array.isArray(students) ? students : []).length === 0 ? (
                     <div className="p-12 text-center text-gray-400">
                       <Users className="w-12 h-12 mx-auto mb-3 opacity-20" />
                       <p>ยังไม่มีรายชื่อนักเรียนในระบบ</p>
@@ -251,10 +252,10 @@ export default function StudentsTab() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
-                          {students
+                          {(Array.isArray(students) ? students : [])
                             .filter(s => 
-                              s.id.includes(searchStudentInput) || 
-                              s.name.toLowerCase().includes(searchStudentInput.toLowerCase())
+                              (s.id && String(s.id).includes(searchStudentInput)) || 
+                              (s.name && String(s.name).toLowerCase().includes(searchStudentInput.toLowerCase()))
                             )
                             .map((student) => (
                             <tr key={student.id} className="hover:bg-blue-50/50 transition-colors group">
