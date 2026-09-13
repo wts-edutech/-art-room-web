@@ -17,8 +17,6 @@ export default function Navbar() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [time, setTime] = useState<Date | null>(null);
   const [isTeachersEnabled, setIsTeachersEnabled] = useState(false);
-  const [isM3Enabled, setIsM3Enabled] = useState(true);
-  const [isM4Enabled, setIsM4Enabled] = useState(true);
 
   useEffect(() => {
     setTime(new Date());
@@ -37,26 +35,6 @@ export default function Navbar() {
       .then(data => {
         if (data && typeof data.enabled === 'boolean') {
           setIsTeachersEnabled(data.enabled);
-        }
-      })
-      .catch(() => {});
-
-    // Check if M3 lessons are enabled by admin
-    fetch('/api/m3-lessons/status')
-      .then(res => res.json())
-      .then(data => {
-        if (data && typeof data.enabled === 'boolean') {
-          setIsM3Enabled(data.enabled);
-        }
-      })
-      .catch(() => {});
-
-    // Check if M4 lessons are enabled by admin
-    fetch('/api/m4-lessons/status')
-      .then(res => res.json())
-      .then(data => {
-        if (data && typeof data.enabled === 'boolean') {
-          setIsM4Enabled(data.enabled);
         }
       })
       .catch(() => {});
@@ -190,22 +168,6 @@ export default function Navbar() {
                   <span>ศูนย์ดาวน์โหลดใบงาน</span>
                   <span className="bg-emerald-100 text-emerald-700 text-[10px] px-1.5 py-0.5 rounded font-bold">PDF</span>
                 </Link>
-                {isM3Enabled && (
-                  <Link 
-                    href="/materials/m3" 
-                    className="px-4 py-2 hover:bg-gray-50 text-gray-700 hover:text-red-600 transition-colors whitespace-nowrap text-xs"
-                  >
-                    สื่อการสอน (ม.3)
-                  </Link>
-                )}
-                {isM4Enabled && (
-                  <Link 
-                    href="/materials/m4" 
-                    className="px-4 py-2 hover:bg-gray-50 text-gray-700 hover:text-red-600 transition-colors whitespace-nowrap text-xs"
-                  >
-                    สื่อการสอน (ม.4)
-                  </Link>
-                )}
               </div>
             </div>
           </div>
@@ -425,16 +387,6 @@ export default function Navbar() {
                   <span>ศูนย์ดาวน์โหลดใบงาน</span>
                   <span className="bg-emerald-100 text-emerald-700 text-[10px] px-1.5 py-0.5 rounded font-bold">PDF</span>
                 </Link>
-                {isM3Enabled && (
-                  <Link href="/materials/m3" className="px-3 py-2 text-gray-600 hover:text-red-600 font-medium text-xs rounded-lg hover:bg-red-50/50 cursor-pointer" onClick={() => setIsMobileMenuOpen(false)}>
-                    สื่อการสอน (ม.3)
-                  </Link>
-                )}
-                {isM4Enabled && (
-                  <Link href="/materials/m4" className="px-3 py-2 text-gray-600 hover:text-red-600 font-medium text-xs rounded-lg hover:bg-red-50/50 cursor-pointer" onClick={() => setIsMobileMenuOpen(false)}>
-                    สื่อการสอน (ม.4)
-                  </Link>
-                )}
               </div>
             </div>
           </div>
