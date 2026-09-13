@@ -9,7 +9,6 @@ import { Menu, X, ChevronDown, LogOut, Calendar, Clock } from "lucide-react";
 export default function Navbar() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isMaterialsOpen, setIsMaterialsOpen] = useState(false);
   const [isActivitiesOpen, setIsActivitiesOpen] = useState(false);
   const [isArtworksOpen, setIsArtworksOpen] = useState(false);
   const [isOrgMediaOpen, setIsOrgMediaOpen] = useState(false);
@@ -144,33 +143,12 @@ export default function Navbar() {
             หน้าแรก
           </Link>
 
-          {/* Materials Dropdown Menu */}
-          <div className="relative group h-full flex items-center flex-shrink-0">
-            <Link 
-              href="/materials"
-              className={`whitespace-nowrap flex items-center gap-1.5 px-1 h-full border-b-[3px] transition-colors focus:outline-none ${pathname.startsWith("/materials") ? "border-red-500 text-red-500" : "border-transparent hover:border-red-500 hover:text-red-500"}`}
-            >
-              สื่อการสอน <ChevronDown className="w-4 h-4 transition-transform duration-300 group-hover:rotate-180" />
-            </Link>
-            
-            <div className="absolute top-full -left-4 pt-2 w-56 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-              <div className="bg-white rounded-2xl shadow-xl border border-gray-100 py-2 flex flex-col">
-                <Link 
-                  href="/materials" 
-                  className="px-4 py-2 hover:bg-gray-50 text-gray-700 hover:text-red-600 transition-colors whitespace-nowrap font-medium"
-                >
-                  คลังสื่อ Art Room (ม.1 - ม.6)
-                </Link>
-                <Link 
-                  href="/downloads" 
-                  className="px-4 py-2 hover:bg-gray-50 text-gray-700 hover:text-emerald-600 transition-colors whitespace-nowrap font-medium flex items-center justify-between"
-                >
-                  <span>ศูนย์ดาวน์โหลดใบงาน</span>
-                  <span className="bg-emerald-100 text-emerald-700 text-[10px] px-1.5 py-0.5 rounded font-bold">PDF</span>
-                </Link>
-              </div>
-            </div>
-          </div>
+          <Link 
+            href="/materials" 
+            className={`h-full flex items-center px-1 border-b-[3px] transition-colors whitespace-nowrap flex-shrink-0 ${pathname.startsWith("/materials") || pathname.startsWith("/downloads") ? "border-red-500 text-red-500 font-bold" : "border-transparent hover:border-red-500 hover:text-red-500"}`}
+          >
+            คลังสื่อการสอน
+          </Link>
 
           <Link 
             href="/news" 
@@ -369,27 +347,13 @@ export default function Navbar() {
             หน้าแรก
           </Link>
           
-          {/* Materials Mobile Dropdown */}
-          <div className="flex flex-col">
-            <button 
-              onClick={() => setIsMaterialsOpen(!isMaterialsOpen)}
-              className="px-4 py-3 text-gray-700 font-medium hover:bg-gray-50 rounded-xl flex items-center justify-between text-left cursor-pointer"
-            >
-              <span>สื่อการสอน</span>
-              <ChevronDown className={`w-4 h-4 transition-transform ${isMaterialsOpen ? "rotate-180 text-red-600" : ""}`} />
-            </button>
-            <div className={`overflow-hidden transition-all duration-300 ${isMaterialsOpen ? "max-h-60 opacity-100 mt-1" : "max-h-0 opacity-0"}`}>
-              <div className="ml-4 flex flex-col border-l-2 border-red-200 pl-2 space-y-1">
-                <Link href="/materials" className="px-3 py-2 text-gray-700 hover:text-red-600 font-medium text-sm rounded-lg hover:bg-red-50/50 cursor-pointer" onClick={() => setIsMobileMenuOpen(false)}>
-                  คลังสื่อ Art Room (ม.1 - ม.6)
-                </Link>
-                <Link href="/downloads" className="px-3 py-2 text-emerald-600 hover:text-emerald-700 font-medium text-sm rounded-lg hover:bg-emerald-50/50 cursor-pointer flex items-center justify-between" onClick={() => setIsMobileMenuOpen(false)}>
-                  <span>ศูนย์ดาวน์โหลดใบงาน</span>
-                  <span className="bg-emerald-100 text-emerald-700 text-[10px] px-1.5 py-0.5 rounded font-bold">PDF</span>
-                </Link>
-              </div>
-            </div>
-          </div>
+          <Link 
+            href="/materials" 
+            className={`px-4 py-3 font-medium rounded-xl transition-colors cursor-pointer ${pathname.startsWith("/materials") || pathname.startsWith("/downloads") ? "bg-red-50 text-red-600 font-bold" : "text-gray-700 hover:bg-gray-50"}`} 
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            คลังสื่อการสอน
+          </Link>
           
           <Link 
             href="/news" 
