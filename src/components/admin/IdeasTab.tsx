@@ -1,15 +1,35 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Trash2, Lightbulb, CheckCircle, XCircle, Image as ImageIcon, Upload, Eye, Link as LinkIcon } from "lucide-react";
-import * as XLSX from "xlsx";
+import { 
+  Trash2, Lightbulb, CheckCircle, XCircle, Image as ImageIcon, 
+  Eye, Link as LinkIcon, Search, MessageSquare, Download, Clock, AlertTriangle 
+} from "lucide-react";
+
+interface AdminIdeaItem {
+  id: string;
+  title: string;
+  description: string;
+  category?: string;
+  authorName: string;
+  authorEmail?: string;
+  coverImageUrl?: string;
+  files?: any[];
+  link?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+  commentsCount?: number;
+  comments?: any[];
+}
 
 export default function IdeasTab() {
-  const [ideasList, setIdeasList] = useState<any[]>([]);
+  const [ideasList, setIdeasList] = useState<AdminIdeaItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>("all");
-  const [previewIdea, setPreviewIdea] = useState<any | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [previewIdea, setPreviewIdea] = useState<AdminIdeaItem | null>(null);
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -18,7 +38,7 @@ export default function IdeasTab() {
       const data = await res.json();
       setIdeasList(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error("Failed to fetch", error);
+      console.error("Failed to fetch ideas", error);
       setIdeasList([]);
     } finally {
       setIsLoading(false);
@@ -29,6 +49,22 @@ export default function IdeasTab() {
     fetchData();
   }, []);
 
+  const openPreview = async (idea: AdminIdeaItem) => {
+    setPreviewIdea(idea);
+    setIsLoadingDetail(true);
+    try {
+      const res = await fetch(`/api/ideas/${idea.id}`);
+      if (res.ok) {
+        const fullData: AdminIdeaItem = (await res.json()) as AdminIdeaItem;
+        setPreviewIdea(fullData);
+      }
+    } catch (e) {
+      console.error("Failed to fetch full idea detail", e);
+    } finally {
+      setIsLoadingDetail(false);
+    }
+  };
+
   const handleUpdateIdeaStatus = async (id: string, status: 'pending' | 'approved' | 'rejected') => {
     try {
       const res = await fetch(`/api/ideas/${id}`, {
@@ -37,8 +73,7 @@ export default function IdeasTab() {
         body: JSON.stringify({ status })
       });
       if (res.ok) {
-        fetchData();
-        // Update local state if preview modal is open
+        setIdeasList(prev => prev.map(item => item.id === id ? { ...item, status } : item));
         if (previewIdea && previewIdea.id === id) {
           setPreviewIdea({ ...previewIdea, status });
         }
@@ -51,11 +86,14 @@ export default function IdeasTab() {
   };
 
   const handleDeleteIdea = async (id: string) => {
-    if (!confirm("คุณแน่ใจหรือไม่ที่จะลบไอเดียนี้?")) return;
+    if (!confirm("คุณแน่ใจหรือไม่ที่จะลบไอเดียนี้? ข้อมูลและคอมเมนต์ทั้งหมดจะถูกลบถาวร")) return;
     try {
       const res = await fetch(`/api/ideas/${id}`, { method: "DELETE" });
       if (res.ok) {
-        fetchData();
+        setIdeasList(prev => prev.filter(item => item.id !== id));
+        if (previewIdea && previewIdea.id === id) {
+          setPreviewIdea(null);
+        }
       } else {
         alert("ไม่สามารถลบไอเดียได้");
       }
@@ -64,362 +102,464 @@ export default function IdeasTab() {
     }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleDeleteCommentInPreview = async (commentId: string) => {
+    if (!previewIdea) return;
+    if (!confirm("ต้องการลบความคิดเห็นนี้ใช่หรือไม่?")) return;
 
-    setIsLoading(true);
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      try {
-        const bstr = event.target?.result;
-        const workbook = XLSX.read(bstr, { type: "binary" });
-        
-        let newStudents: {id: string, name: string}[] = [];
-        
-        // Loop through all sheets
-        workbook.SheetNames.forEach(sheetName => {
-          const worksheet = workbook.Sheets[sheetName];
-          const data = XLSX.utils.sheet_to_json<any>(worksheet, { header: 1 });
-          
-          data.forEach(row => {
-            if (row && row.length >= 4) {
-              const col0 = String(row[0] || "").trim();
-              const col1 = String(row[1] || "").trim();
-              
-              // Assume row[0] is number, row[1] is ID, row[2] is firstname, row[3] is lastname
-              if (/^\d+$/.test(col0) && /^\d{5}$/.test(col1)) {
-                const firstName = String(row[2] || "").trim();
-                const lastName = String(row[3] || "").trim();
-                newStudents.push({
-                  id: col1,
-                  name: `${firstName} ${lastName}`.trim()
-                });
-              }
-            }
-          });
+    try {
+      const res = await fetch(`/api/ideas/${previewIdea.id}/comment?commentId=${commentId}`, {
+        method: "DELETE"
+      });
+      if (res.ok) {
+        setPreviewIdea({
+          ...previewIdea,
+          comments: (previewIdea.comments || []).filter((c: any) => c.id !== commentId)
         });
-
-        if (newStudents.length === 0) {
-          alert("ไม่พบข้อมูลนักเรียนที่ถูกต้องในไฟล์นี้");
-          setIsLoading(false);
-          return;
-        }
-
-        // Send to backend bulk API
-        const res = await fetch("/api/students", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "bulkInsert", students: newStudents })
-        });
-        
-        if (res.ok) {
-          const data = await res.json();
-          alert(`นำเข้าข้อมูลนักเรียนสำเร็จ ${data.addedCount} รายการ!`);
-          fetchData();
-        } else {
-          alert("เกิดข้อผิดพลาดในการนำเข้าข้อมูล");
-          setIsLoading(false);
-        }
-      } catch (error) {
-        console.error("Error parsing Excel:", error);
-        alert("เกิดข้อผิดพลาดในการอ่านไฟล์");
-        setIsLoading(false);
+      } else {
+        alert("ไม่สามารถลบความคิดเห็นได้");
       }
-      
-      // Reset input
-      e.target.value = '';
-    };
-    reader.readAsBinaryString(file);
+    } catch (e) {
+      alert("เกิดข้อผิดพลาดในการลบความคิดเห็น");
+    }
   };
+
+  // Stats calculation
+  const stats = useMemo(() => {
+    const total = ideasList.length;
+    const pending = ideasList.filter(i => i.status === 'pending').length;
+    const approved = ideasList.filter(i => i.status === 'approved').length;
+    const rejected = ideasList.filter(i => i.status === 'rejected').length;
+    return { total, pending, approved, rejected };
+  }, [ideasList]);
+
+  // Filtered list
+  const filteredIdeas = useMemo(() => {
+    return ideasList.filter(idea => {
+      const matchStatus = filterStatus === "all" || idea.status === filterStatus;
+      const q = searchQuery.toLowerCase().trim();
+      const matchQuery = !q || 
+        (idea.title || "").toLowerCase().includes(q) ||
+        (idea.authorName || "").toLowerCase().includes(q) ||
+        (idea.category || "").toLowerCase().includes(q);
+      return matchStatus && matchQuery;
+    });
+  }, [ideasList, filterStatus, searchQuery]);
 
   return (
     <>
       <div className="space-y-6">
+        {/* Stat Summary Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div 
+            onClick={() => setFilterStatus("all")}
+            className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+              filterStatus === "all" 
+                ? "bg-blue-50/70 border-blue-300 ring-2 ring-blue-400/20" 
+                : "bg-white border-gray-100 hover:border-gray-200"
+            }`}
+          >
+            <p className="text-xs font-semibold text-gray-500 mb-1">ไอเดียทั้งหมด</p>
+            <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+          </div>
+
+          <div 
+            onClick={() => setFilterStatus("pending")}
+            className={`p-4 rounded-2xl border transition-all cursor-pointer relative overflow-hidden ${
+              filterStatus === "pending" 
+                ? "bg-amber-50/80 border-amber-300 ring-2 ring-amber-400/20" 
+                : "bg-white border-gray-100 hover:border-gray-200"
+            }`}
+          >
+            {stats.pending > 0 && (
+              <span className="absolute top-3 right-3 flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
+              </span>
+            )}
+            <p className="text-xs font-semibold text-amber-700 mb-1 flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5" /> รอตรวจสอบ
+            </p>
+            <p className="text-2xl font-bold text-amber-900">{stats.pending}</p>
+          </div>
+
+          <div 
+            onClick={() => setFilterStatus("approved")}
+            className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+              filterStatus === "approved" 
+                ? "bg-emerald-50/70 border-emerald-300 ring-2 ring-emerald-400/20" 
+                : "bg-white border-gray-100 hover:border-gray-200"
+            }`}
+          >
+            <p className="text-xs font-semibold text-emerald-700 mb-1 flex items-center gap-1">
+              <CheckCircle className="w-3.5 h-3.5" /> อนุมัติแล้ว
+            </p>
+            <p className="text-2xl font-bold text-emerald-900">{stats.approved}</p>
+          </div>
+
+          <div 
+            onClick={() => setFilterStatus("rejected")}
+            className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+              filterStatus === "rejected" 
+                ? "bg-red-50/70 border-red-300 ring-2 ring-red-400/20" 
+                : "bg-white border-gray-100 hover:border-gray-200"
+            }`}
+          >
+            <p className="text-xs font-semibold text-red-700 mb-1 flex items-center gap-1">
+              <XCircle className="w-3.5 h-3.5" /> ไม่อนุมัติ
+            </p>
+            <p className="text-2xl font-bold text-red-900">{stats.rejected}</p>
+          </div>
+        </div>
+
+        {/* Main Ideas Management Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center text-orange-600 font-bold shadow-sm">
-                      <Lightbulb className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h2 className="text-xl font-bold text-gray-900">จัดการไอเดียที่แบ่งปัน</h2>
-                      <p className="text-sm text-gray-500">ตรวจสอบและอนุมัติไอเดียจากครูและนักเรียน</p>
-                    </div>
-                  </div>
-                  <div>
-                    <select
-                      value={filterStatus}
-                      onChange={(e) => setFilterStatus(e.target.value)}
-                      className="h-10 pl-3 pr-8 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm bg-white"
-                    >
-                      <option value="all">ทั้งหมด</option>
-                      <option value="pending">รอตรวจสอบ</option>
-                      <option value="approved">อนุมัติแล้ว</option>
-                      <option value="rejected">ไม่อนุมัติ</option>
-                    </select>
-                  </div>
-                </div>
-                
-                <div className="overflow-x-auto">
-                  {isLoading ? (
-                    <div className="text-center py-10 text-gray-400">กำลังโหลด...</div>
-                  ) : ideasList.filter(idea => filterStatus === "all" || idea.status === filterStatus).length === 0 ? (
-                    <div className="text-center py-10 text-gray-400">ยังไม่มีข้อมูลไอเดีย</div>
-                  ) : (
-                    <table className="w-full text-left border-collapse">
-                      <thead>
-                        <tr className="bg-gray-50 border-b border-gray-100 text-sm font-semibold text-gray-600">
-                          <th className="p-4">รูปภาพ</th>
-                          <th className="p-4">หัวข้อ</th>
-                          <th className="p-4">ผู้แบ่งปัน</th>
-                          <th className="p-4">ไฟล์แนบ</th>
-                          <th className="p-4">สถานะ</th>
-                          <th className="p-4 text-right">จัดการ</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {ideasList.filter(idea => filterStatus === "all" || idea.status === filterStatus).map((idea) => (
-                          <tr key={idea.id} className="hover:bg-gray-50/50 transition-colors">
-                            <td className="p-4">
-                              <div className="w-16 h-12 bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
-                                {idea.coverImageUrl ? (
-                                  // eslint-disable-next-line @next/next/no-img-element
-                                  <img src={idea.coverImageUrl} alt={idea.title} className="w-full h-full object-cover" />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center text-gray-400">
-                                    <ImageIcon className="w-5 h-5" />
-                                  </div>
-                                )}
-                              </div>
-                            </td>
-                            <td className="p-4">
-                              <div className="font-bold text-gray-900 text-sm line-clamp-1">{idea.title}</div>
-                              <div className="text-xs text-gray-500 mt-1">
-                                {idea.category && <span className="bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full mr-2">{idea.category}</span>}
-                                {new Date(idea.createdAt).toLocaleDateString('th-TH')}
-                              </div>
-                            </td>
-                            <td className="p-4">
-                              <div className="text-sm font-medium text-gray-700">{idea.authorName}</div>
-                            </td>
-                            <td className="p-4">
-                              <div className="text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded-md inline-block">
-                                {idea.files && Array.isArray(idea.files) ? idea.files.length : 0} ไฟล์
-                              </div>
-                            </td>
-                            <td className="p-4">
-                              {idea.status === 'pending' && (
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200">
-                                  รอตรวจสอบ
-                                </span>
-                              )}
-                              {idea.status === 'approved' && (
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
-                                  อนุมัติแล้ว
-                                </span>
-                              )}
-                              {idea.status === 'rejected' && (
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200">
-                                  ไม่อนุมัติ
-                                </span>
-                              )}
-                            </td>
-                            <td className="p-4">
-                              <div className="flex justify-end gap-2">
-                                <button 
-                                  onClick={() => setPreviewIdea(idea)} 
-                                  className="p-2 rounded-lg text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors"
-                                  title="ตรวจสอบรายละเอียด (Preview)"
-                                >
-                                  <Eye className="w-4 h-4" />
-                                </button>
-                                {idea.status === 'pending' && (
-                                  <>
-                                    <button 
-                                      onClick={() => handleUpdateIdeaStatus(idea.id, 'approved')} 
-                                      className="p-2 rounded-lg text-green-600 bg-green-50 hover:bg-green-100 transition-colors"
-                                      title="อนุมัติ"
-                                    >
-                                      <CheckCircle className="w-4 h-4" />
-                                    </button>
-                                    <button 
-                                      onClick={() => handleUpdateIdeaStatus(idea.id, 'rejected')} 
-                                      className="p-2 rounded-lg text-red-600 bg-red-50 hover:bg-red-100 transition-colors"
-                                      title="ไม่อนุมัติ"
-                                    >
-                                      <XCircle className="w-4 h-4" />
-                                    </button>
-                                  </>
-                                )}
-                                {idea.status === 'rejected' && (
-                                  <button 
-                                    onClick={() => handleUpdateIdeaStatus(idea.id, 'approved')} 
-                                    className="p-2 rounded-lg text-green-600 bg-green-50 hover:bg-green-100 transition-colors"
-                                    title="อนุมัติ"
-                                  >
-                                    <CheckCircle className="w-4 h-4" />
-                                  </button>
-                                )}
-                                {idea.status === 'approved' && (
-                                  <button 
-                                    onClick={() => handleUpdateIdeaStatus(idea.id, 'rejected')} 
-                                    className="p-2 rounded-lg text-yellow-600 bg-yellow-50 hover:bg-yellow-100 transition-colors"
-                                    title="ยกเลิกการอนุมัติ"
-                                  >
-                                    <XCircle className="w-4 h-4" />
-                                  </button>
-                                )}
-                                <button 
-                                  onClick={() => handleDeleteIdea(idea.id)} 
-                                  className="p-2 rounded-lg text-red-600 bg-red-50 hover:bg-red-100 transition-colors"
-                                  title="ลบ"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
+          {/* Header & Filter Bar */}
+          <div className="p-6 border-b border-gray-100 flex flex-col md:flex-row items-stretch md:items-center justify-between bg-gray-50/40 gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center text-orange-600 font-bold shadow-sm">
+                <Lightbulb className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">จัดการห้องสมุดไอเดีย</h2>
+                <p className="text-xs text-gray-500">ตรวจสอบ อนุมัติ และจัดการไอเดียจากครูและนักเรียน</p>
               </div>
             </div>
 
-            {/* Preview Modal */}
-            {previewIdea && (
-              <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-                <div className="bg-white rounded-3xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                  <div className="p-6 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
-                    <div>
-                      <h3 className="text-xl font-bold text-gray-900">ตรวจสอบข้อมูลไอเดีย</h3>
-                      <p className="text-sm text-gray-500">ตรวจสอบรายละเอียด เนื้อหา และไฟล์แนบก่อนดำเนินการ</p>
-                    </div>
-                    <button 
-                      onClick={() => setPreviewIdea(null)}
-                      className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
-                    >
-                      <XCircle className="w-6 h-6" />
-                    </button>
-                  </div>
-                  
-                  <div className="p-6 overflow-y-auto flex-1 bg-gray-50/30">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      {/* Left: Image */}
-                      <div>
-                        <div className="aspect-video bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
-                          {previewIdea.coverImageUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={previewIdea.coverImageUrl} alt="Cover" className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 gap-2">
-                              <ImageIcon className="w-10 h-10" />
-                              <span className="text-sm">ไม่มีรูปภาพหน้าปก</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* Right: Info */}
-                      <div className="space-y-6">
-                        <div>
-                          <h2 className="text-2xl font-bold text-gray-900 leading-tight mb-2">{previewIdea.title}</h2>
-                          <div className="flex flex-wrap gap-2 text-sm">
-                            {previewIdea.category && (
-                              <span className="bg-orange-100 text-orange-700 px-3 py-1 rounded-full font-medium">
-                                {previewIdea.category}
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Search Bar */}
+              <div className="relative flex-1 sm:w-64">
+                <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="ค้นหาชื่อไอเดีย, ผู้แบ่งปัน..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full h-10 pl-9 pr-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 outline-none text-xs bg-white"
+                />
+              </div>
+
+              {/* Status Filter */}
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="h-10 px-3 rounded-xl border border-gray-200 focus:border-orange-500 outline-none text-xs bg-white font-medium text-gray-700 cursor-pointer"
+              >
+                <option value="all">สถานะ: ทั้งหมด ({stats.total})</option>
+                <option value="pending">รอตรวจสอบ ({stats.pending})</option>
+                <option value="approved">อนุมัติแล้ว ({stats.approved})</option>
+                <option value="rejected">ไม่อนุมัติ ({stats.rejected})</option>
+              </select>
+            </div>
+          </div>
+          
+          {/* Table View */}
+          <div className="overflow-x-auto">
+            {isLoading ? (
+              <div className="text-center py-16 text-gray-400">
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-orange-300 border-t-orange-600 mx-auto mb-2"></div>
+                <p className="text-xs">กำลังโหลดข้อมูลไอเดีย...</p>
+              </div>
+            ) : filteredIdeas.length === 0 ? (
+              <div className="text-center py-16 text-gray-400">
+                <Lightbulb className="w-10 h-10 mx-auto mb-2 text-gray-300" />
+                <p className="text-sm font-medium text-gray-600">ไม่พบข้อมูลไอเดีย</p>
+                <p className="text-xs text-gray-400 mt-1">ลองเปลี่ยนเงื่อนไขการค้นหาหรือตัวกรองสถานะ</p>
+              </div>
+            ) : (
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50/75 border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                    <th className="p-4 w-16">หน้าปก</th>
+                    <th className="p-4">หัวข้อไอเดีย</th>
+                    <th className="p-4">ผู้แบ่งปัน</th>
+                    <th className="p-4">ไฟล์ / คอมเมนต์</th>
+                    <th className="p-4">สถานะ</th>
+                    <th className="p-4 text-right">จัดการ</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 text-sm">
+                  {filteredIdeas.map((idea) => {
+                    const filesCount = Array.isArray(idea.files) ? idea.files.length : 0;
+                    return (
+                      <tr key={idea.id} className="hover:bg-gray-50/50 transition-colors group">
+                        <td className="p-4">
+                          <div className="w-14 h-11 bg-gray-100 rounded-xl overflow-hidden border border-gray-200 shadow-sm flex-shrink-0">
+                            {idea.coverImageUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={idea.coverImageUrl} alt={idea.title} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                <ImageIcon className="w-4 h-4" />
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <div className="font-bold text-gray-900 text-sm line-clamp-1 group-hover:text-orange-600 transition-colors">
+                            {idea.title}
+                          </div>
+                          <div className="text-xs text-gray-400 mt-0.5 flex items-center gap-1.5">
+                            {idea.category && (
+                              <span className="bg-orange-50 text-orange-700 px-2 py-0.5 rounded-md font-semibold text-[11px]">
+                                {idea.category}
                               </span>
                             )}
-                            <span className="text-gray-500 flex items-center bg-white border border-gray-200 px-3 py-1 rounded-full">
-                              ผู้แบ่งปัน: <span className="font-semibold text-gray-700 ml-1">{previewIdea.authorName}</span>
+                            <span>• {new Date(idea.createdAt).toLocaleDateString('th-TH')}</span>
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <div className="text-xs font-semibold text-gray-800">{idea.authorName}</div>
+                          {idea.authorEmail && <div className="text-[11px] text-gray-400">{idea.authorEmail}</div>}
+                        </td>
+                        <td className="p-4">
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-md font-medium">
+                              📎 {filesCount}
+                            </span>
+                            <span className="text-gray-500 flex items-center gap-1 font-medium">
+                              💬 {idea.commentsCount || 0}
                             </span>
                           </div>
-                        </div>
-
-                        {previewIdea.description && (
-                          <div>
-                            <h4 className="text-sm font-bold text-gray-700 mb-2">รายละเอียด:</h4>
-                            <div className="bg-white p-4 rounded-xl border border-gray-200 text-gray-600 text-sm whitespace-pre-wrap leading-relaxed">
-                              {previewIdea.description}
-                            </div>
-                          </div>
-                        )}
-
-                        {previewIdea.link && (
-                          <div>
-                            <h4 className="text-sm font-bold text-gray-700 mb-2">ลิงก์ที่เกี่ยวข้อง:</h4>
-                            <a 
-                              href={previewIdea.link.startsWith('http') ? previewIdea.link : `https://${previewIdea.link}`} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 px-3 py-2 bg-orange-50 text-orange-600 rounded-lg border border-orange-100 hover:bg-orange-100 transition-colors text-sm font-medium break-all"
+                        </td>
+                        <td className="p-4">
+                          {idea.status === 'pending' && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                              <Clock className="w-3 h-3" /> รอตรวจสอบ
+                            </span>
+                          )}
+                          {idea.status === 'approved' && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                              <CheckCircle className="w-3 h-3" /> อนุมัติแล้ว
+                            </span>
+                          )}
+                          {idea.status === 'rejected' && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800 border border-red-200">
+                              <XCircle className="w-3 h-3" /> ไม่อนุมัติ
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-4">
+                          <div className="flex justify-end items-center gap-1.5">
+                            <button 
+                              onClick={() => openPreview(idea)} 
+                              className="p-2 rounded-xl text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors"
+                              title="ตรวจสอบรายละเอียด"
                             >
-                              <LinkIcon className="w-4 h-4" />
-                              {previewIdea.link}
-                            </a>
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            {idea.status !== 'approved' && (
+                              <button 
+                                onClick={() => handleUpdateIdeaStatus(idea.id, 'approved')} 
+                                className="p-2 rounded-xl text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-colors"
+                                title="อนุมัติไอเดียนี้"
+                              >
+                                <CheckCircle className="w-4 h-4" />
+                              </button>
+                            )}
+                            {idea.status !== 'rejected' && (
+                              <button 
+                                onClick={() => handleUpdateIdeaStatus(idea.id, 'rejected')} 
+                                className="p-2 rounded-xl text-amber-600 bg-amber-50 hover:bg-amber-100 transition-colors"
+                                title="ไม่อนุมัติไอเดียนี้"
+                              >
+                                <XCircle className="w-4 h-4" />
+                              </button>
+                            )}
+                            <button 
+                              onClick={() => handleDeleteIdea(idea.id)} 
+                              className="p-2 rounded-xl text-red-600 bg-red-50 hover:bg-red-100 transition-colors"
+                              title="ลบถาวร"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
                           </div>
-                        )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      </div>
 
-                        {previewIdea.files && previewIdea.files.length > 0 && (
-                          <div>
-                            <h4 className="text-sm font-bold text-gray-700 mb-2">ไฟล์แนบ ({previewIdea.files.length}):</h4>
-                            <div className="space-y-2">
-                              {previewIdea.files.map((file: any, index: number) => (
-                                <a 
-                                  key={index}
-                                  href={file.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-xl hover:border-orange-500 transition-colors group"
-                                >
-                                  <div className="w-8 h-8 rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center">
-                                    <Upload className="w-4 h-4" />
-                                  </div>
-                                  <div className="flex-1 truncate">
-                                    <div className="text-sm font-medium text-gray-700 group-hover:text-orange-600 truncate">{file.name}</div>
-                                  </div>
-                                </a>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+      {/* Preview & Moderation Modal */}
+      {previewIdea && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">ตรวจสอบและดูแลไอเดีย</h3>
+                <p className="text-xs text-gray-500">ตรวจสอบเนื้อหา ไฟล์แนบ และความคิดเห็นของผู้ใช้</p>
+              </div>
+              <button 
+                onClick={() => setPreviewIdea(null)}
+                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+            
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto flex-1 bg-gray-50/40 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Left: Cover Image */}
+                <div>
+                  <div className="aspect-video bg-gray-100 rounded-2xl overflow-hidden border border-gray-200 shadow-sm relative">
+                    {previewIdea.coverImageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={previewIdea.coverImageUrl} alt="Cover" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 gap-2">
+                        <ImageIcon className="w-8 h-8" />
+                        <span className="text-xs">ไม่มีรูปภาพหน้าปก</span>
                       </div>
-                    </div>
-                  </div>
-
-                  <div className="p-6 border-t border-gray-100 bg-white flex justify-between items-center shrink-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-600">สถานะปัจจุบัน:</span>
-                      {previewIdea.status === 'pending' && <span className="px-3 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-800 border border-yellow-200">รอตรวจสอบ</span>}
-                      {previewIdea.status === 'approved' && <span className="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800 border border-green-200">อนุมัติแล้ว</span>}
-                      {previewIdea.status === 'rejected' && <span className="px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800 border border-red-200">ไม่อนุมัติ</span>}
-                    </div>
-                    
-                    <div className="flex items-center gap-3">
-                      {previewIdea.status !== 'rejected' && (
-                        <Button 
-                          variant="outline" 
-                          onClick={() => handleUpdateIdeaStatus(previewIdea.id, 'rejected')}
-                          className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
-                        >
-                          <XCircle className="w-4 h-4 mr-2" /> ไม่อนุมัติ
-                        </Button>
-                      )}
-                      {previewIdea.status !== 'approved' && (
-                        <Button 
-                          onClick={() => handleUpdateIdeaStatus(previewIdea.id, 'approved')}
-                          className="bg-green-600 hover:bg-green-700 text-white"
-                        >
-                          <CheckCircle className="w-4 h-4 mr-2" /> อนุมัติข้อมูลนี้
-                        </Button>
-                      )}
-                    </div>
+                    )}
+                    {previewIdea.category && (
+                      <span className="absolute top-3 left-3 bg-orange-500 text-white font-bold text-xs px-3 py-1 rounded-full shadow">
+                        {previewIdea.category}
+                      </span>
+                    )}
                   </div>
                 </div>
+                
+                {/* Right: Info */}
+                <div className="space-y-4">
+                  <div>
+                    <h2 className="text-xl font-extrabold text-gray-900 leading-snug">{previewIdea.title}</h2>
+                    <p className="text-xs text-gray-500 mt-1">
+                      ผู้แบ่งปัน: <strong className="text-gray-800 font-semibold">{previewIdea.authorName}</strong>
+                      {previewIdea.authorEmail && <span className="ml-1 text-gray-400">({previewIdea.authorEmail})</span>}
+                    </p>
+                    <p className="text-[11px] text-gray-400 mt-0.5">
+                      วันที่สร้าง: {new Date(previewIdea.createdAt).toLocaleDateString('th-TH')}
+                    </p>
+                  </div>
+
+                  <div>
+                    <h4 className="text-xs font-bold text-gray-700 mb-1">รายละเอียดเนื้อหา:</h4>
+                    <div className="bg-white p-4 rounded-xl border border-gray-200 text-gray-700 text-xs whitespace-pre-wrap leading-relaxed max-h-40 overflow-y-auto">
+                      {previewIdea.description}
+                    </div>
+                  </div>
+
+                  {previewIdea.link && (
+                    <div>
+                      <h4 className="text-xs font-bold text-gray-700 mb-1">ลิงก์ที่เกี่ยวข้อง:</h4>
+                      <a 
+                        href={previewIdea.link.startsWith('http') ? previewIdea.link : `https://${previewIdea.link}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 text-orange-600 rounded-lg border border-orange-100 hover:bg-orange-100 transition-colors text-xs font-medium break-all"
+                      >
+                        <LinkIcon className="w-3.5 h-3.5" />
+                        <span>{previewIdea.link}</span>
+                      </a>
+                    </div>
+                  )}
+
+                  {previewIdea.files && previewIdea.files.length > 0 && (
+                    <div>
+                      <h4 className="text-xs font-bold text-gray-700 mb-1">ไฟล์แนบ ({previewIdea.files.length} ไฟล์):</h4>
+                      <div className="space-y-1.5 max-h-36 overflow-y-auto">
+                        {previewIdea.files.map((file: any, index: number) => (
+                          <a 
+                            key={index}
+                            href={file.url}
+                            download={file.name || `attachment-${index + 1}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-between p-2.5 bg-white border border-gray-200 rounded-xl hover:border-orange-400 transition-colors text-xs"
+                          >
+                            <span className="truncate font-medium text-gray-800">{file.name}</span>
+                            <Download className="w-3.5 h-3.5 text-orange-500 shrink-0 ml-2" />
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
+
+              {/* Comments Moderation Inside Modal */}
+              <div className="pt-4 border-t border-gray-200">
+                <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4 text-orange-500" />
+                  <span>ความคิดเห็นทั้งหมด ({previewIdea.comments?.length || 0})</span>
+                </h4>
+
+                {isLoadingDetail ? (
+                  <p className="text-xs text-gray-400">กำลังโหลดความคิดเห็น...</p>
+                ) : previewIdea.comments && previewIdea.comments.length > 0 ? (
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {previewIdea.comments.map((comment: any) => (
+                      <div key={comment.id} className="flex items-start justify-between p-3 bg-white border border-gray-200 rounded-xl text-xs">
+                        <div>
+                          <div className="font-bold text-gray-800 flex items-center gap-2">
+                            <span>{comment.authorName}</span>
+                            <span className="text-[10px] text-gray-400 font-normal">
+                              {comment.createdAt ? new Date(comment.createdAt).toLocaleDateString('th-TH') : ''}
+                            </span>
+                          </div>
+                          <p className="text-gray-600 mt-1 whitespace-pre-wrap">{comment.text}</p>
+                        </div>
+                        <button
+                          onClick={() => handleDeleteCommentInPreview(comment.id)}
+                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors ml-3"
+                          title="ลบความคิดเห็นที่ไม่เหมาะสมนี้"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-400">ยังไม่มีความคิดเห็นในไอเดียนี้</p>
+                )}
+              </div>
+            </div>
+
+            {/* Modal Footer with Actions */}
+            <div className="p-6 border-t border-gray-100 bg-white flex flex-wrap justify-between items-center gap-3 shrink-0">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-gray-500">สถานะปัจจุบัน:</span>
+                {previewIdea.status === 'pending' && <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800">รอตรวจสอบ</span>}
+                {previewIdea.status === 'approved' && <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">อนุมัติแล้ว</span>}
+                {previewIdea.status === 'rejected' && <span className="px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800">ไม่อนุมัติ</span>}
+              </div>
+              
+              <div className="flex items-center gap-2">
+                {previewIdea.status !== 'rejected' && (
+                  <Button 
+                    variant="outline" 
+                    onClick={() => handleUpdateIdeaStatus(previewIdea.id, 'rejected')}
+                    className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 text-xs"
+                  >
+                    <XCircle className="w-4 h-4 mr-1.5" /> ไม่อนุมัติ
+                  </Button>
+                )}
+                {previewIdea.status !== 'approved' && (
+                  <Button 
+                    onClick={() => handleUpdateIdeaStatus(previewIdea.id, 'approved')}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs"
+                  >
+                    <CheckCircle className="w-4 h-4 mr-1.5" /> อนุมัติไอเดียนี้
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  onClick={() => handleDeleteIdea(previewIdea.id)}
+                  className="border-gray-200 text-gray-600 hover:bg-red-50 hover:text-red-600 text-xs"
+                >
+                  <Trash2 className="w-4 h-4 mr-1" /> ลบ
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

@@ -4,19 +4,35 @@ import { NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { ideas, comments } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
+import { checkIsAdmin } from '@/lib/api-auth';
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> | { id: string } }) {
   try {
+    if (!(await checkIsAdmin())) {
+      return NextResponse.json({ error: 'Unauthorized — สำหรับผู้ดูแลระบบเท่านั้น' }, { status: 401 });
+    }
+
     const resolvedParams = await params;
     const id = resolvedParams.id;
-    const { status } = await request.json();
-    if (!status) return NextResponse.json({ error: 'Status is required' }, { status: 400 });
+    const body = (await request.json().catch(() => ({}))) as any;
 
     const db = getDb();
-    await db.update(ideas).set({ status }).where(eq(ideas.id, id));
+    const updates: any = {};
+    if (body.status) updates.status = body.status;
+    if (body.title) updates.title = body.title;
+    if (body.description) updates.description = body.description;
+    if (body.category) updates.category = body.category;
+    if (body.link !== undefined) updates.link = body.link;
+
+    if (Object.keys(updates).length === 0) {
+      return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
+    }
+
+    await db.update(ideas).set(updates).where(eq(ideas.id, id));
     
     return NextResponse.json({ success: true });
   } catch (error) {
+    console.error("PUT /api/ideas/[id] error:", error);
     return NextResponse.json({ error: 'Failed to update idea' }, { status: 500 });
   }
 }
@@ -36,7 +52,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     
     const ideaComments = await db.select().from(comments).where(eq(comments.ideaId, id)).orderBy(desc(comments.time));
     
-    let safeFiles = [];
+    let safeFiles: any[] = [];
     if (ideaData.files) {
       if (typeof ideaData.files === 'string') {
         if (ideaData.files.startsWith('data:')) {
@@ -55,6 +71,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       comments: ideaComments.map((c: any) => ({
         id: c.id,
         authorName: c.author,
+        authorEmail: c.authorEmail || '',
+        authorImage: c.authorImage || '',
         text: c.text,
         createdAt: c.time,
       }))
@@ -69,6 +87,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> | { id: string } }) {
   try {
+    if (!(await checkIsAdmin())) {
+      return NextResponse.json({ error: 'Unauthorized — สำหรับผู้ดูแลระบบเท่านั้น' }, { status: 401 });
+    }
+
     const resolvedParams = await params;
     const id = resolvedParams.id;
     const db = getDb();
