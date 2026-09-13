@@ -40,9 +40,10 @@ export async function GET() {
 
     await ensureSettingsTable(d1);
 
-    const result = await d1.prepare(`
+    const stmt = d1.prepare(`
       SELECT value FROM site_settings WHERE key = 'm3_lessons_enabled'
-    `).get();
+    `);
+    const result: any = typeof stmt.first === 'function' ? await stmt.first() : (await stmt.all?.())?.results?.[0];
 
     // If never set in database, default to true or value in DB
     const enabled = result ? result.value === 'true' : memoryM3Enabled;

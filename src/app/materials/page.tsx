@@ -8,8 +8,6 @@ import { DEFAULT_DOWNLOADS, DownloadItem } from "@/data/default-downloads";
 import { Suspense } from "react";
 import { Sparkles, BookOpen, FileText, GraduationCap } from "lucide-react";
 
-export const runtime = 'edge';
-
 // Helper to fetch lessons from database
 async function getLessons() {
   try {

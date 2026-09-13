@@ -146,9 +146,10 @@ export async function GET() {
     await ensureTables(d1);
 
     // Fetch grade settings
-    const settingsRow = await d1.prepare(`
+    const settingsStmt = d1.prepare(`
       SELECT value FROM site_settings WHERE key = 'downloads_grade_settings'
-    `).get();
+    `);
+    const settingsRow: any = typeof settingsStmt.first === 'function' ? await settingsStmt.first() : (await settingsStmt.all?.())?.results?.[0];
 
     if (settingsRow?.value) {
       try {

@@ -40,9 +40,10 @@ export async function GET() {
 
     await ensureSettingsTable(d1);
 
-    const result = await d1.prepare(`
+    const stmt = d1.prepare(`
       SELECT value FROM site_settings WHERE key = 'teachers_enabled'
-    `).get();
+    `);
+    const result: any = typeof stmt.first === 'function' ? await stmt.first() : (await stmt.all?.())?.results?.[0];
 
     const enabled = result?.value === 'true';
     return NextResponse.json({ enabled });
