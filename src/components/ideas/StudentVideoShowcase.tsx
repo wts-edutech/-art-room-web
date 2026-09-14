@@ -373,14 +373,9 @@ export default function StudentVideoShowcase() {
           >
             {/* Sticky Header Bar */}
             <div className="sticky top-0 z-20 px-4 sm:px-5 py-3 bg-white/95 backdrop-blur-md border-b border-gray-100 flex items-center justify-between gap-3 shadow-2xs">
-              <div className="flex items-center gap-2 truncate min-w-0">
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${selectedVideo.categoryColor}`}>
-                  {selectedVideo.category}
-                </span>
-                <span className="text-xs sm:text-sm font-bold text-gray-800 truncate">
-                  {selectedVideo.title}
-                </span>
-              </div>
+              <h3 className="text-xs sm:text-sm font-bold text-gray-800 truncate min-w-0">
+                {selectedVideo.title}
+              </h3>
 
               <div className="flex items-center gap-1.5 shrink-0">
                 <button 
