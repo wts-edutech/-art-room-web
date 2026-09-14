@@ -371,18 +371,9 @@ export default function StudentVideoShowcase() {
             className="bg-white rounded-3xl overflow-hidden shadow-2xl w-full max-w-2xl border border-gray-100 my-auto animate-in zoom-in-95 duration-150 relative"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Sticky Header Bar with prominent Back button */}
+            {/* Sticky Header Bar */}
             <div className="sticky top-0 z-20 px-4 sm:px-5 py-3 bg-white/95 backdrop-blur-md border-b border-gray-100 flex items-center justify-between gap-3 shadow-2xs">
-              <button 
-                type="button"
-                onClick={() => setSelectedVideo(null)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-50 hover:bg-orange-100 text-orange-700 text-xs font-bold transition-all cursor-pointer active:scale-95 border border-orange-200/80"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                <span>ย้อนกลับ</span>
-              </button>
-
-              <div className="flex items-center gap-2 truncate">
+              <div className="flex items-center gap-2 truncate min-w-0">
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${selectedVideo.categoryColor}`}>
                   {selectedVideo.category}
                 </span>
