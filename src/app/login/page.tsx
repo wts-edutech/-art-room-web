@@ -263,14 +263,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50/70 p-4 relative py-12">
-      {/* Back to Home Button */}
-      <Link 
-        href="/" 
-        className="absolute top-6 left-6 z-20 flex items-center gap-2 px-4 py-2 bg-white rounded-full text-gray-600 font-medium shadow-sm border border-gray-200 hover:text-red-500 hover:border-red-300 hover:shadow-md transition-all group"
-      >
-        <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-        <span className="hidden sm:inline">กลับสู่หน้าแรก</span>
-      </Link>
+
 
       {/* Background Grid Pattern */}
       <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none"></div>
@@ -468,6 +461,17 @@ export default function LoginPage() {
                   "เข้าสู่ระบบนักเรียน"
                 )}
               </Button>
+
+              {/* Back to Home Under Login Button */}
+              <div className="mt-3.5 text-center">
+                <Link 
+                  href="/" 
+                  className="inline-flex items-center justify-center gap-2 text-xs sm:text-sm text-gray-500 hover:text-red-600 font-semibold transition-all py-1.5 px-4 rounded-xl hover:bg-red-50/60 cursor-pointer group"
+                >
+                  <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                  <span>กลับสู่หน้าหลัก</span>
+                </Link>
+              </div>
             </form>
             
             <div className="mt-5 text-center text-gray-500 text-xs">
@@ -625,6 +629,17 @@ export default function LoginPage() {
                   </div>
                 )}
               </Button>
+
+              {/* Back to Home Under Login Button */}
+              <div className="mt-3.5 text-center">
+                <Link 
+                  href="/" 
+                  className="inline-flex items-center justify-center gap-2 text-xs sm:text-sm text-gray-500 hover:text-blue-600 font-semibold transition-all py-1.5 px-4 rounded-xl hover:bg-blue-50/60 cursor-pointer group"
+                >
+                  <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                  <span>กลับสู่หน้าหลัก</span>
+                </Link>
+              </div>
             </form>
 
             {/* Legal Notice */}
