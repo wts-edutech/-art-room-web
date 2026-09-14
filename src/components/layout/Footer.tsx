@@ -67,7 +67,7 @@ export default function Footer() {
             <ul className="space-y-2.5 text-xs sm:text-sm text-gray-600 font-light">
               <li>
                 <Link href="/materials" className="hover:text-red-600 transition-colors">
-                  คลังสื่อการสอน Art Room  By:ครูเก๋
+                  คลังสื่อการสอน Art Room
                 </Link>
               </li>
               <li>
