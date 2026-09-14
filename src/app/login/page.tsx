@@ -580,7 +580,7 @@ export default function LoginPage() {
                   <option value="ผู้ปกครองนักเรียน">ผู้ปกครองนักเรียน (Parent)</option>
                   <option value="ประชาชนทั่วไป / ศิลปิน">ประชาชนทั่วไป / ผู้สนใจศิลปะ</option>
                   <option value="ศิษย์เก่าโรงเรียนวชิรธรรมสาธิต">ศิษย์เก่าโรงเรียนวชิรธรรมสาธิต (Alumni)</option>
-                  <option value="ครู / บุคลากรภายนอก">ครู / บุคลากรทางการศึกษาภายนอก</option>
+                  <option value="ครู / บุคลากรทางการศึกษา">ครู / บุคลากรทางการศึกษา</option>
                 </select>
               </div>
 

@@ -48,7 +48,11 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
     const savedName = localStorage.getItem("artroom_author_name") || "";
     const savedEmail = localStorage.getItem("artroom_author_email") || "";
     const savedRole = localStorage.getItem("artroom_role") || "student";
-    const savedUserRole = localStorage.getItem("artroom_user_role") || "ผู้ปกครองนักเรียน";
+    let savedUserRole = localStorage.getItem("artroom_user_role") || "ผู้ปกครองนักเรียน";
+    if (savedUserRole.includes("ภายนอก")) {
+      savedUserRole = "ครู / บุคลากรทางการศึกษา";
+      localStorage.setItem("artroom_user_role", savedUserRole);
+    }
     const savedPhone = localStorage.getItem("artroom_phone") || "";
     const savedDisplayName = localStorage.getItem("artroom_display_name") || savedName;
     const savedAvatar = localStorage.getItem("artroom_avatar") || "";
