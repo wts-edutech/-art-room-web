@@ -141,9 +141,9 @@ export default function IdeasPage() {
           <StudentVideoShowcase />
 
           {/* Search & Filter Control Bar */}
-          <div className="max-w-4xl mx-auto mb-8 space-y-3.5">
+          <div className="max-w-4xl mx-auto mb-10 space-y-5 sm:space-y-6">
             {/* Row 1: Search Input + Sorting Selector */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               {/* Search Input */}
               <div className="relative flex-1">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -181,8 +181,8 @@ export default function IdeasPage() {
               </div>
             </div>
 
-            {/* Row 2: Category Filter Pills (Full Width, No Truncation) */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none sm:flex-wrap">
+            {/* Row 2: Category Filter Pills (Full Width with Ample Spacing) */}
+            <div className="flex items-center gap-2 sm:gap-2.5 overflow-x-auto pb-1 scrollbar-none sm:flex-wrap pt-0.5">
               {categories.map((cat) => {
                 const isSelected = selectedCategory === cat;
                 return (
