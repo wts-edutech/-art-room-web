@@ -141,7 +141,7 @@ export default function IdeasPage() {
           <StudentVideoShowcase />
 
           {/* Search & Filter Control Bar */}
-          <div className="max-w-4xl mx-auto mb-10 space-y-5 sm:space-y-6">
+          <div className="max-w-4xl mx-auto mb-12">
             {/* Row 1: Search Input + Sorting Selector */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               {/* Search Input */}
@@ -154,7 +154,7 @@ export default function IdeasPage() {
                   placeholder="ค้นหาไอเดีย สื่อการสอน กิจกรรม หรือชื่อผู้แบ่งปัน..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full h-12 pl-11 pr-11 rounded-2xl border border-gray-200 bg-white focus:border-amber-400 focus:ring-4 focus:ring-amber-400/10 outline-none transition-all shadow-2xs text-sm text-gray-800 placeholder-gray-400 font-normal"
+                  className="w-full h-12 sm:h-13 pl-11 pr-11 rounded-2xl border border-gray-200 bg-white focus:border-amber-400 focus:ring-4 focus:ring-amber-400/10 outline-none transition-all shadow-2xs text-sm text-gray-800 placeholder-gray-400 font-normal"
                 />
                 {searchTerm && (
                   <button 
@@ -167,7 +167,7 @@ export default function IdeasPage() {
               </div>
 
               {/* Sorting Selector */}
-              <div className="flex items-center gap-1.5 shrink-0 bg-white px-3.5 h-12 rounded-2xl border border-gray-200 shadow-2xs text-xs sm:text-sm">
+              <div className="flex items-center gap-1.5 shrink-0 bg-white px-3.5 h-12 sm:h-13 rounded-2xl border border-gray-200 shadow-2xs text-xs sm:text-sm">
                 <ArrowUpDown className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                 <span className="text-xs text-gray-400 font-normal">เรียง:</span>
                 <select
@@ -181,33 +181,38 @@ export default function IdeasPage() {
               </div>
             </div>
 
-            {/* Row 2: Category Filter Pills (Full Width with Ample Spacing) */}
-            <div className="flex items-center gap-2 sm:gap-2.5 overflow-x-auto pb-1 scrollbar-none sm:flex-wrap pt-0.5">
-              {categories.map((cat) => {
-                const isSelected = selectedCategory === cat;
-                return (
-                  <button
-                    key={cat}
-                    type="button"
-                    data-active={isSelected ? "true" : "false"}
-                    onClick={() => setSelectedCategory(cat)}
-                    style={{
-                      backgroundColor: isSelected ? "#ffb300" : "#f3f4f6",
-                      color: isSelected ? "#ffffff" : "#374151",
-                      border: "none",
-                      outline: "none",
-                      boxShadow: "none",
-                    }}
-                    className={`category-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-normal tracking-tight transition-all duration-200 cursor-pointer active:scale-95 hover:-translate-y-0.5 whitespace-nowrap border-0 shrink-0 ${
-                      isSelected
-                        ? "is-selected bg-[#ffb300] text-white shadow-xs font-medium"
-                        : "bg-gray-100 text-gray-700 hover:bg-amber-100/60 hover:text-amber-900"
-                    }`}
-                  >
-                    <span style={{ color: isSelected ? "#ffffff" : "inherit" }}>{cat}</span>
-                  </button>
-                );
-              })}
+            {/* Row 2: Category Filter Pills (Generously Spaced & Elegant) */}
+            <div className="mt-8 sm:mt-10">
+              <div className="flex items-center gap-2 overflow-x-auto pb-1.5 scrollbar-none sm:flex-wrap">
+                <span className="text-xs text-gray-400 font-normal shrink-0 mr-1 hidden sm:inline">
+                  หมวดหมู่:
+                </span>
+                {categories.map((cat) => {
+                  const isSelected = selectedCategory === cat;
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      data-active={isSelected ? "true" : "false"}
+                      onClick={() => setSelectedCategory(cat)}
+                      style={{
+                        backgroundColor: isSelected ? "#ffb300" : "#f3f4f6",
+                        color: isSelected ? "#ffffff" : "#374151",
+                        border: "none",
+                        outline: "none",
+                        boxShadow: "none",
+                      }}
+                      className={`category-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-normal tracking-tight transition-all duration-200 cursor-pointer active:scale-95 hover:-translate-y-0.5 whitespace-nowrap border-0 shrink-0 ${
+                        isSelected
+                          ? "is-selected bg-[#ffb300] text-white shadow-xs font-medium"
+                          : "bg-gray-100 text-gray-700 hover:bg-amber-100/60 hover:text-amber-900"
+                      }`}
+                    >
+                      <span style={{ color: isSelected ? "#ffffff" : "inherit" }}>{cat}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
