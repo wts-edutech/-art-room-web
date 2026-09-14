@@ -141,35 +141,35 @@ export default function IdeasPage() {
           <StudentVideoShowcase />
 
           {/* Search & Filter Control Bar */}
-          <div className="max-w-4xl mx-auto mb-8 space-y-3">
-            {/* Search Input */}
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Search className="h-4.5 w-4.5 text-gray-400" />
+          <div className="max-w-4xl mx-auto mb-8 space-y-3.5">
+            {/* Row 1: Search Input + Sorting Selector */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+              {/* Search Input */}
+              <div className="relative flex-1">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Search className="h-4.5 w-4.5 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="ค้นหาไอเดีย สื่อการสอน กิจกรรม หรือชื่อผู้แบ่งปัน..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full h-12 pl-11 pr-11 rounded-2xl border border-gray-200 bg-white focus:border-amber-400 focus:ring-4 focus:ring-amber-400/10 outline-none transition-all shadow-2xs text-sm text-gray-800 placeholder-gray-400 font-normal"
+                />
+                {searchTerm && (
+                  <button 
+                    onClick={() => setSearchTerm("")}
+                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
               </div>
-              <input
-                type="text"
-                placeholder="ค้นหาไอเดีย สื่อการสอน กิจกรรม หรือชื่อผู้แบ่งปัน..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full h-12 sm:h-13 pl-11 pr-11 rounded-2xl border border-gray-200 bg-white focus:border-amber-400 focus:ring-4 focus:ring-amber-400/10 outline-none transition-all shadow-xs text-sm sm:text-base text-gray-800 placeholder-gray-400 font-normal"
-              />
-              {searchTerm && (
-                <button 
-                  onClick={() => setSearchTerm("")}
-                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
 
-            {/* Toolbar Row: Sort Tool on Left + Category Filter Pills */}
-            <div className="flex items-center gap-2 sm:gap-2.5 overflow-x-auto pb-1 scrollbar-none sm:flex-wrap pt-0.5">
-              {/* Sorting Selector on Left */}
-              <div className="flex items-center gap-1.5 shrink-0 bg-white px-3 py-1.5 rounded-xl border border-gray-200 shadow-2xs text-xs sm:text-sm">
+              {/* Sorting Selector */}
+              <div className="flex items-center gap-1.5 shrink-0 bg-white px-3.5 h-12 rounded-2xl border border-gray-200 shadow-2xs text-xs sm:text-sm">
                 <ArrowUpDown className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                <span className="text-[11px] sm:text-xs text-gray-400 font-normal">เรียง:</span>
+                <span className="text-xs text-gray-400 font-normal">เรียง:</span>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as "latest" | "comments")}
@@ -179,10 +179,10 @@ export default function IdeasPage() {
                   <option value="comments">ความคิดเห็นมากที่สุด</option>
                 </select>
               </div>
+            </div>
 
-              <div className="h-5 w-px bg-gray-200 shrink-0 hidden sm:block" />
-
-              {/* Category Filter Pills */}
+            {/* Row 2: Category Filter Pills (Full Width, No Truncation) */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none sm:flex-wrap">
               {categories.map((cat) => {
                 const isSelected = selectedCategory === cat;
                 return (
@@ -198,9 +198,9 @@ export default function IdeasPage() {
                       outline: "none",
                       boxShadow: "none",
                     }}
-                    className={`category-btn px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-normal tracking-tight transition-all duration-200 cursor-pointer active:scale-95 hover:-translate-y-0.5 whitespace-nowrap border-0 shrink-0 ${
+                    className={`category-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-normal tracking-tight transition-all duration-200 cursor-pointer active:scale-95 hover:-translate-y-0.5 whitespace-nowrap border-0 shrink-0 ${
                       isSelected
-                        ? "is-selected bg-[#ffb300] text-white shadow-xs"
+                        ? "is-selected bg-[#ffb300] text-white shadow-xs font-medium"
                         : "bg-gray-100 text-gray-700 hover:bg-amber-100/60 hover:text-amber-900"
                     }`}
                   >
