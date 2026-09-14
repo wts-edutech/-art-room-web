@@ -144,12 +144,12 @@ export default function MaterialsList({
   ];
 
   const categories = [
-    { id: "ทั้งหมด", label: "หมวดหมู่ทั้งหมด", icon: <Grid className="w-4 h-4" /> },
-    { id: "สื่อวิดีทัศน์", label: "สื่อวิดีทัศน์", icon: <Video className="w-4 h-4 text-red-500" /> },
-    { id: "ใบงาน", label: "ใบงานและแบบฝึกหัด", icon: <FileText className="w-4 h-4 text-emerald-500" /> },
-    { id: "ใบความรู้", label: "ใบความรู้และชีตสรุป", icon: <BookOpen className="w-4 h-4 text-blue-500" /> },
-    { id: "สื่อภาพ", label: "สื่อภาพและเทคนิค", icon: <ImageIcon className="w-4 h-4 text-amber-500" /> },
-    { id: "คู่มือ", label: "คู่มือและเกณฑ์ประเมิน", icon: <CheckCircle2 className="w-4 h-4 text-purple-500" /> },
+    { id: "ทั้งหมด", label: "หมวดหมู่ทั้งหมด", icon: <Grid className="w-5 h-5 text-gray-700" /> },
+    { id: "สื่อวิดีทัศน์", label: "สื่อวิดีทัศน์", icon: <Video className="w-5 h-5 text-red-500" /> },
+    { id: "ใบงาน", label: "ใบงานและแบบฝึกหัด", icon: <FileText className="w-5 h-5 text-emerald-500" /> },
+    { id: "ใบความรู้", label: "ใบความรู้และชีตสรุป", icon: <BookOpen className="w-5 h-5 text-blue-500" /> },
+    { id: "สื่อภาพ", label: "สื่อภาพและเทคนิค", icon: <ImageIcon className="w-5 h-5 text-amber-500" /> },
+    { id: "คู่มือ", label: "คู่มือและเกณฑ์ประเมิน", icon: <CheckCircle2 className="w-5 h-5 text-purple-500" /> },
   ];
 
   // Combine lessons and downloads into a unified items array
@@ -277,7 +277,7 @@ export default function MaterialsList({
       )}
 
       {/* Left Sidebar Filter */}
-      <aside className={`fixed inset-y-0 left-0 z-[70] w-[300px] bg-white shadow-2xl transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 lg:w-64 lg:shadow-none lg:bg-transparent lg:z-0 flex-shrink-0 flex flex-col h-full lg:h-auto ${isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
+      <aside className={`fixed inset-y-0 left-0 z-[70] w-[300px] bg-white shadow-2xl transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 lg:w-72 lg:shadow-none lg:bg-transparent lg:z-0 flex-shrink-0 flex flex-col h-full lg:h-auto ${isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="flex items-center justify-between p-5 border-b border-gray-100 lg:hidden">
           <span className="font-heading font-bold text-lg text-gray-900">ตัวกรองสื่อการสอน</span>
           <button 
@@ -290,9 +290,10 @@ export default function MaterialsList({
 
         <div className="flex-1 overflow-y-auto p-5 lg:p-0 space-y-6 lg:sticky lg:top-36">
           {/* Quick Search Box */}
-          <div className="bg-white p-4 rounded-2xl border border-gray-200/80 shadow-xs">
-            <h3 className="text-xs font-bold text-gray-800 uppercase tracking-wider mb-2.5 flex items-center gap-2">
-              <Search className="w-3.5 h-3.5 text-red-500" /> ค้นหาสื่อ / ใบงาน
+          <div className="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-xs">
+            <h3 className="text-sm sm:text-[15px] font-bold text-gray-900 mb-3 flex items-center gap-2">
+              <Search className="w-4 h-4 text-red-500" /> 
+              <span>ค้นหาสื่อ / ใบงาน</span>
             </h3>
             <div className="relative">
               <input
@@ -300,12 +301,12 @@ export default function MaterialsList({
                 placeholder="ชื่อสื่อ, หัวข้อ, เทคนิค..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-11 pl-3.5 pr-8 rounded-xl border border-gray-200 focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none text-xs transition-all text-gray-800"
+                className="w-full h-12 pl-4 pr-9 rounded-xl border border-gray-200 focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none text-sm sm:text-[15px] transition-all text-gray-800 placeholder:text-gray-400"
               />
               {searchQuery && (
                 <button 
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm"
                 >
                   ✕
                 </button>
@@ -314,11 +315,12 @@ export default function MaterialsList({
           </div>
 
           {/* Categories Filter */}
-          <div className="bg-white p-4 rounded-2xl border border-gray-200/80 shadow-xs">
-            <h3 className="text-xs font-bold text-gray-800 uppercase tracking-wider mb-3 border-b border-gray-100 pb-2.5 flex items-center gap-2">
-              <GraduationCap className="w-4 h-4 text-red-500" /> หมวดหมู่เนื้อหา
+          <div className="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-xs">
+            <h3 className="text-sm sm:text-[15px] font-bold text-gray-900 mb-3.5 border-b border-gray-100 pb-3 flex items-center gap-2">
+              <GraduationCap className="w-4.5 h-4.5 text-red-500" /> 
+              <span>หมวดหมู่เนื้อหา</span>
             </h3>
-            <ul className="space-y-1">
+            <ul className="space-y-1.5">
               {categories.map((cat) => (
                 <li key={cat.id}>
                   <button
@@ -326,14 +328,14 @@ export default function MaterialsList({
                       setActiveCategory(cat.id);
                       setIsMobileSidebarOpen(false);
                     }}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all text-left text-xs font-medium cursor-pointer ${
+                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all text-left text-sm sm:text-[15px] cursor-pointer ${
                       activeCategory === cat.id
                         ? "bg-red-50 text-red-600 font-bold border border-red-100 shadow-xs"
-                        : "text-gray-600 hover:bg-gray-50 border border-transparent"
+                        : "text-gray-700 hover:text-gray-900 hover:bg-gray-50 border border-transparent font-medium"
                     }`}
                   >
-                    <span>{cat.icon}</span>
-                    <span className="flex-1">{cat.label}</span>
+                    <span className="shrink-0">{cat.icon}</span>
+                    <span className="flex-1 font-heading">{cat.label}</span>
                   </button>
                 </li>
               ))}
