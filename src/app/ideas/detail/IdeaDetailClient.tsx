@@ -309,65 +309,81 @@ export default function IdeaDetailClient() {
               </div>
 
               {/* Right Column: Views/Comments + Reactions + Share/Bookmark */}
-              <div className="flex flex-col items-end gap-1.5 shrink-0">
+              <div className="flex flex-col items-end gap-2 shrink-0">
                 {/* Views & Comments */}
-                <div className="flex items-center gap-3 text-xs text-gray-500 font-normal">
-                  <div className="flex items-center gap-1">
-                    <Eye className="w-3.5 h-3.5 text-gray-400" />
-                    <span>{viewsCount}</span>
+                <div className="flex items-center gap-4 text-sm sm:text-base text-gray-500 font-medium pr-1">
+                  <div className="flex items-center gap-1.5">
+                    <Eye className="w-[18px] h-[18px] text-gray-400" />
+                    <span className="text-gray-600 font-semibold">{viewsCount}</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <MessageCircle className="w-3.5 h-3.5 text-gray-400" />
-                    <span>{idea.comments?.length || 0}</span>
+                  <div className="flex items-center gap-1.5">
+                    <MessageCircle className="w-[18px] h-[18px] text-gray-400" />
+                    <span className="text-gray-600 font-semibold">{idea.comments?.length || 0}</span>
                   </div>
                 </div>
 
-                {/* Reactions & Buttons */}
-                <div className="flex items-center gap-1.5 sm:gap-2">
+                {/* Reactions & Action Buttons */}
+                <div className="flex items-center gap-2.5 sm:gap-3.5">
+                  {/* Reaction 1: 🤩 with black pill capsule border */}
                   <button
+                    type="button"
                     onClick={handleToggleStarry}
-                    className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full transition-all cursor-pointer ${
-                      hasLikedStarry ? "bg-amber-100 text-amber-700 font-semibold scale-105" : "text-gray-500 hover:bg-gray-100"
+                    className={`flex items-center gap-2 px-3.5 py-1 sm:px-4 sm:py-1.5 rounded-full border-2 transition-all cursor-pointer active:scale-95 ${
+                      hasLikedStarry
+                        ? "border-black bg-amber-50 text-amber-900 shadow-xs"
+                        : "border-black bg-white hover:bg-gray-50 text-gray-900 shadow-xs"
                     }`}
                     title="ว้าว / ชื่นชอบ"
                   >
-                    <span className="text-sm">🤩</span>
-                    <span>{starryCount}</span>
+                    <span className="text-xl sm:text-2xl leading-none">🤩</span>
+                    <span className="text-sm sm:text-base font-bold text-gray-800">{starryCount}</span>
                   </button>
 
+                  {/* Reaction 2: 💐 */}
                   <button
+                    type="button"
                     onClick={handleToggleFlower}
-                    className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full transition-all cursor-pointer ${
-                      hasLikedFlower ? "bg-pink-100 text-pink-700 font-semibold scale-105" : "text-gray-500 hover:bg-gray-100"
+                    className={`flex items-center gap-2 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full transition-all cursor-pointer active:scale-95 ${
+                      hasLikedFlower
+                        ? "border-2 border-pink-400 bg-pink-50 text-pink-900"
+                        : "hover:bg-gray-100 text-gray-900"
                     }`}
                     title="มอบช่อดอกไม้ / ชื่นชม"
                   >
-                    <span className="text-sm">💐</span>
-                    <span>{flowerCount}</span>
+                    <span className="text-xl sm:text-2xl leading-none">💐</span>
+                    <span className="text-sm sm:text-base font-bold text-gray-800">{flowerCount}</span>
                   </button>
-
-                  <div className="h-3.5 w-[1px] bg-gray-300 mx-0.5" />
 
                   {/* Share button */}
                   <button
+                    type="button"
                     onClick={handleCopyLink}
-                    className="w-7 h-7 rounded-full border border-gray-300 hover:border-gray-400 hover:bg-gray-50 flex items-center justify-center text-gray-600 hover:text-gray-900 transition-all shadow-2xs cursor-pointer active:scale-95"
+                    className="w-10 h-10 sm:w-11 sm:h-11 rounded-full border border-gray-300 hover:border-gray-400 hover:bg-gray-50 flex items-center justify-center text-gray-600 hover:text-gray-900 transition-all shadow-xs cursor-pointer active:scale-95"
                     title={isCopied ? "คัดลอกลิงก์แล้ว!" : "แชร์ไอเดียนี้"}
                   >
-                    {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Share2 className="w-3.5 h-3.5" />}
+                    {isCopied ? (
+                      <Check className="w-5 h-5 text-emerald-600" />
+                    ) : (
+                      <Share2 className="w-5 h-5 text-gray-600" />
+                    )}
                   </button>
 
                   {/* Bookmark button */}
                   <button
+                    type="button"
                     onClick={handleToggleBookmark}
-                    className={`w-7 h-7 rounded-full border transition-all shadow-2xs flex items-center justify-center cursor-pointer active:scale-95 ${
+                    className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full border transition-all shadow-xs flex items-center justify-center cursor-pointer active:scale-95 ${
                       isBookmarked
                         ? "border-amber-400 bg-amber-50 text-amber-500"
                         : "border-gray-300 hover:border-gray-400 hover:bg-gray-50 text-gray-600 hover:text-gray-900"
                     }`}
                     title={isBookmarked ? "ยกเลิกการบันทึก" : "บันทึกไอเดียนี้"}
                   >
-                    <Bookmark className={`w-3.5 h-3.5 ${isBookmarked ? "fill-amber-400" : ""}`} />
+                    <Bookmark
+                      className={`w-5 h-5 ${
+                        isBookmarked ? "fill-amber-400 text-amber-500" : "text-gray-600"
+                      }`}
+                    />
                   </button>
                 </div>
               </div>
