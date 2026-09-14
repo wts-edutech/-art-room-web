@@ -207,13 +207,13 @@ export default function NewIdeaPage() {
                     onChange={(e) => setCategory(e.target.value)}
                     className="w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 outline-none transition-all bg-white text-gray-800 font-medium cursor-pointer"
                   >
-                    <option value="ทั่วไป">💡 ทั่วไป</option>
-                    <option value="ใบงาน">📄 ใบงาน</option>
-                    <option value="รูปภาพ">🎨 รูปภาพ</option>
-                    <option value="กิจกรรม">🎪 กิจกรรม</option>
-                    <option value="วีดีโอ">🎬 วีดีโอ</option>
-                    <option value="สื่อการสอน">📚 สื่อการสอน</option>
-                    <option value="เกมส์">🎮 เกมส์</option>
+                    <option value="ทั่วไป">ทั่วไป</option>
+                    <option value="ใบงาน">ใบงานและแบบฝึกหัด</option>
+                    <option value="รูปภาพ">รูปภาพและผลงาน</option>
+                    <option value="กิจกรรม">กิจกรรมสร้างสรรค์</option>
+                    <option value="วีดีโอ">วิดีทัศน์</option>
+                    <option value="สื่อการสอน">สื่อและบทเรียน</option>
+                    <option value="เกมส์">เกมและการเรียนรู้</option>
                   </select>
                 </div>
 

@@ -5,7 +5,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import { Lightbulb, Search, Plus, X, Share2, Check, ArrowUpDown } from "lucide-react";
+import { 
+  Search, Plus, X, Share2, Check, ArrowUpDown, 
+  Sparkles, FileText, Palette, Layers, Video, 
+  BookOpen, Compass, Folder, Grid, Lock 
+} from "lucide-react";
 
 interface IdeaItem {
   id: string;
@@ -35,14 +39,14 @@ export default function IdeasPage() {
   const router = useRouter();
 
   const categories = [
-    { label: "ทั้งหมด", icon: "✨" },
-    { label: "ใบงาน", icon: "📄" },
-    { label: "รูปภาพ", icon: "🎨" },
-    { label: "กิจกรรม", icon: "🎪" },
-    { label: "วีดีโอ", icon: "🎬" },
-    { label: "สื่อการสอน", icon: "📚" },
-    { label: "เกมส์", icon: "🎮" },
-    { label: "ทั่วไป", icon: "💡" },
+    { label: "ทั้งหมด", icon: <Grid className="w-3.5 h-3.5" /> },
+    { label: "ใบงาน", icon: <FileText className="w-3.5 h-3.5" /> },
+    { label: "รูปภาพ", icon: <Palette className="w-3.5 h-3.5" /> },
+    { label: "กิจกรรม", icon: <Layers className="w-3.5 h-3.5" /> },
+    { label: "วีดีโอ", icon: <Video className="w-3.5 h-3.5" /> },
+    { label: "สื่อการสอน", icon: <BookOpen className="w-3.5 h-3.5" /> },
+    { label: "เกมส์", icon: <Compass className="w-3.5 h-3.5" /> },
+    { label: "ทั่วไป", icon: <Folder className="w-3.5 h-3.5" /> },
   ];
 
   useEffect(() => {
@@ -110,65 +114,72 @@ export default function IdeasPage() {
     <>
       <Navbar />
       <main className="flex-1 flex flex-col pt-32 pb-24 min-h-screen bg-[#FCFBF8]">
-        {/* Header Section */}
         <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-tr from-amber-400 to-orange-500 rounded-3xl text-white mb-6 shadow-lg shadow-orange-500/20 transform hover:scale-105 transition-transform">
-              <Lightbulb className="w-10 h-10" />
+          {/* Header Section */}
+          <div className="text-center mb-10 max-w-3xl mx-auto">
+            {/* Subtle Studio Badge */}
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-100 text-zinc-700 text-xs font-medium mb-4 border border-zinc-200/80 shadow-2xs">
+              <Sparkles className="w-3.5 h-3.5 text-zinc-600" />
+              <span>คลังแลกเปลี่ยนแนวคิดและแรงบันดาลใจศิลปะ</span>
             </div>
-            <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4 tracking-tight">
-              ห้องสมุดไอเดียศิลปะ
+
+            {/* Main Heading */}
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold font-heading text-zinc-900 mb-3 tracking-tight">
+              ห้องสมุดไอเดียสร้างสรรค์
             </h1>
-            <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto font-light leading-relaxed">
-              คลังไอเดีย สื่อการสอน ใบงาน และกิจกรรมสร้างสรรค์ <br className="hidden sm:inline" />
-              แบ่งปันโดยคุณครูและนักเรียน ชุมชนศิลปะ Art Room
+
+            {/* Subtitle */}
+            <p className="text-sm sm:text-base text-zinc-500 max-w-2xl mx-auto font-normal leading-relaxed mb-6">
+              พื้นที่แลกเปลี่ยนแนวทางการสร้างสรรค์ สื่อการเรียนรู้ ใบงาน และเทคนิคทางศิลปะ <br className="hidden sm:inline" />
+              ร่วมแบ่งปันโดยคุณครูและนักเรียน โรงเรียนวชิรธรรมสาธิต
             </p>
             
-            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+            {/* Action Button */}
+            <div className="flex items-center justify-center gap-3">
               <button 
                 onClick={handleShareClick} 
-                className="px-8 py-3.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold rounded-full transition-all duration-200 shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 hover:-translate-y-0.5 flex items-center gap-2 text-base"
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-sm rounded-xl transition-all shadow-sm hover:shadow cursor-pointer"
               >
-                <Plus className="w-5 h-5" /> ร่วมแบ่งปันไอเดียใหม่
+                <Plus className="w-4 h-4" /> ร่วมแบ่งปันแนวคิดใหม่
               </button>
             </div>
           </div>
 
           {/* Search & Filter Control Bar */}
-          <div className="max-w-4xl mx-auto mb-8 space-y-4">
+          <div className="max-w-4xl mx-auto mb-8 space-y-3.5">
             {/* Search Input */}
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Search className="h-5 w-5 text-gray-400" />
+                <Search className="h-4 w-4 text-zinc-400" />
               </div>
               <input
                 type="text"
-                placeholder="ค้นหาไอเดีย สื่อการสอน กิจกรรม หรือชื่อผู้แบ่งปัน..."
+                placeholder="ค้นหาหัวข้อ, สื่อการเรียนรู้, ใบงาน หรือชื่อผู้แบ่งปัน..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full h-14 pl-12 pr-12 rounded-2xl border border-gray-200 bg-white focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 outline-none transition-all shadow-sm text-base text-gray-800 placeholder-gray-400"
+                className="w-full h-12 pl-11 pr-11 rounded-xl border border-zinc-200 bg-white focus:border-zinc-400 focus:ring-2 focus:ring-zinc-100 outline-none transition-all shadow-2xs text-sm text-zinc-800 placeholder-zinc-400"
               />
               {searchTerm && (
                 <button 
                   onClick={() => setSearchTerm("")}
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600"
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-zinc-400 hover:text-zinc-600 cursor-pointer"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-4 h-4" />
                 </button>
               )}
             </div>
 
             {/* Category Pills & Sort Bar */}
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-2">
-              <div className="flex flex-wrap gap-2 justify-center md:justify-start">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-3 pt-1">
+              <div className="flex flex-wrap gap-1.5 justify-center md:justify-start">
                 {categories.map((cat) => (
                   <button
                     key={cat.label}
                     onClick={() => setSelectedCategory(cat.label)}
-                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 flex items-center gap-1.5 ${
+                    className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-medium transition-all duration-150 flex items-center gap-1.5 cursor-pointer ${
                       selectedCategory === cat.label
-                        ? "bg-orange-500 text-white shadow-md shadow-orange-500/20 scale-105"
-                        : "bg-white text-gray-600 border border-gray-200 hover:border-orange-300 hover:text-orange-600 hover:bg-orange-50/50"
+                        ? "bg-zinc-900 text-white shadow-xs"
+                        : "bg-white text-zinc-600 border border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-900"
                     }`}
                   >
                     <span>{cat.icon}</span>
@@ -178,13 +189,13 @@ export default function IdeasPage() {
               </div>
 
               {/* Sorting Selector */}
-              <div className="flex items-center gap-2 self-end md:self-auto shrink-0 bg-white px-3 py-1.5 rounded-xl border border-gray-200 shadow-sm text-sm">
-                <ArrowUpDown className="w-4 h-4 text-gray-400" />
-                <span className="text-xs text-gray-400 font-medium">เรียง:</span>
+              <div className="flex items-center gap-2 self-end md:self-auto shrink-0 bg-white px-3 py-1.5 rounded-xl border border-zinc-200 shadow-2xs text-xs text-zinc-600">
+                <ArrowUpDown className="w-3.5 h-3.5 text-zinc-400" />
+                <span className="text-zinc-400 font-normal">จัดเรียง:</span>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as "latest" | "comments")}
-                  className="bg-transparent text-sm font-medium text-gray-700 outline-none cursor-pointer"
+                  className="bg-transparent text-xs font-medium text-zinc-700 outline-none cursor-pointer"
                 >
                   <option value="latest">ล่าสุด</option>
                   <option value="comments">ความคิดเห็นมากที่สุด</option>
@@ -196,9 +207,9 @@ export default function IdeasPage() {
           {/* Ideas Grid */}
           <div className="mt-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <span>ไอเดียทั้งหมด</span>
-                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-orange-100 text-orange-700">
+              <h2 className="text-base sm:text-lg font-bold text-zinc-900 flex items-center gap-2">
+                <span>แนวคิดทั้งหมด</span>
+                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-zinc-100 text-zinc-600 border border-zinc-200/60">
                   {filteredAndSortedIdeas.length} รายการ
                 </span>
               </h2>
@@ -206,27 +217,27 @@ export default function IdeasPage() {
             
             {isLoading ? (
               <div className="flex flex-col justify-center items-center h-64 gap-3">
-                <div className="animate-spin rounded-full h-10 w-10 border-4 border-orange-200 border-t-orange-500"></div>
-                <p className="text-sm text-gray-400">กำลังโหลดไอเดีย...</p>
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-zinc-300 border-t-zinc-700"></div>
+                <p className="text-xs text-zinc-400">กำลังโหลดข้อมูล...</p>
               </div>
             ) : filteredAndSortedIdeas.length === 0 ? (
-              <div className="bg-white rounded-3xl p-12 text-center shadow-sm border border-gray-100 max-w-xl mx-auto">
-                <div className="w-16 h-16 bg-orange-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-orange-400">
-                  <Lightbulb className="w-8 h-8" />
+              <div className="bg-white rounded-2xl p-10 sm:p-12 text-center shadow-2xs border border-zinc-200/80 max-w-md mx-auto">
+                <div className="w-12 h-12 bg-zinc-100 rounded-xl flex items-center justify-center mx-auto mb-3.5 text-zinc-500 border border-zinc-200/60">
+                  <Folder className="w-5 h-5" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-800 mb-2">ไม่พบไอเดียในหมวดหมู่นี้</h3>
-                <p className="text-gray-500 text-sm mb-6">
-                  {searchTerm ? "ลองค้นหาด้วยคำอื่น หรือเลือกหมวดหมู่อื่นดูนะ" : "ยังไม่มีไอเดียในหมวดหมู่นี้ ร่วมเป็นคนแรกที่แบ่งปันไอเดียดีๆ กันเลย!"}
+                <h3 className="text-base font-bold text-zinc-800 mb-1.5">ยังไม่พบข้อมูลในหมวดหมู่นี้</h3>
+                <p className="text-zinc-500 text-xs sm:text-sm mb-5 font-normal leading-relaxed">
+                  {searchTerm ? "ไม่พบข้อมูลที่ตรงกับคำค้นหา กรุณาลองค้นหาด้วยคำอื่น" : "ร่วมเป็นส่วนหนึ่งในการส่งต่อแรงบันดาลใจและแบ่งปันแนวคิดสร้างสรรค์"}
                 </p>
                 <button
                   onClick={handleShareClick}
-                  className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-xl transition-all shadow-sm"
+                  className="px-5 py-2 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium rounded-xl transition-all shadow-2xs cursor-pointer"
                 >
-                  + แบ่งปันไอเดียตอนนี้
+                  + ร่วมแบ่งปันแนวคิดแรก
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredAndSortedIdeas.map((idea) => {
                   const commentCount = idea.commentsCount !== undefined 
                     ? idea.commentsCount 
@@ -237,77 +248,63 @@ export default function IdeasPage() {
                   return (
                     <div 
                       key={idea.id} 
-                      className="group flex flex-col bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl border border-gray-100/80 transition-all duration-300 hover:-translate-y-1.5"
+                      className="group flex flex-col bg-white rounded-2xl overflow-hidden shadow-2xs hover:shadow-md border border-zinc-200/80 transition-all duration-200 hover:-translate-y-0.5"
                     >
-                      <Link href={`/ideas/detail?id=${idea.id}`} className="block relative aspect-[4/3] w-full bg-gray-100 overflow-hidden">
+                      <Link href={`/ideas/detail?id=${idea.id}`} className="block relative aspect-[4/3] w-full bg-zinc-100 overflow-hidden">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img 
-                          src={idea.coverImageUrl || "https://placehold.co/800x600/FFF7ED/EA580C?text=Art+Idea"} 
+                          src={idea.coverImageUrl || "https://placehold.co/800x600/F4F4F5/71717A?text=Art+Idea"} 
                           alt={idea.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          onError={(e) => (e.currentTarget.src = "https://placehold.co/800x600/FFF7ED/EA580C?text=Art+Idea")}
+                          className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300"
+                          onError={(e) => (e.currentTarget.src = "https://placehold.co/800x600/F4F4F5/71717A?text=Art+Idea")}
                         />
                         
                         {/* Badges on Cover */}
                         <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
                           {idea.category && (
-                            <span className="bg-white/95 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-orange-600 shadow-sm border border-orange-100">
+                            <span className="bg-white/95 backdrop-blur-md px-2.5 py-0.5 rounded-md text-[11px] font-medium text-zinc-800 shadow-2xs border border-zinc-200/80">
                               {idea.category}
                             </span>
                           )}
                         </div>
 
                         {filesCount > 0 && (
-                          <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full text-xs font-semibold text-white shadow-sm flex items-center gap-1">
+                          <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-md text-[11px] font-medium text-white shadow-2xs flex items-center gap-1">
                             📎 {filesCount} ไฟล์
                           </div>
                         )}
                       </Link>
                       
-                      <div className="p-6 flex-1 flex flex-col justify-between">
+                      <div className="p-5 flex-1 flex flex-col justify-between">
                         <div>
                           <Link href={`/ideas/detail?id=${idea.id}`}>
-                            <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-orange-500 transition-colors leading-snug">
+                            <h3 className="text-base font-bold text-zinc-900 mb-1.5 line-clamp-2 group-hover:text-zinc-600 transition-colors leading-snug">
                               {idea.title}
                             </h3>
                           </Link>
-                          <p className="text-gray-500 text-sm line-clamp-2 mb-4 font-normal leading-relaxed">
+                          <p className="text-zinc-500 text-xs line-clamp-2 mb-4 font-normal leading-relaxed">
                             {idea.description}
                           </p>
                         </div>
                         
-                        <div className="pt-4 border-t border-gray-100 mt-2">
-                          <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-orange-400 to-amber-400 text-white flex items-center justify-center font-bold text-xs uppercase flex-shrink-0 shadow-sm">
-                                {(idea.authorName || "U").charAt(0)}
-                              </div>
-                              <span className="text-xs text-gray-600 font-medium truncate">
-                                {idea.authorName}
-                              </span>
-                            </div>
-                            
-                            <div className="flex items-center gap-3 text-xs text-gray-400 shrink-0">
-                              <span className="flex items-center gap-1 text-gray-500 font-medium">
-                                💬 {commentCount}
-                              </span>
+                        <div className="pt-3.5 border-t border-zinc-100 mt-2">
+                          <div className="flex items-center justify-between mb-3.5 text-xs text-zinc-500">
+                            <span className="font-medium text-zinc-700 truncate max-w-[140px]">{idea.authorName}</span>
+                            <div className="flex items-center gap-2 text-[11px]">
+                              <span>💬 {commentCount}</span>
                               <button
                                 onClick={(e) => handleCopyLink(e, idea.id)}
                                 title="คัดลอกลิงก์แชร์"
-                                className={`p-1.5 rounded-lg border transition-all ${
-                                  isCopied 
-                                    ? "bg-green-50 border-green-200 text-green-600" 
-                                    : "bg-gray-50 border-gray-100 text-gray-400 hover:text-orange-500 hover:bg-orange-50"
-                                }`}
+                                className="w-7 h-7 rounded-lg border border-zinc-200 flex items-center justify-center text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 transition-colors cursor-pointer"
                               >
-                                {isCopied ? <Check className="w-3.5 h-3.5" /> : <Share2 className="w-3.5 h-3.5" />}
+                                {isCopied ? <Check className="w-3 h-3 text-emerald-600" /> : <Share2 className="w-3 h-3" />}
                               </button>
                             </div>
                           </div>
 
                           <Link href={`/ideas/detail?id=${idea.id}`} className="block">
-                            <div className="w-full text-center py-2.5 bg-orange-50/80 text-orange-600 font-bold text-xs rounded-xl group-hover:bg-orange-500 group-hover:text-white transition-all duration-200 shadow-sm">
-                              ดูรายละเอียดไอเดีย →
+                            <div className="w-full text-center py-2 bg-zinc-50 hover:bg-zinc-900 text-zinc-700 hover:text-white font-medium text-xs rounded-xl border border-zinc-200/60 transition-all duration-150">
+                              ดูรายละเอียดแนวคิด →
                             </div>
                           </Link>
                         </div>
@@ -324,34 +321,36 @@ export default function IdeasPage() {
 
       {/* Guest Login Modal */}
       {showGuestModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity">
-          <div className="bg-white rounded-[2rem] p-8 max-w-sm w-full relative shadow-2xl border border-white/20 animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs transition-opacity">
+          <div className="bg-white rounded-2xl p-6 sm:p-7 max-w-sm w-full relative shadow-xl border border-zinc-200 text-center animate-in fade-in zoom-in-95 duration-150">
             <button 
               onClick={() => setShowGuestModal(false)}
-              className="absolute top-5 right-5 w-8 h-8 flex items-center justify-center bg-gray-50 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-all"
+              className="absolute top-4 right-4 w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 rounded-full transition-all cursor-pointer text-xs"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
-            <div className="text-center mb-4 mt-2">
-              <div className="flex justify-center mb-2 relative">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img 
-                  src="/images/login-mascot.png"
-                  alt="Login Mascot"
-                  className="w-40 h-40 object-contain animate-bounce relative z-10" 
-                  style={{ animationDuration: '3s' }}
-                  onError={(e) => (e.currentTarget.style.display = 'none')}
-                />
-              </div>
-              <h3 className="text-2xl font-black text-[#1E3A8A] mb-2 tracking-tight">เข้าสู่ระบบก่อนน้า~</h3>
-              <p className="text-gray-500 text-sm font-medium mb-2">เพื่อร่วมแบ่งปันไอเดียดีๆ ให้เพื่อนๆ และคุณครู</p>
+            
+            <div className="w-12 h-12 rounded-2xl bg-zinc-100 border border-zinc-200/80 flex items-center justify-center text-zinc-700 mx-auto mb-4">
+              <Lock className="w-5 h-5 text-zinc-700" />
             </div>
-            <div className="flex flex-col gap-3 px-2 pb-2">
-              <Link href="/login?redirect=/ideas/new" className="w-full group">
-                <button className="w-full py-3.5 bg-gradient-to-r from-orange-400 to-yellow-400 hover:from-orange-500 hover:to-yellow-500 text-white font-bold text-lg rounded-full transition-all shadow-md shadow-orange-500/20 group-hover:-translate-y-0.5">
+
+            <h3 className="text-lg font-bold text-zinc-900 mb-1.5 tracking-tight">เข้าสู่ระบบเพื่อร่วมแบ่งปัน</h3>
+            <p className="text-zinc-500 text-xs leading-relaxed font-normal mb-5">
+              กรุณาเข้าสู่ระบบเพื่อร่วมแบ่งปันแนวคิด สื่อการสอน หรือร่วมแสดงความคิดเห็น
+            </p>
+
+            <div className="flex flex-col gap-2">
+              <Link href="/login?redirect=/ideas/new" className="w-full">
+                <button className="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-xs sm:text-sm rounded-xl transition-all shadow-xs cursor-pointer">
                   เข้าสู่ระบบ
                 </button>
               </Link>
+              <button
+                onClick={() => setShowGuestModal(false)}
+                className="w-full py-2 text-zinc-500 hover:text-zinc-700 font-medium text-xs transition-colors cursor-pointer"
+              >
+                ไว้คราวหลัง
+              </button>
             </div>
           </div>
         </div>
