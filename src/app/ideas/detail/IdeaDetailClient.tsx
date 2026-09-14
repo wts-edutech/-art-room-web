@@ -35,6 +35,103 @@ interface IdeaDetail {
   comments?: CommentItem[];
 }
 
+// Line art Star-Eyes Face Icon (matching black-and-white line art style)
+function StarEyesIcon({ className = "w-7 h-7" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 28 28"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      {/* Face circle */}
+      <circle cx="14" cy="15" r="10" />
+      {/* Left Star Eye */}
+      <polygon
+        points="9,6 10.3,9.5 13.8,9.5 11,11.8 12.1,15.2 9,13.2 5.9,15.2 7,11.8 4.2,9.5 7.7,9.5"
+        fill="white"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
+      {/* Right Star Eye */}
+      <polygon
+        points="19,6 20.3,9.5 23.8,9.5 21,11.8 22.1,15.2 19,13.2 15.9,15.2 17,11.8 14.2,9.5 17.7,9.5"
+        fill="white"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
+      {/* Smiling mouth */}
+      <path d="M11.5 18.5c1.2 1.6 3.8 1.6 5 0" strokeWidth="1.8" />
+    </svg>
+  );
+}
+
+// Line art Bouquet Icon (matching black-and-white line art style)
+function BouquetIcon({ className = "w-7 h-7" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 28 28"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      {/* Flower blossoms cluster background */}
+      <path
+        d="M9 11.5C7 11 5.8 9.5 6.5 7.8c.8-1.8 2.5-1.2 3-2.2.6-1.2 2.2-2.2 4-2.1 1.6.1 3 1.1 3.5 2.2.6 1.1 2.2.5 3 2.2.7 1.7-.5 3.2-2.5 3.6"
+        fill="white"
+      />
+      {/* Individual flower petals and centers */}
+      <circle cx="13.5" cy="6.2" r="1.1" fill="none" stroke="currentColor" />
+      <path d="M13.5 4.2c.7 0 1.2.5 1.2 1.1M15.4 5.6c.4.5.3 1.2-.2 1.5M14.2 7.8c-.5.5-1.2.3-1.5-.2M12 7.2c-.5-.4-.5-1.2 0-1.6M12.4 4.8c.3-.5 1-.8 1.1-.6" />
+      
+      <circle cx="9.8" cy="8.6" r="1.1" fill="none" stroke="currentColor" />
+      <path d="M9.8 6.6c.6 0 1.1.4 1.1 1M11.6 8.2c.4.5.2 1.1-.2 1.4M10.4 10.2c-.5.4-1.1.2-1.4-.2M8.2 9.6c-.4-.4-.4-1 0-1.4M8.6 7.2c.3-.5.9-.6 1.2-.6" />
+
+      <circle cx="17.2" cy="8.6" r="1.1" fill="none" stroke="currentColor" />
+      <path d="M17.2 6.6c.6 0 1.1.4 1.1 1M19 8.2c.4.5.2 1.1-.2 1.4M17.8 10.2c-.5.4-1.1.2-1.4-.2M15.6 9.6c-.4-.4-.4-1 0-1.4M16 7.2c.3-.5.9-.6 1.2-.6" />
+
+      <circle cx="13.5" cy="10.8" r="1.1" fill="none" stroke="currentColor" />
+      <path d="M13.5 9.2c.6 0 1 .4 1 .9M15 10.5c.3.4.2 1-.2 1.2M14 12.2c-.4.3-1 .2-1.2-.2M12.2 11.6c-.3-.4-.2-1 .2-1.2" />
+
+      {/* Wrapper Cone */}
+      <path d="M7.8 11.8 L11.8 19.5 L16.2 19.5 L20.2 11.8" fill="white" />
+      <path d="M8.5 12 C11.5 13.8 16.5 13.8 19.5 12" />
+
+      {/* Tie bands */}
+      <path d="M11.2 19.2 L16.8 19.2" strokeWidth="1.8" />
+      <path d="M11.8 21.2 L16.2 21.2" strokeWidth="1.8" />
+
+      {/* Ribbon / Stems below tie */}
+      <path d="M12.2 22 L10 25.5 M14 22 L14 26 M15.8 22 L18 25.5" />
+    </svg>
+  );
+}
+
+// Line art Share Icon (L-bracket tray with curved up-right arrow)
+function ShareTrayIcon({ className = "w-5 h-5" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M6 9v9a1 1 0 0 0 1 1h11" />
+      <path d="M9 15c2-4 5.5-6 10-6" />
+      <path d="M14.5 5.5L19 9l-4.5 3.5" />
+    </svg>
+  );
+}
+
 export default function IdeaDetailClient() {
   const searchParams = useSearchParams();
   const params = useParams();
@@ -313,75 +410,94 @@ export default function IdeaDetailClient() {
                 {/* Views & Comments */}
                 <div className="flex items-center gap-4 text-sm sm:text-base text-gray-500 font-medium pr-1">
                   <div className="flex items-center gap-1.5">
-                    <Eye className="w-[18px] h-[18px] text-gray-400" />
-                    <span className="text-gray-600 font-semibold">{viewsCount}</span>
+                    <Eye className="w-[18px] h-[18px] text-gray-500" strokeWidth={1.8} />
+                    <span className="text-gray-700 font-semibold">{viewsCount}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <MessageCircle className="w-[18px] h-[18px] text-gray-400" />
-                    <span className="text-gray-600 font-semibold">{idea.comments?.length || 0}</span>
+                    <MessageCircle className="w-[18px] h-[18px] text-gray-500" strokeWidth={1.8} />
+                    <span className="text-gray-700 font-semibold">{idea.comments?.length || 0}</span>
                   </div>
                 </div>
 
-                {/* Reactions & Action Buttons */}
-                <div className="flex items-center gap-2.5 sm:gap-3.5">
-                  {/* Reaction 1: 🤩 with black pill capsule border */}
+                {/* Reactions & Action Buttons (Monochrome Outline Style) */}
+                <div className="flex items-center gap-3 sm:gap-4">
+                  {/* Reaction 1: Star Eyes (Black & White line art) */}
                   <button
                     type="button"
                     onClick={handleToggleStarry}
-                    className={`flex items-center gap-2 px-3.5 py-1 sm:px-4 sm:py-1.5 rounded-full border-2 transition-all cursor-pointer active:scale-95 ${
-                      hasLikedStarry
-                        ? "border-black bg-amber-50 text-amber-900 shadow-xs"
-                        : "border-black bg-white hover:bg-gray-50 text-gray-900 shadow-xs"
-                    }`}
+                    className="flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 text-neutral-800 hover:opacity-80"
                     title="ว้าว / ชื่นชอบ"
                   >
-                    <span className="text-xl sm:text-2xl leading-none">🤩</span>
-                    <span className="text-sm sm:text-base font-bold text-gray-800">{starryCount}</span>
+                    <StarEyesIcon
+                      className={`w-7 h-7 sm:w-8 sm:h-8 transition-all ${
+                        hasLikedStarry
+                          ? "text-amber-500 scale-110 drop-shadow-xs"
+                          : "text-neutral-800"
+                      }`}
+                    />
+                    <span
+                      className={`text-base sm:text-lg font-semibold ${
+                        hasLikedStarry ? "text-amber-600" : "text-gray-700"
+                      }`}
+                    >
+                      {starryCount}
+                    </span>
                   </button>
 
-                  {/* Reaction 2: 💐 */}
+                  {/* Reaction 2: Bouquet (Black & White line art) */}
                   <button
                     type="button"
                     onClick={handleToggleFlower}
-                    className={`flex items-center gap-2 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full transition-all cursor-pointer active:scale-95 ${
-                      hasLikedFlower
-                        ? "border-2 border-pink-400 bg-pink-50 text-pink-900"
-                        : "hover:bg-gray-100 text-gray-900"
-                    }`}
+                    className="flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 text-neutral-800 hover:opacity-80"
                     title="มอบช่อดอกไม้ / ชื่นชม"
                   >
-                    <span className="text-xl sm:text-2xl leading-none">💐</span>
-                    <span className="text-sm sm:text-base font-bold text-gray-800">{flowerCount}</span>
+                    <BouquetIcon
+                      className={`w-7 h-7 sm:w-8 sm:h-8 transition-all ${
+                        hasLikedFlower
+                          ? "text-pink-500 scale-110 drop-shadow-xs"
+                          : "text-neutral-800"
+                      }`}
+                    />
+                    <span
+                      className={`text-base sm:text-lg font-semibold ${
+                        hasLikedFlower ? "text-pink-600" : "text-gray-700"
+                      }`}
+                    >
+                      {flowerCount}
+                    </span>
                   </button>
 
-                  {/* Share button */}
+                  {/* Vertical Divider Line */}
+                  <div className="h-7 sm:h-8 w-[1.5px] bg-neutral-800 mx-0.5 sm:mx-1" />
+
+                  {/* Share button (Circular with black outline) */}
                   <button
                     type="button"
                     onClick={handleCopyLink}
-                    className="w-10 h-10 sm:w-11 sm:h-11 rounded-full border border-gray-300 hover:border-gray-400 hover:bg-gray-50 flex items-center justify-center text-gray-600 hover:text-gray-900 transition-all shadow-xs cursor-pointer active:scale-95"
+                    className="w-10 h-10 sm:w-11 sm:h-11 rounded-full border-[1.5px] border-neutral-800 bg-white hover:bg-neutral-50 flex items-center justify-center text-neutral-800 transition-all shadow-2xs cursor-pointer active:scale-95"
                     title={isCopied ? "คัดลอกลิงก์แล้ว!" : "แชร์ไอเดียนี้"}
                   >
                     {isCopied ? (
-                      <Check className="w-5 h-5 text-emerald-600" />
+                      <Check className="w-5 h-5 text-emerald-600 stroke-[2]" />
                     ) : (
-                      <Share2 className="w-5 h-5 text-gray-600" />
+                      <ShareTrayIcon className="w-5 h-5 text-neutral-800" />
                     )}
                   </button>
 
-                  {/* Bookmark button */}
+                  {/* Bookmark button (Circular with black outline) */}
                   <button
                     type="button"
                     onClick={handleToggleBookmark}
-                    className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full border transition-all shadow-xs flex items-center justify-center cursor-pointer active:scale-95 ${
+                    className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full border-[1.5px] transition-all shadow-2xs flex items-center justify-center cursor-pointer active:scale-95 ${
                       isBookmarked
-                        ? "border-amber-400 bg-amber-50 text-amber-500"
-                        : "border-gray-300 hover:border-gray-400 hover:bg-gray-50 text-gray-600 hover:text-gray-900"
+                        ? "border-neutral-800 bg-amber-50 text-amber-500"
+                        : "border-neutral-800 bg-white hover:bg-neutral-50 text-neutral-800"
                     }`}
                     title={isBookmarked ? "ยกเลิกการบันทึก" : "บันทึกไอเดียนี้"}
                   >
                     <Bookmark
-                      className={`w-5 h-5 ${
-                        isBookmarked ? "fill-amber-400 text-amber-500" : "text-gray-600"
+                      className={`w-5 h-5 stroke-[1.8] ${
+                        isBookmarked ? "fill-amber-400 text-amber-500" : "text-neutral-800"
                       }`}
                     />
                   </button>
