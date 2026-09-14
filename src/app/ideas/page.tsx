@@ -438,14 +438,18 @@ export default function IdeasPage() {
                         
                         <div className="pt-4 border-t border-gray-100 mt-2 space-y-3">
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2.5 min-w-0">
-                              <div className="w-8 h-8 rounded-full bg-[#ffb300] text-white flex items-center justify-center font-bold text-sm uppercase shrink-0 shadow-xs">
+                            <Link
+                              href={`/teachers/profile?name=${encodeURIComponent(idea.authorName || "ครูศิลปะ: Art Room")}`}
+                              className="group/author flex items-center gap-2.5 min-w-0 cursor-pointer"
+                              title="ดูโปรไฟล์คุณครู"
+                            >
+                              <div className="w-8 h-8 rounded-full bg-[#ffb300] text-white flex items-center justify-center font-bold text-sm uppercase shrink-0 shadow-xs transition-transform duration-200 group-hover/author:scale-110">
                                 {(idea.authorName || "ค").charAt(0)}
                               </div>
-                              <span className="text-[14px] sm:text-[15px] font-semibold text-gray-800 truncate">
+                              <span className="text-[14px] sm:text-[15px] font-semibold text-gray-800 truncate transition-all duration-200 group-hover/author:scale-105 group-hover/author:text-[#1E3A8A] origin-left inline-block">
                                 {idea.authorName || "ครูศิลปะ: Art Room"}
                               </span>
-                            </div>
+                            </Link>
 
                             <div className="flex items-center gap-3 shrink-0">
                               <div className="flex items-center gap-1.5 text-sm text-gray-600 font-medium">

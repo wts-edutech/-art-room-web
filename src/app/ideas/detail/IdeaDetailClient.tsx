@@ -378,9 +378,13 @@ export default function IdeaDetailClient() {
 
             {/* 2. Author Row & Stats Bar */}
             <div className="flex items-center justify-between gap-4 pb-4 border-b border-gray-100">
-              {/* Left Column: Avatar + Author + Date */}
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-11 h-11 rounded-full overflow-hidden border border-gray-200/80 bg-orange-50 shrink-0 shadow-2xs flex items-center justify-center">
+              {/* Left Column: Avatar + Author + Date (Clickable with hover enlargement) */}
+              <Link
+                href={`/teachers/profile?name=${encodeURIComponent(idea.authorName || "สลิน")}`}
+                className="group flex items-center gap-3 min-w-0 cursor-pointer"
+                title="คลิกเพื่อดูโปรไฟล์และข้อมูลของคุณครู"
+              >
+                <div className="w-11 h-11 rounded-full overflow-hidden border border-gray-200/80 bg-orange-50 shrink-0 shadow-2xs flex items-center justify-center transition-transform duration-200 group-hover:scale-110 group-hover:ring-2 group-hover:ring-orange-300">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img 
                     src={`https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(idea.authorName || 'ArtTeacher')}&backgroundColor=ffdfbf`} 
@@ -395,7 +399,7 @@ export default function IdeaDetailClient() {
                   />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="font-semibold text-gray-800 text-sm sm:text-[15px] leading-tight truncate">
+                  <h3 className="font-semibold text-gray-900 text-sm sm:text-[15px] leading-tight truncate transition-all duration-200 group-hover:scale-110 group-hover:text-[#1E3A8A] group-hover:font-bold origin-left inline-block">
                     {idea.authorName}
                   </h3>
                   <p className="text-xs text-gray-400 font-light mt-0.5 truncate">
@@ -403,7 +407,7 @@ export default function IdeaDetailClient() {
                     {idea.createdAt ? ` (แก้ไข ${new Date(idea.createdAt).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' })})` : ''}
                   </p>
                 </div>
-              </div>
+              </Link>
 
               {/* Right Column: Views/Comments + Reactions + Share/Bookmark */}
               <div className="flex flex-col items-end gap-2 shrink-0">
