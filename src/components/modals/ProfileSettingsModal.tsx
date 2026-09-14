@@ -297,10 +297,10 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
           {/* Scrollable Body */}
           <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 space-y-4">
             {/* Avatar Showcase & Selection Header */}
-            <div className="bg-gradient-to-br from-orange-50/70 via-amber-50/40 to-white rounded-2xl p-3.5 sm:p-4 border border-orange-150/70 flex flex-col sm:flex-row items-center gap-4">
+            <div className="bg-gradient-to-br from-amber-50/90 via-orange-50/50 to-white rounded-2xl p-4 border border-orange-200/90 shadow-xs flex flex-col sm:flex-row items-center gap-4">
               {/* Current Active Avatar Circle */}
               <div className="relative group shrink-0">
-                <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-full bg-white shadow-md border-3 border-white flex items-center justify-center overflow-hidden ring-3 ring-orange-200/60 transition-all">
+                <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-full bg-white shadow-md border-3 border-white ring-4 ring-orange-300/80 flex items-center justify-center overflow-hidden transition-all">
                   {currentResolvedAvatar.type === "image" ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img 
@@ -309,60 +309,67 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
                       className="w-full h-full object-cover" 
                     />
                   ) : currentResolvedAvatar.type === "preset" ? (
-                    <div className={`w-full h-full flex flex-col items-center justify-center ${currentResolvedAvatar.preset?.colorBg || "bg-orange-50"}`}>
-                      <span className="text-3xl sm:text-4xl select-none animate-in zoom-in-75 duration-200">
+                    <div className={`w-full h-full flex flex-col items-center justify-center ${currentResolvedAvatar.preset?.colorBg || "bg-orange-50"} bg-gradient-to-br from-amber-50 to-rose-100`}>
+                      <span className="text-4xl sm:text-5xl select-none filter drop-shadow-xs animate-in zoom-in-75 duration-200">
                         {currentResolvedAvatar.value}
                       </span>
                     </div>
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-tr from-orange-500 to-amber-400 text-white font-bold text-2xl sm:text-3xl flex items-center justify-center">
+                    <div className="w-full h-full bg-gradient-to-tr from-orange-500 to-amber-500 text-white font-extrabold text-2xl sm:text-3xl flex items-center justify-center">
                       {currentResolvedAvatar.value}
                     </div>
                   )}
                 </div>
 
-                {/* Quick Camera Action Overlay */}
+                {/* Quick Camera Action Overlay with Vivid High-Contrast Styling */}
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-orange-600 hover:bg-orange-700 text-white flex items-center justify-center shadow-md transition-all active:scale-90 cursor-pointer border-2 border-white"
+                  style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
+                  className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[#ea580c] hover:bg-[#c2410c] text-white flex items-center justify-center shadow-md transition-all active:scale-90 cursor-pointer border-2 border-white ring-2 ring-orange-200"
                   title="อัปโหลดรูปภาพใหม่"
                 >
-                  <Camera className="w-3.5 h-3.5" />
+                  <Camera className="w-4 h-4 text-white stroke-[2.5]" />
                 </button>
               </div>
 
               {/* Avatar Info & Mode Toggles */}
-              <div className="flex-1 text-center sm:text-left space-y-1.5">
+              <div className="flex-1 text-center sm:text-left space-y-2">
                 <div>
-                  <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-orange-600 block">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-bold uppercase tracking-wider bg-orange-100 text-orange-900 border border-orange-200 mb-1">
                     รูปภาพประจำตัว (Avatar)
                   </span>
-                  <h4 className="text-sm sm:text-base font-bold text-gray-900 truncate">
+                  <h4 className="text-base sm:text-lg font-extrabold text-gray-950 truncate">
                     {displayName || fullName || "ผู้ใช้งาน Art Room"}
                   </h4>
-                  <p className="text-[11px] sm:text-xs text-gray-500 font-normal mt-0.5">
-                    {currentResolvedAvatar.type === "preset"
-                      ? `ใช้งานไอคอนศิลปะ: ${currentResolvedAvatar.preset?.name}`
-                      : currentResolvedAvatar.type === "image"
-                      ? "ใช้งานรูปภาพอัปโหลดส่วนตัว"
-                      : "ใช้งานอักษรย่อเริ่มต้น"}
-                  </p>
+                  
+                  {/* High-Contrast Active Status Tag */}
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/95 border border-orange-200 shadow-2xs text-xs font-semibold text-gray-800 mt-1">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                    <span>
+                      {currentResolvedAvatar.type === "preset"
+                        ? `ใช้งานไอคอนศิลปะ: ${currentResolvedAvatar.preset?.name}`
+                        : currentResolvedAvatar.type === "image"
+                        ? "ใช้งานรูปภาพอัปโหลดส่วนตัว"
+                        : "ใช้งานอักษรย่อเริ่มต้น"}
+                    </span>
+                  </div>
                 </div>
 
-                {/* Avatar Options Tabs for Students */}
+                {/* Avatar Options Segmented Tabs for Students */}
                 {role === "student" && (
-                  <div className="flex items-center justify-center sm:justify-start gap-2 pt-0.5">
+                  <div className="inline-flex p-1 bg-amber-100/80 border border-amber-200/90 rounded-2xl gap-1 pt-0.5">
                     <button
                       type="button"
                       onClick={() => setAvatarMode("preset")}
-                      className={`px-3 py-1 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                      style={avatarMode === "preset" ? { backgroundColor: '#ea580c', color: '#ffffff' } : { backgroundColor: '#ffffff', color: '#374151' }}
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
                         avatarMode === "preset"
-                          ? "bg-orange-600 text-white shadow-xs"
-                          : "bg-white text-gray-600 hover:bg-orange-50 border border-gray-200"
+                          ? "border-orange-600 shadow-sm"
+                          : "border-transparent hover:bg-white text-gray-700"
                       }`}
                     >
-                      <Palette className="w-3 h-3" />
+                      <Palette className="w-3.5 h-3.5" />
                       <span>ไอคอนศิลปะ (8 แบบ)</span>
                     </button>
 
@@ -372,13 +379,14 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
                         setAvatarMode("upload");
                         fileInputRef.current?.click();
                       }}
-                      className={`px-3 py-1 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                      style={avatarMode === "upload" ? { backgroundColor: '#ea580c', color: '#ffffff' } : { backgroundColor: '#ffffff', color: '#374151' }}
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
                         avatarMode === "upload"
-                          ? "bg-orange-600 text-white shadow-xs"
-                          : "bg-white text-gray-600 hover:bg-orange-50 border border-gray-200"
+                          ? "border-orange-600 shadow-sm"
+                          : "border-transparent hover:bg-white text-gray-700"
                       }`}
                     >
-                      <Upload className="w-3 h-3" />
+                      <Upload className="w-3.5 h-3.5" />
                       <span>อัปโหลดรูปส่วนตัว</span>
                     </button>
                   </div>
@@ -390,9 +398,10 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="px-3 py-1 rounded-full text-xs font-bold bg-white hover:bg-orange-50 text-gray-700 border border-gray-200 flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+                      style={{ backgroundColor: '#ffffff', color: '#1f2937' }}
+                      className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-white hover:bg-orange-50 text-gray-800 border border-gray-300 flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
                     >
-                      <Upload className="w-3 h-3 text-orange-500" />
+                      <Upload className="w-3.5 h-3.5 text-[#ea580c]" />
                       <span>เปลี่ยนรูปภาพ</span>
                     </button>
 
@@ -403,7 +412,8 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
                           const seed = encodeURIComponent(fullName || "Guest");
                           setAvatarValue(`https://api.dicebear.com/7.x/notionists/svg?seed=${seed}&backgroundColor=ffe4e6,ffedd5`);
                         }}
-                        className="px-2.5 py-1 rounded-full text-xs font-normal text-gray-500 hover:text-red-600 hover:bg-red-50 flex items-center gap-1 transition-colors cursor-pointer"
+                        style={{ backgroundColor: '#ffffff', color: '#4b5563' }}
+                        className="px-3 py-1.5 rounded-xl text-xs font-semibold text-gray-600 hover:text-red-600 hover:bg-red-50 border border-gray-200 flex items-center gap-1 transition-colors cursor-pointer"
                       >
                         <RefreshCw className="w-3 h-3" />
                         <span>รีเซ็ตรูปโซเชียล</span>
@@ -446,26 +456,30 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
                           setAvatarValue(item.id);
                           setAvatarMode("preset");
                         }}
-                        className={`p-2.5 rounded-2xl border transition-all cursor-pointer flex flex-col items-center text-center relative ${
+                        style={isSelected ? { borderColor: '#ea580c', backgroundColor: '#fff7ed' } : undefined}
+                        className={`p-2.5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col items-center text-center relative ${
                           isSelected
-                            ? `ring-2 ring-orange-500 bg-white shadow-md ${item.colorBorder}`
-                            : "bg-gray-50/60 hover:bg-white hover:border-gray-300 border-gray-150"
+                            ? "border-orange-500 bg-orange-50/80 shadow-md ring-2 ring-orange-300/60"
+                            : "bg-white hover:bg-orange-50/40 hover:border-orange-200 border-gray-200 shadow-2xs"
                         }`}
                       >
                         {/* Active Indicator Checkmark */}
                         {isSelected && (
-                          <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-orange-600 text-white flex items-center justify-center shadow-2xs">
-                            <Check className="w-2.5 h-2.5 stroke-[3]" />
+                          <div 
+                            style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
+                            className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-[#ea580c] text-white flex items-center justify-center shadow-xs"
+                          >
+                            <Check className="w-3 h-3 stroke-[3]" />
                           </div>
                         )}
 
-                        <div className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full ${item.colorBg} flex items-center justify-center text-xl sm:text-2xl mb-1 shadow-2xs`}>
-                          {item.iconEmoji}
+                        <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-2xl ${item.colorBg} flex items-center justify-center text-2xl mb-1.5 shadow-2xs border border-orange-100`}>
+                          <span className="filter drop-shadow-xs">{item.iconEmoji}</span>
                         </div>
-                        <span className="text-[11px] sm:text-xs font-bold text-gray-800 leading-tight">
+                        <span className="text-[12px] sm:text-[13px] font-bold text-gray-900 leading-tight">
                           {item.name}
                         </span>
-                        <span className="text-[9px] sm:text-[10px] text-gray-400 font-normal mt-0.5 line-clamp-1">
+                        <span className="text-[10px] text-gray-600 font-medium mt-0.5 line-clamp-1">
                           {item.category}
                         </span>
                       </div>
