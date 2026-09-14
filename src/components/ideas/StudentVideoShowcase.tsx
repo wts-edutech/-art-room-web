@@ -224,10 +224,10 @@ export default function StudentVideoShowcase() {
       {/* Header & Section Title */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-5">
         <div>
-          <p className="text-xs sm:text-sm font-normal text-orange-600 mb-1">
+          <p className="text-xs sm:text-sm font-bold text-orange-600 mb-1">
             Inspiring Young Creators
           </p>
-          <h2 className="text-xl sm:text-2xl font-normal text-gray-900 tracking-tight flex flex-wrap items-baseline gap-2">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight flex flex-wrap items-baseline gap-2">
             <span>คลิปผลงานและวิธีทำสร้างสรรค์</span>
             <span className="text-xs sm:text-sm font-normal text-gray-500">โดยนักเรียน Art Room</span>
           </h2>
