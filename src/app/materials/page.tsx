@@ -7,18 +7,45 @@ import { lessons } from "@/db/schema";
 import { desc } from "drizzle-orm";
 import { DEFAULT_DOWNLOADS, DownloadItem } from "@/data/default-downloads";
 import { Suspense } from "react";
-import { Sparkles, BookOpen, FileText, GraduationCap } from "lucide-react";
+import { Sparkles, BookOpen, FileText } from "lucide-react";
 import { getSession } from "@/lib/api-auth";
 import { redirect } from "next/navigation";
+
+const DEFAULT_LESSONS = [
+  {
+    id: "1788253108830",
+    title: "เทคนิควาดเส้น ประเภทของเส้น",
+    description: "เรียนรู้ประเภทของเส้นและเทคนิคการวาดเส้นสร้างสรรค์เพื่อสื่ออารมณ์",
+    videoId: "AB1QIlCEDDU",
+    category: "สื่อวิดีทัศน์",
+    type: "general"
+  },
+  {
+    id: "1788253557873",
+    title: "สอนลงสีไม้รูปมังคุด",
+    description: "เทคนิคการระบายสีไม้และเกลี่ยน้ำหนักให้ผลงานดูมีมิติและสมจริง",
+    videoId: "Frj7Onjr4kg",
+    category: "สื่อวิดีทัศน์",
+    type: "general"
+  },
+  {
+    id: "1788253613400",
+    title: "เทคนิคสีไม้ รูปผีเสื้อ",
+    description: "การไล่เฉดสีไม้สร้างลวดลายปีกผีเสื้อที่สวยงามประณีต",
+    videoId: "71JjYfjynTM",
+    category: "สื่อวิดีทัศน์",
+    type: "general"
+  }
+];
 
 // Helper to fetch lessons from database
 async function getLessons() {
   try {
     const db = getDb();
     const list = await db.select().from(lessons).orderBy(desc(lessons.createdAt));
-    return list || [];
+    return list && list.length > 0 ? list : DEFAULT_LESSONS;
   } catch (error) {
-    return [];
+    return DEFAULT_LESSONS;
   }
 }
 
@@ -39,7 +66,6 @@ export default async function MaterialsPage() {
 
   const totalLessons = allLessons.length;
   const totalDownloads = allDownloads.length;
-  const totalResources = totalLessons + totalDownloads;
 
   return (
     <>
@@ -56,7 +82,7 @@ export default async function MaterialsPage() {
               {/* Badge */}
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white text-red-700 text-xs sm:text-sm font-bold mb-5 shadow-sm border border-red-100">
                 <Sparkles className="w-4 h-4 text-red-500" />
-                <span>ศูนย์รวมสื่อการเรียนรู้และใบงานศิลปะ (ม.1 - ม.6) ครบวงจร</span>
+                <span>ศูนย์รวมสื่อการเรียนรู้และใบงานศิลปะ ครบวงจร</span>
               </div>
 
               {/* Main Heading */}
@@ -71,7 +97,7 @@ export default async function MaterialsPage() {
               </p>
 
               {/* Stats Counters */}
-              <div className="grid grid-cols-3 gap-3 sm:gap-6 max-w-lg mx-auto">
+              <div className="grid grid-cols-2 gap-4 sm:gap-6 max-w-sm mx-auto">
                 <div className="bg-white/80 backdrop-blur-sm p-3.5 sm:p-4 rounded-2xl border border-gray-200/70 shadow-xs">
                   <div className="flex items-center justify-center gap-1.5 text-xs text-gray-500 font-medium mb-1">
                     <BookOpen className="w-3.5 h-3.5 text-red-500" />
@@ -88,14 +114,6 @@ export default async function MaterialsPage() {
                     <span className="sm:hidden">ใบงาน</span>
                   </div>
                   <p className="text-xl sm:text-2xl font-black text-emerald-600">{totalDownloads}</p>
-                </div>
-
-                <div className="bg-white/80 backdrop-blur-sm p-3.5 sm:p-4 rounded-2xl border border-gray-200/70 shadow-xs">
-                  <div className="flex items-center justify-center gap-1.5 text-xs text-gray-500 font-medium mb-1">
-                    <GraduationCap className="w-3.5 h-3.5 text-blue-500" />
-                    <span>ระดับชั้น</span>
-                  </div>
-                  <p className="text-xl sm:text-2xl font-black text-gray-900">ม.1 - ม.6</p>
                 </div>
               </div>
             </div>
