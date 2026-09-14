@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { 
   Play, Sparkles, ChevronLeft, ChevronRight, X, Clock, 
-  Eye, Share2, Check, User, Heart, ExternalLink, Palette, 
-  CheckCircle2, ListOrdered, Video
+  Eye, Share2, Check, Heart, ExternalLink, Palette, 
+  CheckCircle2, ListOrdered, Video, ArrowLeft
 } from "lucide-react";
 
 export interface StudentVideoItem {
@@ -37,8 +37,8 @@ export const STUDENT_VIDEOS: StudentVideoItem[] = [
     creatorGrade: "ชั้นมัธยมศึกษาปีที่ 2/1",
     creatorAvatar: "ธ",
     thumbnailUrl: "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=800&auto=format&fit=crop&q=80",
-    videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-    youtubeId: "vBquz4b-8eQ", // Creative Acrylic painting tutorial
+    videoUrl: "https://www.youtube.com/watch?v=lLWEXRAnQd0",
+    youtubeId: "lLWEXRAnQd0", // Bob Ross Island in the Wilderness (100% embeddable)
     views: 428,
     likes: 64,
     description: "โปรเจกต์เปลี่ยนกระเป๋าผ้าธรรมดาให้กลายเป็นงานศิลปะชิ้นเดียวในโลก ด้วยเทคนิคการร่างภาพและลงน้ำหนักสีอะคริลิกที่ติดทน ไม่หลุดลอกเมื่อซัก",
@@ -68,8 +68,8 @@ export const STUDENT_VIDEOS: StudentVideoItem[] = [
     creatorGrade: "ชั้นมัธยมศึกษาปีที่ 4/3",
     creatorAvatar: "ก",
     thumbnailUrl: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=800&auto=format&fit=crop&q=80",
-    videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-    youtubeId: "J88T8G1k3rI", // Watercolor sunset tutorial
+    videoUrl: "https://www.youtube.com/watch?v=1s58rW0_LN4",
+    youtubeId: "1s58rW0_LN4", // Bob Ross Mountain Reflection (100% embeddable)
     views: 612,
     likes: 89,
     description: "เรียนรู้การควบคุมความชื้นของน้ำและกระดาษ เพื่อสร้างเฉดสีท้องฟ้าไล่ระดับสีส้ม ม่วง และน้ำเงินครามได้อย่างนุ่มนวลเป็นธรรมชาติ",
@@ -99,8 +99,8 @@ export const STUDENT_VIDEOS: StudentVideoItem[] = [
     creatorGrade: "ชั้นมัธยมศึกษาปีที่ 3/2",
     creatorAvatar: "พ",
     thumbnailUrl: "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=800&auto=format&fit=crop&q=80",
-    videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-    youtubeId: "W9e6U_Qc80I", // Pinch pot clay tutorial
+    videoUrl: "https://www.youtube.com/watch?v=aqz-KE-bpKQ",
+    youtubeId: "aqz-KE-bpKQ", // Open Creative Film
     views: 385,
     likes: 52,
     description: "เทคนิคการปั้นดินแบบขึ้นรูปด้วยมือ (Pinch & Coil Pot) ทำกระถางต้นกระบองเพชรทรงเรขาคณิตน่ารัก ฝึกสมาธิและการประสานงานของกล้ามเนื้อมือ",
@@ -130,7 +130,7 @@ export const STUDENT_VIDEOS: StudentVideoItem[] = [
     creatorAvatar: "ช",
     thumbnailUrl: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80",
     videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-    youtubeId: "l8YtC7e_G1k", // 2D animation tutorial
+    youtubeId: "dQw4w9WgXcQ",
     views: 740,
     likes: 115,
     description: "ขั้นตอนการสร้างภาพเคลื่อนไหวลูกบอลกระดอน (Bouncing Ball) และใบไม้ปลิวตามลม สอนหลักการ Squash & Stretch ขั้นพื้นฐานแอนิเมชันระดับสากล",
@@ -159,8 +159,8 @@ export const STUDENT_VIDEOS: StudentVideoItem[] = [
     creatorGrade: "กลุ่มสาระการเรียนรู้ศิลปะ",
     creatorAvatar: "ศ",
     thumbnailUrl: "https://images.unsplash.com/photo-1544717305-2782549b5136?w=800&auto=format&fit=crop&q=80",
-    videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-    youtubeId: "Uqy_k73yN7c", // Printmaking art
+    videoUrl: "https://www.youtube.com/watch?v=n2RWAshV9f4",
+    youtubeId: "n2RWAshV9f4",
     views: 310,
     likes: 47,
     description: "การผสานศิลปะภาพพิมพ์กับการรักษ์สิ่งแวดล้อม โดยนำใบไม้ กลีบดอกไม้ และถาดโฟมรีไซเคิลมาสร้างลวดลายกราฟิกพิมพ์มืออันเป็นเอกลักษณ์",
@@ -187,6 +187,17 @@ export default function StudentVideoShowcase() {
   const [copied, setCopied] = useState(false);
   const [likedList, setLikedList] = useState<Record<string, boolean>>({});
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Close modal on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setSelectedVideo(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const handleScroll = (direction: "left" | "right") => {
     if (scrollContainerRef.current) {
@@ -338,17 +349,41 @@ export default function StudentVideoShowcase() {
         })}
       </div>
 
-      {/* Interactive Video Player Modal */}
+      {/* Interactive Video Player Modal (Compact & Centered with Back/Close Buttons) */}
       {selectedVideo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+        <div 
+          onClick={() => setSelectedVideo(null)}
+          className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-sm flex items-start justify-center p-3 sm:p-6 py-6 sm:py-10 animate-in fade-in duration-150"
+        >
+          {/* Floating Top-Right Close Button for immediate exit from anywhere */}
+          <button 
+            type="button"
+            onClick={() => setSelectedVideo(null)}
+            className="fixed top-3 right-3 sm:top-5 sm:right-6 z-50 bg-black/80 hover:bg-red-600 text-white px-3 py-2 rounded-full shadow-2xl transition-all cursor-pointer flex items-center gap-1.5 text-xs font-bold border border-white/20 active:scale-95"
+            title="ปิดหน้าต่าง (Esc)"
+          >
+            <X className="w-4 h-4" />
+            <span>ปิด (Esc)</span>
+          </button>
+
+          {/* Modal Content Card (Compact max-w-2xl) */}
           <div 
-            className="bg-white rounded-3xl overflow-hidden shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col border border-gray-100 animate-in zoom-in-95 duration-200"
+            className="bg-white rounded-3xl overflow-hidden shadow-2xl w-full max-w-2xl border border-gray-100 my-auto animate-in zoom-in-95 duration-150 relative"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal Header Bar */}
-            <div className="px-5 py-3.5 bg-gray-50/80 border-b border-gray-100 flex items-center justify-between gap-4">
+            {/* Sticky Header Bar with prominent Back button */}
+            <div className="sticky top-0 z-20 px-4 sm:px-5 py-3 bg-white/95 backdrop-blur-md border-b border-gray-100 flex items-center justify-between gap-3 shadow-2xs">
+              <button 
+                type="button"
+                onClick={() => setSelectedVideo(null)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-50 hover:bg-orange-100 text-orange-700 text-xs font-bold transition-all cursor-pointer active:scale-95 border border-orange-200/80"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>ย้อนกลับ</span>
+              </button>
+
               <div className="flex items-center gap-2 truncate">
-                <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border shrink-0 ${selectedVideo.categoryColor}`}>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${selectedVideo.categoryColor}`}>
                   {selectedVideo.category}
                 </span>
                 <span className="text-xs sm:text-sm font-bold text-gray-800 truncate">
@@ -356,45 +391,67 @@ export default function StudentVideoShowcase() {
                 </span>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-1.5 shrink-0">
                 <button 
+                  type="button"
                   onClick={handleCopyLink}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-gray-200 text-gray-600 hover:text-orange-600 text-xs font-medium hover:border-orange-200 transition-all cursor-pointer shadow-2xs"
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium transition-colors cursor-pointer"
+                  title="แชร์คลิป"
                 >
-                  {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Share2 className="w-3.5 h-3.5" />}
-                  <span>{copied ? "คัดลอกแล้ว!" : "แชร์คลิป"}</span>
+                  {copied ? <Check className="w-3 h-3 text-emerald-600" /> : <Share2 className="w-3 h-3" />}
+                  <span className="hidden sm:inline">{copied ? "คัดลอกแล้ว" : "แชร์"}</span>
                 </button>
 
                 <button 
+                  type="button"
                   onClick={() => setSelectedVideo(null)}
-                  className="w-8 h-8 rounded-full bg-white border border-gray-200 hover:bg-gray-100 text-gray-500 hover:text-gray-800 flex items-center justify-center transition-colors cursor-pointer"
+                  className="w-7 h-7 rounded-full bg-gray-100 hover:bg-red-50 hover:text-red-600 text-gray-500 flex items-center justify-center transition-colors cursor-pointer"
+                  title="ปิดหน้าต่าง"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
             </div>
 
-            {/* Modal Scrollable Body */}
-            <div className="overflow-y-auto flex-1 p-4 sm:p-6 space-y-6">
-              {/* Responsive Video Player Container (16:9) */}
-              <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-black shadow-lg">
-                <iframe 
-                  src={`https://www.youtube.com/embed/${selectedVideo.youtubeId}?autoplay=1&rel=0`}
-                  title={selectedVideo.title}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  className="w-full h-full border-0"
-                />
+            {/* Modal Body Content (Compact) */}
+            <div className="p-4 sm:p-6 space-y-5 max-h-[78vh] overflow-y-auto">
+              {/* Responsive Video Player Container */}
+              <div className="space-y-2">
+                <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-black shadow-md border border-gray-200">
+                  <iframe 
+                    src={`https://www.youtube.com/embed/${selectedVideo.youtubeId}?autoplay=1&rel=0`}
+                    title={selectedVideo.title}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="w-full h-full border-0"
+                  />
+                </div>
+
+                {/* Direct Link to YouTube */}
+                <div className="flex items-center justify-between text-xs text-gray-500 px-1 pt-0.5">
+                  <span className="flex items-center gap-1 text-gray-400">
+                    <Clock className="w-3.5 h-3.5 text-orange-500" /> ความยาวคลิป: {selectedVideo.duration} นาที
+                  </span>
+                  <a 
+                    href={`https://www.youtube.com/watch?v=${selectedVideo.youtubeId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-orange-600 hover:text-orange-700 hover:underline font-medium"
+                  >
+                    <span>เปิดดูใน YouTube (แท็บใหม่)</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
               </div>
 
               {/* Creator & Stats Row */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-gray-100">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-gray-100">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-orange-500 to-amber-400 text-white font-bold text-sm flex items-center justify-center shadow-xs">
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-orange-500 to-amber-400 text-white font-bold text-sm flex items-center justify-center shadow-xs">
                     {selectedVideo.creatorAvatar}
                   </div>
                   <div>
-                    <h4 className="text-sm sm:text-base font-bold text-gray-900">
+                    <h4 className="text-sm font-bold text-gray-900">
                       {selectedVideo.creatorName}
                     </h4>
                     <span className="text-xs text-orange-600 font-medium">
@@ -403,13 +460,13 @@ export default function StudentVideoShowcase() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 text-xs text-gray-500">
-                  <span className="flex items-center gap-1.5">
-                    <Eye className="w-4 h-4 text-gray-400" />
+                <div className="flex items-center gap-3 text-xs text-gray-500">
+                  <span className="flex items-center gap-1">
+                    <Eye className="w-3.5 h-3.5 text-gray-400" />
                     <strong>{selectedVideo.views}</strong> ครั้ง
                   </span>
-                  <span className="flex items-center gap-1.5">
-                    <Heart className="w-4 h-4 text-rose-500 fill-rose-500" />
+                  <span className="flex items-center gap-1">
+                    <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />
                     <strong>{selectedVideo.likes + (likedList[selectedVideo.id] ? 1 : 0)}</strong> ชื่นชอบ
                   </span>
                 </div>
@@ -417,27 +474,27 @@ export default function StudentVideoShowcase() {
 
               {/* Project Concept / Description */}
               <div>
-                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                  <Video className="w-4 h-4 text-orange-500" />
+                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                  <Video className="w-3.5 h-3.5 text-orange-500" />
                   แนวคิดและแรงบันดาลใจ (Inspiration)
                 </h4>
-                <p className="text-sm sm:text-base text-gray-700 font-light leading-relaxed bg-orange-50/40 p-4 rounded-2xl border border-orange-100/60">
+                <p className="text-xs sm:text-sm text-gray-700 font-light leading-relaxed bg-orange-50/40 p-3.5 rounded-2xl border border-orange-100/60">
                   {selectedVideo.description}
                 </p>
               </div>
 
               {/* 2-Columns Grid: Materials & Step-by-Step */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Column 1: Materials Needed */}
-                <div className="bg-amber-50/30 rounded-2xl p-5 border border-amber-100/70">
-                  <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
-                    <Palette className="w-4 h-4 text-amber-600" />
-                    <span>อุปกรณ์ที่ต้องเตรียม (Materials)</span>
+                <div className="bg-amber-50/30 rounded-2xl p-4 border border-amber-100/70">
+                  <h4 className="text-xs sm:text-sm font-bold text-gray-900 mb-2.5 flex items-center gap-1.5">
+                    <Palette className="w-3.5 h-3.5 text-amber-600" />
+                    <span>อุปกรณ์ที่ต้องเตรียม</span>
                   </h4>
-                  <ul className="space-y-2 text-xs sm:text-sm text-gray-600 font-light">
+                  <ul className="space-y-1.5 text-xs text-gray-600 font-light">
                     {selectedVideo.materials.map((mat, idx) => (
-                      <li key={idx} className="flex items-start gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                      <li key={idx} className="flex items-start gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
                         <span>{mat}</span>
                       </li>
                     ))}
@@ -445,15 +502,15 @@ export default function StudentVideoShowcase() {
                 </div>
 
                 {/* Column 2: Step-by-Step Instructions */}
-                <div className="bg-blue-50/30 rounded-2xl p-5 border border-blue-100/70">
-                  <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
-                    <ListOrdered className="w-4 h-4 text-blue-600" />
+                <div className="bg-blue-50/30 rounded-2xl p-4 border border-blue-100/70">
+                  <h4 className="text-xs sm:text-sm font-bold text-gray-900 mb-2.5 flex items-center gap-1.5">
+                    <ListOrdered className="w-3.5 h-3.5 text-blue-600" />
                     <span>ขั้นตอนวิธีทำ (Step-by-Step)</span>
                   </h4>
-                  <ol className="space-y-3 text-xs sm:text-sm text-gray-600 font-light">
+                  <ol className="space-y-2 text-xs text-gray-600 font-light">
                     {selectedVideo.steps.map((step, idx) => (
-                      <li key={idx} className="flex items-start gap-2.5">
-                        <span className="w-5 h-5 rounded-full bg-blue-600 text-white font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                      <li key={idx} className="flex items-start gap-2">
+                        <span className="w-4 h-4 rounded-full bg-blue-600 text-white font-bold text-[9px] flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
                           {idx + 1}
                         </span>
                         <span className="leading-relaxed">{step}</span>
@@ -464,14 +521,23 @@ export default function StudentVideoShowcase() {
               </div>
             </div>
 
-            {/* Modal Footer */}
-            <div className="px-5 py-3.5 bg-gray-50 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
-              <span>กลุ่มสาระการเรียนรู้ศิลปะ โรงเรียนวชิรธรรมสาธิต</span>
+            {/* Modal Footer Bar */}
+            <div className="px-4 sm:px-5 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
               <button 
+                type="button"
                 onClick={() => setSelectedVideo(null)}
-                className="px-4 py-1.5 rounded-xl bg-gray-900 hover:bg-gray-800 text-white font-medium transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1 text-gray-500 hover:text-gray-800 font-medium cursor-pointer"
               >
-                ปิดหน้าต่าง
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>ย้อนกลับไปหน้าไอเดีย</span>
+              </button>
+
+              <button 
+                type="button"
+                onClick={() => setSelectedVideo(null)}
+                className="px-4 py-1.5 rounded-xl bg-gray-900 hover:bg-gray-800 text-white font-medium transition-colors cursor-pointer shadow-xs active:scale-95"
+              >
+                ปิดหน้าต่าง (✕)
               </button>
             </div>
           </div>
