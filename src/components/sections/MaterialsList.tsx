@@ -7,7 +7,7 @@ import {
   Search, BookOpen, Video, Image as ImageIcon, Star, Grid, 
   Download, ExternalLink, GraduationCap, FileText, Presentation, 
   Filter, CheckCircle2, ArrowRight, X, Sparkles, Eye, CloudDownload,
-  Loader2
+  Loader2, MessageSquare
 } from "lucide-react";
 import { DownloadItem } from "@/data/default-downloads";
 
@@ -472,8 +472,17 @@ export default function MaterialsList({
                       <span>{downloadCounts[item.id] ?? item.downloadsCount ?? 342} ครั้ง</span>
                     </div>
 
-                    {/* Right: Actions [ 👁 ดู ] and [ ☁ ดาวน์โหลด ] */}
-                    <div className="flex items-center gap-2">
+                    {/* Right: Actions [ 💬 ถาม-ตอบ ] [ 👁 ดู ] and [ ☁ ดาวน์โหลด ] */}
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                      <Link
+                        href={item.rawId ? `${basePath}/detail?id=${item.rawId}#comments` : "#materials-community-discussion"}
+                        className="px-2.5 py-1.5 rounded-full bg-orange-50/90 hover:bg-orange-100 text-orange-600 text-xs font-semibold flex items-center gap-1 transition-all active:scale-95 shadow-2xs border border-orange-100/60 cursor-pointer"
+                        title="ร่วมพูดคุยหรือสอบถามเกี่ยวกับบทเรียนนี้"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5 text-orange-500" />
+                        <span className="hidden sm:inline">ถาม-ตอบ</span>
+                      </Link>
+
                       <button
                         type="button"
                         onClick={() => handleView(item)}
@@ -563,17 +572,29 @@ export default function MaterialsList({
                   </div>
 
                   <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-2xs space-y-2">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
                       <h4 className="text-sm font-bold text-gray-800">คำอธิบายบทเรียน</h4>
-                      {previewItem.rawId && (
-                        <Link
-                          href={`${basePath}/detail?id=${previewItem.rawId}`}
-                          className="text-xs font-semibold text-red-600 hover:text-red-700 flex items-center gap-1"
-                        >
-                          <span>ดูหน้าบทเรียนเต็ม</span>
-                          <ArrowRight className="w-3.5 h-3.5" />
-                        </Link>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {previewItem.rawId && (
+                          <Link
+                            href={`${basePath}/detail?id=${previewItem.rawId}#comments`}
+                            className="text-xs font-semibold text-orange-600 hover:text-orange-700 flex items-center gap-1 bg-orange-50 px-2.5 py-1 rounded-lg border border-orange-100"
+                            onClick={() => setPreviewItem(null)}
+                          >
+                            <MessageSquare className="w-3 h-3" />
+                            <span>ถาม-ตอบบทเรียน</span>
+                          </Link>
+                        )}
+                        {previewItem.rawId && (
+                          <Link
+                            href={`${basePath}/detail?id=${previewItem.rawId}`}
+                            className="text-xs font-semibold text-red-600 hover:text-red-700 flex items-center gap-1"
+                          >
+                            <span>ดูหน้าบทเรียนเต็ม</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </Link>
+                        )}
+                      </div>
                     </div>
                     <p className="text-xs sm:text-[13px] text-gray-600 leading-relaxed">
                       {previewItem.description || "สื่อการสอนศิลปะโดยกลุ่มสาระการเรียนรู้ศิลปะ โรงเรียนวชิรธรรมสาธิต"}

@@ -8,6 +8,7 @@ import { User, MessageSquare, ArrowLeft, Eye, Star, Mail, Download } from "lucid
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import CommunityDiscussion from "@/components/common/CommunityDiscussion";
 
 export default function LessonDetailPage() {
   const searchParams = useSearchParams();
@@ -279,97 +280,23 @@ export default function LessonDetailPage() {
               </div>
             </div>
 
-            {/* Comment Section */}
-            <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
-              <div className="flex items-center gap-3 mb-8 border-b border-gray-100 pb-4">
-                <MessageSquare className="w-6 h-6 text-(--color-primary-500)" />
-                <h2 className="text-2xl font-bold font-heading text-gray-900">ความคิดเห็น ({comments.length})</h2>
-              </div>
-
-              {/* Comment Form */}
-              {userRole === "guest" ? (
-                <div className="mb-10 p-6 bg-gray-50 border border-gray-200 rounded-2xl text-center">
-                  <p className="text-gray-500 mb-2">คุณกำลังเข้าชมในฐานะ "บุคคลทั่วไป"</p>
-                  <p className="text-gray-700 font-medium">ไม่สามารถแสดงความคิดเห็นได้ เพื่อป้องกันสแปมและปกป้องความเป็นส่วนตัวของนักเรียน</p>
-                </div>
-              ) : (
-                <form onSubmit={handlePostComment} className="mb-10 flex gap-4">
-                  <div className="w-12 h-12 rounded-full bg-gray-100 flex-shrink-0 flex items-center justify-center text-gray-400 overflow-hidden font-bold text-lg">
-                    {authorName ? authorName.charAt(0) : <User className="w-6 h-6" />}
-                  </div>
-                  <div className="flex-1 space-y-3">
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <div className="relative flex-1">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <User className="h-4 w-4 text-gray-400" />
-                        </div>
-                        <input
-                          type="text"
-                          value={authorName}
-                          onChange={(e) => setAuthorName(e.target.value)}
-                          placeholder="ชื่อของคุณ (เช่น ด.ช. สมชาย)"
-                          className="w-full h-10 pl-10 pr-4 rounded-xl border border-gray-200 focus:border-(--color-primary-500) focus:ring-2 focus:ring-(--color-primary-500)/20 outline-none transition-all text-sm font-medium"
-                          required
-                        />
-                      </div>
-                      <div className="relative flex-1">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <Mail className="h-4 w-4 text-gray-400" />
-                        </div>
-                        <input
-                          type="email"
-                          value={authorEmail}
-                          onChange={(e) => setAuthorEmail(e.target.value)}
-                          placeholder="อีเมลของคุณ (เพื่อยืนยันตัวตน)"
-                          className="w-full h-10 pl-10 pr-4 rounded-xl border border-gray-200 focus:border-(--color-primary-500) focus:ring-2 focus:ring-(--color-primary-500)/20 outline-none transition-all text-sm font-medium"
-                          required
-                        />
-                      </div>
-                    </div>
-                    <textarea 
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      placeholder="พิมพ์ข้อความเพื่อสอบถามหรือแสดงความคิดเห็น..."
-                      className="w-full h-24 p-4 rounded-xl border border-gray-200 focus:border-(--color-primary-500) focus:ring-2 focus:ring-(--color-primary-500)/20 outline-none transition-all resize-none"
-                      required
-                    />
-                    <div className="flex justify-end">
-                      <Button type="submit" disabled={!newComment.trim() || !authorName.trim() || !authorEmail.trim() || isPosting} className="rounded-full px-6 shadow-sm hover:shadow-md transition-shadow bg-(--color-primary-500) hover:bg-(--color-primary-600) text-white">
-                        {isPosting ? "กำลังส่ง..." : "ส่งความคิดเห็น"}
-                      </Button>
-                    </div>
-                  </div>
-                </form>
-              )}
-
-              {/* Comment List */}
-              <div className="space-y-6">
-                {comments.length === 0 ? (
-                  <div className="text-center text-gray-400 py-8">ยังไม่มีความคิดเห็น เป็นคนแรกที่แสดงความคิดเห็นเลย!</div>
-                ) : (
-                  (Array.isArray(comments) ? comments : []).map((comment) => (
-                    <div key={comment.id} className="flex gap-4">
-                      <div className="w-12 h-12 rounded-full bg-blue-50 flex-shrink-0 flex items-center justify-center text-(--color-accent-blue) font-bold text-lg overflow-hidden">
-                        {comment.authorImage ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={comment.authorImage} alt={comment.author} className="w-full h-full object-cover" />
-                        ) : (
-                          comment.author.charAt(0)
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <div className="bg-gray-50 rounded-2xl rounded-tl-none p-4 inline-block min-w-[250px] border border-gray-100">
-                          <div className="flex items-baseline justify-between gap-4 mb-1">
-                            <span className="font-bold text-gray-900">{comment.author}</span>
-                            <span className="text-xs text-gray-500 font-medium">{formatDate(comment.time)}</span>
-                          </div>
-                          <p className="text-gray-700 text-[15px]">{comment.text}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
+            {/* Community Discussion & Q&A Section */}
+            <div className="mt-8">
+              <CommunityDiscussion
+                id="comments"
+                topicId={id}
+                title={`ถาม-ตอบ & สนทนาบทเรียน`}
+                subtitle={`ร่วมพูดคุย สอบถามเทคนิค หรือแลกเปลี่ยนความคิดเห็นเกี่ยวกับบทเรียน "${lesson.title}"`}
+                accentColor="red"
+                tags={["ทั้งหมด", "❓ ถามเรื่องเทคนิค", "🎨 อุปกรณ์ที่ใช้", "💡 ข้อแนะนำเพิ่มเติม", "💬 พูดคุยทั่วไป"]}
+                quickPrompts={[
+                  "ขอบคุณสำหรับบทเรียนดีๆ ครับ ทำตามได้ง่ายมาก 👍",
+                  "ขอคำแนะนำเรื่องการเลือกใช้สีเพิ่มเติมครับ 🎨",
+                  "มีข้อสงสัยขั้นตอนการเกลี่ยน้ำหนักครับ ❓",
+                  "อยากให้คุณครูทำคลิปเทคนิคนี้เพิ่มเติมครับ ✨"
+                ]}
+                emptyMessage="ยังไม่มีข้อความสนทนาในบทเรียนนี้ ร่วมสอบถามหรือแชร์ความคิดเห็นเป็นคนแรกได้เลย!"
+              />
             </div>
 
           </div>

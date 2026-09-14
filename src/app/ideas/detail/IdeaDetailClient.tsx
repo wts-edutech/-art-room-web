@@ -9,13 +9,15 @@ import {
   ArrowLeft, Download, MessageSquare, Send, Trash2, 
   Video, Gamepad2, FileText, Image as ImageIcon, File, 
   Link as LinkIcon, Share2, Check, Sparkles, Calendar, User,
-  Eye, MessageCircle, Bookmark
+  Eye, MessageCircle, Bookmark, Heart, Reply
 } from "lucide-react";
+import { resolveUserAvatar } from "@/lib/art-avatars";
 
 interface CommentItem {
   id: string;
   authorName: string;
   authorEmail?: string;
+  authorImage?: string;
   text: string;
   createdAt: string;
 }
@@ -180,6 +182,7 @@ export default function IdeaDetailClient() {
   const [commentText, setCommentText] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [authorName, setAuthorName] = useState("");
+  const [userAvatar, setUserAvatar] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState("student");
   const [isCopied, setIsCopied] = useState(false);
@@ -189,6 +192,7 @@ export default function IdeaDetailClient() {
   const [flowerCount, setFlowerCount] = useState(0);
   const [hasLikedFlower, setHasLikedFlower] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const [commentLikesMap, setCommentLikesMap] = useState<Record<string, boolean>>({});
   const [previewFile, setPreviewFile] = useState<{ name: string; url: string; size?: number } | null>(null);
 
   const primaryFile = useMemo(() => {
@@ -217,10 +221,12 @@ export default function IdeaDetailClient() {
 
   useEffect(() => {
     const name = localStorage.getItem("artroom_author_name");
-    const role = localStorage.getItem("artroom_role");
+    const role = localStorage.getItem("artroom_role") || localStorage.getItem("artroom_user_role");
+    const avatar = localStorage.getItem("artroom_user_avatar") || "";
     setIsLoggedIn(!!name);
     if (name) setAuthorName(name);
     if (role) setUserRole(role);
+    if (avatar) setUserAvatar(avatar);
 
     if (id) {
       // Load saved interaction states
@@ -329,6 +335,7 @@ export default function IdeaDetailClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           authorName: authorName,
+          authorImage: userAvatar,
           text: commentText.trim()
         })
       });
@@ -513,6 +520,21 @@ export default function IdeaDetailClient() {
 
                   {/* Vertical Divider Line */}
                   <div className="h-7 sm:h-8 w-[1.5px] bg-neutral-800 mx-0.5 sm:mx-1" />
+
+                  {/* Comment / Discussion button with comment count */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      document.getElementById("comments-section")?.scrollIntoView({ behavior: "smooth" });
+                    }}
+                    className="h-10 sm:h-11 px-3 sm:px-3.5 rounded-full border-[1.5px] border-neutral-800 bg-white hover:bg-orange-50/50 flex items-center justify-center gap-1.5 text-neutral-800 transition-all shadow-2xs cursor-pointer active:scale-95"
+                    title="ไปยังส่วนพูดคุยและแสดงความคิดเห็น"
+                  >
+                    <MessageCircle className="w-5 h-5 text-orange-500" />
+                    <span className="text-sm font-bold text-gray-800">
+                      {idea.comments?.length || 0}
+                    </span>
+                  </button>
 
                   {/* Share button (Circular with black outline) */}
                   <button
@@ -745,11 +767,11 @@ export default function IdeaDetailClient() {
               <hr className="border-gray-100 my-8" />
 
               {/* Comments Section */}
-              <div>
+              <div id="comments-section" className="scroll-mt-28">
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                     <MessageSquare className="w-5 h-5 text-orange-500" />
-                    <span>ความคิดเห็น</span>
+                    <span>ความคิดเห็น & สนทนาแลกเปลี่ยน</span>
                     <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600">
                       {idea.comments?.length || 0}
                     </span>
@@ -758,35 +780,76 @@ export default function IdeaDetailClient() {
 
                 {/* Post Comment Form */}
                 {isLoggedIn ? (
-                  <form onSubmit={handlePostComment} className="mb-8">
+                  <form onSubmit={handlePostComment} className="mb-8 bg-gray-50/50 p-4 sm:p-5 rounded-2xl border border-gray-100">
                     <div className="flex gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm uppercase flex-shrink-0 shadow-sm">
-                        {(authorName || "U").charAt(0)}
-                      </div>
-                      <div className="flex-1 relative">
-                        <textarea 
-                          value={commentText}
-                          onChange={(e) => setCommentText(e.target.value)}
-                          placeholder={`แสดงความคิดเห็นในชื่อ ${authorName}...`}
-                          className="w-full h-24 p-4 pr-14 rounded-2xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 outline-none transition-all resize-none text-sm text-gray-800"
-                        />
-                        <button 
-                          type="submit"
-                          disabled={!commentText.trim() || isSubmittingComment}
-                          className="absolute bottom-3 right-3 w-9 h-9 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-xl flex items-center justify-center shadow-sm transition-all"
-                          title="ส่งความคิดเห็น"
-                        >
-                          <Send className="w-4 h-4" />
-                        </button>
+                      {/* Avatar */}
+                      {(() => {
+                        const currentResolvedAvatar = resolveUserAvatar(userAvatar, authorName);
+                        return (
+                          <div className="w-10 h-10 rounded-full overflow-hidden bg-white shadow-xs border border-orange-200 flex items-center justify-center shrink-0">
+                            {currentResolvedAvatar.type === "image" ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={currentResolvedAvatar.value} alt={authorName} className="w-full h-full object-cover" />
+                            ) : currentResolvedAvatar.type === "preset" ? (
+                              <span className="text-lg select-none">{currentResolvedAvatar.value}</span>
+                            ) : (
+                              <span className="text-xs font-bold text-orange-600">{currentResolvedAvatar.value}</span>
+                            )}
+                          </div>
+                        );
+                      })()}
+
+                      <div className="flex-1">
+                        <div className="relative">
+                          <textarea 
+                            value={commentText}
+                            onChange={(e) => setCommentText(e.target.value)}
+                            placeholder={`แสดงความคิดเห็นในชื่อ ${authorName}...`}
+                            className="w-full h-24 p-4 pr-14 rounded-2xl border border-gray-200 bg-white focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 outline-none transition-all resize-none text-sm text-gray-800"
+                          />
+                          <button 
+                            type="submit"
+                            disabled={!commentText.trim() || isSubmittingComment}
+                            className="absolute bottom-3 right-3 w-9 h-9 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-xl flex items-center justify-center shadow-sm transition-all cursor-pointer"
+                            title="ส่งความคิดเห็น"
+                          >
+                            <Send className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        {/* Quick Prompts */}
+                        <div className="mt-2.5 flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                          <span className="text-[11px] text-gray-400 shrink-0 mr-1 flex items-center gap-1">
+                            <Sparkles className="w-3 h-3 text-amber-500" />
+                            ข้อความด่วน:
+                          </span>
+                          {[
+                            "💡 ขอสอบถามเทคนิคหรือไอเดียเพิ่มเติมครับ",
+                            "🎨 สวยงามและสร้างสรรค์มาก เป็นแรงบันดาลใจที่ดี ✨",
+                            "✂️ จะนำกิจกรรมนี้ไปทดลองประดิษฐ์ดูครับ 👍",
+                            "📄 มีข้อแนะนำอุปกรณ์เพิ่มเติมไหมครับ"
+                          ].map((prompt, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => {
+                                setCommentText((prev) => prev.trim() ? `${prev.trim()}\n${prompt}` : prompt);
+                              }}
+                              className="shrink-0 px-2.5 py-1 rounded-lg bg-white hover:bg-orange-50 border border-gray-200/80 hover:border-orange-200 text-[11px] font-normal text-gray-600 hover:text-orange-700 transition-all shadow-2xs active:scale-95 cursor-pointer"
+                            >
+                              {prompt}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </form>
                 ) : (
                   <div className="mb-8 bg-orange-50/60 border border-orange-100 rounded-2xl p-6 text-center">
                     <p className="text-gray-700 text-sm mb-3">เข้าสู่ระบบเพื่อร่วมแสดงความคิดเห็นหรือพูดคุยกับผู้แบ่งปันไอเดีย</p>
-                    <Link href={`/login?redirect=/ideas/detail?id=${idea.id}`}>
-                      <button className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl text-sm shadow-sm transition-all">
-                        เข้าสู่ระบบเพื่อคอมเมนต์
+                    <Link href={`/login?redirect=/ideas/detail?id=${idea.id}#comments-section`}>
+                      <button className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl text-sm shadow-sm transition-all cursor-pointer">
+                        เข้าสู่ระบบเพื่อร่วมสนทนา
                       </button>
                     </Link>
                   </div>
@@ -800,21 +863,36 @@ export default function IdeaDetailClient() {
                         userRole === "admin" || 
                         comment.authorName === authorName ||
                         (authorName && comment.authorName?.startsWith(authorName));
+                      const commentAvatar = resolveUserAvatar(comment.authorImage, comment.authorName);
+                      const isLiked = commentLikesMap[comment.id] || false;
 
                       return (
                         <div key={comment.id} className="flex gap-3 group">
-                          <div className="w-9 h-9 rounded-xl bg-gray-100 text-gray-600 flex items-center justify-center font-bold text-xs uppercase flex-shrink-0 mt-0.5">
-                            {(comment.authorName || "U").charAt(0)}
+                          {/* Comment Avatar */}
+                          <div className="w-10 h-10 rounded-full overflow-hidden bg-white shadow-xs border border-gray-200 flex items-center justify-center shrink-0 mt-0.5">
+                            {commentAvatar.type === "image" ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={commentAvatar.value} alt={comment.authorName} className="w-full h-full object-cover" />
+                            ) : commentAvatar.type === "preset" ? (
+                              <span className="text-lg select-none">{commentAvatar.value}</span>
+                            ) : (
+                              <span className="text-xs font-bold text-gray-700">{commentAvatar.value}</span>
+                            )}
                           </div>
+
                           <div className="flex-1 bg-gray-50/80 rounded-2xl rounded-tl-none p-4 border border-gray-100">
-                            <div className="flex items-center justify-between mb-1.5">
+                            <div className="flex items-center justify-between mb-1.5 flex-wrap gap-2">
                               <div className="flex items-center gap-2">
                                 <span className="font-bold text-gray-900 text-sm">
                                   {comment.authorName}
                                 </span>
-                                {comment.authorName?.includes("(Admin)") && (
+                                {comment.authorName?.includes("(Admin)") ? (
                                   <span className="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-md font-bold">
-                                    ผู้ดูแล
+                                    ผู้ดูแลระบบ
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-md font-bold">
+                                    สมาชิก Art Room
                                   </span>
                                 )}
                               </div>
@@ -826,7 +904,7 @@ export default function IdeaDetailClient() {
                                 {canDelete && (
                                   <button
                                     onClick={() => handleDeleteComment(comment.id)}
-                                    className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-600 p-1 rounded transition-all"
+                                    className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-600 p-1 rounded transition-all cursor-pointer"
                                     title="ลบความคิดเห็นนี้"
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
@@ -834,9 +912,37 @@ export default function IdeaDetailClient() {
                                 )}
                               </div>
                             </div>
-                            <p className="text-gray-700 text-sm whitespace-pre-wrap leading-relaxed">
+                            <p className="text-gray-700 text-sm whitespace-pre-wrap leading-relaxed mb-3">
                               {comment.text}
                             </p>
+
+                            {/* Comment Footer: Like & Reply */}
+                            <div className="flex items-center gap-3 pt-1 text-xs">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setCommentLikesMap((prev) => ({ ...prev, [comment.id]: !prev[comment.id] }));
+                                }}
+                                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                                  isLiked ? "bg-rose-50 text-rose-600" : "bg-white hover:bg-gray-100 text-gray-500 border border-gray-100"
+                                }`}
+                              >
+                                <Heart className={`w-3.5 h-3.5 ${isLiked ? "fill-rose-500 text-rose-500" : ""}`} />
+                                <span>{isLiked ? "ถูกใจแล้ว" : "ถูกใจ"}</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const mention = `@${comment.authorName} `;
+                                  setCommentText((prev) => prev.includes(mention) ? prev : `${mention}${prev}`);
+                                }}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-orange-50 hover:text-orange-600 text-gray-500 text-xs font-semibold border border-gray-100 transition-colors cursor-pointer"
+                              >
+                                <Reply className="w-3.5 h-3.5" />
+                                <span>ตอบกลับ</span>
+                              </button>
+                            </div>
                           </div>
                         </div>
                       );

@@ -2,13 +2,14 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import MaterialsList from "@/components/sections/MaterialsList";
 import GuestBlockModal from "@/components/modals/GuestBlockModal";
+import CommunityDiscussion from "@/components/common/CommunityDiscussion";
 import { getDb } from "@/db";
 import { lessons } from "@/db/schema";
 import { desc } from "drizzle-orm";
 import { DEFAULT_DOWNLOADS, DownloadItem } from "@/data/default-downloads";
 import { Suspense } from "react";
-import { Sparkles, BookOpen, FileText } from "lucide-react";
-import { getSession } from "@/lib/api-auth";
+import { Sparkles, BookOpen, FileText, MessageSquare } from "lucide-react";
+import { getSession, checkIsAdmin } from "@/lib/api-auth";
 import { redirect } from "next/navigation";
 
 const DEFAULT_LESSONS = [
@@ -50,14 +51,15 @@ async function getLessons() {
 }
 
 export default async function MaterialsPage() {
-  // Authentication Guard: Restricted to Students Only
+  // Authentication Guard: Restricted to Students & Admins
   const session = await getSession();
+  const isAdmin = await checkIsAdmin();
 
-  if (!session) {
+  if (!session && !isAdmin) {
     redirect("/login?tab=student&redirect=/materials&notice=student_only");
   }
 
-  if (session.role !== "student") {
+  if (!isAdmin && session?.role !== "student") {
     return <GuestBlockModal redirectPath="/materials" />;
   }
 
@@ -97,7 +99,7 @@ export default async function MaterialsPage() {
               </p>
 
               {/* Stats Counters */}
-              <div className="grid grid-cols-2 gap-4 sm:gap-6 max-w-sm mx-auto">
+              <div className="grid grid-cols-2 gap-4 sm:gap-6 max-w-sm mx-auto mb-8">
                 <div className="bg-white/80 backdrop-blur-sm p-3.5 sm:p-4 rounded-2xl border border-gray-200/70 shadow-xs">
                   <div className="flex items-center justify-center gap-1.5 text-xs text-gray-500 font-medium mb-1">
                     <BookOpen className="w-3.5 h-3.5 text-red-500" />
@@ -115,6 +117,17 @@ export default async function MaterialsPage() {
                   </div>
                   <p className="text-xl sm:text-2xl font-black text-emerald-600">{totalDownloads}</p>
                 </div>
+              </div>
+
+              {/* Jump to Discussion Shortcut */}
+              <div className="flex items-center justify-center">
+                <a
+                  href="#materials-community-discussion"
+                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-white/90 hover:bg-white text-gray-800 hover:text-red-600 font-bold text-xs sm:text-sm border border-gray-200 shadow-2xs hover:shadow-md transition-all active:scale-95 cursor-pointer"
+                >
+                  <MessageSquare className="w-4 h-4 text-red-500" />
+                  <span>💬 กระดานสนทนา & ถาม-ตอบ สื่อการสอน</span>
+                </a>
               </div>
             </div>
           </div>
@@ -134,6 +147,25 @@ export default async function MaterialsPage() {
               basePath="/materials"
             />
           </Suspense>
+        </section>
+
+        {/* Learning Materials Community Discussion & Q&A Board */}
+        <section className="container mx-auto px-4 sm:px-6 max-w-7xl pt-16">
+          <CommunityDiscussion
+            id="materials-community-discussion"
+            topicId="materials-hub"
+            title="กระดานสนทนา & ถาม-ตอบ สื่อการสอน"
+            subtitle="ร่วมพูดคุย สอบถามเทคนิคในบทเรียน แลกเปลี่ยนวิธีการทำงานศิลปะ หรือเสนอแนะสื่อการสอนใหม่ๆ ที่ต้องการให้คุณครูจัดทำ"
+            accentColor="red"
+            tags={["ทั้งหมด", "❓ ถามเรื่องบทเรียน", "🎨 เทคนิคและอุปกรณ์", "💡 เสนอแนะสื่อใหม่", "💬 พูดคุยทั่วไป"]}
+            quickPrompts={[
+              "ชอบเทคนิควิดีโอนี้มากครับ ทำตามได้เข้าใจง่าย 👍",
+              "ขอสอบถามเรื่องการเกลี่ยน้ำหนักสีไม้ครับ 🎨",
+              "อยากให้คุณครูทำคลิปสอนเทคนิคสีน้ำเพิ่มครับ 💡",
+              "มีใบงานสำหรับฝึกวาดเพิ่มเติมไหมครับ 📄"
+            ]}
+            emptyMessage="ยังไม่มีข้อความสนทนาในกระดานสื่อการสอน มาเป็นคนแรกที่สอบถามหรือพูดคุยกับคุณครูกันเถอะ!"
+          />
         </section>
       </main>
       <Footer />

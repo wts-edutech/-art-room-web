@@ -48,7 +48,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       lessonId: '-', // generic foreign key placeholder
       author: authorName,
       authorEmail: session?.userId || '',
-      authorImage: '',
+      authorImage: body.authorImage || '',
       text: text,
       time: new Date().toISOString()
     };
@@ -59,6 +59,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const mappedComment = {
       id: newComment.id,
       authorName: newComment.author,
+      authorImage: newComment.authorImage,
       text: newComment.text,
       createdAt: newComment.time
     };

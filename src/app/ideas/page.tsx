@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import StudentVideoShowcase from "@/components/ideas/StudentVideoShowcase";
+import CommunityDiscussion from "@/components/common/CommunityDiscussion";
 import { Lightbulb, Search, Plus, X, Share2, Check, ArrowUpDown, MessageCircle } from "lucide-react";
 
 interface IdeaItem {
@@ -127,13 +128,20 @@ export default function IdeasPage() {
               แบ่งปันโดยคุณครูและนักเรียน ชุมชนศิลปะ Art Room
             </p>
             
-            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
               <button 
                 onClick={handleShareClick} 
-                className="px-8 py-3.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold rounded-full transition-all duration-200 shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 hover:-translate-y-0.5 flex items-center gap-2 text-base"
+                className="w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold rounded-full transition-all duration-200 shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 hover:-translate-y-0.5 flex items-center justify-center gap-2 text-base cursor-pointer"
               >
                 <Plus className="w-5 h-5" /> ร่วมแบ่งปันไอเดียใหม่
               </button>
+
+              <a
+                href="#ideas-community-discussion"
+                className="w-full sm:w-auto px-7 py-3.5 bg-white hover:bg-orange-50/70 text-gray-800 hover:text-orange-600 font-bold rounded-full transition-all duration-200 border border-gray-200 shadow-2xs hover:shadow-md flex items-center justify-center gap-2 text-sm sm:text-base cursor-pointer"
+              >
+                <MessageCircle className="w-5 h-5 text-orange-500" /> ร่วมพูดคุย & แลกเปลี่ยนไอเดีย
+              </a>
             </div>
           </div>
 
@@ -322,11 +330,15 @@ export default function IdeasPage() {
                               </span>
                             </Link>
 
-                            <div className="flex items-center gap-3 shrink-0">
-                              <div className="flex items-center gap-1.5 text-sm text-gray-600 font-medium">
-                                <MessageCircle className="w-4 h-4 text-[#a855f7] fill-[#a855f7]/20" />
+                            <div className="flex items-center gap-2.5 shrink-0">
+                              <Link
+                                href={`/ideas/detail?id=${idea.id}#comments-section`}
+                                className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-purple-50 hover:bg-purple-100 text-xs text-purple-700 font-bold transition-all border border-purple-100/80 shadow-2xs hover:scale-105 active:scale-95 cursor-pointer"
+                                title="ร่วมพูดคุย / ดูความคิดเห็นของไอเดียนี้"
+                              >
+                                <MessageCircle className="w-3.5 h-3.5 text-[#a855f7] fill-[#a855f7]/20" />
                                 <span>{commentCount}</span>
-                              </div>
+                              </Link>
                               <button
                                 onClick={(e) => handleCopyLink(e, idea.id)}
                                 className={`w-8 h-8 rounded-xl border flex items-center justify-center transition-colors shadow-xs ${
@@ -354,6 +366,25 @@ export default function IdeasPage() {
                 })}
               </div>
             )}
+          </div>
+
+          {/* Community Ideas Discussion & Inspiration Exchange Hub */}
+          <div className="mt-20">
+            <CommunityDiscussion
+              id="ideas-community-discussion"
+              topicId="ideas-hub"
+              title="จุดร่วมพูดคุยและแลกเปลี่ยนไอเดียสร้างสรรค์"
+              subtitle="พื้นที่เปิดกว้างสำหรับแบ่งปันไอเดียศิลปะ ถามเทคนิคการประดิษฐ์ หรือเสนอแนะกิจกรรมที่อยากทำร่วมกัน"
+              accentColor="orange"
+              tags={["ทั้งหมด", "💡 แลกเปลี่ยนไอเดีย", "🎨 เทคนิค DIY", "❓ สอบถามอุปกรณ์", "💬 พูดคุยสร้างสรรค์"]}
+              quickPrompts={[
+                "กำลังหาไอเดียงานศิลปะจากวัสดุเหลือใช้ ใครมีไอเดียแนะนำบ้างครับ 💡",
+                "มีเทคนิคการเพ้นท์สีบนผ้าแคนวาสให้สีติดทนไหมครับ 🎨",
+                "อยากได้ไอเดียทำการ์ดวันสำคัญสวยๆ ครับ ✨",
+                "ผลงานไอเดียในห้องสมุดนี้เจ๋งมากๆ เลยครับ เป็นแรงบันดาลใจที่ดีมาก 👍"
+              ]}
+              emptyMessage="ยังไม่มีข้อความสนทนาในกระดานแลกเปลี่ยนไอเดีย มาร่วมจุดประกายไอเดียแรกกันเถอะ!"
+            />
           </div>
         </div>
       </main>
