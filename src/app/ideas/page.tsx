@@ -199,7 +199,7 @@ export default function IdeasPage() {
                   onChange={(e) => setSortBy(e.target.value as "latest" | "comments")}
                   className="bg-transparent text-sm font-medium text-gray-700 outline-none cursor-pointer"
                 >
-                  <option value="latest">ล่าสุด</option>
+                  <option value="latest">ไอเดียล่าสุด</option>
                   <option value="comments">ความคิดเห็นมากที่สุด</option>
                 </select>
               </div>
@@ -212,7 +212,13 @@ export default function IdeasPage() {
           <div className="mt-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <span>ไอเดียทั้งหมด</span>
+                <span>
+                  {selectedCategory !== "ทั้งหมด"
+                    ? `ไอเดียหมวด${selectedCategory}`
+                    : sortBy === "latest"
+                      ? "ไอเดียล่าสุด"
+                      : "ไอเดียทั้งหมด"}
+                </span>
                 <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-orange-100 text-orange-700">
                   {filteredAndSortedIdeas.length} รายการ
                 </span>
