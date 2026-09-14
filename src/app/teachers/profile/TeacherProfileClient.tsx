@@ -142,15 +142,15 @@ export default function TeacherProfileClient() {
         </div>
       </section>
 
-      {/* Main Content Area (Soft Warm Cream Background #FAF7F2 matching Reference 100%) */}
-      <main className="flex-1 py-8 px-4 sm:px-8 pr-14 sm:pr-20">
+      {/* Main Content Area (Exact Warm Cream Background #FBF8EF matching Reference 100%) */}
+      <main className="flex-1 py-8 px-4 sm:px-8 pr-14 sm:pr-20 bg-[#FBF8EF]">
         <div className="max-w-6xl mx-auto">
           {activeTab === "profile" && (
-            <div className="flex flex-col md:flex-row items-start gap-6 w-full">
-              {/* LEFT COLUMN: คุณครู + Impact Points (Fixed ~280px-300px width on desktop) */}
-              <div className="w-full md:w-[280px] md:min-w-[280px] md:max-w-[280px] shrink-0 flex flex-col gap-4">
+            <div className="profile-grid-layout">
+              {/* LEFT COLUMN: คุณครู + Impact Points */}
+              <div className="flex flex-col gap-4 w-full">
                 {/* Card 1: คุณครู */}
-                <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+                <div className="bg-white rounded-2xl p-5 border border-[#EBE8E1] shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
                   <h3 className="text-xs font-bold text-gray-900 mb-2">คุณครู</h3>
                   <p className="text-xs text-gray-700 leading-relaxed font-normal">
                     โรงเรียน โรงเรียนบ้านเกาะน้ำโจน ๑ ประถมปลาย
@@ -162,7 +162,7 @@ export default function TeacherProfileClient() {
                 </div>
 
                 {/* Card 2: Impact Points */}
-                <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] relative text-center">
+                <div className="bg-white rounded-2xl p-6 border border-[#EBE8E1] shadow-[0_1px_3px_rgba(0,0,0,0.03)] relative text-center">
                   <button 
                     type="button" 
                     className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
@@ -185,7 +185,7 @@ export default function TeacherProfileClient() {
               </div>
 
               {/* RIGHT COLUMN: การให้คำปรึกษา + การแลกเปลี่ยนเรียนรู้ใน insKru + นักเรียนรู้ */}
-              <div className="flex-1 min-w-0 flex flex-col gap-6">
+              <div className="flex flex-col gap-6 w-full min-w-0">
                 {/* Section 1: การให้คำปรึกษา */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
@@ -201,9 +201,9 @@ export default function TeacherProfileClient() {
                     นักแบ่งปัน
                   </h4>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
                     {/* Card 1: session */}
-                    <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] flex items-center justify-between">
+                    <div className="bg-white rounded-xl p-4 sm:p-5 border border-[#EBE8E1] shadow-[0_1px_3px_rgba(0,0,0,0.03)] flex items-center justify-between">
                       <div className="flex flex-col gap-1.5">
                         <div className="w-6 h-6 rounded-md border border-emerald-500 text-emerald-600 flex items-center justify-center">
                           <User className="w-3.5 h-3.5" />
@@ -214,7 +214,7 @@ export default function TeacherProfileClient() {
                     </div>
 
                     {/* Card 2: รีวิว */}
-                    <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] flex items-center justify-between">
+                    <div className="bg-white rounded-xl p-4 sm:p-5 border border-[#EBE8E1] shadow-[0_1px_3px_rgba(0,0,0,0.03)] flex items-center justify-between">
                       <div className="flex flex-col gap-1.5">
                         <Star className="w-5 h-5 text-amber-400 stroke-[1.8]" />
                         <span className="text-xs text-gray-500 font-medium">รีวิว</span>
@@ -239,9 +239,9 @@ export default function TeacherProfileClient() {
                     นักแบ่งปัน
                   </h4>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
                     {/* Item 1: ไอเดีย */}
-                    <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] flex items-center justify-between">
+                    <div className="bg-white rounded-xl p-4 sm:p-5 border border-[#EBE8E1] shadow-[0_1px_3px_rgba(0,0,0,0.03)] flex items-center justify-between">
                       <div className="flex flex-col gap-1.5">
                         <Lightbulb className="w-5 h-5 text-amber-500 stroke-[1.8]" />
                         <span className="text-xs text-gray-500 font-medium">ไอเดีย</span>
@@ -250,7 +250,7 @@ export default function TeacherProfileClient() {
                     </div>
 
                     {/* Item 2: ผู้อ่าน */}
-                    <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] flex items-center justify-between">
+                    <div className="bg-white rounded-xl p-4 sm:p-5 border border-[#EBE8E1] shadow-[0_1px_3px_rgba(0,0,0,0.03)] flex items-center justify-between">
                       <div className="flex flex-col gap-1.5">
                         <Eye className="w-5 h-5 text-sky-500 stroke-[1.8]" />
                         <span className="text-xs text-gray-500 font-medium">ผู้อ่าน</span>
@@ -259,7 +259,7 @@ export default function TeacherProfileClient() {
                     </div>
 
                     {/* Item 3: ความเห็น */}
-                    <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] flex items-center justify-between">
+                    <div className="bg-white rounded-xl p-4 sm:p-5 border border-[#EBE8E1] shadow-[0_1px_3px_rgba(0,0,0,0.03)] flex items-center justify-between">
                       <div className="flex flex-col gap-1.5">
                         <MessageSquare className="w-5 h-5 text-indigo-500 stroke-[1.8]" />
                         <span className="text-xs text-gray-500 font-medium">ความเห็น</span>
@@ -268,7 +268,7 @@ export default function TeacherProfileClient() {
                     </div>
 
                     {/* Item 4: นำไปใช้ */}
-                    <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] flex items-center justify-between">
+                    <div className="bg-white rounded-xl p-4 sm:p-5 border border-[#EBE8E1] shadow-[0_1px_3px_rgba(0,0,0,0.03)] flex items-center justify-between">
                       <div className="flex flex-col gap-1.5">
                         <HeartHandshake className="w-5 h-5 text-rose-500 stroke-[1.8]" />
                         <span className="text-xs text-gray-500 font-medium">นำไปใช้</span>
@@ -284,9 +284,9 @@ export default function TeacherProfileClient() {
                     นักเรียนรู้
                   </h4>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
                     {/* Item 1: เรียนรู้ 6 ไอเดีย */}
-                    <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] flex items-center justify-between">
+                    <div className="bg-white rounded-xl p-4 sm:p-5 border border-[#EBE8E1] shadow-[0_1px_3px_rgba(0,0,0,0.03)] flex items-center justify-between">
                       <div className="flex flex-col gap-1.5">
                         <div className="w-6 h-6 rounded-md border border-rose-400 text-rose-500 flex items-center justify-center">
                           <FileText className="w-3.5 h-3.5" />
@@ -300,7 +300,7 @@ export default function TeacherProfileClient() {
                     </div>
 
                     {/* Item 2: นำ 0 ไอเดียไปใช้ */}
-                    <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] flex items-center justify-between">
+                    <div className="bg-white rounded-xl p-4 sm:p-5 border border-[#EBE8E1] shadow-[0_1px_3px_rgba(0,0,0,0.03)] flex items-center justify-between">
                       <div className="flex flex-col gap-1.5">
                         <div className="w-6 h-6 rounded-md border border-emerald-500 text-emerald-600 flex items-center justify-center">
                           <BookOpen className="w-3.5 h-3.5" />

@@ -94,5 +94,23 @@
   color: #ffffff !important;
 }
 
+/* Teacher Profile Two-Column Layout (Matching insKru 100%) */
+.profile-grid-layout {
+  display: grid;
+  grid-template-columns: 100%;
+  gap: 1.5rem;
+  width: 100%;
+  align-items: start;
+}
 
+@media (min-width: 768px) {
+  .profile-grid-layout {
+    grid-template-columns: 260px minmax(0, 1fr) !important;
+  }
+}
 
+@media (min-width: 1024px) {
+  .profile-grid-layout {
+    grid-template-columns: 280px minmax(0, 1fr) !important;
+  }
+}
