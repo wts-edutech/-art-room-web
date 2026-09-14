@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { X } from "lucide-react";
+import { X, Lock } from "lucide-react";
 import GuestBlockModal from "@/components/modals/GuestBlockModal";
 
 interface ProtectedRouteProps {
