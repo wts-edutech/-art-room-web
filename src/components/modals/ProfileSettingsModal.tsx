@@ -227,23 +227,34 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
 
   return (
     <div 
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-[9999] overflow-y-auto bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center p-3 sm:p-4 py-6 sm:py-8 animate-in fade-in duration-200"
       onClick={onClose}
     >
+      {/* Floating Top-Right Close Button for Quick Exit on Any Screen */}
+      <button 
+        type="button" 
+        onClick={onClose} 
+        className="fixed top-3 right-3 sm:top-5 sm:right-6 z-[10000] bg-black/80 hover:bg-red-600 text-white px-3 py-1.5 rounded-full shadow-2xl transition-all cursor-pointer flex items-center gap-1.5 text-xs font-bold border border-white/20 active:scale-95 backdrop-blur-md"
+        title="ปิดหน้าต่าง (Esc)"
+      >
+        <X className="w-3.5 h-3.5" />
+        <span>ปิด (Esc)</span>
+      </button>
+
       <div 
-        className="bg-white rounded-3xl w-full max-w-xl max-h-[92vh] flex flex-col shadow-2xl border border-orange-100 overflow-hidden animate-in zoom-in-95 duration-200 my-auto relative"
+        className="bg-white rounded-3xl w-full max-w-lg sm:max-w-xl max-h-[85vh] sm:max-h-[88vh] flex flex-col min-h-0 shadow-2xl border border-orange-100 overflow-hidden animate-in zoom-in-95 duration-200 relative my-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Sticky Header */}
-        <div className="sticky top-0 z-20 px-5 sm:px-6 py-4 bg-white/95 backdrop-blur-md border-b border-gray-100 flex items-center justify-between">
+        <div className="shrink-0 px-4 sm:px-6 py-3.5 bg-white/95 backdrop-blur-md border-b border-gray-100 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shadow-2xs">
               <User className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-base sm:text-lg font-bold text-gray-900 leading-none flex items-center gap-2">
+              <h3 className="text-sm sm:text-base font-bold text-gray-900 leading-none flex items-center gap-2">
                 <span>ตั้งค่าโปรไฟล์ผู้ใช้งาน</span>
-                <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${
+                <span className={`text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-full border ${
                   role === "student"
                     ? "bg-amber-50 text-amber-800 border-amber-200"
                     : "bg-blue-50 text-blue-800 border-blue-200"
@@ -251,7 +262,7 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
                   {userRoleTitle}
                 </span>
               </h3>
-              <p className="text-xs text-gray-400 font-normal mt-0.5">
+              <p className="text-[11px] sm:text-xs text-gray-400 font-normal mt-0.5">
                 ปรับแต่งข้อมูลส่วนตัวและรูปโปรไฟล์ในระบบ ART ROOM
               </p>
             </div>
@@ -267,335 +278,338 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
           </button>
         </div>
 
-        {/* Modal Scrollable Body */}
-        <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
-          {/* Avatar Showcase & Selection Header */}
-          <div className="bg-gradient-to-br from-orange-50/70 via-amber-50/40 to-white rounded-3xl p-4 sm:p-5 border border-orange-150/70 flex flex-col sm:flex-row items-center gap-5">
-            {/* Current Active Avatar Circle */}
-            <div className="relative group shrink-0">
-              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-white shadow-md border-4 border-white flex items-center justify-center overflow-hidden ring-4 ring-orange-200/60 transition-all">
-                {currentResolvedAvatar.type === "image" ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img 
-                    src={currentResolvedAvatar.value} 
-                    alt={fullName} 
-                    className="w-full h-full object-cover" 
-                  />
-                ) : currentResolvedAvatar.type === "preset" ? (
-                  <div className={`w-full h-full flex flex-col items-center justify-center ${currentResolvedAvatar.preset?.colorBg || "bg-orange-50"}`}>
-                    <span className="text-4xl sm:text-5xl select-none animate-in zoom-in-75 duration-200">
+        {/* Modal Form wrapping Scrollable Body & Sticky Footer */}
+        <form onSubmit={handleSave} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          {/* Scrollable Body */}
+          <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 space-y-4">
+            {/* Avatar Showcase & Selection Header */}
+            <div className="bg-gradient-to-br from-orange-50/70 via-amber-50/40 to-white rounded-2xl p-3.5 sm:p-4 border border-orange-150/70 flex flex-col sm:flex-row items-center gap-4">
+              {/* Current Active Avatar Circle */}
+              <div className="relative group shrink-0">
+                <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-full bg-white shadow-md border-3 border-white flex items-center justify-center overflow-hidden ring-3 ring-orange-200/60 transition-all">
+                  {currentResolvedAvatar.type === "image" ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img 
+                      src={currentResolvedAvatar.value} 
+                      alt={fullName} 
+                      className="w-full h-full object-cover" 
+                    />
+                  ) : currentResolvedAvatar.type === "preset" ? (
+                    <div className={`w-full h-full flex flex-col items-center justify-center ${currentResolvedAvatar.preset?.colorBg || "bg-orange-50"}`}>
+                      <span className="text-3xl sm:text-4xl select-none animate-in zoom-in-75 duration-200">
+                        {currentResolvedAvatar.value}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-tr from-orange-500 to-amber-400 text-white font-bold text-2xl sm:text-3xl flex items-center justify-center">
                       {currentResolvedAvatar.value}
-                    </span>
-                  </div>
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-tr from-orange-500 to-amber-400 text-white font-bold text-3xl sm:text-4xl flex items-center justify-center">
-                    {currentResolvedAvatar.value}
-                  </div>
-                )}
-              </div>
-
-              {/* Quick Camera Action Overlay */}
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-orange-600 hover:bg-orange-700 text-white flex items-center justify-center shadow-md transition-all active:scale-90 cursor-pointer border-2 border-white"
-                title="อัปโหลดรูปภาพใหม่"
-              >
-                <Camera className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Avatar Info & Mode Toggles */}
-            <div className="flex-1 text-center sm:text-left space-y-2">
-              <div>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-orange-600 block">
-                  รูปภาพประจำตัว (Avatar)
-                </span>
-                <h4 className="text-base font-bold text-gray-900 truncate">
-                  {displayName || fullName || "ผู้ใช้งาน Art Room"}
-                </h4>
-                <p className="text-xs text-gray-500 font-normal mt-0.5">
-                  {currentResolvedAvatar.type === "preset"
-                    ? `ใช้งานไอคอนศิลปะ: ${currentResolvedAvatar.preset?.name}`
-                    : currentResolvedAvatar.type === "image"
-                    ? "ใช้งานรูปภาพอัปโหลดส่วนตัว"
-                    : "ใช้งานอักษรย่อเริ่มต้น"}
-                </p>
-              </div>
-
-              {/* Avatar Options Tabs for Students */}
-              {role === "student" && (
-                <div className="flex items-center justify-center sm:justify-start gap-2 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => setAvatarMode("preset")}
-                    className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                      avatarMode === "preset"
-                        ? "bg-orange-600 text-white shadow-xs"
-                        : "bg-white text-gray-600 hover:bg-orange-50 border border-gray-200"
-                    }`}
-                  >
-                    <Palette className="w-3.5 h-3.5" />
-                    <span>ไอคอนศิลปะ (8 แบบ)</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAvatarMode("upload");
-                      fileInputRef.current?.click();
-                    }}
-                    className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                      avatarMode === "upload"
-                        ? "bg-orange-600 text-white shadow-xs"
-                        : "bg-white text-gray-600 hover:bg-orange-50 border border-gray-200"
-                    }`}
-                  >
-                    <Upload className="w-3.5 h-3.5" />
-                    <span>อัปโหลดรูปส่วนตัว</span>
-                  </button>
+                    </div>
+                  )}
                 </div>
-              )}
 
-              {/* Guest Quick Actions */}
-              {role !== "student" && (
-                <div className="flex items-center justify-center sm:justify-start gap-2 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-white hover:bg-orange-50 text-gray-700 border border-gray-200 flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
-                  >
-                    <Upload className="w-3.5 h-3.5 text-orange-500" />
-                    <span>เปลี่ยนรูปภาพ</span>
-                  </button>
+                {/* Quick Camera Action Overlay */}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-orange-600 hover:bg-orange-700 text-white flex items-center justify-center shadow-md transition-all active:scale-90 cursor-pointer border-2 border-white"
+                  title="อัปโหลดรูปภาพใหม่"
+                >
+                  <Camera className="w-3.5 h-3.5" />
+                </button>
+              </div>
 
-                  {avatarValue && avatarValue.startsWith("data:") && (
+              {/* Avatar Info & Mode Toggles */}
+              <div className="flex-1 text-center sm:text-left space-y-1.5">
+                <div>
+                  <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-orange-600 block">
+                    รูปภาพประจำตัว (Avatar)
+                  </span>
+                  <h4 className="text-sm sm:text-base font-bold text-gray-900 truncate">
+                    {displayName || fullName || "ผู้ใช้งาน Art Room"}
+                  </h4>
+                  <p className="text-[11px] sm:text-xs text-gray-500 font-normal mt-0.5">
+                    {currentResolvedAvatar.type === "preset"
+                      ? `ใช้งานไอคอนศิลปะ: ${currentResolvedAvatar.preset?.name}`
+                      : currentResolvedAvatar.type === "image"
+                      ? "ใช้งานรูปภาพอัปโหลดส่วนตัว"
+                      : "ใช้งานอักษรย่อเริ่มต้น"}
+                  </p>
+                </div>
+
+                {/* Avatar Options Tabs for Students */}
+                {role === "student" && (
+                  <div className="flex items-center justify-center sm:justify-start gap-2 pt-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setAvatarMode("preset")}
+                      className={`px-3 py-1 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                        avatarMode === "preset"
+                          ? "bg-orange-600 text-white shadow-xs"
+                          : "bg-white text-gray-600 hover:bg-orange-50 border border-gray-200"
+                      }`}
+                    >
+                      <Palette className="w-3 h-3" />
+                      <span>ไอคอนศิลปะ (8 แบบ)</span>
+                    </button>
+
                     <button
                       type="button"
                       onClick={() => {
-                        const seed = encodeURIComponent(fullName || "Guest");
-                        setAvatarValue(`https://api.dicebear.com/7.x/notionists/svg?seed=${seed}&backgroundColor=ffe4e6,ffedd5`);
+                        setAvatarMode("upload");
+                        fileInputRef.current?.click();
                       }}
-                      className="px-3 py-1.5 rounded-full text-xs font-normal text-gray-500 hover:text-red-600 hover:bg-red-50 flex items-center gap-1 transition-colors cursor-pointer"
-                    >
-                      <RefreshCw className="w-3 h-3" />
-                      <span>รีเซ็ตรูปโซเชียล</span>
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Hidden File Input for Device Image Upload */}
-          <input 
-            type="file"
-            ref={fileInputRef}
-            onChange={handleImageFileChange}
-            accept="image/png,image/jpeg,image/webp,image/jpg"
-            className="hidden"
-          />
-
-          {/* PRESET ART AVATARS SELECTION GRID (For Students & Enthusiasts) */}
-          {(role === "student" || avatarMode === "preset") && (
-            <div className="space-y-2.5">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                  <span>เลือกอวาตาร์ไอคอนศิลปะสำเร็จรูป (Preset Art Avatars)</span>
-                </label>
-                <span className="text-[11px] text-gray-400 font-normal">
-                  คลิกเพื่อเลือกทันที (8 แบบ)
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                {ART_AVATAR_PRESETS.map((item) => {
-                  const isSelected = avatarValue === item.id;
-                  return (
-                    <div
-                      key={item.id}
-                      onClick={() => {
-                        setAvatarValue(item.id);
-                        setAvatarMode("preset");
-                      }}
-                      className={`p-3 rounded-2xl border transition-all cursor-pointer flex flex-col items-center text-center relative ${
-                        isSelected
-                          ? `ring-2 ring-orange-500 bg-white shadow-md ${item.colorBorder}`
-                          : "bg-gray-50/60 hover:bg-white hover:border-gray-300 border-gray-150"
+                      className={`px-3 py-1 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                        avatarMode === "upload"
+                          ? "bg-orange-600 text-white shadow-xs"
+                          : "bg-white text-gray-600 hover:bg-orange-50 border border-gray-200"
                       }`}
                     >
-                      {/* Active Indicator Checkmark */}
-                      {isSelected && (
-                        <div className="absolute top-2 right-2 w-4 h-4 rounded-full bg-orange-600 text-white flex items-center justify-center shadow-2xs">
-                          <Check className="w-2.5 h-2.5 stroke-[3]" />
-                        </div>
-                      )}
+                      <Upload className="w-3 h-3" />
+                      <span>อัปโหลดรูปส่วนตัว</span>
+                    </button>
+                  </div>
+                )}
 
-                      <div className={`w-12 h-12 rounded-full ${item.colorBg} flex items-center justify-center text-2xl mb-1.5 shadow-2xs`}>
-                        {item.iconEmoji}
-                      </div>
-                      <span className="text-xs font-bold text-gray-800 leading-tight">
-                        {item.name}
-                      </span>
-                      <span className="text-[10px] text-gray-400 font-normal mt-0.5">
-                        {item.category}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+                {/* Guest Quick Actions */}
+                {role !== "student" && (
+                  <div className="flex items-center justify-center sm:justify-start gap-2 pt-0.5">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="px-3 py-1 rounded-full text-xs font-bold bg-white hover:bg-orange-50 text-gray-700 border border-gray-200 flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+                    >
+                      <Upload className="w-3 h-3 text-orange-500" />
+                      <span>เปลี่ยนรูปภาพ</span>
+                    </button>
 
-          {/* EDITABLE FIELDS SECTION */}
-          <div className="space-y-4 pt-2 border-t border-gray-100">
-            <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
-              <User className="w-3.5 h-3.5 text-orange-500" />
-              <span>ข้อมูลประจำตัวผู้ใช้งาน</span>
-            </h4>
-
-            {/* Field 1: Full Name */}
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                ชื่อ - นามสกุลจริง <span className="text-red-500">*</span>
-              </label>
-              <input 
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="เช่น กฤตยชญ์ วงศ์สว่าง"
-                className="w-full h-11 px-3.5 rounded-xl border border-gray-200 bg-white focus:border-amber-400 focus:ring-4 focus:ring-amber-400/10 outline-none text-sm text-gray-800 font-normal transition-all"
-                required
-              />
-            </div>
-
-            {/* Field 2: Display Name (Optional / Social Alias) */}
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5 flex items-center justify-between">
-                <span>ชื่อแสดงผลในระบบ (Display Name)</span>
-                <span className="text-[11px] text-gray-400 font-normal">ปรากฏในคอมเมนต์และไอเดีย</span>
-              </label>
-              <input 
-                type="text"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="เช่น อาร์ตี้ ม.3 หรือ ครูต้องใจ"
-                className="w-full h-11 px-3.5 rounded-xl border border-gray-200 bg-white focus:border-amber-400 focus:ring-4 focus:ring-amber-400/10 outline-none text-sm text-gray-800 font-normal transition-all"
-              />
-            </div>
-
-            {/* STUDENT SPECIFIC: Grade & Room Status */}
-            {role === "student" && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-amber-50/40 p-3.5 rounded-2xl border border-amber-100/80">
-                <div>
-                  <label className="block text-xs font-bold text-amber-900 mb-1 flex items-center gap-1">
-                    <GraduationCap className="w-3.5 h-3.5 text-amber-600" />
-                    <span>ระดับชั้น</span>
-                  </label>
-                  <select
-                    value={grade}
-                    onChange={(e) => setGrade(e.target.value)}
-                    className="w-full h-10 px-3 rounded-xl border border-amber-200 bg-white text-xs sm:text-sm font-normal text-gray-800 outline-none cursor-pointer"
-                  >
-                    <option value="ม.3">มัธยมศึกษาปีที่ 3 (ม.3)</option>
-                    <option value="ม.4">มัธยมศึกษาปีที่ 4 (ม.4)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-amber-900 mb-1">
-                    ห้องเรียน
-                  </label>
-                  <select
-                    value={room}
-                    onChange={(e) => setRoom(e.target.value)}
-                    className="w-full h-10 px-3 rounded-xl border border-amber-200 bg-white text-xs sm:text-sm font-normal text-gray-800 outline-none cursor-pointer"
-                  >
-                    {[...Array(14)].map((_, i) => (
-                      <option key={i + 1} value={String(i + 1)}>
-                        ห้อง {i + 1}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {studentId && (
-                  <div className="sm:col-span-2 flex items-center justify-between text-xs text-amber-800 pt-1 border-t border-amber-200/50">
-                    <span className="font-normal">รหัสประจำตัวนักเรียน:</span>
-                    <span className="font-mono font-bold px-2 py-0.5 rounded-md bg-amber-100 text-amber-900">
-                      {studentId}
-                    </span>
+                    {avatarValue && avatarValue.startsWith("data:") && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const seed = encodeURIComponent(fullName || "Guest");
+                          setAvatarValue(`https://api.dicebear.com/7.x/notionists/svg?seed=${seed}&backgroundColor=ffe4e6,ffedd5`);
+                        }}
+                        className="px-2.5 py-1 rounded-full text-xs font-normal text-gray-500 hover:text-red-600 hover:bg-red-50 flex items-center gap-1 transition-colors cursor-pointer"
+                      >
+                        <RefreshCw className="w-3 h-3" />
+                        <span>รีเซ็ตรูปโซเชียล</span>
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* Hidden File Input for Device Image Upload */}
+            <input 
+              type="file"
+              ref={fileInputRef}
+              onChange={handleImageFileChange}
+              accept="image/png,image/jpeg,image/webp,image/jpg"
+              className="hidden"
+            />
+
+            {/* PRESET ART AVATARS SELECTION GRID (For Students & Enthusiasts) */}
+            {(role === "student" || avatarMode === "preset") && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    <span>เลือกอวาตาร์ไอคอนศิลปะสำเร็จรูป (Preset Art Avatars)</span>
+                  </label>
+                  <span className="text-[11px] text-gray-400 font-normal">
+                    คลิกเพื่อเลือกทันที (8 แบบ)
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
+                  {ART_AVATAR_PRESETS.map((item) => {
+                    const isSelected = avatarValue === item.id;
+                    return (
+                      <div
+                        key={item.id}
+                        onClick={() => {
+                          setAvatarValue(item.id);
+                          setAvatarMode("preset");
+                        }}
+                        className={`p-2.5 rounded-2xl border transition-all cursor-pointer flex flex-col items-center text-center relative ${
+                          isSelected
+                            ? `ring-2 ring-orange-500 bg-white shadow-md ${item.colorBorder}`
+                            : "bg-gray-50/60 hover:bg-white hover:border-gray-300 border-gray-150"
+                        }`}
+                      >
+                        {/* Active Indicator Checkmark */}
+                        {isSelected && (
+                          <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-orange-600 text-white flex items-center justify-center shadow-2xs">
+                            <Check className="w-2.5 h-2.5 stroke-[3]" />
+                          </div>
+                        )}
+
+                        <div className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full ${item.colorBg} flex items-center justify-center text-xl sm:text-2xl mb-1 shadow-2xs`}>
+                          {item.iconEmoji}
+                        </div>
+                        <span className="text-[11px] sm:text-xs font-bold text-gray-800 leading-tight">
+                          {item.name}
+                        </span>
+                        <span className="text-[9px] sm:text-[10px] text-gray-400 font-normal mt-0.5 line-clamp-1">
+                          {item.category}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             )}
 
-            {/* Field 3: Phone Number (for contact / parents) */}
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5 flex items-center justify-between">
-                <span>เบอร์โทรศัพท์สำหรับติดต่อ</span>
-                <span className="text-[11px] text-gray-400 font-normal">สำหรับประสานงานผลงาน/กิจกรรม</span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                  <Phone className="w-4 h-4" />
-                </div>
+            {/* EDITABLE FIELDS SECTION */}
+            <div className="space-y-3 pt-2 border-t border-gray-100">
+              <h4 className="text-[11px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                <User className="w-3.5 h-3.5 text-orange-500" />
+                <span>ข้อมูลประจำตัวผู้ใช้งาน</span>
+              </h4>
+
+              {/* Field 1: Full Name */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">
+                  ชื่อ - นามสกุลจริง <span className="text-red-500">*</span>
+                </label>
                 <input 
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="เช่น 081-234-5678"
-                  className="w-full h-11 pl-9 pr-3.5 rounded-xl border border-gray-200 bg-white focus:border-amber-400 focus:ring-4 focus:ring-amber-400/10 outline-none text-sm text-gray-800 font-normal transition-all"
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="เช่น กฤตยชญ์ วงศ์สว่าง"
+                  className="w-full h-10 px-3.5 rounded-xl border border-gray-200 bg-white focus:border-amber-400 focus:ring-4 focus:ring-amber-400/10 outline-none text-xs sm:text-sm text-gray-800 font-normal transition-all"
+                  required
                 />
+              </div>
+
+              {/* Field 2: Display Name (Optional / Social Alias) */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1 flex items-center justify-between">
+                  <span>ชื่อแสดงผลในระบบ (Display Name)</span>
+                  <span className="text-[10px] sm:text-[11px] text-gray-400 font-normal">ปรากฏในคอมเมนต์และไอเดีย</span>
+                </label>
+                <input 
+                  type="text"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="เช่น อาร์ตี้ ม.3 หรือ ครูต้องใจ"
+                  className="w-full h-10 px-3.5 rounded-xl border border-gray-200 bg-white focus:border-amber-400 focus:ring-4 focus:ring-amber-400/10 outline-none text-xs sm:text-sm text-gray-800 font-normal transition-all"
+                />
+              </div>
+
+              {/* STUDENT SPECIFIC: Grade & Room Status */}
+              {role === "student" && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 bg-amber-50/40 p-3 rounded-2xl border border-amber-100/80">
+                  <div>
+                    <label className="block text-xs font-bold text-amber-900 mb-1 flex items-center gap-1">
+                      <GraduationCap className="w-3.5 h-3.5 text-amber-600" />
+                      <span>ระดับชั้น</span>
+                    </label>
+                    <select
+                      value={grade}
+                      onChange={(e) => setGrade(e.target.value)}
+                      className="w-full h-9 px-3 rounded-xl border border-amber-200 bg-white text-xs font-normal text-gray-800 outline-none cursor-pointer"
+                    >
+                      <option value="ม.3">มัธยมศึกษาปีที่ 3 (ม.3)</option>
+                      <option value="ม.4">มัธยมศึกษาปีที่ 4 (ม.4)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-amber-900 mb-1">
+                      ห้องเรียน
+                    </label>
+                    <select
+                      value={room}
+                      onChange={(e) => setRoom(e.target.value)}
+                      className="w-full h-9 px-3 rounded-xl border border-amber-200 bg-white text-xs font-normal text-gray-800 outline-none cursor-pointer"
+                    >
+                      {[...Array(14)].map((_, i) => (
+                        <option key={i + 1} value={String(i + 1)}>
+                          ห้อง {i + 1}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {studentId && (
+                    <div className="sm:col-span-2 flex items-center justify-between text-xs text-amber-800 pt-1 border-t border-amber-200/50">
+                      <span className="font-normal">รหัสประจำตัวนักเรียน:</span>
+                      <span className="font-mono font-bold px-2 py-0.5 rounded-md bg-amber-100 text-amber-900">
+                        {studentId}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Field 3: Phone Number (for contact / parents) */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1 flex items-center justify-between">
+                  <span>เบอร์โทรศัพท์สำหรับติดต่อ</span>
+                  <span className="text-[10px] sm:text-[11px] text-gray-400 font-normal">สำหรับประสานงานผลงาน/กิจกรรม</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                    <Phone className="w-3.5 h-3.5" />
+                  </div>
+                  <input 
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="เช่น 081-234-5678"
+                    className="w-full h-10 pl-9 pr-3.5 rounded-xl border border-gray-200 bg-white focus:border-amber-400 focus:ring-4 focus:ring-amber-400/10 outline-none text-xs sm:text-sm text-gray-800 font-normal transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Email Display (Read-Only) */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1 flex items-center justify-between">
+                  <span>อีเมลบัญชีที่ใช้งาน</span>
+                  <span className="text-[10px] sm:text-[11px] text-emerald-600 font-bold flex items-center gap-1">
+                    <ShieldCheck className="w-3 h-3" /> ยืนยันแล้ว
+                  </span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                    <Mail className="w-3.5 h-3.5" />
+                  </div>
+                  <input 
+                    type="email"
+                    value={email}
+                    disabled
+                    className="w-full h-10 pl-9 pr-3.5 rounded-xl border border-gray-200 bg-gray-50 text-xs sm:text-sm text-gray-500 font-normal cursor-not-allowed"
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Email Display (Read-Only) */}
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5 flex items-center justify-between">
-                <span>อีเมลบัญชีที่ใช้งาน</span>
-                <span className="text-[11px] text-emerald-600 font-bold flex items-center gap-1">
-                  <ShieldCheck className="w-3 h-3" /> ยืนยันแล้ว
-                </span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                  <Mail className="w-4 h-4" />
-                </div>
-                <input 
-                  type="email"
-                  value={email}
-                  disabled
-                  className="w-full h-11 pl-9 pr-3.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-500 font-normal cursor-not-allowed"
-                />
+            {/* Error Message Alert */}
+            {errorMessage && (
+              <div className="p-3 rounded-xl bg-red-50 text-red-700 border border-red-200 text-xs font-normal animate-in fade-in">
+                ⚠️ {errorMessage}
               </div>
-            </div>
+            )}
+
+            {/* Success Message Alert */}
+            {saveSuccess && (
+              <div className="p-3 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold flex items-center gap-2 animate-in zoom-in-95">
+                <div className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                  <Check className="w-3 h-3 stroke-[3]" />
+                </div>
+                <span>บันทึกข้อมูลโปรไฟล์เรียบร้อยแล้ว! ข้อมูลจะอัปเดตทันที</span>
+              </div>
+            )}
           </div>
 
-          {/* Error Message Alert */}
-          {errorMessage && (
-            <div className="p-3 rounded-xl bg-red-50 text-red-700 border border-red-200 text-xs font-normal animate-in fade-in">
-              ⚠️ {errorMessage}
-            </div>
-          )}
-
-          {/* Success Message Alert */}
-          {saveSuccess && (
-            <div className="p-3.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold flex items-center gap-2 animate-in zoom-in-95">
-              <div className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center">
-                <Check className="w-3.5 h-3.5 stroke-[3]" />
-              </div>
-              <span>บันทึกข้อมูลโปรไฟล์เรียบร้อยแล้ว! ข้อมูลจะอัปเดตทันที</span>
-            </div>
-          )}
-
-          {/* Modal Footer / Actions */}
-          <div className="pt-2 flex flex-col-reverse sm:flex-row items-center justify-end gap-2.5">
+          {/* Modal Sticky Footer Actions Bar */}
+          <div className="shrink-0 px-4 sm:px-6 py-3 bg-gray-50/95 backdrop-blur-md border-t border-gray-100 flex items-center justify-end gap-2.5">
             <button
               type="button"
               onClick={onClose}
-              className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs sm:text-sm font-normal text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+              className="px-4 py-2 rounded-xl text-xs sm:text-sm font-normal text-gray-600 hover:bg-gray-200/60 transition-colors cursor-pointer"
             >
               ยกเลิก
             </button>
@@ -603,7 +617,7 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
             <button
               type="submit"
               disabled={isSaving || isUploading}
-              className={`w-full sm:w-auto px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-95 ${
+              className={`px-5 py-2 rounded-xl text-xs sm:text-sm font-bold text-white transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-95 ${
                 saveSuccess
                   ? "bg-emerald-600 shadow-emerald-500/25"
                   : "bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 shadow-orange-500/20"
@@ -611,7 +625,7 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
             >
               {isSaving ? (
                 <>
-                  <div className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+                  <div className="w-3.5 h-3.5 rounded-full border-2 border-white/40 border-t-white animate-spin" />
                   <span>กำลังบันทึก...</span>
                 </>
               ) : saveSuccess ? (
