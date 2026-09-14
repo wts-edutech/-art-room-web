@@ -269,48 +269,14 @@ export default function MaterialsList({
 
       {/* Right Main Feed Area */}
       <div className="flex-1 w-full space-y-6">
-        {/* 1. Grade Selector Bar (ม.1 - ม.6) */}
-        <div className="bg-white p-3 rounded-2xl border border-gray-200/80 shadow-xs">
-          <div className="flex items-center justify-between mb-2 px-1">
-            <span className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
-              <GraduationCap className="w-4 h-4 text-red-500" /> เลือกระดับชั้นเรียน:
+        {/* Results Header */}
+        <div className="flex items-center justify-between pb-2 border-b border-gray-100">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900 flex items-center gap-2">
+            <span>สื่อการสอน{activeCategory !== "ทั้งหมด" ? ` (${activeCategory})` : ""}</span>
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-red-100 text-red-700">
+              {filteredItems.length} รายการ
             </span>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
-              พบ {filteredItems.length} รายการ
-            </span>
-          </div>
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-            {grades.map((g) => (
-              <button
-                key={g.id}
-                onClick={() => setSelectedGrade(g.id)}
-                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all cursor-pointer ${
-                  selectedGrade === g.id
-                    ? "bg-red-600 text-white shadow-md shadow-red-500/20 scale-[1.02]"
-                    : "bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200/70"
-                }`}
-              >
-                {g.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* 2. Media Type Pills */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-          {mediaTypes.map((m) => (
-            <button
-              key={m.id}
-              onClick={() => setSelectedMediaType(m.id)}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-                selectedMediaType === m.id
-                  ? "bg-gray-900 text-white shadow-sm"
-                  : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
-              }`}
-            >
-              <span>{m.label}</span>
-            </button>
-          ))}
+          </h2>
         </div>
 
         {/* 3. Unified Feed Grid */}
