@@ -35,6 +35,13 @@ interface IdeaDetail {
   comments?: CommentItem[];
 }
 
+function getYouTubeEmbedId(url?: string): string | null {
+  if (!url) return null;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+  const match = url.match(regExp);
+  return (match && match[2].length === 11) ? match[2] : null;
+}
+
 // Line art Star-Eyes Face Icon (matching black-and-white line art style)
 function StarEyesIcon({ className = "w-7 h-7" }: { className?: string }) {
   return (
@@ -561,6 +568,31 @@ export default function IdeaDetailClient() {
 
           {/* 4. Idea Details Body */}
           <div className="bg-white rounded-3xl p-6 sm:p-10 border border-gray-100 shadow-sm mb-10">
+            {/* Embedded YouTube Video (if link is YouTube) */}
+            {(() => {
+              const ytId = getYouTubeEmbedId(idea.link);
+              if (!ytId) return null;
+              return (
+                <div className="mb-8">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Video className="w-5 h-5 text-orange-500" />
+                    <h3 className="text-base font-bold text-gray-900">
+                      วิดีโอสาธิตและวิธีทำ (Video Tutorial)
+                    </h3>
+                  </div>
+                  <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-black shadow-md border border-gray-100">
+                    <iframe
+                      src={`https://www.youtube.com/embed/${ytId}?rel=0`}
+                      title={idea.title}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="w-full h-full border-0"
+                    />
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* Description */}
             <div className="prose max-w-none text-gray-800 mb-8 whitespace-pre-wrap leading-relaxed text-base">
               {idea.description}

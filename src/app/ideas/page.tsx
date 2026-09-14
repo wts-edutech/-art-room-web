@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import StudentVideoShowcase from "@/components/ideas/StudentVideoShowcase";
 import { Lightbulb, Search, Plus, X, Share2, Check, ArrowUpDown, MessageCircle } from "lucide-react";
 
 interface IdeaItem {
@@ -135,6 +136,9 @@ export default function IdeasPage() {
               </button>
             </div>
           </div>
+
+          {/* Student Creative Video & DIY Showcase (Inspiring Young Creators) */}
+          <StudentVideoShowcase />
 
           {/* Search & Filter Control Bar */}
           <div className="max-w-4xl mx-auto mb-8 space-y-4">

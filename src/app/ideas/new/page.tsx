@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import { ArrowLeft, Image as ImageIcon, FileText, Upload, Plus, X, CheckCircle, AlertCircle, Sparkles } from "lucide-react";
+import { ArrowLeft, Image as ImageIcon, FileText, Upload, Plus, X, CheckCircle, AlertCircle, Sparkles, Video, Palette, ListOrdered } from "lucide-react";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 const MAX_COVER_SIZE = 5 * 1024 * 1024; // 5 MB
@@ -16,6 +16,9 @@ export default function NewIdeaPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [link, setLink] = useState("");
+  const [videoUrl, setVideoUrl] = useState("");
+  const [materialsInput, setMaterialsInput] = useState("");
+  const [stepsInput, setStepsInput] = useState("");
   const [category, setCategory] = useState("ทั่วไป");
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
@@ -98,11 +101,27 @@ export default function NewIdeaPage() {
 
     setIsSubmitting(true);
     
+    let finalDescription = description.trim();
+    if (materialsInput.trim()) {
+      const matList = materialsInput.split('\n').map(m => m.trim()).filter(Boolean);
+      if (matList.length > 0) {
+        finalDescription += `\n\n### 🎨 อุปกรณ์ที่ต้องเตรียม (Materials)\n` + matList.map(m => `• ${m}`).join('\n');
+      }
+    }
+    if (stepsInput.trim()) {
+      const stepList = stepsInput.split('\n').map(s => s.trim()).filter(Boolean);
+      if (stepList.length > 0) {
+        finalDescription += `\n\n### 📝 ขั้นตอนวิธีทำ (Step-by-Step)\n` + stepList.map((s, idx) => `${idx + 1}. ${s}`).join('\n');
+      }
+    }
+
+    const finalLink = videoUrl.trim() || link.trim();
+
     const formData = new FormData();
     formData.append("title", title.trim());
-    formData.append("description", description.trim());
+    formData.append("description", finalDescription);
     formData.append("category", category);
-    if (link.trim()) formData.append("link", link.trim());
+    if (finalLink) formData.append("link", finalLink);
     formData.append("authorName", authorName);
     formData.append("authorEmail", localStorage.getItem("artroom_author_email") || "");
     formData.append("coverImage", coverImage);
@@ -205,13 +224,36 @@ export default function NewIdeaPage() {
                     className="w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 outline-none transition-all bg-white text-gray-800 font-medium cursor-pointer"
                   >
                     <option value="ทั่วไป">ทั่วไป</option>
+                    <option value="วิธีทำ">🎨 วิธีทำ DIY / ขั้นตอนการสร้างสรรค์</option>
+                    <option value="วีดีโอ">🎥 วิดีทัศน์ / คลิปผลงาน</option>
+                    <option value="โปรเจกต์">✨ โปรเจกต์สร้างสรรค์นักเรียน</option>
                     <option value="ใบงาน">ใบงานและแบบฝึกหัด</option>
                     <option value="รูปภาพ">รูปภาพและผลงาน</option>
                     <option value="กิจกรรม">กิจกรรมสร้างสรรค์</option>
-                    <option value="วีดีโอ">วิดีทัศน์</option>
                     <option value="สื่อการสอน">สื่อและบทเรียน</option>
                     <option value="เกมส์">เกมและการเรียนรู้</option>
                   </select>
+                </div>
+
+                {/* Video URL Input (Inspiring Young Creators) */}
+                <div className="p-5 rounded-2xl bg-orange-50/50 border border-orange-200/70 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Video className="w-5 h-5 text-orange-500" />
+                    <span className="text-sm font-bold text-gray-800">
+                      คลิปวิดีโอผลงาน หรือวิธีทำ (YouTube Video URL)
+                    </span>
+                    <span className="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-bold">แนะนำ</span>
+                  </div>
+                  <input 
+                    type="url" 
+                    value={videoUrl}
+                    onChange={(e) => setVideoUrl(e.target.value)}
+                    placeholder="เช่น https://www.youtube.com/watch?v=... หรือ https://youtu.be/..."
+                    className="w-full h-12 px-4 rounded-xl border border-gray-200 bg-white focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 outline-none transition-all text-gray-800 text-sm"
+                  />
+                  <p className="text-xs text-gray-500 font-light">
+                    หากใส่ลิงก์ YouTube ระบบจะแปลงเป็นเครื่องเล่นวิดีโอ HD ให้เปิดดูได้ทันทีในหน้าไอเดีย
+                  </p>
                 </div>
 
                 <div>
@@ -223,8 +265,37 @@ export default function NewIdeaPage() {
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="อธิบายขั้นตอนการจัดกิจกรรม วัตถุประสงค์ วิธีการนำสื่อไปใช้งาน หรือคำแนะนำสำหรับเพื่อนๆ และคุณครู..."
-                    className="w-full h-36 p-4 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 outline-none transition-all resize-none text-gray-800 leading-relaxed"
+                    className="w-full h-32 p-4 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 outline-none transition-all resize-none text-gray-800 leading-relaxed"
                   />
+                </div>
+
+                {/* Materials & Steps (Optional Structured Inputs) */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-800 mb-2 flex items-center gap-1.5">
+                      <Palette className="w-4 h-4 text-amber-500" />
+                      อุปกรณ์ที่ต้องเตรียม (ถ้ามี)
+                    </label>
+                    <textarea 
+                      value={materialsInput}
+                      onChange={(e) => setMaterialsInput(e.target.value)}
+                      placeholder="พิมพ์อุปกรณ์แต่ละชิ้นแยกบรรทัด เช่น&#10;กระเป๋าผ้าแคนวาส&#10;สีอะคริลิก 3 แม่สี&#10;พู่กันเบอร์ 6"
+                      className="w-full h-28 p-3.5 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 outline-none transition-all resize-none text-gray-800 text-xs sm:text-sm leading-relaxed"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-gray-800 mb-2 flex items-center gap-1.5">
+                      <ListOrdered className="w-4 h-4 text-blue-500" />
+                      ขั้นตอนวิธีทำทีละข้อ (ถ้ามี)
+                    </label>
+                    <textarea 
+                      value={stepsInput}
+                      onChange={(e) => setStepsInput(e.target.value)}
+                      placeholder="พิมพ์ขั้นตอนแต่ละข้อแยกบรรทัด เช่น&#10;ร่างแบบลวดลายลงบนผ้า&#10;ลงสีพื้นหลังแล้วรอให้แห้ง&#10;ตัดเส้นเก็บรายละเอียด"
+                      className="w-full h-28 p-3.5 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 outline-none transition-all resize-none text-gray-800 text-xs sm:text-sm leading-relaxed"
+                    />
+                  </div>
                 </div>
 
                 <div>
