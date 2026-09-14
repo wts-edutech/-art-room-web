@@ -4,7 +4,9 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Menu, X, ChevronDown, LogOut, Calendar, Clock } from "lucide-react";
+import { Menu, X, ChevronDown, LogOut, Calendar, Clock, Settings, User } from "lucide-react";
+import ProfileSettingsModal from "@/components/modals/ProfileSettingsModal";
+import { resolveUserAvatar } from "@/lib/art-avatars";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -14,8 +16,19 @@ export default function Navbar() {
   const [isOrgMediaOpen, setIsOrgMediaOpen] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [userAvatar, setUserAvatar] = useState<string | null>(null);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [time, setTime] = useState<Date | null>(null);
   const [isTeachersEnabled, setIsTeachersEnabled] = useState(false);
+
+  const updateUserData = () => {
+    const name = localStorage.getItem("artroom_author_name");
+    const role = localStorage.getItem("artroom_role");
+    const avatar = localStorage.getItem("artroom_avatar");
+    setUserName(name);
+    setUserRole(role);
+    setUserAvatar(avatar);
+  };
 
   useEffect(() => {
     setTime(new Date());
@@ -23,10 +36,10 @@ export default function Navbar() {
       setTime(new Date());
     }, 1000);
 
-    const name = localStorage.getItem("artroom_author_name");
-    const role = localStorage.getItem("artroom_role");
-    if (name) setUserName(name);
-    if (role) setUserRole(role);
+    updateUserData();
+
+    // Listen for profile changes from ProfileSettingsModal
+    window.addEventListener("artroom_profile_updated", updateUserData);
 
     // Check if teachers directory is enabled by admin
     fetch('/api/teachers/status')
@@ -38,7 +51,10 @@ export default function Navbar() {
       })
       .catch(() => {});
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("artroom_profile_updated", updateUserData);
+    };
   }, []);
 
   // Close mobile drawer when route changes
@@ -55,9 +71,17 @@ export default function Navbar() {
     localStorage.removeItem("artroom_author_name");
     localStorage.removeItem("artroom_author_email");
     localStorage.removeItem("artroom_role");
+    localStorage.removeItem("artroom_user_role");
+    localStorage.removeItem("artroom_phone");
+    localStorage.removeItem("artroom_display_name");
+    localStorage.removeItem("artroom_avatar");
+    localStorage.removeItem("artroom_student_grade");
     setUserName(null);
+    setUserAvatar(null);
     window.location.reload();
   };
+
+  const resolvedAvatar = resolveUserAvatar(userAvatar, userName);
 
   // Format date and time in Thai with Buddhist Era (Asia/Bangkok timezone)
   const formatThaiDate = (date: Date) => {
@@ -273,12 +297,26 @@ export default function Navbar() {
                   หลังบ้าน
                 </Link>
               ) : null}
-              <div 
-                className="text-xs font-bold text-orange-600 bg-orange-50 px-2.5 sm:px-3 py-1.5 rounded-full border border-orange-100 shadow-2xs max-w-[90px] sm:max-w-[130px] truncate cursor-default"
-                title={userName}
+              {/* Clickable Profile Badge with Avatar */}
+              <button 
+                type="button"
+                onClick={() => setIsProfileModalOpen(true)}
+                className="flex items-center gap-1.5 sm:gap-2 text-xs font-bold text-orange-700 bg-orange-50/90 hover:bg-orange-100/90 px-2 py-1 sm:pr-3 rounded-full border border-orange-200/80 shadow-2xs transition-all cursor-pointer active:scale-95 group"
+                title="คลิกเพื่อตั้งค่าโปรไฟล์"
               >
-                {userName}
-              </div>
+                <div className="w-6 h-6 rounded-full overflow-hidden bg-white shadow-2xs border border-orange-200 flex items-center justify-center shrink-0">
+                  {resolvedAvatar.type === "image" ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={resolvedAvatar.value} alt={userName || ""} className="w-full h-full object-cover" />
+                  ) : resolvedAvatar.type === "preset" ? (
+                    <span className="text-xs select-none">{resolvedAvatar.value}</span>
+                  ) : (
+                    <span className="text-[10px] font-bold text-orange-600">{resolvedAvatar.value}</span>
+                  )}
+                </div>
+                <span className="max-w-[70px] sm:max-w-[120px] truncate">{userName}</span>
+                <Settings className="w-3 h-3 text-orange-400 group-hover:text-orange-600 transition-colors shrink-0" />
+              </button>
               <button 
                 onClick={handleLogout} 
                 title="ออกจากระบบ" 
@@ -454,9 +492,35 @@ export default function Navbar() {
         <div className="p-4 border-t border-gray-100 safe-pb bg-gray-50/50">
           {userName ? (
             <div className="flex flex-col gap-2.5">
-              <div className="px-4 py-2.5 bg-orange-50 rounded-xl text-orange-700 font-bold text-center border border-orange-200 text-sm truncate">
-                สวัสดี, {userName}
-              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  setIsProfileModalOpen(true);
+                }}
+                className="px-3.5 py-2.5 bg-gradient-to-r from-orange-50 to-amber-50 rounded-2xl text-orange-800 font-bold border border-orange-200 text-sm flex items-center gap-3 transition-colors cursor-pointer hover:bg-orange-100/60 shadow-2xs active:scale-98"
+              >
+                <div className="w-9 h-9 rounded-full overflow-hidden bg-white shadow-xs border border-orange-200 flex items-center justify-center shrink-0">
+                  {resolvedAvatar.type === "image" ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={resolvedAvatar.value} alt={userName} className="w-full h-full object-cover" />
+                  ) : resolvedAvatar.type === "preset" ? (
+                    <span className="text-lg select-none">{resolvedAvatar.value}</span>
+                  ) : (
+                    <span className="text-xs font-bold text-orange-600">{resolvedAvatar.value}</span>
+                  )}
+                </div>
+                <div className="flex-1 text-left truncate">
+                  <div className="text-[11px] text-orange-500 font-normal">
+                    โปรไฟล์ ({userRole === "student" ? "นักเรียน WTS" : "ผู้ปกครอง/ทั่วไป"})
+                  </div>
+                  <div className="font-bold truncate text-gray-900">{userName}</div>
+                </div>
+                <span className="text-xs text-orange-600 font-medium px-2.5 py-1 bg-white rounded-full shadow-2xs border border-orange-200 flex items-center gap-1">
+                  <Settings className="w-3 h-3" /> ตั้งค่า
+                </span>
+              </button>
+
               {(userRole === "teacher" || userRole === "admin") && (
                 <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)}>
                   <Button variant="outline" className="w-full rounded-xl h-[44px] border-red-500 text-red-600 hover:bg-red-50 font-bold transition-colors cursor-pointer">
@@ -480,6 +544,12 @@ export default function Navbar() {
           )}
         </div>
       </div>
+
+      {/* Global Profile Settings Modal */}
+      <ProfileSettingsModal 
+        isOpen={isProfileModalOpen} 
+        onClose={() => setIsProfileModalOpen(false)} 
+      />
     </header>
   );
 }

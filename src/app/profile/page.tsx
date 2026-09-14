@@ -1,8 +1,9 @@
 import { Suspense } from "react";
-import TeacherProfileClient from "../teachers/profile/TeacherProfileClient";
+import ProfilePageClient from "./ProfilePageClient";
 
 export const metadata = {
   title: "ข้อมูลโปรไฟล์ | ART ROOM",
+  description: "จัดการข้อมูลส่วนตัว รูปภาพโปรไฟล์ และสถานะการใช้งานในระบบ ART ROOM",
 };
 
 export default function ProfilePage() {
@@ -14,7 +15,7 @@ export default function ProfilePage() {
         </div>
       }
     >
-      <TeacherProfileClient />
+      <ProfilePageClient />
     </Suspense>
   );
 }
