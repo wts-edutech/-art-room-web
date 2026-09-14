@@ -294,16 +294,16 @@ export default function LoginPage() {
         
         {/* Student Only Access Notice Banner */}
         {isStudentOnlyNotice && (
-          <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-300/80 text-amber-950 rounded-2xl p-4 mb-6 flex items-start gap-3.5 shadow-sm animate-in fade-in">
-            <div className="p-2.5 bg-amber-200/60 rounded-xl text-amber-800 flex-shrink-0 mt-0.5">
-              <Lock className="w-5 h-5 text-amber-700" />
+          <div className="bg-zinc-50 border border-zinc-200 text-zinc-800 rounded-xl p-3.5 mb-5 flex items-start gap-3 shadow-xs animate-in fade-in text-left">
+            <div className="w-8 h-8 rounded-lg bg-zinc-100 border border-zinc-200 flex items-center justify-center text-zinc-700 flex-shrink-0 mt-0.5">
+              <Lock className="w-4 h-4 text-zinc-700" />
             </div>
-            <div className="text-xs sm:text-sm">
-              <p className="font-bold text-amber-950 flex items-center gap-1.5 mb-1 text-sm">
-                🔒 คลังสื่อการสอนเปิดให้เข้าถึงเฉพาะนักเรียนเท่านั้น
+            <div className="text-xs">
+              <p className="font-semibold text-zinc-900 mb-0.5">
+                สงวนสิทธิ์เฉพาะนักเรียน
               </p>
-              <p className="text-amber-800/95 leading-relaxed font-light">
-                กรุณาเข้าสู่ระบบด้วย <strong>รหัสประจำตัวนักเรียน 5 หลัก</strong> เพื่อเข้าชมบทเรียน วิดีทัศน์ และดาวน์โหลดเอกสารใบงาน PDF
+              <p className="text-zinc-500 leading-relaxed font-normal">
+                คลังสื่อการสอนและใบงานเปิดให้เข้าใช้งานเฉพาะบัญชีนักเรียน กรุณาเข้าสู่ระบบด้วยรหัสประจำตัวนักเรียน 5 หลัก
               </p>
             </div>
           </div>
