@@ -173,11 +173,12 @@ export default function IdeasPage() {
                         backgroundColor: isSelected ? "#f97316" : "#ffffff",
                         color: isSelected ? "#ffffff" : "#374151",
                         borderColor: isSelected ? "#ea580c" : "#e5e7eb",
+                        boxShadow: "none",
                       }}
-                      className={`category-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold tracking-tight transition-all duration-200 cursor-pointer active:scale-95 hover:-translate-y-1.5 hover:shadow-lg hover:shadow-orange-500/15 hover:border-orange-400 hover:text-orange-600 hover:scale-[1.03] border-2 ${
+                      className={`category-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold tracking-tight transition-all duration-200 cursor-pointer active:scale-95 hover:-translate-y-0.5 hover:border-orange-400 hover:text-orange-600 border-2 ${
                         isSelected
-                          ? "is-selected bg-orange-500 text-white border-orange-600 shadow-md shadow-orange-500/30 scale-[1.02]"
-                          : "bg-white text-gray-700 border-gray-200 shadow-xs"
+                          ? "is-selected bg-orange-500 text-white border-orange-600"
+                          : "bg-white text-gray-700 border-gray-200"
                       }`}
                     >
                       <span style={{ color: isSelected ? "#ffffff" : "inherit" }}>{cat}</span>

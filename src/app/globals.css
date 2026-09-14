@@ -52,7 +52,7 @@
   }
 }
 
-/* Sleek Category Filter Buttons with Orange Active Theme */
+/* Sleek Category Filter Buttons (Flat Minimal, No Shadow) */
 .category-btn {
   display: inline-flex;
   align-items: center;
@@ -65,16 +65,16 @@
   background-color: #ffffff;
   color: #374151;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  box-shadow: none !important;
   cursor: pointer;
   user-select: none;
 }
 
 .category-btn:hover {
-  transform: translateY(-3px) scale(1.03);
+  transform: translateY(-2px);
   border-color: #fb923c;
   color: #ea580c;
-  box-shadow: 0 8px 16px -4px rgba(249, 115, 22, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  box-shadow: none !important;
 }
 
 .category-btn.is-selected,
@@ -82,12 +82,12 @@
   background-color: #f97316 !important;
   border-color: #ea580c !important;
   color: #ffffff !important;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(249, 115, 22, 0.4) !important;
+  box-shadow: none !important;
 }
 
 .category-btn.is-selected span,
 .category-btn[data-active="true"] span {
   color: #ffffff !important;
 }
+
 
