@@ -122,7 +122,7 @@ export default function NewIdeaPage() {
       });
 
       if (res.ok) {
-        setSuccessMsg("แบ่งปันไอเดียสำเร็จแล้ว! ไอเดียของคุณจะขึ้นแสดงในส่วน \"แนะนำไอเดียใหม่\" ทันที");
+        setSuccessMsg("แบ่งปันไอเดียสำเร็จแล้ว! ไอเดียของคุณจะขึ้นแสดงในแชร์ไอเดียทันที");
         setTimeout(() => {
           router.push("/ideas");
         }, 1500);
