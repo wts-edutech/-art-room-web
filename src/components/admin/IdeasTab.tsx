@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { 
   Trash2, Lightbulb, CheckCircle, XCircle, Image as ImageIcon, 
-  Eye, Link as LinkIcon, Search, MessageSquare, Download, Clock, AlertTriangle 
+  Eye, Link as LinkIcon, Search, MessageSquare, Download, Clock, AlertTriangle, Star 
 } from "lucide-react";
 
 interface AdminIdeaItem {
@@ -18,6 +18,7 @@ interface AdminIdeaItem {
   files?: any[];
   link?: string;
   status: 'pending' | 'approved' | 'rejected';
+  isFeatured?: number | boolean;
   createdAt: string;
   commentsCount?: number;
   comments?: any[];
@@ -123,19 +124,45 @@ export default function IdeasTab() {
     }
   };
 
+  const handleToggleFeatured = async (id: string, currentFeatured: boolean) => {
+    const newFeatured = !currentFeatured;
+    try {
+      const res = await fetch(`/api/ideas/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isFeatured: newFeatured ? 1 : 0 })
+      });
+      if (res.ok) {
+        setIdeasList(prev => prev.map(item => item.id === id ? { ...item, isFeatured: newFeatured ? 1 : 0 } : item));
+        if (previewIdea && previewIdea.id === id) {
+          setPreviewIdea({ ...previewIdea, isFeatured: newFeatured ? 1 : 0 });
+        }
+      } else {
+        alert("ไม่สามารถเปลี่ยนสถานะแนะนำได้");
+      }
+    } catch (error) {
+      console.error("Failed to toggle featured status", error);
+    }
+  };
+
   // Stats calculation
   const stats = useMemo(() => {
     const total = ideasList.length;
     const pending = ideasList.filter(i => i.status === 'pending').length;
     const approved = ideasList.filter(i => i.status === 'approved').length;
     const rejected = ideasList.filter(i => i.status === 'rejected').length;
-    return { total, pending, approved, rejected };
+    const featured = ideasList.filter(i => Boolean(i.isFeatured)).length;
+    return { total, pending, approved, rejected, featured };
   }, [ideasList]);
 
   // Filtered list
   const filteredIdeas = useMemo(() => {
     return ideasList.filter(idea => {
-      const matchStatus = filterStatus === "all" || idea.status === filterStatus;
+      const matchStatus = filterStatus === "all" 
+        ? true 
+        : filterStatus === "featured"
+        ? Boolean(idea.isFeatured)
+        : idea.status === filterStatus;
       const q = searchQuery.toLowerCase().trim();
       const matchQuery = !q || 
         (idea.title || "").toLowerCase().includes(q) ||
@@ -149,7 +176,7 @@ export default function IdeasTab() {
     <>
       <div className="space-y-6">
         {/* Stat Summary Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
           <div 
             onClick={() => setFilterStatus("all")}
             className={`p-4 rounded-2xl border transition-all cursor-pointer ${
@@ -160,6 +187,20 @@ export default function IdeasTab() {
           >
             <p className="text-xs font-semibold text-gray-500 mb-1">ไอเดียทั้งหมด</p>
             <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+          </div>
+
+          <div 
+            onClick={() => setFilterStatus("featured")}
+            className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+              filterStatus === "featured" 
+                ? "bg-amber-50/90 border-amber-400 ring-2 ring-amber-400/25" 
+                : "bg-white border-gray-100 hover:border-gray-200"
+            }`}
+          >
+            <p className="text-xs font-semibold text-amber-700 mb-1 flex items-center gap-1">
+              <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" /> แนะนำไอเดียใหม่
+            </p>
+            <p className="text-2xl font-bold text-amber-900">{stats.featured}</p>
           </div>
 
           <div 
@@ -245,6 +286,7 @@ export default function IdeasTab() {
                 className="h-10 px-3 rounded-xl border border-gray-200 focus:border-orange-500 outline-none text-xs bg-white font-medium text-gray-700 cursor-pointer"
               >
                 <option value="all">สถานะ: ทั้งหมด ({stats.total})</option>
+                <option value="featured">⭐ แนะนำไอเดียใหม่ ({stats.featured})</option>
                 <option value="pending">รอตรวจสอบ ({stats.pending})</option>
                 <option value="approved">อนุมัติแล้ว ({stats.approved})</option>
                 <option value="rejected">ไม่อนุมัติ ({stats.rejected})</option>
@@ -322,24 +364,42 @@ export default function IdeasTab() {
                           </div>
                         </td>
                         <td className="p-4">
-                          {idea.status === 'pending' && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
-                              <Clock className="w-3 h-3" /> รอตรวจสอบ
-                            </span>
-                          )}
-                          {idea.status === 'approved' && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                              <CheckCircle className="w-3 h-3" /> อนุมัติแล้ว
-                            </span>
-                          )}
-                          {idea.status === 'rejected' && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800 border border-red-200">
-                              <XCircle className="w-3 h-3" /> ไม่อนุมัติ
-                            </span>
-                          )}
+                          <div className="flex flex-col items-start gap-1">
+                            {idea.status === 'pending' && (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                <Clock className="w-3 h-3" /> รอตรวจสอบ
+                              </span>
+                            )}
+                            {idea.status === 'approved' && (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                <CheckCircle className="w-3 h-3" /> อนุมัติแล้ว
+                              </span>
+                            )}
+                            {idea.status === 'rejected' && (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-800 border border-red-200">
+                                <XCircle className="w-3 h-3" /> ไม่อนุมัติ
+                              </span>
+                            )}
+                            {Boolean(idea.isFeatured) && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                                <Star className="w-3 h-3 fill-amber-500 text-amber-500" /> แนะนำไอเดีย
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="p-4">
                           <div className="flex justify-end items-center gap-1.5">
+                            <button
+                              onClick={() => handleToggleFeatured(idea.id, Boolean(idea.isFeatured))}
+                              className={`p-2 rounded-xl transition-colors ${
+                                Boolean(idea.isFeatured)
+                                  ? "text-amber-700 bg-amber-100 hover:bg-amber-200 border border-amber-300"
+                                  : "text-gray-400 bg-gray-100 hover:bg-amber-50 hover:text-amber-600"
+                              }`}
+                              title={Boolean(idea.isFeatured) ? "ปลดออกจากแนะนำไอเดียใหม่" : "ปักหมุดแนะนำไอเดียใหม่"}
+                            >
+                              <Star className={`w-4 h-4 ${Boolean(idea.isFeatured) ? "fill-amber-500 text-amber-500" : ""}`} />
+                            </button>
                             <button 
                               onClick={() => openPreview(idea)} 
                               className="p-2 rounded-xl text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors"
@@ -548,6 +608,18 @@ export default function IdeasTab() {
                     <CheckCircle className="w-4 h-4 mr-1.5" /> อนุมัติไอเดียนี้
                   </Button>
                 )}
+                <Button
+                  variant="outline"
+                  onClick={() => handleToggleFeatured(previewIdea.id, Boolean(previewIdea.isFeatured))}
+                  className={`text-xs ${
+                    Boolean(previewIdea.isFeatured)
+                      ? "border-amber-400 bg-amber-50 text-amber-800 hover:bg-amber-100 font-bold"
+                      : "border-gray-200 text-gray-700 hover:bg-amber-50 hover:text-amber-700"
+                  }`}
+                >
+                  <Star className={`w-4 h-4 mr-1.5 ${Boolean(previewIdea.isFeatured) ? "fill-amber-500 text-amber-500" : ""}`} />
+                  {Boolean(previewIdea.isFeatured) ? "ปลดจากแนะนำ" : "ปักหมุดแนะนำ"}
+                </Button>
                 <Button
                   variant="outline"
                   onClick={() => handleDeleteIdea(previewIdea.id)}

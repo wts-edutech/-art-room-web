@@ -110,6 +110,7 @@ export const ideas = sqliteTable('ideas', {
   files: text('files', { mode: 'json' }), // JSON string for files array
   link: text('link'), // Optional external link/website
   status: text('status').notNull().default('pending'), // 'pending', 'approved', 'rejected'
+  isFeatured: integer('is_featured').default(0), // 1 = featured / แนะนำไอเดียใหม่, 0 = normal
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
 

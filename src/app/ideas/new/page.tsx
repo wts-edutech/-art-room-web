@@ -122,13 +122,10 @@ export default function NewIdeaPage() {
       });
 
       if (res.ok) {
-        const msg = isAdmin && instantApprove
-          ? "เผยแพร่ไอเดียสำเร็จแล้ว! กำลังพาท่านไปยังหน้ารวมไอเดีย..."
-          : "ส่งไอเดียสำเร็จแล้ว! ระบบจะแสดงผลเมื่อได้รับการอนุมัติจากผู้ดูแลระบบ";
-        setSuccessMsg(msg);
+        setSuccessMsg("แบ่งปันไอเดียสำเร็จแล้ว! ไอเดียของคุณจะขึ้นแสดงในส่วน \"แนะนำไอเดียใหม่\" ทันที");
         setTimeout(() => {
           router.push("/ideas");
-        }, 2000);
+        }, 1500);
       } else {
         const data = (await res.json().catch(() => ({}))) as any;
         setErrorMsg(data.error || "เกิดข้อผิดพลาดในการส่งข้อมูล");

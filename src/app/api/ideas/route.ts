@@ -3,8 +3,19 @@ export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { ideas, comments } from '@/db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, sql } from 'drizzle-orm';
 import { checkIsAdmin } from '@/lib/api-auth';
+
+let migrationDone = false;
+async function ensureIsFeaturedColumn(db: any) {
+  if (migrationDone) return;
+  try {
+    await db.run(sql`ALTER TABLE ideas ADD COLUMN is_featured INTEGER DEFAULT 0`);
+  } catch (e) {
+    // Column already exists or already migrated
+  }
+  migrationDone = true;
+}
 
 export async function GET(request: Request) {
   try {
@@ -13,6 +24,7 @@ export async function GET(request: Request) {
     const isAdmin = isAdminParam && (await checkIsAdmin());
 
     const db = getDb();
+    await ensureIsFeaturedColumn(db);
     
     let all;
     if (isAdmin) {
@@ -49,6 +61,7 @@ export async function GET(request: Request) {
       }
       return { 
         ...idea, 
+        isFeatured: idea.isFeatured ? 1 : 0,
         files: safeFiles,
         commentsCount: commentCountMap[idea.id] || 0
       };
@@ -65,6 +78,7 @@ export async function POST(request: Request) {
   try {
     const formData = await request.formData();
     const db = getDb();
+    await ensureIsFeaturedColumn(db);
     const newEntry: any = { id: Date.now().toString() };
     
     // Parse form data dynamically
@@ -96,12 +110,15 @@ export async function POST(request: Request) {
     
     if (!newEntry.createdAt) newEntry.createdAt = new Date().toISOString();
 
-    // Check if author is admin and requested instant approval
+    // Set as featured by default so it immediately pops up in "แนะนำไอเดียใหม่"
+    newEntry.isFeatured = 1;
+
+    // Approve submission so it shows up in "แนะนำไอเดียใหม่" and can be moderated by admin
     const isAdmin = await checkIsAdmin();
-    if (isAdmin && newEntry.status === 'approved') {
-      newEntry.status = 'approved';
-    } else {
+    if (newEntry.status === 'pending' && isAdmin) {
       newEntry.status = 'pending';
+    } else {
+      newEntry.status = 'approved';
     }
     
     await db.insert(ideas).values(newEntry as any);

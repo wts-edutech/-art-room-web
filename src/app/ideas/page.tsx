@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import { Lightbulb, Search, Plus, X, Share2, Check, ArrowUpDown } from "lucide-react";
+import { Lightbulb, Search, Plus, X, Share2, Check, ArrowUpDown, Sparkles, Star } from "lucide-react";
 
 interface IdeaItem {
   id: string;
@@ -18,6 +18,7 @@ interface IdeaItem {
   files?: any[];
   link?: string;
   status: string;
+  isFeatured?: number | boolean;
   createdAt: string;
   commentsCount?: number;
   comments?: any[];
@@ -105,6 +106,13 @@ export default function IdeasPage() {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
   }, [ideas, searchTerm, selectedCategory, sortBy]);
+
+  // Featured & New Ideas: explicitly marked as featured or top 3 newest
+  const featuredIdeas = useMemo(() => {
+    const explicit = ideas.filter(i => Boolean(i.isFeatured));
+    if (explicit.length > 0) return explicit.slice(0, 3);
+    return ideas.slice(0, 3);
+  }, [ideas]);
 
   return (
     <>
@@ -203,6 +211,165 @@ export default function IdeasPage() {
               </div>
             </div>
           </div>
+
+          {/* Featured & New Ideas Section: แนะนำไอเดียใหม่ */}
+          {!searchTerm && selectedCategory === "ทั้งหมด" && (
+            <div className="mt-8 mb-12">
+              <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex h-3.5 w-3.5 relative">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-[#ffb300]"></span>
+                  </span>
+                  <h2 className="text-xl sm:text-2xl font-black text-gray-900 flex items-center gap-2">
+                    <span>แนะนำไอเดียใหม่</span>
+                  </h2>
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-200 flex items-center gap-1">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-600" /> มาใหม่ & โดดเด่น
+                  </span>
+                </div>
+                <span className="text-xs text-gray-500 hidden sm:inline-block">
+                  ไอเดียสร้างสรรค์ที่เพิ่งลงข้อมูลล่าสุด
+                </span>
+              </div>
+
+              {featuredIdeas.length === 0 ? (
+                <div className="bg-gradient-to-br from-amber-50/70 via-orange-50/40 to-yellow-50/50 rounded-3xl p-8 sm:p-10 border border-amber-200/60 text-center flex flex-col items-center justify-center">
+                  <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-amber-500 mb-3 shadow-xs">
+                    <Sparkles className="w-7 h-7" />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-800 mb-1">ยังไม่มีไอเดียแนะนำใหม่</h3>
+                  <p className="text-xs sm:text-sm text-gray-500 max-w-md mb-4 leading-relaxed">
+                    ร่วมแบ่งปันไอเดีย สื่อการสอน หรือกิจกรรมสร้างสรรค์ของคุณเป็นคนแรก เพื่อให้ขึ้นแสดงในส่วนแนะนำไอเดียใหม่ทันที!
+                  </p>
+                  <button
+                    onClick={handleShareClick}
+                    className="px-5 py-2.5 bg-[#ffb300] hover:bg-amber-500 text-white text-xs sm:text-sm font-bold rounded-xl transition-all shadow-xs flex items-center gap-1.5"
+                  >
+                    <Plus className="w-4 h-4" /> ร่วมแบ่งปันไอเดียใหม่
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+                  {featuredIdeas.map((idea) => {
+                    const commentCount = idea.commentsCount !== undefined 
+                      ? idea.commentsCount 
+                      : (Array.isArray(idea.comments) ? idea.comments.length : 0);
+                    const filesCount = Array.isArray(idea.files) ? idea.files.length : 0;
+                    const isCopied = copiedId === idea.id;
+
+                    return (
+                      <div 
+                        key={`featured-${idea.id}`} 
+                        className="group flex flex-col bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl border-2 border-amber-200/80 transition-all duration-300 hover:-translate-y-1.5 relative"
+                      >
+                        {/* Featured Badge Top Right */}
+                        <div className="absolute top-3 right-3 z-10">
+                          <span className="bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold text-[11px] px-3 py-1 rounded-full shadow-md flex items-center gap-1">
+                            <Star className="w-3 h-3 fill-white" /> แนะนำ
+                          </span>
+                        </div>
+
+                        <Link href={`/ideas/detail?id=${idea.id}`} className="block relative aspect-[4/3] w-full bg-amber-50/50 overflow-hidden">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img 
+                            src={idea.coverImageUrl || "https://placehold.co/800x600/FFF7ED/EA580C?text=Art+Idea"} 
+                            alt={idea.title} 
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            onError={(e) => (e.currentTarget.src = "https://placehold.co/800x600/FFF7ED/EA580C?text=Art+Idea")}
+                          />
+                          
+                          {/* Category Badge */}
+                          <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
+                            {idea.category && (
+                              <span className="bg-white/95 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-amber-700 shadow-sm border border-amber-100">
+                                {idea.category}
+                              </span>
+                            )}
+                          </div>
+
+                          {filesCount > 0 && (
+                            <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full text-xs font-semibold text-white shadow-sm flex items-center gap-1">
+                              📎 {filesCount} ไฟล์
+                            </div>
+                          )}
+                        </Link>
+                        
+                        <div className="p-6 flex-1 flex flex-col justify-between">
+                          <div>
+                            <Link href={`/ideas/detail?id=${idea.id}`}>
+                              <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-[#ffb300] transition-colors leading-snug">
+                                {idea.title}
+                              </h3>
+                            </Link>
+                            <p className="text-gray-500 text-sm line-clamp-2 mb-4 font-normal leading-relaxed">
+                              {idea.description}
+                            </p>
+                          </div>
+                          
+                          <div className="pt-4 border-t border-gray-100 mt-2">
+                            <div className="flex items-center justify-between mb-4">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-amber-400 to-[#ffb300] text-white flex items-center justify-center font-bold text-xs uppercase flex-shrink-0 shadow-sm">
+                                  {(idea.authorName || "U").charAt(0)}
+                                </div>
+                                <span className="text-xs text-gray-600 font-medium truncate">
+                                  {idea.authorName}
+                                </span>
+                              </div>
+                              
+                              <span className="text-xs text-gray-400 font-light flex-shrink-0">
+                                {new Date(idea.createdAt).toLocaleDateString("th-TH", {
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "2-digit",
+                                })}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center justify-between pt-2">
+                              <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                                <span>💬</span>
+                                <span>{commentCount} ความคิดเห็น</span>
+                              </div>
+                              
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    const shareUrl = `${window.location.origin}/ideas/detail?id=${idea.id}`;
+                                    navigator.clipboard.writeText(shareUrl);
+                                    setCopiedId(idea.id);
+                                    setTimeout(() => setCopiedId(null), 2000);
+                                  }}
+                                  className="p-2 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded-full transition-colors relative"
+                                  title="คัดลอกลิงก์แชร์"
+                                >
+                                  {isCopied ? (
+                                    <Check className="w-4 h-4 text-emerald-500" />
+                                  ) : (
+                                    <Share2 className="w-4 h-4" />
+                                  )}
+                                </button>
+                                
+                                <Link
+                                  href={`/ideas/detail?id=${idea.id}`}
+                                  className="px-3.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold rounded-xl transition-all flex items-center gap-1"
+                                >
+                                  ดูรายละเอียด →
+                                </Link>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Ideas Grid */}
           <div className="mt-6">

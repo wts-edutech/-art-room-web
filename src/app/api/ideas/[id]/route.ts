@@ -23,6 +23,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     if (body.description) updates.description = body.description;
     if (body.category) updates.category = body.category;
     if (body.link !== undefined) updates.link = body.link;
+    if (body.isFeatured !== undefined) updates.isFeatured = body.isFeatured ? 1 : 0;
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
