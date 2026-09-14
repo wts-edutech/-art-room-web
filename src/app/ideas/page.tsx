@@ -161,19 +161,27 @@ export default function IdeasPage() {
             {/* Category Pills & Sort Bar */}
             <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-2">
               <div className="flex flex-wrap gap-2 justify-center md:justify-start">
-                {categories.map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setSelectedCategory(cat)}
-                    className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-medium tracking-tight transition-all duration-200 cursor-pointer active:scale-95 hover:-translate-y-1.5 hover:shadow-lg hover:shadow-zinc-900/10 hover:scale-[1.04] ${
-                      selectedCategory === cat
-                        ? "bg-zinc-900 text-white shadow-md shadow-zinc-900/20 scale-[1.02]"
-                        : "bg-white text-zinc-600 border border-zinc-200/80 shadow-xs hover:border-zinc-400 hover:text-zinc-900 hover:bg-zinc-50"
-                    }`}
-                  >
-                    <span>{cat}</span>
-                  </button>
-                ))}
+                {categories.map((cat) => {
+                  const isSelected = selectedCategory === cat;
+                  return (
+                    <button
+                      key={cat}
+                      onClick={() => setSelectedCategory(cat)}
+                      style={{
+                        backgroundColor: isSelected ? "#18181b" : "#ffffff",
+                        color: isSelected ? "#ffffff" : "#1f2937",
+                        borderColor: isSelected ? "#18181b" : "#e5e7eb",
+                      }}
+                      className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold tracking-tight transition-all duration-200 cursor-pointer active:scale-95 hover:-translate-y-1.5 hover:shadow-lg hover:shadow-black/15 hover:scale-[1.05] border-2 ${
+                        isSelected
+                          ? "shadow-md shadow-black/25 scale-[1.02]"
+                          : "hover:border-gray-900 hover:text-black hover:bg-gray-50 shadow-xs"
+                      }`}
+                    >
+                      <span>{cat}</span>
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Sorting Selector */}
