@@ -8,7 +8,8 @@ import Footer from "@/components/layout/Footer";
 import { 
   ArrowLeft, Download, MessageSquare, Send, Trash2, 
   Video, Gamepad2, FileText, Image as ImageIcon, File, 
-  Link as LinkIcon, Share2, Check, Sparkles, Calendar, User
+  Link as LinkIcon, Share2, Check, Sparkles, Calendar, User,
+  Eye, MessageCircle, Bookmark
 } from "lucide-react";
 
 interface CommentItem {
@@ -49,6 +50,12 @@ export default function IdeaDetailClient() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState("student");
   const [isCopied, setIsCopied] = useState(false);
+  const [viewsCount, setViewsCount] = useState(7);
+  const [starryCount, setStarryCount] = useState(0);
+  const [hasLikedStarry, setHasLikedStarry] = useState(false);
+  const [flowerCount, setFlowerCount] = useState(0);
+  const [hasLikedFlower, setHasLikedFlower] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(false);
 
   const getFileIcon = (filename: string) => {
     const ext = filename?.split('.').pop()?.toLowerCase();
@@ -67,6 +74,24 @@ export default function IdeaDetailClient() {
     if (role) setUserRole(role);
 
     if (id) {
+      // Load saved interaction states
+      const savedBookmark = localStorage.getItem(`artroom_idea_bookmark_${id}`) === "true";
+      const savedStarry = localStorage.getItem(`artroom_idea_starry_${id}`) === "true";
+      const savedFlower = localStorage.getItem(`artroom_idea_flower_${id}`) === "true";
+      const savedStarryCount = Number(localStorage.getItem(`artroom_idea_starry_count_${id}`)) || 0;
+      const savedFlowerCount = Number(localStorage.getItem(`artroom_idea_flower_count_${id}`)) || 0;
+
+      setIsBookmarked(savedBookmark);
+      setHasLikedStarry(savedStarry);
+      setHasLikedFlower(savedFlower);
+      setStarryCount(savedStarryCount);
+      setFlowerCount(savedFlowerCount);
+
+      const localViews = Number(localStorage.getItem(`artroom_idea_views_${id}`)) || Math.floor(Math.random() * 5) + 7;
+      const newViews = localViews + 1;
+      localStorage.setItem(`artroom_idea_views_${id}`, String(newViews));
+      setViewsCount(newViews);
+
       setIsLoading(true);
       fetch(`/api/ideas/${id}`)
         .then((res) => {
@@ -99,6 +124,42 @@ export default function IdeaDetailClient() {
     navigator.clipboard.writeText(shareUrl).then(() => {
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2500);
+    });
+  };
+
+  const handleToggleStarry = () => {
+    setHasLikedStarry((prev) => {
+      const next = !prev;
+      const nextCount = next ? starryCount + 1 : Math.max(0, starryCount - 1);
+      setStarryCount(nextCount);
+      if (id) {
+        localStorage.setItem(`artroom_idea_starry_${id}`, String(next));
+        localStorage.setItem(`artroom_idea_starry_count_${id}`, String(nextCount));
+      }
+      return next;
+    });
+  };
+
+  const handleToggleFlower = () => {
+    setHasLikedFlower((prev) => {
+      const next = !prev;
+      const nextCount = next ? flowerCount + 1 : Math.max(0, flowerCount - 1);
+      setFlowerCount(nextCount);
+      if (id) {
+        localStorage.setItem(`artroom_idea_flower_${id}`, String(next));
+        localStorage.setItem(`artroom_idea_flower_count_${id}`, String(nextCount));
+      }
+      return next;
+    });
+  };
+
+  const handleToggleBookmark = () => {
+    setIsBookmarked((prev) => {
+      const next = !prev;
+      if (id) {
+        localStorage.setItem(`artroom_idea_bookmark_${id}`, String(next));
+      }
+      return next;
     });
   };
 
@@ -182,10 +243,10 @@ export default function IdeaDetailClient() {
   return (
     <>
       <Navbar />
-      <main className="flex-1 flex flex-col pt-32 pb-24 min-h-screen bg-[#FCFBF8]">
+      <main className="flex-1 flex flex-col pt-28 pb-24 min-h-screen bg-white">
         <div className="container mx-auto px-4 sm:px-6 max-w-4xl">
-          {/* Top Bar Navigation & Actions */}
-          <div className="flex items-center justify-between mb-6">
+          {/* Top Bar Navigation */}
+          <div className="mb-5">
             <Link 
               href="/ideas" 
               className="inline-flex items-center text-gray-500 hover:text-orange-600 transition-colors font-medium text-sm group"
@@ -193,74 +254,134 @@ export default function IdeaDetailClient() {
               <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
               กลับไปยังห้องสมุดไอเดีย
             </Link>
-
-            <button
-              onClick={handleCopyLink}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border text-xs font-semibold transition-all shadow-sm ${
-                isCopied 
-                  ? "bg-green-50 border-green-300 text-green-700" 
-                  : "bg-white border-gray-200 text-gray-700 hover:border-orange-300 hover:text-orange-600 hover:bg-orange-50/50"
-              }`}
-            >
-              {isCopied ? <Check className="w-4 h-4 text-green-600" /> : <Share2 className="w-4 h-4" />}
-              <span>{isCopied ? "คัดลอกลิงก์แล้ว!" : "แชร์ไอเดีย"}</span>
-            </button>
           </div>
 
-          {/* Main Idea Content Card */}
-          <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100 mb-10">
-            {/* Cover Image Banner */}
-            <div className="relative aspect-[16/9] w-full bg-gray-100 overflow-hidden">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img 
-                src={idea.coverImageUrl || "https://placehold.co/1200x600/FFF7ED/EA580C?text=Art+Room"} 
-                alt={idea.title}
-                className="w-full h-full object-cover"
-                onError={(e) => (e.currentTarget.src = "https://placehold.co/1200x600/FFF7ED/EA580C?text=Art+Room")}
-              />
-              {idea.category && (
-                <div className="absolute top-4 left-4 bg-orange-500/95 backdrop-blur-md text-white font-bold text-xs px-3.5 py-1.5 rounded-full shadow-md">
-                  {idea.category}
+          {/* Article Header (Exactly matching user mockup) */}
+          <div className="mb-6">
+            {/* 1. Title */}
+            <h1 className="text-2xl sm:text-3xl font-bold font-heading text-gray-900 mb-4 leading-snug">
+              {idea.title}
+            </h1>
+
+            {/* 2. Author Row & Stats Bar */}
+            <div className="flex items-center justify-between gap-4 pb-4 border-b border-gray-100">
+              {/* Left Column: Avatar + Author + Date */}
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-11 h-11 rounded-full overflow-hidden border border-gray-200/80 bg-orange-50 shrink-0 shadow-2xs flex items-center justify-center">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img 
+                    src={`https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(idea.authorName || 'ArtTeacher')}&backgroundColor=ffdfbf`} 
+                    alt={idea.authorName}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      if (e.currentTarget.parentElement) {
+                        e.currentTarget.parentElement.innerHTML = `<span class="text-orange-600 font-bold text-base">${(idea.authorName || 'ค').charAt(0)}</span>`;
+                      }
+                    }}
+                  />
                 </div>
-              )}
+                <div className="min-w-0">
+                  <h3 className="font-semibold text-gray-800 text-sm sm:text-[15px] leading-tight truncate">
+                    {idea.authorName}
+                  </h3>
+                  <p className="text-xs text-gray-400 font-light mt-0.5 truncate">
+                    {new Date(idea.createdAt || Date.now()).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    {idea.createdAt ? ` (แก้ไข ${new Date(idea.createdAt).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' })})` : ''}
+                  </p>
+                </div>
+              </div>
+
+              {/* Right Column: Views/Comments + Reactions + Share/Bookmark */}
+              <div className="flex flex-col items-end gap-1.5 shrink-0">
+                {/* Views & Comments */}
+                <div className="flex items-center gap-3 text-xs text-gray-500 font-normal">
+                  <div className="flex items-center gap-1">
+                    <Eye className="w-3.5 h-3.5 text-gray-400" />
+                    <span>{viewsCount}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <MessageCircle className="w-3.5 h-3.5 text-gray-400" />
+                    <span>{idea.comments?.length || 0}</span>
+                  </div>
+                </div>
+
+                {/* Reactions & Buttons */}
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <button
+                    onClick={handleToggleStarry}
+                    className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full transition-all cursor-pointer ${
+                      hasLikedStarry ? "bg-amber-100 text-amber-700 font-semibold scale-105" : "text-gray-500 hover:bg-gray-100"
+                    }`}
+                    title="ว้าว / ชื่นชอบ"
+                  >
+                    <span className="text-sm">🤩</span>
+                    <span>{starryCount}</span>
+                  </button>
+
+                  <button
+                    onClick={handleToggleFlower}
+                    className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full transition-all cursor-pointer ${
+                      hasLikedFlower ? "bg-pink-100 text-pink-700 font-semibold scale-105" : "text-gray-500 hover:bg-gray-100"
+                    }`}
+                    title="มอบช่อดอกไม้ / ชื่นชม"
+                  >
+                    <span className="text-sm">💐</span>
+                    <span>{flowerCount}</span>
+                  </button>
+
+                  <div className="h-3.5 w-[1px] bg-gray-300 mx-0.5" />
+
+                  {/* Share button */}
+                  <button
+                    onClick={handleCopyLink}
+                    className="w-7 h-7 rounded-full border border-gray-300 hover:border-gray-400 hover:bg-gray-50 flex items-center justify-center text-gray-600 hover:text-gray-900 transition-all shadow-2xs cursor-pointer active:scale-95"
+                    title={isCopied ? "คัดลอกลิงก์แล้ว!" : "แชร์ไอเดียนี้"}
+                  >
+                    {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Share2 className="w-3.5 h-3.5" />}
+                  </button>
+
+                  {/* Bookmark button */}
+                  <button
+                    onClick={handleToggleBookmark}
+                    className={`w-7 h-7 rounded-full border transition-all shadow-2xs flex items-center justify-center cursor-pointer active:scale-95 ${
+                      isBookmarked
+                        ? "border-amber-400 bg-amber-50 text-amber-500"
+                        : "border-gray-300 hover:border-gray-400 hover:bg-gray-50 text-gray-600 hover:text-gray-900"
+                    }`}
+                    title={isBookmarked ? "ยกเลิกการบันทึก" : "บันทึกไอเดียนี้"}
+                  >
+                    <Bookmark className={`w-3.5 h-3.5 ${isBookmarked ? "fill-amber-400" : ""}`} />
+                  </button>
+                </div>
+              </div>
             </div>
-            
-            <div className="p-6 sm:p-10">
-              {/* Author & Meta */}
-              <div className="flex flex-wrap items-center justify-between gap-4 pb-6 mb-6 border-b border-gray-100">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-orange-400 to-amber-400 text-white flex items-center justify-center font-bold text-lg uppercase shadow-sm">
-                    {(idea.authorName || "U").charAt(0)}
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900 text-base leading-tight">
-                      {idea.authorName}
-                    </h3>
-                    <p className="text-xs text-gray-400 flex items-center gap-1.5 mt-1">
-                      <Calendar className="w-3.5 h-3.5" />
-                      <span>{new Date(idea.createdAt).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                    </p>
-                  </div>
-                </div>
+          </div>
 
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="px-3 py-1 bg-gray-50 text-gray-600 rounded-full border border-gray-200">
-                    หมวดหมู่: <strong className="text-gray-900 font-semibold">{idea.category || "ทั่วไป"}</strong>
-                  </span>
-                </div>
+          {/* 3. Cover Image Banner */}
+          <div className="relative aspect-video sm:aspect-[16/9] w-full bg-gray-100 rounded-2xl sm:rounded-3xl overflow-hidden border border-gray-100/90 shadow-sm mb-8">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img 
+              src={idea.coverImageUrl || "https://placehold.co/1200x675/FFF7ED/EA580C?text=Art+Room"} 
+              alt={idea.title}
+              className="w-full h-full object-cover"
+              onError={(e) => (e.currentTarget.src = "https://placehold.co/1200x675/FFF7ED/EA580C?text=Art+Room")}
+            />
+            {idea.category && (
+              <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-md text-gray-800 font-bold text-xs px-3.5 py-1.5 rounded-full shadow-sm border border-gray-100">
+                {idea.category}
               </div>
+            )}
+          </div>
 
-              {/* Title */}
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-900 mb-6 leading-tight">
-                {idea.title}
-              </h1>
-              
-              {/* Description */}
-              <div className="prose max-w-none text-gray-700 mb-8 whitespace-pre-wrap leading-relaxed text-base">
-                {idea.description}
-              </div>
+          {/* 4. Idea Details Body */}
+          <div className="bg-white rounded-3xl p-6 sm:p-10 border border-gray-100 shadow-sm mb-10">
+            {/* Description */}
+            <div className="prose max-w-none text-gray-800 mb-8 whitespace-pre-wrap leading-relaxed text-base">
+              {idea.description}
+            </div>
 
-              {/* External Link */}
+            {/* External Link */}
               {idea.link && (
                 <div className="mb-8 p-5 bg-gradient-to-r from-orange-50/60 to-amber-50/40 rounded-2xl border border-orange-100">
                   <h3 className="text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
@@ -447,7 +568,6 @@ export default function IdeaDetailClient() {
                 </div>
               </div>
             </div>
-          </div>
 
           {/* Related / Recommended Ideas Section */}
           {relatedIdeas.length > 0 && (
