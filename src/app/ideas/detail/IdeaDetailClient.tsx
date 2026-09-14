@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
@@ -56,6 +56,22 @@ export default function IdeaDetailClient() {
   const [flowerCount, setFlowerCount] = useState(0);
   const [hasLikedFlower, setHasLikedFlower] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const [previewFile, setPreviewFile] = useState<{ name: string; url: string; size?: number } | null>(null);
+
+  const primaryFile = useMemo(() => {
+    if (idea?.files && Array.isArray(idea.files) && idea.files.length > 0) {
+      return idea.files[0];
+    }
+    return {
+      name: `เอกสารและใบกิจกรรม - ${idea?.title || "Art Room"}.pdf`,
+      url: idea?.coverImageUrl || "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+      size: 1024 * 1024 * 1.8,
+    };
+  }, [idea]);
+
+  const handleOpenPreview = (file: { name: string; url: string; size?: number }) => {
+    setPreviewFile(file);
+  };
 
   const getFileIcon = (filename: string) => {
     const ext = filename?.split('.').pop()?.toLowerCase();
@@ -399,46 +415,83 @@ export default function IdeaDetailClient() {
                 </div>
               )}
 
-              {/* Attachments Section */}
-              {idea.files && idea.files.length > 0 && (
-                <div className="mb-10">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                      <Download className="w-5 h-5 text-orange-500" /> 
-                      <span>เอกสารและไฟล์แนบ</span>
-                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">
-                        {idea.files.length} ไฟล์
-                      </span>
-                    </h3>
-                    {!isLoggedIn && (
-                      <span className="text-xs text-amber-700 font-medium bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
-                        * เข้าสู่ระบบเพื่อดาวน์โหลด
-                      </span>
-                    )}
+            {/* Quick Action Document Banner with ดูพรีวิว and ดาวน์โหลดเอกสาร */}
+            <div className="mb-8 p-5 sm:p-6 rounded-2xl bg-gradient-to-r from-orange-50/90 via-amber-50/60 to-white border border-orange-200/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5 min-w-0">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-orange-500 to-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <FileText className="w-6 h-6" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider bg-orange-100 text-orange-800 px-2 py-0.2 rounded-full">
+                      เอกสารแนบ
+                    </span>
+                    <span className="text-xs text-gray-400">PDF Document</span>
                   </div>
+                  <h4 className="text-sm sm:text-base font-bold text-gray-900 truncate">
+                    {primaryFile.name}
+                  </h4>
+                </div>
+              </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {(Array.isArray(idea.files) ? idea.files : []).map((file: any, index: number) => {
-                      const ext = file.name?.split('.').pop()?.toUpperCase() || 'FILE';
-                      const sizeStr = file.size ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : '';
+              {/* Action Buttons: ดูพรีวิว & ดาวน์โหลดเอกสาร */}
+              <div className="flex items-center gap-2.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => handleOpenPreview(primaryFile)}
+                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-white hover:bg-orange-50 text-gray-800 hover:text-orange-600 border border-gray-200 hover:border-orange-300 font-bold text-xs sm:text-sm transition-all shadow-xs cursor-pointer active:scale-95"
+                >
+                  <Eye className="w-4 h-4 text-orange-500" />
+                  <span>ดูพรีวิว</span>
+                </button>
 
-                      return (
-                        <a 
-                          key={index} 
-                          href={isLoggedIn ? file.url : '#'} 
-                          download={isLoggedIn ? (file.name || `attachment-${index + 1}`) : undefined}
-                          target={isLoggedIn ? "_blank" : undefined}
-                          rel={isLoggedIn ? "noopener noreferrer" : undefined}
-                          onClick={(e) => {
-                            if (!isLoggedIn) {
-                              e.preventDefault();
-                              if (confirm("กรุณาเข้าสู่ระบบก่อนดาวน์โหลดไฟล์ ต้องการไปหน้าเข้าสู่ระบบหรือไม่?")) {
-                                router.push(`/login?redirect=/ideas/detail?id=${idea.id}`);
-                              }
-                            }
-                          }}
-                          className="flex items-center gap-3 p-4 rounded-2xl border border-gray-200 hover:border-orange-500 hover:bg-orange-50/30 transition-all group cursor-pointer shadow-sm bg-white"
-                        >
+                <a
+                  href={isLoggedIn ? primaryFile.url : "#"}
+                  download={isLoggedIn ? primaryFile.name : undefined}
+                  target={isLoggedIn ? "_blank" : undefined}
+                  rel={isLoggedIn ? "noopener noreferrer" : undefined}
+                  onClick={(e) => {
+                    if (!isLoggedIn) {
+                      e.preventDefault();
+                      if (confirm("กรุณาเข้าสู่ระบบก่อนดาวน์โหลดเอกสาร ต้องการไปหน้าเข้าสู่ระบบหรือไม่?")) {
+                        router.push(`/login?redirect=/ideas/detail?id=${idea.id}`);
+                      }
+                    }
+                  }}
+                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-5 sm:px-6 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-xs sm:text-sm transition-all shadow-sm hover:shadow-md cursor-pointer active:scale-95"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>ดาวน์โหลดเอกสาร</span>
+                </a>
+              </div>
+            </div>
+
+            {/* Attachments Section if multiple files exist */}
+            {idea.files && idea.files.length > 1 && (
+              <div className="mb-10">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                    <Download className="w-5 h-5 text-orange-500" /> 
+                    <span>ไฟล์แนบทั้งหมด ({idea.files.length} ไฟล์)</span>
+                  </h3>
+                  {!isLoggedIn && (
+                    <span className="text-xs text-amber-700 font-medium bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
+                      * เข้าสู่ระบบเพื่อดาวน์โหลด
+                    </span>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {(Array.isArray(idea.files) ? idea.files : []).map((file: any, index: number) => {
+                    const ext = file.name?.split('.').pop()?.toUpperCase() || 'FILE';
+                    const sizeStr = file.size ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : '';
+
+                    return (
+                      <div 
+                        key={index}
+                        className="flex items-center justify-between gap-3 p-4 rounded-2xl border border-gray-200 hover:border-orange-300 hover:bg-orange-50/20 transition-all group shadow-xs bg-white"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
                           <div className="w-10 h-10 rounded-xl bg-gray-50 group-hover:bg-white flex items-center justify-center flex-shrink-0 border border-gray-100">
                             {getFileIcon(file.name)}
                           </div>
@@ -451,15 +504,42 @@ export default function IdeaDetailClient() {
                               {sizeStr && <span>• {sizeStr}</span>}
                             </p>
                           </div>
-                          <div className="w-8 h-8 rounded-lg bg-gray-50 group-hover:bg-orange-500 group-hover:text-white flex items-center justify-center text-gray-400 transition-colors shrink-0">
+                        </div>
+
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenPreview(file)}
+                            className="p-2 rounded-xl bg-gray-50 hover:bg-orange-50 text-gray-600 hover:text-orange-600 border border-gray-200 hover:border-orange-300 transition-colors"
+                            title="ดูพรีวิว"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <a
+                            href={isLoggedIn ? file.url : '#'} 
+                            download={isLoggedIn ? (file.name || `attachment-${index + 1}`) : undefined}
+                            target={isLoggedIn ? "_blank" : undefined}
+                            rel={isLoggedIn ? "noopener noreferrer" : undefined}
+                            onClick={(e) => {
+                              if (!isLoggedIn) {
+                                e.preventDefault();
+                                if (confirm("กรุณาเข้าสู่ระบบก่อนดาวน์โหลดไฟล์ ต้องการไปหน้าเข้าสู่ระบบหรือไม่?")) {
+                                  router.push(`/login?redirect=/ideas/detail?id=${idea.id}`);
+                                }
+                              }
+                            }}
+                            className="p-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white transition-colors shadow-xs"
+                            title="ดาวน์โหลด"
+                          >
                             <Download className="w-4 h-4" />
-                          </div>
-                        </a>
-                      );
-                    })}
-                  </div>
+                          </a>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              )}
+              </div>
+            )}
 
               <hr className="border-gray-100 my-8" />
 
@@ -615,6 +695,91 @@ export default function IdeaDetailClient() {
           )}
         </div>
       </main>
+      {/* Interactive Document Preview Modal */}
+      {previewFile && (
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-xs animate-in fade-in duration-200"
+          onClick={() => setPreviewFile(null)}
+        >
+          <div 
+            className="bg-white rounded-3xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl border border-gray-100 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 sm:p-5 border-b border-gray-100 bg-gray-50/80">
+              <div className="flex items-center gap-3 min-w-0 pr-4">
+                <div className="w-9 h-9 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0">
+                  <FileText className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <h4 className="font-bold text-gray-900 text-sm sm:text-base truncate">
+                    {previewFile.name}
+                  </h4>
+                  <p className="text-xs text-gray-400">พรีวิวเอกสารออนไลน์</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <a
+                  href={isLoggedIn ? previewFile.url : "#"}
+                  download={isLoggedIn ? previewFile.name : undefined}
+                  target={isLoggedIn ? "_blank" : undefined}
+                  rel={isLoggedIn ? "noopener noreferrer" : undefined}
+                  onClick={(e) => {
+                    if (!isLoggedIn) {
+                      e.preventDefault();
+                      if (confirm("กรุณาเข้าสู่ระบบก่อนดาวน์โหลดเอกสาร ต้องการไปหน้าเข้าสู่ระบบหรือไม่?")) {
+                        router.push(`/login?redirect=/ideas/detail?id=${idea.id}`);
+                      }
+                    }
+                  }}
+                  className="px-3.5 py-1.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>ดาวน์โหลด</span>
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setPreviewFile(null)}
+                  className="w-8 h-8 rounded-full bg-gray-200/80 hover:bg-gray-300 text-gray-600 flex items-center justify-center transition-colors text-sm font-bold cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body Preview Viewer */}
+            <div className="flex-1 overflow-auto p-4 sm:p-6 bg-[#2B2B2B] flex flex-col items-center justify-center min-h-[420px]">
+              {previewFile.url?.startsWith("data:image") || previewFile.url?.match(/\.(jpeg|jpg|png|gif|webp)$/i) ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img 
+                  src={previewFile.url} 
+                  alt={previewFile.name} 
+                  className="max-h-[70vh] w-auto max-w-full rounded-lg shadow-lg object-contain"
+                />
+              ) : (
+                <div className="w-full h-full min-h-[500px] flex flex-col items-center justify-center bg-white rounded-2xl p-4 sm:p-6 text-center">
+                  <iframe 
+                    src={previewFile.url} 
+                    title={previewFile.name}
+                    className="w-full h-[60vh] rounded-xl border border-gray-200"
+                  />
+                  <div className="mt-3 flex items-center gap-3">
+                    <a
+                      href={previewFile.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-orange-600 hover:underline font-semibold flex items-center gap-1"
+                    >
+                      เปิดพรีวิวในแท็บใหม่ ↗
+                    </a>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       <Footer />
     </>
   );

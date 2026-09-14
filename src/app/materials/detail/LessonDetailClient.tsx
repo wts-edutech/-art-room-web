@@ -228,16 +228,24 @@ export default function LessonDetailPage() {
                   {lesson.title}
                 </h1>
                 
-                {lesson.category === "สื่อเอกสาร PDF" && lesson.pdfUrl && (
-                  <div className="mb-6">
+                {(lesson.fileUrl || lesson.pdfUrl) && (
+                  <div className="mb-6 flex items-center gap-3 flex-wrap">
                     <a 
-                      href={lesson.pdfUrl} 
-                      download 
+                      href={lesson.pdfUrl || lesson.fileUrl} 
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl shadow-sm shadow-red-500/30 transition-all hover:-translate-y-1"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-sm rounded-xl shadow-xs transition-all cursor-pointer"
                     >
-                      <Download className="w-5 h-5" /> ดาวน์โหลดไฟล์เอกสาร PDF
+                      <Eye className="w-4 h-4 text-gray-600" /> ดูพรีวิว
+                    </a>
+                    <a 
+                      href={lesson.pdfUrl || lesson.fileUrl} 
+                      download={lesson.attachmentName || "art-material.pdf"} 
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-sm rounded-xl shadow-sm shadow-red-500/20 transition-all hover:-translate-y-0.5 cursor-pointer"
+                    >
+                      <Download className="w-4 h-4" /> ดาวน์โหลดเอกสาร
                     </a>
                   </div>
                 )}
