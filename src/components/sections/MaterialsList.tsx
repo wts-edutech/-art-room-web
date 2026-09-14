@@ -6,7 +6,8 @@ import { useSearchParams } from "next/navigation";
 import { 
   Search, BookOpen, Video, Image as ImageIcon, Star, Grid, 
   Download, ExternalLink, GraduationCap, FileText, Presentation, 
-  Filter, CheckCircle2, ArrowRight, X, Sparkles, Eye, CloudDownload
+  Filter, CheckCircle2, ArrowRight, X, Sparkles, Eye, CloudDownload,
+  Loader2
 } from "lucide-react";
 import { DownloadItem } from "@/data/default-downloads";
 
@@ -31,6 +32,80 @@ export default function MaterialsList({
   const [activeCategory, setActiveCategory] = useState<string>("ทั้งหมด");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
+  const [previewItem, setPreviewItem] = useState<any | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ title: string; message: string; type: "success" | "loading" | "info" } | null>(null);
+  const [downloadCounts, setDownloadCounts] = useState<Record<string, number>>({});
+
+  const handleView = (item: any) => {
+    setPreviewItem(item);
+  };
+
+  const handleDownload = async (e: React.MouseEvent, item: any) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (downloadingId) return;
+
+    setDownloadingId(item.id);
+    const targetFileName = item.fileName || (item.mediaType === "video" ? "lesson_video.mp4" : `${item.title}.pdf`);
+
+    setToast({
+      title: "กำลังเริ่มดาวน์โหลด...",
+      message: `เตรียมไฟล์: ${targetFileName}`,
+      type: "loading"
+    });
+
+    // Optimistically increment download count
+    setDownloadCounts(prev => ({
+      ...prev,
+      [item.id]: (prev[item.id] ?? item.downloadsCount ?? 0) + 1
+    }));
+
+    // Trigger API download count increment
+    if (item.rawId) {
+      fetch(`/api/downloads?id=${encodeURIComponent(item.rawId)}`, { method: "PATCH" }).catch(() => {});
+    }
+
+    try {
+      if (item.fileUrl) {
+        const response = await fetch(item.fileUrl, { mode: "cors" });
+        if (response.ok) {
+          const blob = await response.blob();
+          const blobUrl = window.URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = blobUrl;
+          link.download = targetFileName;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(blobUrl);
+        } else {
+          throw new Error("Direct link fallback");
+        }
+      }
+    } catch {
+      // Fallback for cross-origin URLs
+      const link = document.createElement("a");
+      link.href = item.fileUrl || "#";
+      link.setAttribute("download", targetFileName);
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    setTimeout(() => {
+      setToast({
+        title: "ดาวน์โหลดเรียบร้อยแล้ว!",
+        message: `บันทึกไฟล์ ${targetFileName} เรียบร้อยแล้ว`,
+        type: "success"
+      });
+      setDownloadingId(null);
+      setTimeout(() => setToast(null), 3500);
+    }, 700);
+  };
 
   // Sync with searchParams if they change
   useEffect(() => {
@@ -387,41 +462,35 @@ export default function MaterialsList({
                     {/* Left: Downloads Count */}
                     <div className="flex items-center gap-1.5 text-xs text-gray-400 font-normal">
                       <Download className="w-3.5 h-3.5 text-gray-400" />
-                      <span>{item.downloadsCount || 342} ครั้ง</span>
+                      <span>{downloadCounts[item.id] ?? item.downloadsCount ?? 342} ครั้ง</span>
                     </div>
 
                     {/* Right: Actions [ 👁 ดู ] and [ ☁ ดาวน์โหลด ] */}
                     <div className="flex items-center gap-2">
-                      {isVideo ? (
-                        <Link
-                          href={`${basePath}/detail?id=${item.rawId}`}
-                          className="px-3.5 py-1.5 rounded-full bg-gray-100/90 hover:bg-gray-200 text-gray-700 text-xs font-semibold flex items-center gap-1 transition-colors"
-                        >
-                          <Eye className="w-3.5 h-3.5 text-gray-600" />
-                          <span>ดู</span>
-                        </Link>
-                      ) : (
-                        <a
-                          href={item.fileUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-3.5 py-1.5 rounded-full bg-gray-100/90 hover:bg-gray-200 text-gray-700 text-xs font-semibold flex items-center gap-1 transition-colors"
-                        >
-                          <Eye className="w-3.5 h-3.5 text-gray-600" />
-                          <span>ดู</span>
-                        </a>
-                      )}
-
-                      <a
-                        href={item.fileUrl}
-                        download={item.fileName || "art-material.pdf"}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-3.5 py-1.5 rounded-full bg-[#FFF0F3] hover:bg-[#FFE4E8] text-[#E11D48] text-xs font-semibold flex items-center gap-1.5 transition-colors border border-pink-100/80 active:scale-95"
+                      <button
+                        type="button"
+                        onClick={() => handleView(item)}
+                        className="px-3.5 py-1.5 rounded-full bg-gray-100/90 hover:bg-gray-200 text-gray-700 text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-2xs"
+                        title="ดูตัวอย่างเอกสารหรือบทเรียน"
                       >
-                        <CloudDownload className="w-3.5 h-3.5 text-[#E11D48]" />
-                        <span>ดาวน์โหลด</span>
-                      </a>
+                        <Eye className="w-3.5 h-3.5 text-gray-600" />
+                        <span>ดู</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={(e) => handleDownload(e, item)}
+                        disabled={downloadingId === item.id}
+                        className="px-3.5 py-1.5 rounded-full bg-[#FFF0F3] hover:bg-[#FFE4E8] text-[#E11D48] text-xs font-semibold flex items-center gap-1.5 transition-all border border-pink-100/80 active:scale-95 cursor-pointer shadow-2xs disabled:opacity-75"
+                        title="ดาวน์โหลดไฟล์ลงเครื่อง"
+                      >
+                        {downloadingId === item.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-[#E11D48]" />
+                        ) : (
+                          <CloudDownload className="w-3.5 h-3.5 text-[#E11D48]" />
+                        )}
+                        <span>{downloadingId === item.id ? "กำลังโหลด..." : "ดาวน์โหลด"}</span>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -430,6 +499,186 @@ export default function MaterialsList({
           </div>
         )}
       </div>
+
+      {/* Interactive Preview Modal */}
+      {previewItem && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200"
+          onClick={() => setPreviewItem(null)}
+        >
+          <div 
+            className="bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-gray-100 animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="px-5 sm:px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10">
+              <div className="flex items-center gap-2.5 min-w-0 pr-4">
+                <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${
+                  previewItem.mediaType === "video" || previewItem.videoId 
+                    ? "bg-blue-50 text-blue-600 border border-blue-100" 
+                    : "bg-red-50 text-red-600 border border-red-100"
+                }`}>
+                  {previewItem.category || "สื่อการสอน"}
+                </span>
+                <h3 className="text-base sm:text-lg font-bold text-gray-900 truncate" title={previewItem.title}>
+                  {previewItem.title}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewItem(null)}
+                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-800 flex items-center justify-center transition-colors shrink-0 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-5 sm:p-6 overflow-y-auto flex-1 space-y-4 bg-[#FBFBFC]">
+              {/* If Video: Embedded YouTube Player */}
+              {(previewItem.mediaType === "video" || previewItem.videoId) ? (
+                <div className="space-y-4">
+                  <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-black shadow-md">
+                    {previewItem.videoId ? (
+                      <iframe
+                        src={`https://www.youtube-nocookie.com/embed/${previewItem.videoId}?autoplay=1`}
+                        title={previewItem.title}
+                        className="w-full h-full border-0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center text-white bg-slate-900 p-6 text-center">
+                        <Video className="w-12 h-12 text-red-500 mb-2" />
+                        <p className="text-sm font-semibold">วิดีโอประกอบการเรียนรู้ศิลปะ</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-2xs space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-bold text-gray-800">คำอธิบายบทเรียน</h4>
+                      {previewItem.rawId && (
+                        <Link
+                          href={`${basePath}/detail?id=${previewItem.rawId}`}
+                          className="text-xs font-semibold text-red-600 hover:text-red-700 flex items-center gap-1"
+                        >
+                          <span>ดูหน้าบทเรียนเต็ม</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </Link>
+                      )}
+                    </div>
+                    <p className="text-xs sm:text-[13px] text-gray-600 leading-relaxed">
+                      {previewItem.description || "สื่อการสอนศิลปะโดยกลุ่มสาระการเรียนรู้ศิลปะ โรงเรียนวชิรธรรมสาธิต"}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                /* If Document / Worksheet PDF */
+                <div className="space-y-4">
+                  {/* File Meta Info Bar */}
+                  <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-2xs flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shrink-0">
+                        <FileText className="w-5 h-5" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs sm:text-sm font-bold text-gray-800 truncate">
+                          {previewItem.fileName || "worksheet.pdf"}
+                        </p>
+                        <div className="flex items-center gap-3 text-xs text-gray-400 mt-0.5">
+                          <span>ขนาด: {previewItem.fileSize || "1.4 MB"}</span>
+                          <span>•</span>
+                          <span>ดาวน์โหลดแล้ว: {downloadCounts[previewItem.id] ?? previewItem.downloadsCount ?? 0} ครั้ง</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={previewItem.fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-1.5 rounded-xl border border-gray-200 text-gray-700 text-xs font-semibold hover:bg-gray-50 flex items-center gap-1.5 transition-colors"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5 text-gray-500" />
+                        <span>เปิดแท็บใหม่</span>
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* Document Preview Frame */}
+                  <div className="w-full h-[45vh] sm:h-[50vh] rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-inner relative flex flex-col items-center justify-center">
+                    {previewItem.fileUrl ? (
+                      <iframe
+                        src={`${previewItem.fileUrl}#toolbar=0`}
+                        title={previewItem.title}
+                        className="w-full h-full border-0"
+                      />
+                    ) : (
+                      <div className="text-center p-6 text-gray-400">
+                        <FileText className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                        <p className="text-xs">ตัวอย่างเอกสารใบงาน</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-2xs">
+                    <h4 className="text-xs font-bold text-gray-800 mb-1">รายละเอียดเอกสาร</h4>
+                    <p className="text-xs text-gray-600 leading-relaxed">
+                      {previewItem.description || "เอกสารประกอบการเรียนการสอนรายวิชาทัศนศิลป์ กลุ่มสาระการเรียนรู้ศิลปะ โรงเรียนวชิรธรรมสาธิต"}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-5 sm:px-6 py-3.5 border-t border-gray-100 bg-white flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => setPreviewItem(null)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+              >
+                ปิดหน้าต่าง
+              </button>
+
+              <button
+                type="button"
+                onClick={(e) => handleDownload(e, previewItem)}
+                disabled={downloadingId === previewItem.id}
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white text-xs font-bold flex items-center gap-2 shadow-md shadow-red-200 transition-all active:scale-95 cursor-pointer disabled:opacity-75"
+              >
+                {downloadingId === previewItem.id ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <CloudDownload className="w-4 h-4" />
+                )}
+                <span>{downloadingId === previewItem.id ? "กำลังเตรียมดาวน์โหลด..." : "ดาวน์โหลดไฟล์เอกสาร"}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-pink-100 animate-in slide-in-from-bottom-5 duration-300">
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+            toast.type === "loading" ? "bg-rose-50 text-[#E11D48]" : "bg-emerald-50 text-emerald-600"
+          }`}>
+            {toast.type === "loading" ? (
+              <Loader2 className="w-4 h-4 animate-spin text-[#E11D48]" />
+            ) : (
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            )}
+          </div>
+          <div>
+            <p className="text-xs font-bold text-gray-900">{toast.title}</p>
+            <p className="text-[11px] text-gray-500 max-w-xs truncate">{toast.message}</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
