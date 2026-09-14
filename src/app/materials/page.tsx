@@ -125,8 +125,8 @@ export default async function MaterialsPage() {
                   href="#materials-community-discussion"
                   className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-white/90 hover:bg-white text-gray-800 hover:text-red-600 font-bold text-xs sm:text-sm border border-gray-200 shadow-2xs hover:shadow-md transition-all active:scale-95 cursor-pointer"
                 >
-                  <MessageSquare className="w-4 h-4 text-red-500" />
-                  <span>💬 กระดานสนทนา & ถาม-ตอบ สื่อการสอน</span>
+                  <MessageSquare className="w-4 h-4 text-red-500 shrink-0" />
+                  <span className="whitespace-nowrap">💬 กระดานสนทนา & ถาม-ตอบ สื่อการสอน</span>
                 </a>
               </div>
             </div>

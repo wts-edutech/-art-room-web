@@ -447,7 +447,7 @@ export default function MaterialsList({
                     <div className="p-5 sm:p-6 pb-2">
                       {/* Title */}
                       <h3 
-                        className={`text-base sm:text-lg font-bold mb-2 line-clamp-1 leading-snug transition-colors ${
+                        className={`text-base sm:text-lg font-bold mb-2 line-clamp-2 min-h-[2.6rem] leading-snug transition-colors ${
                           isRedTitle 
                             ? "text-[#DC2626]" 
                             : "text-gray-900 group-hover:text-red-600"
@@ -465,31 +465,37 @@ export default function MaterialsList({
                   </div>
 
                   {/* Bottom Action Bar */}
-                  <div className="px-5 sm:px-6 pb-5 pt-3 border-t border-gray-50 flex items-center justify-between">
-                    {/* Left: Downloads Count */}
-                    <div className="flex items-center gap-1.5 text-xs text-gray-400 font-normal">
-                      <Download className="w-3.5 h-3.5 text-gray-400" />
-                      <span>{downloadCounts[item.id] ?? item.downloadsCount ?? 342} ครั้ง</span>
-                    </div>
+                  <div className="px-4 sm:px-5 pb-4 pt-3 border-t border-gray-50 flex items-center justify-between gap-2 overflow-hidden">
+                    {/* Left: Downloads Count & Quick QA link */}
+                    <div className="flex items-center gap-2 text-xs text-gray-500 shrink-0">
+                      <div className="flex items-center gap-1 text-gray-400 font-normal" title="จำนวนดาวน์โหลด">
+                        <Download className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                        <span className="whitespace-nowrap font-medium text-gray-500">
+                          {downloadCounts[item.id] ?? item.downloadsCount ?? 342}
+                        </span>
+                      </div>
 
-                    {/* Right: Actions [ 💬 ถาม-ตอบ ] [ 👁 ดู ] and [ ☁ ดาวน์โหลด ] */}
-                    <div className="flex items-center gap-1.5 sm:gap-2">
+                      <span className="text-gray-200 select-none">•</span>
+
                       <Link
                         href={item.rawId ? `${basePath}/detail?id=${item.rawId}#comments` : "#materials-community-discussion"}
-                        className="px-2.5 py-1.5 rounded-full bg-orange-50/90 hover:bg-orange-100 text-orange-600 text-xs font-semibold flex items-center gap-1 transition-all active:scale-95 shadow-2xs border border-orange-100/60 cursor-pointer"
-                        title="ร่วมพูดคุยหรือสอบถามเกี่ยวกับบทเรียนนี้"
+                        className="inline-flex items-center gap-1 text-xs text-orange-600 hover:text-orange-700 font-semibold transition-colors hover:underline whitespace-nowrap group/qa"
+                        title="ถาม-ตอบเกี่ยวกับบทเรียนนี้"
                       >
-                        <MessageSquare className="w-3.5 h-3.5 text-orange-500" />
-                        <span className="hidden sm:inline">ถาม-ตอบ</span>
+                        <MessageSquare className="w-3.5 h-3.5 text-orange-500 shrink-0 transition-transform group-hover/qa:scale-110" />
+                        <span className="whitespace-nowrap">ถาม-ตอบ</span>
                       </Link>
+                    </div>
 
+                    {/* Right: Actions [ 👁 ดู ] and [ ☁ ดาวน์โหลด ] */}
+                    <div className="flex items-center gap-1.5 shrink-0">
                       <button
                         type="button"
                         onClick={() => handleView(item)}
-                        className="px-3.5 py-1.5 rounded-full bg-gray-100/90 hover:bg-gray-200 text-gray-700 text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-2xs"
+                        className="px-3 py-1.5 rounded-full bg-gray-100/90 hover:bg-gray-200 text-gray-700 text-xs font-semibold flex items-center gap-1 transition-all active:scale-95 cursor-pointer shadow-2xs whitespace-nowrap"
                         title="ดูตัวอย่างเอกสารหรือบทเรียน"
                       >
-                        <Eye className="w-3.5 h-3.5 text-gray-600" />
+                        <Eye className="w-3.5 h-3.5 text-gray-600 shrink-0" />
                         <span>ดู</span>
                       </button>
 
@@ -497,13 +503,13 @@ export default function MaterialsList({
                         type="button"
                         onClick={(e) => handleDownload(e, item)}
                         disabled={downloadingId === item.id}
-                        className="px-3.5 py-1.5 rounded-full bg-[#FFF0F3] hover:bg-[#FFE4E8] text-[#E11D48] text-xs font-semibold flex items-center gap-1.5 transition-all border border-pink-100/80 active:scale-95 cursor-pointer shadow-2xs disabled:opacity-75"
+                        className="px-3.5 py-1.5 rounded-full bg-[#FFF0F3] hover:bg-[#FFE4E8] text-[#E11D48] text-xs font-semibold flex items-center gap-1.5 transition-all border border-pink-100/80 active:scale-95 cursor-pointer shadow-2xs disabled:opacity-75 whitespace-nowrap"
                         title="ดาวน์โหลดไฟล์ลงเครื่อง"
                       >
                         {downloadingId === item.id ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin text-[#E11D48]" />
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-[#E11D48] shrink-0" />
                         ) : (
-                          <CloudDownload className="w-3.5 h-3.5 text-[#E11D48]" />
+                          <CloudDownload className="w-3.5 h-3.5 text-[#E11D48] shrink-0" />
                         )}
                         <span>{downloadingId === item.id ? "กำลังโหลด..." : "ดาวน์โหลด"}</span>
                       </button>

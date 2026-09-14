@@ -299,35 +299,43 @@ export default function CommunityDiscussion({
         <div className="absolute bottom-0 left-0 w-80 h-80 bg-amber-100/20 rounded-full blur-3xl pointer-events-none -ml-20 -mb-20" />
 
         {/* Section Header */}
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-6 border-b border-gray-100">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-50 border border-orange-100 text-orange-700 text-xs font-bold mb-2">
-              <MessageCircleHeart className="w-3.5 h-3.5 text-orange-500" />
-              <span>คอมเมนต์ & สนทนาแลกเปลี่ยน</span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight flex items-center gap-3">
-              <span>{title}</span>
-              <span className="text-xs sm:text-sm font-bold px-3 py-1 rounded-full bg-gray-100 text-gray-700 shadow-2xs">
-                {comments.length} บทสนทนา
-              </span>
-            </h2>
-            <p className="text-xs sm:text-sm text-gray-500 font-light mt-1">
-              {subtitle}
-            </p>
+        <div className="relative z-10 mb-8 pb-6 border-b border-gray-100">
+          {/* Top Pill Badge */}
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-orange-50 border border-orange-100 text-orange-700 text-xs font-bold mb-3 shadow-2xs">
+            <MessageCircleHeart className="w-3.5 h-3.5 text-orange-500 shrink-0" />
+            <span className="whitespace-nowrap">คอมเมนต์ & สนทนาแลกเปลี่ยน</span>
           </div>
 
-          {/* Quick Filter Tags */}
+          {/* Title Row with Counter Badge */}
+          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 mb-2">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-gray-900 tracking-tight leading-snug break-words">
+              {title}
+            </h2>
+            <span className="whitespace-nowrap text-xs sm:text-sm font-bold px-3 py-1 rounded-full bg-gray-100 text-gray-700 shadow-2xs shrink-0">
+              {comments.length} บทสนทนา
+            </span>
+          </div>
+
+          {/* Subtitle */}
+          <p className="text-xs sm:text-sm text-gray-500 font-light leading-relaxed max-w-3xl">
+            {subtitle}
+          </p>
+
+          {/* Category Filter Pills Bar */}
           {tags && tags.length > 0 && (
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none sm:flex-wrap">
+            <div className="mt-5 pt-4 border-t border-gray-100/80 flex items-center gap-2 overflow-x-auto pb-1.5 scrollbar-none">
+              <span className="text-xs text-gray-400 font-medium shrink-0 mr-1 hidden sm:inline whitespace-nowrap">
+                เลือกหมวดหมู่:
+              </span>
               {tags.map((tag) => (
                 <button
                   key={tag}
                   type="button"
                   onClick={() => setSelectedTag(tag)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
                     selectedTag === tag
-                      ? `${theme.badgeBg} shadow-xs scale-102`
-                      : "bg-gray-100/80 text-gray-600 hover:bg-gray-200/70"
+                      ? `${theme.badgeBg} shadow-xs scale-102 font-bold`
+                      : "bg-gray-100/90 text-gray-600 hover:bg-gray-200/80 hover:text-gray-900"
                   }`}
                 >
                   {tag}
@@ -364,7 +372,7 @@ export default function CommunityDiscussion({
 
                     {/* Role Badge */}
                     {isLoggedIn ? (
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md whitespace-nowrap shrink-0 ${
                         userRole === "admin" || userRole === "teacher"
                           ? "bg-red-100 text-red-700"
                           : userRole === "guest"
@@ -374,7 +382,7 @@ export default function CommunityDiscussion({
                         {userRole === "admin" ? "ผู้ดูแลระบบ" : userRole === "teacher" ? "คุณครู" : userRole === "guest" ? "ผู้ปกครอง/ทั่วไป" : "นักเรียน WTS"}
                       </span>
                     ) : (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-gray-200 text-gray-600">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-gray-200 text-gray-600 whitespace-nowrap shrink-0">
                         ผู้เยี่ยมชม
                       </span>
                     )}
