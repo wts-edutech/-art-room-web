@@ -4,36 +4,55 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { X } from "lucide-react";
+import GuestBlockModal from "@/components/modals/GuestBlockModal";
 
-export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  studentOnly?: boolean;
+}
+
+export default function ProtectedRoute({ children, studentOnly = false }: ProtectedRouteProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const [isAuthorized, setIsAuthorized] = useState(false);
-  const [isChecking, setIsChecking] = useState(true);
+  const [authState, setAuthState] = useState<"checking" | "authorized" | "unauthorized" | "guest_blocked">("checking");
 
   useEffect(() => {
     // Check if the user is logged in
     const isLoggedIn = localStorage.getItem("artroom_author_name");
+    const role = localStorage.getItem("artroom_role");
     
-    if (isLoggedIn) {
-      setIsAuthorized(true);
+    if (!isLoggedIn) {
+      if (studentOnly) {
+        const search = typeof window !== "undefined" ? window.location.search || "" : "";
+        const target = `${pathname}${search}`;
+        router.replace(`/login?tab=student&redirect=${encodeURIComponent(target)}&notice=student_only`);
+        return;
+      }
+      setAuthState("unauthorized");
+    } else if (studentOnly && role !== "student") {
+      setAuthState("guest_blocked");
     } else {
-      setIsAuthorized(false);
+      setAuthState("authorized");
     }
-    setIsChecking(false);
-  }, []);
+  }, [pathname, studentOnly, router]);
 
   // While checking authorization, show a loading spinner
-  if (isChecking) {
+  if (authState === "checking") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#FDF9F1]">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-orange-200 border-t-orange-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-red-200 border-t-red-600"></div>
       </div>
     );
   }
 
+  // If student-only route and user is logged in as guest
+  if (authState === "guest_blocked") {
+    const search = typeof window !== "undefined" ? window.location.search || "" : "";
+    return <GuestBlockModal redirectPath={`${pathname}${search}`} />;
+  }
+
   // If not authorized, show the mascot modal
-  if (!isAuthorized) {
+  if (authState === "unauthorized") {
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900">
         {/* Artistic Background */}

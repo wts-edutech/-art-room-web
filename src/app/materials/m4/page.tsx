@@ -109,7 +109,7 @@ export default function M4MaterialsPage() {
         </div>
       )}
 
-      <ProtectedRoute>
+      <ProtectedRoute studentOnly={true}>
         <main className="flex-1 flex flex-col pt-32 pb-24 bg-white">
           <div className="container mx-auto px-4 sm:px-6 max-w-7xl">
             <div className="text-center mb-16">

@@ -104,10 +104,14 @@ export default function LoginPage() {
   // Client-Side Anti-Brute-Force Lockout State
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [lockoutTimer, setLockoutTimer] = useState(0);
+  const [isStudentOnlyNotice, setIsStudentOnlyNotice] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("tab") === "guest") {
+    if (params.get("notice") === "student_only") {
+      setIsStudentOnlyNotice(true);
+      setActiveTab("student");
+    } else if (params.get("tab") === "guest") {
       setActiveTab("guest");
     }
   }, []);
@@ -287,6 +291,23 @@ export default function LoginPage() {
             กลุ่มสาระการเรียนรู้ศิลปะ โรงเรียนวชิรธรรมสาธิต
           </p>
         </div>
+        
+        {/* Student Only Access Notice Banner */}
+        {isStudentOnlyNotice && (
+          <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-300/80 text-amber-950 rounded-2xl p-4 mb-6 flex items-start gap-3.5 shadow-sm animate-in fade-in">
+            <div className="p-2.5 bg-amber-200/60 rounded-xl text-amber-800 flex-shrink-0 mt-0.5">
+              <Lock className="w-5 h-5 text-amber-700" />
+            </div>
+            <div className="text-xs sm:text-sm">
+              <p className="font-bold text-amber-950 flex items-center gap-1.5 mb-1 text-sm">
+                🔒 คลังสื่อการสอนเปิดให้เข้าถึงเฉพาะนักเรียนเท่านั้น
+              </p>
+              <p className="text-amber-800/95 leading-relaxed font-light">
+                กรุณาเข้าสู่ระบบด้วย <strong>รหัสประจำตัวนักเรียน 5 หลัก</strong> เพื่อเข้าชมบทเรียน วิดีทัศน์ และดาวน์โหลดเอกสารใบงาน PDF
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Tab Selection */}
         <div className="flex bg-gray-100 p-1.5 rounded-2xl mb-6 shadow-inner">

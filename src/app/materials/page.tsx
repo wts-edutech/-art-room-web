@@ -1,12 +1,15 @@
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import MaterialsList from "@/components/sections/MaterialsList";
+import GuestBlockModal from "@/components/modals/GuestBlockModal";
 import { getDb } from "@/db";
 import { lessons } from "@/db/schema";
 import { desc } from "drizzle-orm";
 import { DEFAULT_DOWNLOADS, DownloadItem } from "@/data/default-downloads";
 import { Suspense } from "react";
 import { Sparkles, BookOpen, FileText, GraduationCap } from "lucide-react";
+import { getSession } from "@/lib/api-auth";
+import { redirect } from "next/navigation";
 
 // Helper to fetch lessons from database
 async function getLessons() {
@@ -20,6 +23,17 @@ async function getLessons() {
 }
 
 export default async function MaterialsPage() {
+  // Authentication Guard: Restricted to Students Only
+  const session = await getSession();
+
+  if (!session) {
+    redirect("/login?tab=student&redirect=/materials&notice=student_only");
+  }
+
+  if (session.role !== "student") {
+    return <GuestBlockModal redirectPath="/materials" />;
+  }
+
   const allLessons = await getLessons();
   const allDownloads: DownloadItem[] = DEFAULT_DOWNLOADS;
 

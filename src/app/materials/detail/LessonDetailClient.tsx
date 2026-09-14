@@ -160,7 +160,7 @@ export default function LessonDetailPage() {
   return (
     <>
       <Navbar />
-      <ProtectedRoute>
+      <ProtectedRoute studentOnly={true}>
         <main className="flex-1 flex flex-col pt-24 pb-24 bg-gray-50/50 min-h-screen">
           <div className="container mx-auto px-4 sm:px-6 max-w-4xl">
             
