@@ -8,7 +8,7 @@ import Footer from "@/components/layout/Footer";
 import { 
   ArrowLeft, Laptop, HelpCircle, User, Star, 
   Lightbulb, Eye, MessageSquare, HeartHandshake, 
-  FileText, BookOpen, Share2, Sparkles, Check
+  FileText, BookOpen, Share2, Check
 } from "lucide-react";
 
 // Mascot avatar matching the user's uploaded reference image
@@ -62,7 +62,7 @@ export default function TeacherProfileClient() {
   const [isLoadingIdeas, setIsLoadingIdeas] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
 
-  // Fetch ideas by this teacher if any
+  // Fetch ideas by this teacher
   useEffect(() => {
     setIsLoadingIdeas(true);
     fetch("/api/ideas")
@@ -88,11 +88,11 @@ export default function TeacherProfileClient() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FBF9F4] flex flex-col font-sans text-gray-800 selection:bg-orange-100 selection:text-orange-900">
+    <div className="min-h-screen bg-[#FAF8F5] flex flex-col font-sans text-gray-800 selection:bg-orange-100 selection:text-orange-900">
       <Navbar />
 
-      {/* Top Profile Header (Pure White Background matching Reference) */}
-      <section className="bg-white border-b border-gray-200/80 pt-6 sm:pt-8 transition-all">
+      {/* Top Profile Header with pt-24/pt-28 to cleanly clear the fixed Navbar (96px) */}
+      <section className="bg-white border-b border-gray-200 pt-28 sm:pt-32 shadow-2xs">
         <div className="max-w-6xl mx-auto px-4 sm:px-8">
           {/* Breadcrumb / Back button */}
           <div className="mb-4">
@@ -106,10 +106,10 @@ export default function TeacherProfileClient() {
           </div>
 
           {/* Profile User Info Row */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 pb-6">
             <div className="flex items-center gap-4 sm:gap-6">
               {/* Avatar circle */}
-              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-2 border-orange-100 bg-[#FFF5EB] shadow-xs shrink-0 flex items-center justify-center p-1">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden border-2 border-orange-100 bg-[#FFF5EB] shadow-xs shrink-0 flex items-center justify-center p-1">
                 <TeacherMascotAvatar className="w-full h-full" />
               </div>
 
@@ -119,8 +119,8 @@ export default function TeacherProfileClient() {
                   {nameParam}
                 </h1>
                 <div className="flex items-center gap-4 text-xs sm:text-sm text-gray-600 font-medium mt-1.5">
-                  <span>ผู้ติดตาม <strong className="text-gray-900">0</strong></span>
-                  <span>กำลังติดตาม <strong className="text-gray-900">0</strong></span>
+                  <span>ผู้ติดตาม <strong className="text-gray-900 font-bold">0</strong></span>
+                  <span>กำลังติดตาม <strong className="text-gray-900 font-bold">0</strong></span>
                 </div>
               </div>
             </div>
@@ -130,7 +130,7 @@ export default function TeacherProfileClient() {
               <button
                 type="button"
                 onClick={handleCopyProfile}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50 text-xs sm:text-sm font-semibold text-gray-700 transition-all shadow-2xs cursor-pointer active:scale-95"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-300 hover:border-gray-400 bg-white hover:bg-gray-50 text-xs sm:text-sm font-semibold text-gray-700 transition-all shadow-2xs cursor-pointer active:scale-95"
               >
                 {isCopied ? <Check className="w-4 h-4 text-emerald-600" /> : <Share2 className="w-4 h-4 text-gray-500" />}
                 <span>{isCopied ? "คัดลอกลิงก์แล้ว!" : "แชร์โปรไฟล์"}</span>
@@ -177,15 +177,15 @@ export default function TeacherProfileClient() {
         </div>
       </section>
 
-      {/* Main Content Area (Soft Warm Cream Background #FBF9F4) */}
+      {/* Main Content Area (Two-Column Flexbox Layout) */}
       <main className="flex-1 py-8 px-4 sm:px-8">
         <div className="max-w-6xl mx-auto">
           {activeTab === "profile" && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-              {/* Left Column (คุณครู + Impact Points) */}
-              <div className="lg:col-span-4 flex flex-col gap-5">
+            <div className="flex flex-col md:flex-row items-start gap-6">
+              {/* LEFT COLUMN: คุณครู + Impact Points (Fixed width on desktop) */}
+              <div className="w-full md:w-[300px] lg:w-[330px] shrink-0 flex flex-col gap-5">
                 {/* Card 1: คุณครู */}
-                <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-2xs transition-all hover:shadow-xs">
+                <div className="bg-white rounded-2xl p-5 border border-gray-200/80 shadow-xs hover:shadow-sm transition-all">
                   <h3 className="text-xs font-bold text-gray-900 mb-2.5">คุณครู</h3>
                   <p className="text-xs text-gray-700 leading-relaxed font-normal">
                     โรงเรียน โรงเรียนบ้านเกาะน้ำโจน ๑ ประถมปลาย
@@ -197,11 +197,11 @@ export default function TeacherProfileClient() {
                 </div>
 
                 {/* Card 2: Impact Points */}
-                <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-2xs relative text-center transition-all hover:shadow-xs">
+                <div className="bg-white rounded-2xl p-6 border border-gray-200/80 shadow-xs hover:shadow-sm transition-all relative text-center">
                   <button 
                     type="button" 
-                    className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
-                    title="Impact Points คือคะแนนการมีส่วนร่วมและผลกระทบเชิงบวกต่อการศึกษา"
+                    className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+                    title="Impact Points คือคะแนนการมีส่วนร่วมและผลกระทบเชิงบวก"
                   >
                     <HelpCircle className="w-4 h-4" />
                   </button>
@@ -219,15 +219,15 @@ export default function TeacherProfileClient() {
                 </div>
               </div>
 
-              {/* Right Column (การให้คำปรึกษา + การแลกเปลี่ยนเรียนรู้ + นักเรียนรู้) */}
-              <div className="lg:col-span-8 flex flex-col gap-6">
+              {/* RIGHT COLUMN: การให้คำปรึกษา + การแลกเปลี่ยนเรียนรู้ + นักเรียนรู้ */}
+              <div className="flex-1 min-w-0 w-full flex flex-col gap-6">
                 {/* Section 1: การให้คำปรึกษา */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <h3 className="text-sm sm:text-base font-bold text-gray-900">
                       การให้คำปรึกษา
                     </h3>
-                    <button type="button" className="text-gray-400 hover:text-gray-600">
+                    <button type="button" className="text-gray-400 hover:text-gray-600 cursor-pointer">
                       <HelpCircle className="w-4 h-4" />
                     </button>
                   </div>
@@ -238,7 +238,7 @@ export default function TeacherProfileClient() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                     {/* Card 1: session */}
-                    <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-2xs flex items-center justify-between">
+                    <div className="bg-white rounded-xl p-4 border border-gray-200/80 shadow-xs flex items-center justify-between">
                       <div className="flex flex-col gap-1.5">
                         <div className="w-6 h-6 rounded-md border border-emerald-500 text-emerald-600 flex items-center justify-center">
                           <User className="w-3.5 h-3.5" />
@@ -249,7 +249,7 @@ export default function TeacherProfileClient() {
                     </div>
 
                     {/* Card 2: รีวิว */}
-                    <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-2xs flex items-center justify-between">
+                    <div className="bg-white rounded-xl p-4 border border-gray-200/80 shadow-xs flex items-center justify-between">
                       <div className="flex flex-col gap-1.5">
                         <Star className="w-5 h-5 text-amber-400 stroke-[1.8]" />
                         <span className="text-xs text-gray-500 font-medium">รีวิว</span>
@@ -265,7 +265,7 @@ export default function TeacherProfileClient() {
                     <h3 className="text-sm sm:text-base font-bold text-gray-900">
                       การแลกเปลี่ยนเรียนรู้ใน insKru
                     </h3>
-                    <button type="button" className="text-gray-400 hover:text-gray-600">
+                    <button type="button" className="text-gray-400 hover:text-gray-600 cursor-pointer">
                       <HelpCircle className="w-4 h-4" />
                     </button>
                   </div>
@@ -276,18 +276,18 @@ export default function TeacherProfileClient() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                     {/* Item 1: ไอเดีย */}
-                    <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-2xs flex items-center justify-between">
+                    <div className="bg-white rounded-xl p-4 border border-gray-200/80 shadow-xs flex items-center justify-between">
                       <div className="flex flex-col gap-1.5">
                         <Lightbulb className="w-5 h-5 text-amber-500 stroke-[1.8]" />
                         <span className="text-xs text-gray-500 font-medium">ไอเดีย</span>
                       </div>
                       <span className="text-base font-bold text-gray-800">
-                        {teacherIdeas.length > 0 ? teacherIdeas.length : 3}
+                        {teacherIdeas.length > 0 ? teacherIdeas.length : 1}
                       </span>
                     </div>
 
                     {/* Item 2: ผู้อ่าน */}
-                    <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-2xs flex items-center justify-between">
+                    <div className="bg-white rounded-xl p-4 border border-gray-200/80 shadow-xs flex items-center justify-between">
                       <div className="flex flex-col gap-1.5">
                         <Eye className="w-5 h-5 text-sky-500 stroke-[1.8]" />
                         <span className="text-xs text-gray-500 font-medium">ผู้อ่าน</span>
@@ -296,7 +296,7 @@ export default function TeacherProfileClient() {
                     </div>
 
                     {/* Item 3: ความเห็น */}
-                    <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-2xs flex items-center justify-between">
+                    <div className="bg-white rounded-xl p-4 border border-gray-200/80 shadow-xs flex items-center justify-between">
                       <div className="flex flex-col gap-1.5">
                         <MessageSquare className="w-5 h-5 text-indigo-500 stroke-[1.8]" />
                         <span className="text-xs text-gray-500 font-medium">ความเห็น</span>
@@ -305,7 +305,7 @@ export default function TeacherProfileClient() {
                     </div>
 
                     {/* Item 4: นำไปใช้ */}
-                    <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-2xs flex items-center justify-between">
+                    <div className="bg-white rounded-xl p-4 border border-gray-200/80 shadow-xs flex items-center justify-between">
                       <div className="flex flex-col gap-1.5">
                         <HeartHandshake className="w-5 h-5 text-rose-500 stroke-[1.8]" />
                         <span className="text-xs text-gray-500 font-medium">นำไปใช้</span>
@@ -323,7 +323,7 @@ export default function TeacherProfileClient() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                     {/* Item 1: เรียนรู้ 6 ไอเดีย */}
-                    <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-2xs flex items-center justify-between">
+                    <div className="bg-white rounded-xl p-4 border border-gray-200/80 shadow-xs flex items-center justify-between">
                       <div className="flex flex-col gap-1.5">
                         <div className="w-6 h-6 rounded-md border border-rose-400 text-rose-500 flex items-center justify-center">
                           <FileText className="w-3.5 h-3.5" />
@@ -337,7 +337,7 @@ export default function TeacherProfileClient() {
                     </div>
 
                     {/* Item 2: นำ 0 ไอเดียไปใช้ */}
-                    <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-2xs flex items-center justify-between">
+                    <div className="bg-white rounded-xl p-4 border border-gray-200/80 shadow-xs flex items-center justify-between">
                       <div className="flex flex-col gap-1.5">
                         <div className="w-6 h-6 rounded-md border border-emerald-500 text-emerald-600 flex items-center justify-center">
                           <BookOpen className="w-3.5 h-3.5" />
