@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { 
-  Play, Sparkles, ChevronLeft, ChevronRight, X, Clock, 
+  Play, ChevronLeft, ChevronRight, X, Clock, 
   Eye, Share2, Check, Heart, ExternalLink, Palette, 
   CheckCircle2, ListOrdered, Video, ArrowLeft
 } from "lucide-react";
@@ -224,15 +224,14 @@ export default function StudentVideoShowcase() {
       {/* Header & Section Title */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-5">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-orange-100 via-amber-100 to-rose-100 border border-orange-200/80 text-orange-800 text-xs font-bold mb-2 shadow-2xs">
-            <Sparkles className="w-3.5 h-3.5 text-orange-600 animate-pulse" />
-            <span>Inspiring Young Creators</span>
-          </div>
-          <h2 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight flex items-center gap-2">
-            <span>🎥 คลิปผลงานและวิธีทำสร้างสรรค์</span>
+          <p className="text-xs sm:text-sm font-normal text-orange-600 mb-1">
+            Inspiring Young Creators
+          </p>
+          <h2 className="text-xl sm:text-2xl font-normal text-gray-900 tracking-tight flex flex-wrap items-baseline gap-2">
+            <span>คลิปผลงานและวิธีทำสร้างสรรค์</span>
             <span className="text-xs sm:text-sm font-normal text-gray-500">โดยนักเรียน Art Room</span>
           </h2>
-          <p className="text-xs sm:text-sm text-gray-500 font-light mt-0.5">
+          <p className="text-xs sm:text-sm text-gray-500 font-normal mt-1">
             ชมคลิปวิดีโอสาธิตวิธีทำทีละขั้นตอน และโปรเจกต์ไอเดียสร้างสรรค์เพื่อปลุกพลังจินตนาการ
           </p>
         </div>
