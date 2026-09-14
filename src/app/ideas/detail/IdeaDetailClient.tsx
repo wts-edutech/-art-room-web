@@ -132,6 +132,35 @@ function ShareTrayIcon({ className = "w-5 h-5" }: { className?: string }) {
   );
 }
 
+// Hand-crafted high-fidelity mascot avatar matching Teacher Salin
+function TeacherMascotAvatar({ className = "w-full h-full" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 120 120" fill="none" className={className}>
+      <circle cx="60" cy="60" r="56" fill="#F4EFEA" />
+      <path d="M22 118 C22 92 38 84 60 84 C82 84 98 92 98 118 Z" fill="#FFA8A4" />
+      <polygon points="60,88 46,84 52,98" fill="#F87171" />
+      <polygon points="60,88 74,84 68,98" fill="#F87171" />
+      <circle cx="60" cy="106" r="2.5" fill="#FFFFFF" />
+      <rect x="52" y="73" width="16" height="16" fill="#FFD8B8" rx="4" />
+      <ellipse cx="60" cy="54" rx="30" ry="28" fill="#FFD8B8" />
+      <circle cx="30" cy="56" r="7" fill="#FFD8B8" />
+      <circle cx="90" cy="56" r="7" fill="#FFD8B8" />
+      <ellipse cx="43" cy="60" rx="6.5" ry="3.8" fill="#FF8A8A" opacity="0.8" />
+      <ellipse cx="77" cy="60" rx="6.5" ry="3.8" fill="#FF8A8A" opacity="0.8" />
+      <path d="M52 63 C56 68 64 68 68 63" stroke="#1F2937" strokeWidth="2.4" strokeLinecap="round" />
+      <rect x="37" y="46" width="19" height="16" rx="5.5" stroke="#1F2937" strokeWidth="2.5" fill="white" fillOpacity="0.2" />
+      <rect x="64" y="46" width="19" height="16" rx="5.5" stroke="#1F2937" strokeWidth="2.5" fill="white" fillOpacity="0.2" />
+      <path d="M56 53 L64 53" stroke="#1F2937" strokeWidth="2.5" />
+      <circle cx="46.5" cy="53" r="2.3" fill="#1F2937" />
+      <circle cx="73.5" cy="53" r="2.3" fill="#1F2937" />
+      <path d="M41 41.5 C45 39.5 49 40.5 52 42.5" stroke="#1F2937" strokeWidth="2" strokeLinecap="round" />
+      <path d="M68 42.5 C71 40.5 75 39.5 79 41.5" stroke="#1F2937" strokeWidth="2" strokeLinecap="round" />
+      <path d="M29 49 C26 29 37 14 60 14 C83 14 94 29 91 49 C88 40 82 34 76 36 C71 27 62 24 54 27 C45 25 38 33 34 40 C32 43 31 46 29 49 Z" fill="#374151" />
+      <path d="M35 36 C42 45 48 42 52 37 C56 44 62 44 66 38 C71 45 76 43 83 37 C81 48 76 50 71 46" fill="#374151" />
+    </svg>
+  );
+}
+
 export default function IdeaDetailClient() {
   const searchParams = useSearchParams();
   const params = useParams();
@@ -380,27 +409,31 @@ export default function IdeaDetailClient() {
             <div className="flex items-center justify-between gap-4 pb-4 border-b border-gray-100">
               {/* Left Column: Avatar + Author + Date (Clickable with hover enlargement) */}
               <Link
-                href={`/teachers/profile?name=${encodeURIComponent(idea.authorName || "สลิน")}`}
+                href={`/teachers/profile?name=${encodeURIComponent(idea.authorName || "ครูสลิน")}`}
                 className="group flex items-center gap-3 min-w-0 cursor-pointer"
                 title="คลิกเพื่อดูโปรไฟล์และข้อมูลของคุณครู"
               >
                 <div className="w-11 h-11 rounded-full overflow-hidden border border-gray-200/80 bg-orange-50 shrink-0 shadow-2xs flex items-center justify-center transition-transform duration-200 group-hover:scale-110 group-hover:ring-2 group-hover:ring-orange-300">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img 
-                    src={`https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(idea.authorName || 'ArtTeacher')}&backgroundColor=ffdfbf`} 
-                    alt={idea.authorName}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                      if (e.currentTarget.parentElement) {
-                        e.currentTarget.parentElement.innerHTML = `<span class="text-orange-600 font-bold text-base">${(idea.authorName || 'ค').charAt(0)}</span>`;
-                      }
-                    }}
-                  />
+                  {(!idea.authorName || idea.authorName.includes("สลิน")) ? (
+                    <TeacherMascotAvatar className="w-full h-full" />
+                  ) : (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img 
+                      src={`https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(idea.authorName)}&backgroundColor=ffdfbf`} 
+                      alt={idea.authorName}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        if (e.currentTarget.parentElement) {
+                          e.currentTarget.parentElement.innerHTML = `<span class="text-orange-600 font-bold text-base">${idea.authorName.charAt(0)}</span>`;
+                        }
+                      }}
+                    />
+                  )}
                 </div>
                 <div className="min-w-0">
                   <h3 className="font-semibold text-gray-900 text-sm sm:text-[15px] leading-tight truncate transition-all duration-200 group-hover:scale-110 group-hover:text-[#1E3A8A] group-hover:font-bold origin-left inline-block">
-                    {idea.authorName}
+                    {idea.authorName || "ครูสลิน"}
                   </h3>
                   <p className="text-xs text-gray-400 font-light mt-0.5 truncate">
                     {new Date(idea.createdAt || Date.now()).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' })}
