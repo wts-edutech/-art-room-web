@@ -82,7 +82,7 @@ export default async function MaterialsPage() {
               {/* Badge */}
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white text-red-700 text-xs sm:text-sm font-bold mb-5 shadow-sm border border-red-100">
                 <Sparkles className="w-4 h-4 text-red-500" />
-                <span>ศูนย์รวมสื่อการเรียนรู้และใบงานศิลปะ ครบวงจร</span>
+                <span>ศูนย์รวมสื่อการเรียนรู้และใบงานศิลปะ  By:ครูเก๋</span>
               </div>
 
               {/* Main Heading */}
