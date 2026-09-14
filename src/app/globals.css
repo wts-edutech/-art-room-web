@@ -52,17 +52,18 @@
   }
 }
 
-/* Sleek Category Filter Buttons (Flat Minimal, No Shadow) */
+/* Sleek Category Filter Buttons (Flat Minimal, #ffb300, No Border, No Shadow) */
 .category-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 1.125rem;
   border-radius: 0.75rem;
   font-size: 0.875rem;
   font-weight: 600;
-  border: 2px solid #e5e7eb;
-  background-color: #ffffff;
+  border: none !important;
+  outline: none !important;
+  background-color: #f3f4f6;
   color: #374151;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: none !important;
@@ -72,15 +73,18 @@
 
 .category-btn:hover {
   transform: translateY(-2px);
-  border-color: #fb923c;
-  color: #ea580c;
+  background-color: #fef3c7;
+  color: #b45309;
+  border: none !important;
   box-shadow: none !important;
 }
 
 .category-btn.is-selected,
 .category-btn[data-active="true"] {
-  background-color: #f97316 !important;
-  border-color: #ea580c !important;
+  background-color: #ffb300 !important;
+  border: none !important;
+  outline: none !important;
+  border-color: transparent !important;
   color: #ffffff !important;
   box-shadow: none !important;
 }
@@ -89,5 +93,6 @@
 .category-btn[data-active="true"] span {
   color: #ffffff !important;
 }
+
 
 

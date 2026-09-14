@@ -170,15 +170,16 @@ export default function IdeasPage() {
                       data-active={isSelected ? "true" : "false"}
                       onClick={() => setSelectedCategory(cat)}
                       style={{
-                        backgroundColor: isSelected ? "#f97316" : "#ffffff",
+                        backgroundColor: isSelected ? "#ffb300" : "#f3f4f6",
                         color: isSelected ? "#ffffff" : "#374151",
-                        borderColor: isSelected ? "#ea580c" : "#e5e7eb",
+                        border: "none",
+                        outline: "none",
                         boxShadow: "none",
                       }}
-                      className={`category-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold tracking-tight transition-all duration-200 cursor-pointer active:scale-95 hover:-translate-y-0.5 hover:border-orange-400 hover:text-orange-600 border-2 ${
+                      className={`category-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold tracking-tight transition-all duration-200 cursor-pointer active:scale-95 hover:-translate-y-0.5 border-0 ${
                         isSelected
-                          ? "is-selected bg-orange-500 text-white border-orange-600"
-                          : "bg-white text-gray-700 border-gray-200"
+                          ? "is-selected bg-[#ffb300] text-white"
+                          : "bg-gray-100 text-gray-700 hover:bg-amber-100/60 hover:text-amber-800"
                       }`}
                     >
                       <span style={{ color: isSelected ? "#ffffff" : "inherit" }}>{cat}</span>
