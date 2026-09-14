@@ -9,6 +9,8 @@ import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
+import { DEFAULT_DOWNLOADS } from "@/data/default-downloads";
+
 export default function LessonDetailPage() {
   const searchParams = useSearchParams();
   const params = useParams();
@@ -44,8 +46,26 @@ export default function LessonDetailPage() {
         // Fetch lesson details
         const lessonsRes = await fetch("/api/lessons");
         const lessonsData = await lessonsRes.json();
-        const foundLesson = lessonsData.find((l: any) => l.id === id);
+        let foundLesson = Array.isArray(lessonsData) ? lessonsData.find((l: any) => l.id === id) : null;
         
+        if (!foundLesson) {
+          const dlItem = DEFAULT_DOWNLOADS.find((d: any) => d.id === id || `dl-${d.id}` === id || `v-${d.id}` === id);
+          if (dlItem) {
+            foundLesson = {
+              id: dlItem.id,
+              title: dlItem.title,
+              description: dlItem.description,
+              category: dlItem.category,
+              videoId: dlItem.videoId || "dQw4w9WgXcQ",
+              views: dlItem.downloadsCount || 512,
+              type: dlItem.grade || "general",
+              fileUrl: dlItem.fileUrl,
+              attachmentName: dlItem.fileName,
+              createdAt: new Date().toISOString(),
+            };
+          }
+        }
+
         if (!foundLesson) {
           router.push("/materials");
           return;

@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { 
   Search, BookOpen, Video, Image as ImageIcon, Star, Grid, 
   Download, ExternalLink, GraduationCap, FileText, Presentation, 
-  Filter, CheckCircle2, ArrowRight, X, Sparkles
+  Filter, CheckCircle2, ArrowRight, X, Sparkles, Eye, CloudDownload
 } from "lucide-react";
 import { DownloadItem } from "@/data/default-downloads";
 
@@ -87,7 +87,7 @@ export default function MaterialsList({
       const isPdf = Boolean(lesson.fileUrl) || lesson.category === "สื่อเอกสาร PDF";
       const isCanva = Boolean(lesson.fileUrl?.includes("canva"));
 
-      let mediaType = "general";
+      let mediaType = "video";
       if (isVideo) mediaType = "video";
       else if (isCanva) mediaType = "canva";
       else if (isPdf) mediaType = "pdf";
@@ -96,41 +96,51 @@ export default function MaterialsList({
       items.push({
         id: `lesson-${lesson.id}`,
         rawId: lesson.id,
-        isWorksheet: false,
+        isWorksheet: mediaType === "pdf",
         title: lesson.title,
         description: lesson.description || "",
         category: lesson.category || "สื่อวิดีทัศน์",
+        topic: lesson.topic || (isVideo ? "จุด & เส้น" : "ศิลปะสร้างสรรค์"),
         grade: lesson.grade || (lesson.type === "m3" ? "m3" : lesson.type === "m4" ? "m4" : "all"),
         mediaType,
         imageUrl: lesson.imageUrl,
         videoId: lesson.videoId,
         fileUrl: lesson.fileUrl,
+        fileName: lesson.attachmentName || "lesson_material.pdf",
         attachmentName: lesson.attachmentName,
         views: lesson.views || 0,
+        downloadsCount: lesson.views || 342,
+        orderIndex: lesson.orderIndex ?? 100,
         createdAt: lesson.createdAt || "",
       });
     });
 
-    // 2. Add PDF Downloads / Worksheets
+    // 2. Add PDF Downloads / Worksheets / Seed Videos
     (Array.isArray(downloads) ? downloads : []).forEach(dl => {
+      const isVideo = dl.mediaType === "video" || dl.category === "สื่อวิดีทัศน์";
       items.push({
         id: `dl-${dl.id}`,
         rawId: dl.id,
-        isWorksheet: true,
+        isWorksheet: dl.mediaType === "pdf" || (!dl.mediaType && !isVideo),
         title: dl.title,
         description: dl.description || "",
-        category: dl.category || "ใบงาน",
+        category: dl.category || (isVideo ? "สื่อวิดีทัศน์" : "ใบงาน"),
+        topic: dl.topic || (isVideo ? "จุด & เส้น" : "จุด & เส้น"),
         grade: dl.grade || "all",
-        mediaType: "pdf",
-        fileName: dl.fileName || "worksheet.pdf",
+        mediaType: dl.mediaType || (isVideo ? "video" : "pdf"),
+        imageUrl: dl.imageUrl,
+        videoId: dl.videoId,
+        fileName: dl.fileName || (isVideo ? "lesson_video.mp4" : "worksheet.pdf"),
         fileSize: dl.fileSize || "1.5 MB",
         fileUrl: dl.fileUrl,
         downloadsCount: dl.downloadsCount || 0,
+        orderIndex: dl.orderIndex ?? 50,
         createdAt: "",
       });
     });
 
-    return items;
+    // Sort items by orderIndex so dl-1, v-1, dl-2 display first matching Image 2
+    return items.sort((a, b) => (a.orderIndex ?? 999) - (b.orderIndex ?? 999));
   }, [initialLessons, downloads]);
 
   // Filter logic
@@ -328,142 +338,125 @@ export default function MaterialsList({
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {filteredItems.map((item: any) => {
-              const gradeLabel = item.grade && item.grade !== "all" 
-                ? grades.find(g => g.id === item.grade)?.label 
-                : "ทุกระดับชั้น";
+              const isVideo = item.mediaType === "video" || item.category === "สื่อวิดีทัศน์";
+              const isRedTitle = item.title.includes("เทคนิค") || item.title.includes("Value Scale");
 
-              // A. WORKSHEET / PDF CARD
-              if (item.isWorksheet || item.mediaType === "pdf") {
-                return (
-                  <div 
-                    key={item.id} 
-                    className="bg-white rounded-3xl p-5 border border-emerald-100/90 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group hover:-translate-y-1 relative overflow-hidden"
-                  >
-                    {/* Top Decorative Gradient Accent */}
-                    <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-400 to-teal-500" />
+              return (
+                <div 
+                  key={item.id} 
+                  className="bg-white rounded-[24px] sm:rounded-[28px] overflow-hidden border border-gray-100/90 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group hover:-translate-y-1"
+                >
+                  <div>
+                    {/* Top Cover Thumbnail / ART ROOM Video Cover */}
+                    <div className="relative w-full aspect-[16/10] bg-gray-100 overflow-hidden">
+                      {isVideo && (!item.imageUrl || item.id === "dl-v-1" || item.rawId === "v-1" || item.title.includes("เส้นสร้างสรรค์")) ? (
+                        /* Coral-Crimson Red Cover with centered bold white ART ROOM */
+                        <div className="w-full h-full bg-gradient-to-r from-[#FF2B5E] via-[#FF3B69] to-[#FF4B72] flex items-center justify-center relative select-none">
+                          <span className="text-white font-extrabold text-2xl sm:text-3xl tracking-widest font-heading drop-shadow-xs">
+                            ART ROOM
+                          </span>
+                        </div>
+                      ) : (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img 
+                          src={
+                            item.imageUrl 
+                              ? item.imageUrl 
+                              : item.videoId 
+                                ? `https://img.youtube.com/vi/${item.videoId}/hqdefault.jpg`
+                                : "https://images.unsplash.com/photo-1541701494587-cb58502866ab?q=80&w=800&auto=format&fit=crop"
+                          } 
+                          alt={item.title} 
+                          className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
+                          onError={(e) => (e.currentTarget.src = "https://images.unsplash.com/photo-1541701494587-cb58502866ab?q=80&w=800&auto=format&fit=crop")}
+                        />
+                      )}
 
-                    <div>
-                      {/* Card Header: Badges */}
-                      <div className="flex items-center justify-between gap-2 mb-3">
-                        <span className="bg-emerald-50 text-emerald-700 border border-emerald-200/80 px-2.5 py-0.5 rounded-full text-[11px] font-bold flex items-center gap-1">
-                          <FileText className="w-3 h-3 text-emerald-600" />
-                          <span>ใบงาน PDF</span>
-                        </span>
-                        <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md text-[11px] font-semibold">
-                          {gradeLabel}
+                      {/* Top-Left Badge: Topic (e.g. จุด & เส้น, น้ำหนัก & แสงเงา) */}
+                      <div className="absolute top-3.5 left-3.5">
+                        <span className="bg-white/95 backdrop-blur-xs text-gray-900 font-bold text-xs px-3.5 py-1.5 rounded-full shadow-xs">
+                          {item.topic || (isVideo ? "จุด & เส้น" : "จุด & เส้น")}
                         </span>
                       </div>
 
-                      {/* Title */}
-                      <h3 className="text-base font-bold text-gray-900 mb-2 line-clamp-2 leading-snug group-hover:text-emerald-700 transition-colors">
-                        {item.title}
-                      </h3>
-
-                      {/* Description */}
-                      <p className="text-gray-500 text-xs line-clamp-2 mb-4 leading-relaxed font-light">
-                        {item.description || "เอกสารประกอบการเรียนรู้และใบงานศิลปะ"}
-                      </p>
-
-                      {/* File Metadata Box */}
-                      <div className="bg-gray-50/80 rounded-2xl p-3 mb-4 border border-gray-100 flex items-center justify-between text-xs">
-                        <div className="truncate pr-2">
-                          <p className="font-semibold text-gray-700 truncate text-[11px]">{item.fileName || "เอกสารแนบ"}</p>
-                          <p className="text-[10px] text-gray-400">{item.fileSize || "1.5 MB"} • PDF Document</p>
-                        </div>
-                        {item.downloadsCount !== undefined && item.downloadsCount > 0 && (
-                          <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded shrink-0">
-                            📥 {item.downloadsCount}
+                      {/* Top-Right Badge: Format (วิดีโอสอน or ใบงาน PDF) */}
+                      <div className="absolute top-3.5 right-3.5">
+                        {isVideo ? (
+                          <span className="bg-white/95 backdrop-blur-xs text-[#2563EB] font-bold text-xs px-3 py-1.5 rounded-full shadow-xs flex items-center gap-1.5">
+                            <Video className="w-3.5 h-3.5 fill-[#2563EB] text-[#2563EB]" />
+                            <span>วิดีโอสอน</span>
+                          </span>
+                        ) : (
+                          <span className="bg-white/95 backdrop-blur-xs text-[#DC2626] font-bold text-xs px-3 py-1.5 rounded-full shadow-xs flex items-center gap-1.5">
+                            <span className="bg-[#DC2626] text-white text-[9px] font-black px-1 py-0.5 rounded-[3px] uppercase leading-none">PDF</span>
+                            <span>ใบงาน PDF</span>
                           </span>
                         )}
                       </div>
                     </div>
 
-                    {/* Action Button: Direct Download */}
-                    <a
-                      href={item.fileUrl}
-                      download={item.fileName || "worksheet.pdf"}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full min-h-[42px] py-2.5 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs sm:text-sm rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98"
-                    >
-                      <Download className="w-4 h-4" />
-                      <span>ดาวน์โหลดใบงาน PDF</span>
-                    </a>
-                  </div>
-                );
-              }
-
-              // B. VIDEO LESSON / CANVA CARD
-              const hasVideo = Boolean(item.videoId);
-              const isCanva = item.mediaType === "canva" || item.fileUrl?.includes("canva");
-
-              return (
-                <div 
-                  key={item.id} 
-                  className="bg-white rounded-3xl p-4 sm:p-5 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group hover:-translate-y-1"
-                >
-                  <div>
-                    {/* Video/Image Thumbnail Container */}
-                    <Link href={`${basePath}/detail?id=${item.rawId}`} className="block w-full aspect-video bg-gray-100 rounded-2xl mb-4 relative overflow-hidden group/thumb">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img 
-                        src={
-                          item.imageUrl 
-                            ? item.imageUrl 
-                            : hasVideo 
-                              ? `https://img.youtube.com/vi/${item.videoId}/hqdefault.jpg` 
-                              : "https://placehold.co/600x400/FFF7ED/EA580C?text=Art+Lesson"
-                        } 
-                        alt={item.title} 
-                        className="w-full h-full object-cover transform group-hover/thumb:scale-105 transition-transform duration-500"
-                        onError={(e) => (e.currentTarget.src = "https://placehold.co/600x400/FFF7ED/EA580C?text=Art+Lesson")}
-                      />
-
-                      {/* Grade Badge */}
-                      <div className="absolute top-2.5 left-2.5 bg-red-600 text-white px-2.5 py-0.5 rounded-lg text-[11px] font-bold shadow-xs">
-                        {gradeLabel}
-                      </div>
-
-                      {/* Format Badge */}
-                      <div className="absolute top-2.5 right-2.5 bg-black/75 backdrop-blur-xs text-white px-2.5 py-0.5 rounded-lg text-[10px] font-semibold flex items-center gap-1 shadow-xs">
-                        {isCanva ? (
-                          <>
-                            <Presentation className="w-3 h-3 text-purple-300" />
-                            <span>สไลด์</span>
-                          </>
-                        ) : hasVideo ? (
-                          <>
-                            <Video className="w-3 h-3 text-red-400" />
-                            <span>วิดีโอ</span>
-                          </>
-                        ) : (
-                          <span>บทเรียน</span>
-                        )}
-                      </div>
-                    </Link>
-
-                    {/* Title */}
-                    <Link href={`${basePath}/detail?id=${item.rawId}`}>
-                      <h3 className="text-base font-bold text-gray-900 mb-1.5 line-clamp-2 group-hover:text-red-600 transition-colors leading-snug">
+                    {/* Card Content Area */}
+                    <div className="p-5 sm:p-6 pb-2">
+                      {/* Title */}
+                      <h3 
+                        className={`text-base sm:text-lg font-bold mb-2 line-clamp-1 leading-snug transition-colors ${
+                          isRedTitle 
+                            ? "text-[#DC2626]" 
+                            : "text-gray-900 group-hover:text-red-600"
+                        }`}
+                        title={item.title}
+                      >
                         {item.title}
                       </h3>
-                    </Link>
 
-                    {/* Description */}
-                    <p className="text-gray-500 mb-4 line-clamp-2 text-xs leading-relaxed font-light">
-                      {item.description || "สื่อการสอนศิลปะโดยกลุ่มสาระการเรียนรู้ศิลปะ โรงเรียนวชิรธรรมสาธิต"}
-                    </p>
+                      {/* Description */}
+                      <p className="text-gray-500 text-xs sm:text-[13px] line-clamp-2 mb-4 leading-relaxed font-light">
+                        {item.description || "สื่อการสอนศิลปะโดยกลุ่มสาระการเรียนรู้ศิลปะ โรงเรียนวชิรธรรมสาธิต"}
+                      </p>
+                    </div>
                   </div>
 
-                  {/* Card Action */}
-                  <div className="pt-3 border-t border-gray-100">
-                    <Link 
-                      href={`${basePath}/detail?id=${item.rawId}`} 
-                      className="text-white font-bold inline-flex items-center justify-center w-full min-h-[42px] gap-1.5 text-xs sm:text-sm bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 rounded-xl transition-all shadow-sm active:scale-98"
-                    >
-                      <span>เข้าสู่บทเรียน</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </Link>
+                  {/* Bottom Action Bar */}
+                  <div className="px-5 sm:px-6 pb-5 pt-3 border-t border-gray-50 flex items-center justify-between">
+                    {/* Left: Downloads Count */}
+                    <div className="flex items-center gap-1.5 text-xs text-gray-400 font-normal">
+                      <Download className="w-3.5 h-3.5 text-gray-400" />
+                      <span>{item.downloadsCount || 342} ครั้ง</span>
+                    </div>
+
+                    {/* Right: Actions [ 👁 ดู ] and [ ☁ ดาวน์โหลด ] */}
+                    <div className="flex items-center gap-2">
+                      {isVideo ? (
+                        <Link
+                          href={`${basePath}/detail?id=${item.rawId}`}
+                          className="px-3.5 py-1.5 rounded-full bg-gray-100/90 hover:bg-gray-200 text-gray-700 text-xs font-semibold flex items-center gap-1 transition-colors"
+                        >
+                          <Eye className="w-3.5 h-3.5 text-gray-600" />
+                          <span>ดู</span>
+                        </Link>
+                      ) : (
+                        <a
+                          href={item.fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3.5 py-1.5 rounded-full bg-gray-100/90 hover:bg-gray-200 text-gray-700 text-xs font-semibold flex items-center gap-1 transition-colors"
+                        >
+                          <Eye className="w-3.5 h-3.5 text-gray-600" />
+                          <span>ดู</span>
+                        </a>
+                      )}
+
+                      <a
+                        href={item.fileUrl}
+                        download={item.fileName || "art-material.pdf"}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3.5 py-1.5 rounded-full bg-[#FFF0F3] hover:bg-[#FFE4E8] text-[#E11D48] text-xs font-semibold flex items-center gap-1.5 transition-colors border border-pink-100/80 active:scale-95"
+                      >
+                        <CloudDownload className="w-3.5 h-3.5 text-[#E11D48]" />
+                        <span>ดาวน์โหลด</span>
+                      </a>
+                    </div>
                   </div>
                 </div>
               );

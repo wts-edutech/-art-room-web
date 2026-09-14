@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import { Lightbulb, Search, Plus, X, Share2, Check, ArrowUpDown, Sparkles, Star } from "lucide-react";
+import { Lightbulb, Search, Plus, X, Share2, Check, ArrowUpDown, Sparkles, Star, MessageCircle } from "lucide-react";
 
 interface IdeaItem {
   id: string;
@@ -307,60 +307,42 @@ export default function IdeasPage() {
                             </p>
                           </div>
                           
-                          <div className="pt-4 border-t border-gray-100 mt-2">
-                            <div className="flex items-center justify-between mb-4">
-                              <div className="flex items-center gap-2 min-w-0">
-                                <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-amber-400 to-[#ffb300] text-white flex items-center justify-center font-bold text-xs uppercase flex-shrink-0 shadow-sm">
-                                  {(idea.authorName || "U").charAt(0)}
+                          <div className="pt-4 border-t border-gray-100 mt-2 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <div className="w-8 h-8 rounded-full bg-[#ffb300] text-white flex items-center justify-center font-bold text-sm uppercase shrink-0 shadow-xs">
+                                  {(idea.authorName || "ค").charAt(0)}
                                 </div>
-                                <span className="text-xs text-gray-600 font-medium truncate">
-                                  {idea.authorName}
+                                <span className="text-[14px] sm:text-[15px] font-semibold text-gray-800 truncate">
+                                  {idea.authorName || "ครูศิลปะ: Art Room"}
                                 </span>
                               </div>
-                              
-                              <span className="text-xs text-gray-400 font-light flex-shrink-0">
-                                {new Date(idea.createdAt).toLocaleDateString("th-TH", {
-                                  day: "numeric",
-                                  month: "short",
-                                  year: "2-digit",
-                                })}
-                              </span>
-                            </div>
 
-                            <div className="flex items-center justify-between pt-2">
-                              <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
-                                <span>💬</span>
-                                <span>{commentCount} ความคิดเห็น</span>
-                              </div>
-                              
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-3 shrink-0">
+                                <div className="flex items-center gap-1.5 text-sm text-gray-600 font-medium">
+                                  <MessageCircle className="w-4 h-4 text-[#a855f7] fill-[#a855f7]/20" />
+                                  <span>{commentCount}</span>
+                                </div>
                                 <button
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    const shareUrl = `${window.location.origin}/ideas/detail?id=${idea.id}`;
-                                    navigator.clipboard.writeText(shareUrl);
-                                    setCopiedId(idea.id);
-                                    setTimeout(() => setCopiedId(null), 2000);
-                                  }}
-                                  className="p-2 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded-full transition-colors relative"
+                                  onClick={(e) => handleCopyLink(e, idea.id)}
+                                  className={`w-8 h-8 rounded-xl border flex items-center justify-center transition-colors shadow-xs ${
+                                    isCopied
+                                      ? "bg-emerald-50 border-emerald-200 text-emerald-600"
+                                      : "bg-gray-50/70 border-gray-200/80 text-gray-400 hover:text-gray-700 hover:bg-gray-100"
+                                  }`}
                                   title="คัดลอกลิงก์แชร์"
                                 >
-                                  {isCopied ? (
-                                    <Check className="w-4 h-4 text-emerald-500" />
-                                  ) : (
-                                    <Share2 className="w-4 h-4" />
-                                  )}
+                                  {isCopied ? <Check className="w-4 h-4 text-emerald-600" /> : <Share2 className="w-4 h-4" />}
                                 </button>
-                                
-                                <Link
-                                  href={`/ideas/detail?id=${idea.id}`}
-                                  className="px-3.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold rounded-xl transition-all flex items-center gap-1"
-                                >
-                                  ดูรายละเอียด →
-                                </Link>
                               </div>
                             </div>
+
+                            <Link
+                              href={`/ideas/detail?id=${idea.id}`}
+                              className="w-full block py-3 rounded-2xl bg-[#FFF9F2] hover:bg-[#FEEFD8] text-[#FF4500] hover:text-[#E03E00] font-bold text-sm text-center transition-all duration-200 border border-orange-100/50"
+                            >
+                              ดูรายละเอียดไอเดีย →
+                            </Link>
                           </div>
                         </div>
                       </div>
@@ -454,39 +436,41 @@ export default function IdeasPage() {
                           </p>
                         </div>
                         
-                        <div className="pt-4 border-t border-gray-100 mt-2">
-                          <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-orange-400 to-amber-400 text-white flex items-center justify-center font-bold text-xs uppercase flex-shrink-0 shadow-sm">
-                                {(idea.authorName || "U").charAt(0)}
+                        <div className="pt-4 border-t border-gray-100 mt-2 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div className="w-8 h-8 rounded-full bg-[#ffb300] text-white flex items-center justify-center font-bold text-sm uppercase shrink-0 shadow-xs">
+                                {(idea.authorName || "ค").charAt(0)}
                               </div>
-                              <span className="text-xs text-gray-600 font-medium truncate">
-                                {idea.authorName}
+                              <span className="text-[14px] sm:text-[15px] font-semibold text-gray-800 truncate">
+                                {idea.authorName || "ครูศิลปะ: Art Room"}
                               </span>
                             </div>
-                            
-                            <div className="flex items-center gap-3 text-xs text-gray-400 shrink-0">
-                              <span className="flex items-center gap-1 text-gray-500 font-medium">
-                                💬 {commentCount}
-                              </span>
+
+                            <div className="flex items-center gap-3 shrink-0">
+                              <div className="flex items-center gap-1.5 text-sm text-gray-600 font-medium">
+                                <MessageCircle className="w-4 h-4 text-[#a855f7] fill-[#a855f7]/20" />
+                                <span>{commentCount}</span>
+                              </div>
                               <button
                                 onClick={(e) => handleCopyLink(e, idea.id)}
-                                title="คัดลอกลิงก์แชร์"
-                                className={`p-1.5 rounded-lg border transition-all ${
-                                  isCopied 
-                                    ? "bg-green-50 border-green-200 text-green-600" 
-                                    : "bg-gray-50 border-gray-100 text-gray-400 hover:text-orange-500 hover:bg-orange-50"
+                                className={`w-8 h-8 rounded-xl border flex items-center justify-center transition-colors shadow-xs ${
+                                  isCopied
+                                    ? "bg-emerald-50 border-emerald-200 text-emerald-600"
+                                    : "bg-gray-50/70 border-gray-200/80 text-gray-400 hover:text-gray-700 hover:bg-gray-100"
                                 }`}
+                                title="คัดลอกลิงก์แชร์"
                               >
-                                {isCopied ? <Check className="w-3.5 h-3.5" /> : <Share2 className="w-3.5 h-3.5" />}
+                                {isCopied ? <Check className="w-4 h-4 text-emerald-600" /> : <Share2 className="w-4 h-4" />}
                               </button>
                             </div>
                           </div>
 
-                          <Link href={`/ideas/detail?id=${idea.id}`} className="block">
-                            <div className="w-full text-center py-2.5 bg-orange-50/80 text-orange-600 font-bold text-xs rounded-xl group-hover:bg-orange-500 group-hover:text-white transition-all duration-200 shadow-sm">
-                              ดูรายละเอียดไอเดีย →
-                            </div>
+                          <Link
+                            href={`/ideas/detail?id=${idea.id}`}
+                            className="w-full block py-3 rounded-2xl bg-[#FFF9F2] hover:bg-[#FEEFD8] text-[#FF4500] hover:text-[#E03E00] font-bold text-sm text-center transition-all duration-200 border border-orange-100/50"
+                          >
+                            ดูรายละเอียดไอเดีย →
                           </Link>
                         </div>
                       </div>
