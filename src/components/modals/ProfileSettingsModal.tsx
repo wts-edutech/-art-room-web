@@ -70,11 +70,25 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
       
       // Parse grade and room
       if (savedGrade.includes("/")) {
-        const [g, r] = savedGrade.split("/");
+        const [rawG, r] = savedGrade.split("/");
+        let g = rawG.trim();
+        if (g.includes("1")) g = "ม.1";
+        else if (g.includes("2")) g = "ม.2";
+        else if (g.includes("3")) g = "ม.3";
+        else if (g.includes("4")) g = "ม.4";
+        else if (g.includes("5")) g = "ม.5";
+        else if (g.includes("6")) g = "ม.6";
         setGrade(g || "ม.3");
         setRoom(r || "1");
       } else {
-        setGrade(savedGrade || "ม.3");
+        let g = savedGrade.trim();
+        if (g.includes("1")) g = "ม.1";
+        else if (g.includes("2")) g = "ม.2";
+        else if (g.includes("3")) g = "ม.3";
+        else if (g.includes("4")) g = "ม.4";
+        else if (g.includes("5")) g = "ม.5";
+        else if (g.includes("6")) g = "ม.6";
+        setGrade(g || "ม.3");
       }
     }
 
@@ -511,8 +525,12 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
                       onChange={(e) => setGrade(e.target.value)}
                       className="w-full h-10 px-3 rounded-xl border border-amber-200 bg-white text-[13px] sm:text-[13.5px] font-normal text-gray-800 outline-none cursor-pointer focus:border-amber-400 focus:ring-2 focus:ring-amber-300/30"
                     >
-                      <option value="ม.3">มัธยมศึกษาปีที่ 3 (ม.3)</option>
-                      <option value="ม.4">มัธยมศึกษาปีที่ 4 (ม.4)</option>
+                      <option value="ม.1">ชั้นมัธยมศึกษาปีที่ 1 (ม.1)</option>
+                      <option value="ม.2">ชั้นมัธยมศึกษาปีที่ 2 (ม.2)</option>
+                      <option value="ม.3">ชั้นมัธยมศึกษาปีที่ 3 (ม.3)</option>
+                      <option value="ม.4">ชั้นมัธยมศึกษาปีที่ 4 (ม.4)</option>
+                      <option value="ม.5">ชั้นมัธยมศึกษาปีที่ 5 (ม.5)</option>
+                      <option value="ม.6">ชั้นมัธยมศึกษาปีที่ 6 (ม.6)</option>
                     </select>
                   </div>
 
