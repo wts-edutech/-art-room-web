@@ -291,7 +291,7 @@ export default function MaterialsList({
         <div className="flex-1 overflow-y-auto p-5 lg:p-0 space-y-6 lg:sticky lg:top-36">
           {/* Quick Search Box */}
           <div className="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-xs">
-            <h3 className="text-sm sm:text-[15px] font-bold text-gray-900 mb-3 flex items-center gap-2">
+            <h3 className="text-sm sm:text-[15px] font-medium text-gray-800 mb-3 flex items-center gap-2">
               <Search className="w-4 h-4 text-red-500" /> 
               <span>ค้นหาสื่อ / ใบงาน</span>
             </h3>
@@ -301,7 +301,7 @@ export default function MaterialsList({
                 placeholder="ชื่อสื่อ, หัวข้อ, เทคนิค..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-12 pl-4 pr-9 rounded-xl border border-gray-200 focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none text-sm sm:text-[15px] transition-all text-gray-800 placeholder:text-gray-400"
+                className="w-full h-12 pl-4 pr-9 rounded-xl border border-gray-200 focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none text-sm sm:text-[15px] font-light transition-all text-gray-800 placeholder:text-gray-400"
               />
               {searchQuery && (
                 <button 
@@ -316,29 +316,34 @@ export default function MaterialsList({
 
           {/* Categories Filter */}
           <div className="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-xs">
-            <h3 className="text-sm sm:text-[15px] font-bold text-gray-900 mb-3.5 border-b border-gray-100 pb-3 flex items-center gap-2">
+            <h3 className="text-sm sm:text-[15px] font-medium text-gray-800 mb-3.5 border-b border-gray-100 pb-3 flex items-center gap-2">
               <GraduationCap className="w-4.5 h-4.5 text-red-500" /> 
               <span>หมวดหมู่เนื้อหา</span>
             </h3>
             <ul className="space-y-1.5">
-              {categories.map((cat) => (
-                <li key={cat.id}>
-                  <button
-                    onClick={() => {
-                      setActiveCategory(cat.id);
-                      setIsMobileSidebarOpen(false);
-                    }}
-                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all text-left text-sm sm:text-[15px] cursor-pointer ${
-                      activeCategory === cat.id
-                        ? "bg-red-50 text-red-600 font-bold border border-red-100 shadow-xs"
-                        : "text-gray-700 hover:text-gray-900 hover:bg-gray-50 border border-transparent font-medium"
-                    }`}
-                  >
-                    <span className="shrink-0">{cat.icon}</span>
-                    <span className="flex-1 font-heading">{cat.label}</span>
-                  </button>
-                </li>
-              ))}
+              {categories.map((cat) => {
+                const isActive = activeCategory === cat.id;
+                return (
+                  <li key={cat.id}>
+                    <button
+                      onClick={() => {
+                        setActiveCategory(cat.id);
+                        setIsMobileSidebarOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all text-left text-sm sm:text-[15px] cursor-pointer ${
+                        isActive
+                          ? "bg-red-50 text-red-600 border border-red-100 shadow-xs"
+                          : "text-gray-600 hover:text-gray-900 hover:bg-gray-50 border border-transparent"
+                      }`}
+                    >
+                      <span className="shrink-0">{cat.icon}</span>
+                      <span className={`flex-1 ${isActive ? "font-normal" : "font-light"}`}>
+                        {cat.label}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         </div>
