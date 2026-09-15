@@ -143,19 +143,20 @@ export default function IdeasPage() {
               แบ่งปันโดยคุณครูและนักเรียน ชุมชนศิลปะ Art Room
             </p>
             
-            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
               <button 
                 onClick={handleShareClick} 
-                className="w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold rounded-full transition-all duration-200 shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 hover:-translate-y-0.5 flex items-center justify-center gap-2 text-base cursor-pointer"
+                className="w-full sm:w-auto shrink-0 px-8 py-3.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold rounded-full transition-all duration-200 shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 hover:-translate-y-0.5 flex items-center justify-center gap-2 text-sm sm:text-base whitespace-nowrap cursor-pointer"
               >
-                <Plus className="w-5 h-5" /> ร่วมแบ่งปันไอเดียใหม่
+                <Plus className="w-5 h-5 shrink-0" /> ร่วมแบ่งปันไอเดียใหม่
               </button>
 
               <a
                 href="#ideas-community-discussion"
-                className="w-full sm:w-auto px-7 py-3.5 bg-white hover:bg-orange-50/70 text-gray-800 hover:text-orange-600 font-bold rounded-full transition-all duration-200 border border-gray-200 shadow-2xs hover:shadow-md flex items-center justify-center gap-2 text-sm sm:text-base cursor-pointer"
+                className="w-full sm:w-auto shrink-0 px-8 sm:px-9 py-3.5 bg-white hover:bg-orange-50/70 text-gray-800 hover:text-orange-600 font-bold rounded-full transition-all duration-200 border border-gray-200 shadow-2xs hover:shadow-md flex items-center justify-center gap-2.5 text-sm sm:text-base whitespace-nowrap cursor-pointer"
               >
-                <MessageCircle className="w-5 h-5 text-orange-500" /> ร่วมพูดคุย & แลกเปลี่ยนไอเดีย
+                <MessageCircle className="w-5 h-5 text-orange-500 shrink-0" />
+                <span>ร่วมพูดคุย & แลกเปลี่ยนไอเดีย</span>
               </a>
             </div>
           </div>
