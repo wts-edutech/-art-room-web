@@ -298,6 +298,9 @@ export default function CommunityDiscussion({
     const commentCheck = checkProfanity(newComment);
     const authorCheck = checkProfanity(effectiveAuthor);
     if (!commentCheck.isClean || !authorCheck.isClean) {
+      if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
       setShowProfanityModal(true);
       return; // Prevent submission immediately!
     }

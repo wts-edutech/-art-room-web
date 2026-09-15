@@ -44,7 +44,10 @@ export default function ProfanityAlertModal({
   if (!isOpen || !mounted) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div 
+      style={{ zIndex: 999999 }}
+      className="fixed inset-0 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+    >
       {/* Backdrop overlay clickable to close */}
       <div className="absolute inset-0" onClick={onClose} />
       {/* Modal Container */}
@@ -52,6 +55,7 @@ export default function ProfanityAlertModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="profanity-modal-title"
+        style={{ zIndex: 1000000 }}
         className="relative w-full max-w-md bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-rose-100/90 text-center overflow-hidden animate-in zoom-in-95 duration-200"
       >
         {/* Decorative background glow */}
