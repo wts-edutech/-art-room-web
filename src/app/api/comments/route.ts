@@ -5,6 +5,7 @@ import { getDb } from '@/db';
 import { comments } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { getSession, checkIsAdmin } from '@/lib/api-auth';
+import { checkProfanity, PROFANITY_ALERT_MESSAGE } from '@/lib/profanity-filter';
 
 export async function GET(request: Request) {
   try {
@@ -45,6 +46,16 @@ export async function POST(request: Request) {
 
     if (text.length > 1000) {
       return NextResponse.json({ error: 'ข้อความมีความยาวเกินกำหนด (สูงสุด 1,000 ตัวอักษร)' }, { status: 400 });
+    }
+
+    // Profanity Filter (Alert & Block)
+    const textCheck = checkProfanity(text);
+    const authorCheck = checkProfanity(body.author || '');
+    if (!textCheck.isClean || !authorCheck.isClean) {
+      return NextResponse.json({
+        error: PROFANITY_ALERT_MESSAGE,
+        isProfanity: true,
+      }, { status: 400 });
     }
 
     const session = await getSession();

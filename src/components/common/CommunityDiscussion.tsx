@@ -8,6 +8,8 @@ import {
   CornerDownRight, Smile, Search, GraduationCap, ShieldCheck
 } from "lucide-react";
 import { resolveUserAvatar } from "@/lib/art-avatars";
+import { checkProfanity } from "@/lib/profanity-filter";
+import ProfanityAlertModal from "@/components/common/ProfanityAlertModal";
 
 export interface CommentItem {
   id: string;
@@ -202,6 +204,7 @@ export default function CommunityDiscussion({
   const [isPosting, setIsPosting] = useState(false);
   const [postError, setPostError] = useState<string | null>(null);
   const [postSuccess, setPostSuccess] = useState(false);
+  const [showProfanityModal, setShowProfanityModal] = useState(false);
 
   // User session state from localStorage
   const [userName, setUserName] = useState<string>("");
@@ -291,6 +294,14 @@ export default function CommunityDiscussion({
       return;
     }
 
+    // Check for inappropriate words / profanity (Alert & Block immediately)
+    const commentCheck = checkProfanity(newComment);
+    const authorCheck = checkProfanity(effectiveAuthor);
+    if (!commentCheck.isClean || !authorCheck.isClean) {
+      setShowProfanityModal(true);
+      return; // Prevent submission immediately!
+    }
+
     setIsPosting(true);
     setPostError(null);
 
@@ -322,7 +333,11 @@ export default function CommunityDiscussion({
         setTimeout(() => setPostSuccess(false), 3000);
       } else {
         const errData = await res.json().catch(() => ({}));
-        setPostError(errData.error || "เกิดข้อผิดพลาดในการส่งข้อความ กรุณาลองใหม่อีกครั้ง");
+        if (errData.isProfanity || (errData.error && errData.error.includes("ถ้อยคำที่ไม่เหมาะสม"))) {
+          setShowProfanityModal(true);
+        } else {
+          setPostError(errData.error || "เกิดข้อผิดพลาดในการส่งข้อความ กรุณาลองใหม่อีกครั้ง");
+        }
       }
     } catch (err) {
       setPostError("ไม่สามารถเชื่อมต่อระบบได้ กรุณาลองใหม่อีกครั้ง");
@@ -881,6 +896,15 @@ export default function CommunityDiscussion({
           )}
         </div>
       </div>
+
+      {/* Polite Profanity Warning Modal (Alert & Block) */}
+      <ProfanityAlertModal
+        isOpen={showProfanityModal}
+        onClose={() => {
+          setShowProfanityModal(false);
+          textareaRef.current?.focus();
+        }}
+      />
     </div>
   );
 }
