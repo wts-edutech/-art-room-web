@@ -58,15 +58,19 @@ export default function LessonDetailPage() {
         if (!foundLesson) {
           const dlItem = DEFAULT_DOWNLOADS.find((d: any) => d.id === id || `dl-${d.id}` === id || `v-${d.id}` === id);
           if (dlItem) {
+            const isPdfItem = dlItem.mediaType === "pdf" || dlItem.category === "ใบงาน" || dlItem.category === "สื่อเอกสาร PDF";
             foundLesson = {
               id: dlItem.id,
               title: dlItem.title,
               description: dlItem.description,
               category: dlItem.category,
-              videoId: dlItem.videoId || "dQw4w9WgXcQ",
+              mediaType: dlItem.mediaType || (isPdfItem ? "pdf" : "video"),
+              videoId: dlItem.videoId || (isPdfItem ? undefined : "AB1QIlCEDDU"),
               views: dlItem.downloadsCount || 512,
               type: dlItem.grade || "general",
               fileUrl: dlItem.fileUrl,
+              pdfUrl: dlItem.fileUrl,
+              imageUrl: dlItem.imageUrl,
               attachmentName: dlItem.fileName,
               createdAt: new Date().toISOString(),
             };
@@ -227,33 +231,41 @@ export default function LessonDetailPage() {
 
             {/* Video / Content Section */}
             <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100 mb-10">
-              <div className={`w-full ${lesson.category === "สื่อภาพ" ? "bg-gray-100 min-h-[400px] flex items-center justify-center" : lesson.category === "สื่อเอกสาร PDF" ? "bg-gray-100" : "aspect-video bg-gray-900 relative"}`}>
-                {lesson.category === "สื่อภาพ" ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img 
-                    src={lesson.imageUrl} 
-                    alt={lesson.title} 
-                    className="w-full h-auto max-h-[80vh] object-contain"
-                    onError={(e) => (e.currentTarget.src = "https://placehold.co/1200x800/eeeeee/999999?text=Image+Not+Found")}
-                  />
-                ) : lesson.category === "สื่อเอกสาร PDF" ? (
-                  <iframe 
-                    className="w-full min-h-[70vh]"
-                    src={lesson.pdfUrl}
-                    title={lesson.title}
-                  >
-                  </iframe>
-                ) : (
-                  <iframe 
-                    className="absolute top-0 left-0 w-full h-full"
-                    src={`https://www.youtube.com/embed/${lesson.videoId}`}
-                    title={lesson.title} 
-                    frameBorder="0" 
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                    allowFullScreen>
-                  </iframe>
-                )}
-              </div>
+              {(() => {
+                const isPdf = lesson.mediaType === "pdf" || lesson.category === "สื่อเอกสาร PDF" || lesson.category === "ใบงาน" || Boolean(lesson.fileUrl?.endsWith?.(".pdf") || lesson.pdfUrl?.endsWith?.(".pdf"));
+                const isImage = lesson.mediaType === "image" || lesson.category === "สื่อภาพ";
+                const contentUrl = lesson.pdfUrl || lesson.fileUrl;
+
+                return (
+                  <div className={`w-full ${isImage ? "bg-gray-100 min-h-[400px] flex items-center justify-center" : isPdf ? "bg-gray-100" : "aspect-video bg-gray-900 relative"}`}>
+                    {isImage ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img 
+                        src={lesson.imageUrl || contentUrl} 
+                        alt={lesson.title} 
+                        className="w-full h-auto max-h-[80vh] object-contain"
+                        onError={(e) => (e.currentTarget.src = "https://placehold.co/1200x800/eeeeee/999999?text=Image+Not+Found")}
+                      />
+                    ) : isPdf ? (
+                      <iframe 
+                        className="w-full min-h-[70vh] border-0"
+                        src={contentUrl}
+                        title={lesson.title}
+                      >
+                      </iframe>
+                    ) : (
+                      <iframe 
+                        className="absolute top-0 left-0 w-full h-full"
+                        src={`https://www.youtube.com/embed/${lesson.videoId || "AB1QIlCEDDU"}`}
+                        title={lesson.title} 
+                        frameBorder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                        allowFullScreen>
+                      </iframe>
+                    )}
+                  </div>
+                );
+              })()}
               
               <div className="p-8">
                 <h1 className="text-3xl font-bold font-heading text-gray-900 mb-4">
