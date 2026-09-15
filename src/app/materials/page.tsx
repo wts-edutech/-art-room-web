@@ -8,7 +8,7 @@ import { lessons } from "@/db/schema";
 import { desc } from "drizzle-orm";
 import { DEFAULT_DOWNLOADS, DownloadItem } from "@/data/default-downloads";
 import { Suspense } from "react";
-import { Sparkles, BookOpen, FileText, MessageSquare } from "lucide-react";
+import { Sparkles, BookOpen, FileText, MessageSquare, ChevronDown } from "lucide-react";
 import { getSession, checkIsAdmin } from "@/lib/api-auth";
 import { redirect } from "next/navigation";
 
@@ -99,23 +99,23 @@ export default async function MaterialsPage() {
               </p>
 
               {/* Stats Counters */}
-              <div className="grid grid-cols-2 gap-4 sm:gap-6 max-w-sm mx-auto mb-8">
-                <div className="bg-white/80 backdrop-blur-sm p-3.5 sm:p-4 rounded-2xl border border-gray-200/70 shadow-xs">
-                  <div className="flex items-center justify-center gap-1.5 text-xs text-gray-500 font-medium mb-1">
+              <div className="grid grid-cols-2 gap-4 sm:gap-6 max-w-sm mx-auto mb-6">
+                <div className="bg-white/90 backdrop-blur-md p-4 rounded-2xl border border-gray-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 text-center">
+                  <div className="flex items-center justify-center gap-1.5 text-xs text-gray-500 font-semibold mb-1">
                     <BookOpen className="w-3.5 h-3.5 text-red-500" />
                     <span className="hidden sm:inline">บทเรียนและวิดีโอ</span>
                     <span className="sm:hidden">บทเรียน</span>
                   </div>
-                  <p className="text-xl sm:text-2xl font-black text-gray-900">{totalLessons}</p>
+                  <p className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">{totalLessons}</p>
                 </div>
 
-                <div className="bg-white/80 backdrop-blur-sm p-3.5 sm:p-4 rounded-2xl border border-gray-200/70 shadow-xs">
-                  <div className="flex items-center justify-center gap-1.5 text-xs text-gray-500 font-medium mb-1">
+                <div className="bg-white/90 backdrop-blur-md p-4 rounded-2xl border border-gray-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 text-center">
+                  <div className="flex items-center justify-center gap-1.5 text-xs text-gray-500 font-semibold mb-1">
                     <FileText className="w-3.5 h-3.5 text-emerald-500" />
                     <span className="hidden sm:inline">ใบงาน PDF</span>
                     <span className="sm:hidden">ใบงาน</span>
                   </div>
-                  <p className="text-xl sm:text-2xl font-black text-emerald-600">{totalDownloads}</p>
+                  <p className="text-2xl sm:text-3xl font-black text-emerald-600 tracking-tight">{totalDownloads}</p>
                 </div>
               </div>
 
@@ -123,10 +123,15 @@ export default async function MaterialsPage() {
               <div className="flex items-center justify-center">
                 <a
                   href="#materials-community-discussion"
-                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-white/90 hover:bg-white text-gray-800 hover:text-red-600 font-bold text-xs sm:text-sm border border-gray-200 shadow-2xs hover:shadow-md transition-all active:scale-95 cursor-pointer"
+                  className="group inline-flex items-center gap-2.5 px-6 sm:px-7 py-3 rounded-full bg-white hover:bg-red-50/30 text-gray-800 hover:text-red-600 font-bold text-xs sm:text-sm border border-red-100/90 hover:border-red-200 shadow-2xs hover:shadow-md transition-all duration-200 active:scale-98 cursor-pointer"
                 >
-                  <MessageSquare className="w-4 h-4 text-red-500 shrink-0" />
-                  <span className="whitespace-nowrap">💬 กระดานสนทนา & ถาม-ตอบ สื่อการสอน</span>
+                  <div className="w-6 h-6 rounded-full bg-red-50 text-red-500 group-hover:bg-red-500 group-hover:text-white transition-colors flex items-center justify-center shrink-0">
+                    <MessageSquare className="w-3.5 h-3.5" />
+                  </div>
+                  <span className="whitespace-nowrap font-bold text-gray-800 group-hover:text-red-600 transition-colors">
+                    กระดานสนทนา & ถาม-ตอบ สื่อการสอน
+                  </span>
+                  <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-red-500 group-hover:translate-y-0.5 transition-all shrink-0" />
                 </a>
               </div>
             </div>
