@@ -788,24 +788,7 @@ export default function CommunityDiscussion({
               <Loader2 className="w-8 h-8 animate-spin mx-auto text-orange-500 mb-2" />
               <p className="text-xs">กำลังโหลดบทสนทนา...</p>
             </div>
-          ) : filteredComments.length === 0 ? (
-            <div className="py-14 text-center bg-gray-50/60 rounded-3xl border border-dashed border-gray-200 p-8">
-              <div className="w-14 h-14 rounded-2xl bg-orange-100/70 text-orange-500 flex items-center justify-center mx-auto mb-3">
-                <MessageSquare className="w-7 h-7" />
-              </div>
-              <h3 className="text-base font-bold text-gray-800 mb-1">ยังไม่มีบทสนทนา</h3>
-              <p className="text-xs text-gray-500 max-w-sm mx-auto mb-4 font-light">
-                {emptyMessage}
-              </p>
-              <button
-                type="button"
-                onClick={() => textareaRef.current?.focus()}
-                className="px-5 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold transition-all shadow-sm"
-              >
-                + เริ่มต้นพูดคุยเป็นคนแรก
-              </button>
-            </div>
-          ) : (
+          ) : filteredComments.length === 0 ? null : (
             filteredComments.map((comment) => {
               const isLiked = likedMap[comment.id] || false;
               const likesCount = likesCountMap[comment.id] || 0;
