@@ -5,8 +5,14 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import { ArrowLeft, Image as ImageIcon, FileText, Upload, Plus, X, CheckCircle, AlertCircle, Sparkles, Video, Palette, ListOrdered, ChevronDown, Check } from "lucide-react";
+import { 
+  ArrowLeft, Image as ImageIcon, FileText, Upload, Plus, X, 
+  CheckCircle, AlertCircle, Sparkles, Video, Palette, ListOrdered, 
+  ChevronDown, Check, RotateCw, Sliders, RefreshCw, Trash2, Eye, 
+  Maximize2, Crop
+} from "lucide-react";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import ImageEditorModal from "@/components/common/ImageEditorModal";
 
 const MAX_COVER_SIZE = 5 * 1024 * 1024; // 5 MB
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
@@ -106,6 +112,13 @@ export default function NewIdeaPage() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
+  const coverFileInputRef = useRef<HTMLInputElement>(null);
+  const [coverFitMode, setCoverFitMode] = useState<"cover" | "contain">("cover");
+  const [isEditorOpen, setIsEditorOpen] = useState<boolean>(false);
+  const [editingTarget, setEditingTarget] = useState<"cover" | { type: "attachment"; index: number } | null>(null);
+  const [isQuickRotating, setIsQuickRotating] = useState<boolean>(false);
+  const [attachmentPreviews, setAttachmentPreviews] = useState<Record<number, string>>({});
+
   const [files, setFiles] = useState<File[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [instantApprove, setInstantApprove] = useState(true);
@@ -138,6 +151,20 @@ export default function NewIdeaPage() {
     }
   }, [coverImage]);
 
+  // Handle attachment image previews
+  useEffect(() => {
+    const newPreviews: Record<number, string> = {};
+    files.forEach((file, index) => {
+      if (file.type.startsWith("image/")) {
+        newPreviews[index] = URL.createObjectURL(file);
+      }
+    });
+    setAttachmentPreviews(newPreviews);
+    return () => {
+      Object.values(newPreviews).forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [files]);
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -158,6 +185,64 @@ export default function NewIdeaPage() {
   }, []);
 
   const currentOption = CATEGORY_OPTIONS.find((c) => c.value === category) || CATEGORY_OPTIONS[0];
+
+  // Quick 1-click rotate cover image 90 degrees
+  const handleQuickRotateCover = async () => {
+    if (!coverImage || isQuickRotating) return;
+    setIsQuickRotating(true);
+    try {
+      const url = URL.createObjectURL(coverImage);
+      const img = new Image();
+      img.src = url;
+      await new Promise((resolve) => {
+        img.onload = resolve;
+      });
+
+      const canvas = document.createElement("canvas");
+      canvas.width = img.height;
+      canvas.height = img.width;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate((90 * Math.PI) / 180);
+        ctx.drawImage(img, -img.width / 2, -img.height / 2);
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              const originalName = coverImage.name.replace(/\.[^/.]+$/, "");
+              const rotatedFile = new File([blob], `${originalName}.jpg`, {
+                type: "image/jpeg",
+                lastModified: Date.now(),
+              });
+              setCoverImage(rotatedFile);
+            }
+            setIsQuickRotating(false);
+          },
+          "image/jpeg",
+          0.92
+        );
+      } else {
+        setIsQuickRotating(false);
+      }
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Quick rotate failed:", err);
+      setIsQuickRotating(false);
+    }
+  };
+
+  // Save changes from ImageEditorModal
+  const handleEditorSave = (editedFile: File) => {
+    if (editingTarget === "cover") {
+      setCoverImage(editedFile);
+    } else if (editingTarget && editingTarget.type === "attachment") {
+      const updated = [...files];
+      updated[editingTarget.index] = editedFile;
+      setFiles(updated);
+    }
+    setIsEditorOpen(false);
+    setEditingTarget(null);
+  };
 
   const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setErrorMsg("");
@@ -559,55 +644,177 @@ export default function NewIdeaPage() {
                   />
                 </div>
 
-                {/* Cover Image Upload */}
+                {/* Cover Image Upload & Interactive Preview */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-bold text-gray-800">
+                    <label className="block text-sm font-bold text-gray-800 flex items-center gap-1.5">
+                      <ImageIcon className="w-4 h-4 text-orange-500" />
                       รูปภาพหน้าปก <span className="text-red-500">*</span>
                     </label>
-                    <span className="text-xs text-gray-400">ขนาดแนะนำ 800x600 px (ไม่เกิน 5 MB)</span>
+                    <span className="text-xs text-gray-400">
+                      แนะนำขนาด 16:9 หรือ 800x600 px (สูงสุด 5 MB)
+                    </span>
                   </div>
 
-                  {coverPreviewUrl ? (
-                    <div className="relative aspect-video w-full rounded-2xl overflow-hidden border border-gray-200 bg-gray-100 group">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img 
-                        src={coverPreviewUrl} 
-                        alt="Cover Preview" 
-                        className="w-full h-full object-cover" 
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setCoverImage(null)}
-                        className="absolute top-3 right-3 bg-black/70 hover:bg-red-600 text-white p-2 rounded-xl transition-all shadow-md flex items-center gap-1.5 text-xs font-semibold"
-                      >
-                        <X className="w-4 h-4" /> เปลี่ยนรูปหน้าปก
-                      </button>
+                  {coverPreviewUrl && coverImage ? (
+                    <div className="bg-gradient-to-b from-gray-50/70 to-white rounded-3xl border border-gray-200/90 p-4 sm:p-5 shadow-xs space-y-4 animate-in fade-in duration-150">
+                      {/* File Info & Fit Mode Switcher */}
+                      <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-gray-100">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className="bg-orange-100 text-orange-700 text-xs font-bold px-2.5 py-1 rounded-lg">
+                            รูปหน้าปก
+                          </span>
+                          <span className="text-xs font-bold text-gray-800 truncate max-w-[160px] sm:max-w-xs">
+                            {coverImage.name}
+                          </span>
+                          <span className="text-[11px] text-gray-400 font-mono">
+                            {(coverImage.size / 1024 / 1024).toFixed(2)} MB
+                          </span>
+                        </div>
+
+                        {/* Fit Mode Toggle */}
+                        <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl text-xs font-medium">
+                          <button
+                            type="button"
+                            onClick={() => setCoverFitMode("cover")}
+                            className={`px-2.5 py-1 rounded-lg transition-all ${
+                              coverFitMode === "cover"
+                                ? "bg-white text-orange-600 font-bold shadow-xs"
+                                : "text-gray-500 hover:text-gray-900"
+                            }`}
+                          >
+                            เต็มกรอบ 16:9
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setCoverFitMode("contain")}
+                            className={`px-2.5 py-1 rounded-lg transition-all ${
+                              coverFitMode === "contain"
+                                ? "bg-white text-orange-600 font-bold shadow-xs"
+                                : "text-gray-500 hover:text-gray-900"
+                            }`}
+                          >
+                            เห็นภาพเต็ม
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Visual Preview Box */}
+                      <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-gray-950 border border-gray-200/80 shadow-inner flex items-center justify-center group">
+                        {/* Ambient Blurred Background (for contain mode) */}
+                        {coverFitMode === "contain" && (
+                          <div 
+                            className="absolute inset-0 scale-125 blur-2xl opacity-40 pointer-events-none"
+                            style={{
+                              backgroundImage: `url(${coverPreviewUrl})`,
+                              backgroundPosition: "center",
+                              backgroundSize: "cover",
+                            }}
+                          />
+                        )}
+
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img 
+                          src={coverPreviewUrl} 
+                          alt="Cover Preview" 
+                          className={`relative max-w-full max-h-full transition-all duration-200 ${
+                            coverFitMode === "cover" 
+                              ? "w-full h-full object-cover" 
+                              : "object-contain"
+                          }`}
+                        />
+
+                        {/* Tag overlay */}
+                        <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-md text-white/90 text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-white/10">
+                          {coverFitMode === "cover" ? "มุมมอง: เต็มกรอบ 16:9" : "มุมมอง: สัดส่วนจริง"}
+                        </div>
+                      </div>
+
+                      {/* Interactive Editing Toolbar */}
+                      <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingTarget("cover");
+                              setIsEditorOpen(true);
+                            }}
+                            className="px-3.5 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold shadow-sm hover:shadow transition-all flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <Sliders className="w-3.5 h-3.5" />
+                            <span>ปรับแต่ง & ครอบตัดภาพ</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            disabled={isQuickRotating}
+                            onClick={handleQuickRotateCover}
+                            className="px-3 py-2 rounded-xl border border-gray-200 hover:border-orange-300 hover:bg-orange-50/40 text-gray-700 text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
+                            title="หมุนตามเข็มนาฬิกา 90 องศา"
+                          >
+                            <RotateCw className={`w-3.5 h-3.5 text-orange-500 ${isQuickRotating ? "animate-spin" : ""}`} />
+                            <span>หมุน 90°</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => coverFileInputRef.current?.click()}
+                            className="px-3 py-2 rounded-xl border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-600 text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <RefreshCw className="w-3.5 h-3.5 text-gray-400" />
+                            <span>เปลี่ยนรูป</span>
+                          </button>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => setCoverImage(null)}
+                          className="px-3 py-2 rounded-xl text-red-500 hover:bg-red-50 hover:text-red-600 text-xs font-semibold transition-colors flex items-center gap-1.5 ml-auto cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>ลบรูปภาพ</span>
+                        </button>
+                      </div>
                     </div>
                   ) : (
-                    <label className="relative w-full h-44 border-2 border-dashed border-gray-300 hover:border-orange-400 bg-gray-50/50 hover:bg-orange-50/20 rounded-2xl transition-all group overflow-hidden cursor-pointer flex flex-col items-center justify-center text-center p-4">
+                    <label className="relative w-full h-48 border-2 border-dashed border-gray-300 hover:border-orange-400 bg-gray-50/60 hover:bg-orange-50/20 rounded-3xl transition-all group overflow-hidden cursor-pointer flex flex-col items-center justify-center text-center p-6 shadow-xs">
                       <input 
+                        ref={coverFileInputRef}
                         type="file" 
                         accept="image/*"
                         onChange={handleCoverChange}
                         className="hidden"
                       />
-                      <div className="w-12 h-12 rounded-2xl bg-orange-100 text-orange-500 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                        <ImageIcon className="w-6 h-6" />
+                      <div className="w-14 h-14 rounded-2xl bg-orange-100/80 text-orange-500 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-orange-500 group-hover:text-white transition-all shadow-xs">
+                        <ImageIcon className="w-7 h-7" />
                       </div>
-                      <p className="text-sm font-bold text-gray-700 group-hover:text-orange-600 transition-colors">
+                      <p className="text-base font-bold text-gray-800 group-hover:text-orange-600 transition-colors">
                         คลิกเพื่อเลือกรูปภาพหน้าปก
                       </p>
-                      <p className="text-xs text-gray-400 mt-1">รองรับ JPG, PNG, WEBP (สูงสุด 5 MB)</p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        รองรับ JPG, PNG, WEBP (สูงสุด 5 MB) • สามารถปรับแต่ง ครอบตัด และหมุนภาพได้ทันทีหลังเลือก
+                      </p>
                     </label>
+                  )}
+
+                  {/* Hidden file input for "เปลี่ยนรูป" */}
+                  {coverPreviewUrl && (
+                    <input 
+                      ref={coverFileInputRef}
+                      type="file" 
+                      accept="image/*"
+                      onChange={handleCoverChange}
+                      className="hidden"
+                    />
                   )}
                 </div>
 
-                {/* File Attachments */}
+                {/* File Attachments with Image Preview Thumbnails & Editing */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-bold text-gray-800">
-                      ไฟล์แนบประกอบ (ใบงาน / เอกสาร / สื่อนำเสนอ)
+                    <label className="block text-sm font-bold text-gray-800 flex items-center gap-1.5">
+                      <FileText className="w-4 h-4 text-blue-500" />
+                      ไฟล์แนบประกอบ (ใบงาน / เอกสาร / สื่อนำเสนอ / รูปเพิ่มเติม)
                     </label>
                     <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600">
                       {files.length}/5 ไฟล์
@@ -615,7 +822,7 @@ export default function NewIdeaPage() {
                   </div>
                   
                   {files.length < 5 && (
-                    <label className="relative w-full h-16 border-2 border-dashed border-gray-300 hover:border-blue-400 bg-gray-50 hover:bg-blue-50/20 rounded-2xl transition-all group flex items-center justify-center cursor-pointer px-4">
+                    <label className="relative w-full h-18 border-2 border-dashed border-gray-300 hover:border-blue-400 bg-gray-50/60 hover:bg-blue-50/20 rounded-2xl transition-all group flex items-center justify-center cursor-pointer px-4">
                       <input 
                         type="file" 
                         multiple
@@ -630,28 +837,71 @@ export default function NewIdeaPage() {
                   )}
 
                   {files.length > 0 && (
-                    <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                      {files.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl shadow-sm">
-                          <div className="flex items-center gap-3 overflow-hidden">
-                            <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                              <FileText className="w-4 h-4" />
+                    <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {files.map((file, index) => {
+                        const isImage = file.type.startsWith("image/");
+                        const previewUrl = attachmentPreviews[index];
+
+                        return (
+                          <div 
+                            key={index} 
+                            className="flex items-center justify-between p-3 bg-white border border-gray-200 hover:border-gray-300 rounded-2xl shadow-xs transition-all group"
+                          >
+                            <div className="flex items-center gap-3 overflow-hidden min-w-0">
+                              {isImage && previewUrl ? (
+                                <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-gray-200 shrink-0 bg-gray-100">
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img 
+                                    src={previewUrl} 
+                                    alt={file.name} 
+                                    className="w-full h-full object-cover" 
+                                  />
+                                </div>
+                              ) : (
+                                <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shrink-0">
+                                  <FileText className="w-6 h-6" />
+                                </div>
+                              )}
+                              
+                              <div className="truncate min-w-0">
+                                <p className="text-xs font-bold text-gray-800 truncate">{file.name}</p>
+                                <div className="flex items-center gap-1.5 text-[11px] text-gray-400 mt-0.5">
+                                  <span>{(file.size / 1024 / 1024).toFixed(2)} MB</span>
+                                  {isImage && (
+                                    <span className="text-emerald-600 font-semibold bg-emerald-50 px-1.5 py-0.2 rounded text-[10px]">
+                                      รูปภาพ
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
                             </div>
-                            <div className="truncate">
-                              <p className="text-xs font-semibold text-gray-800 truncate">{file.name}</p>
-                              <p className="text-[11px] text-gray-400">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+
+                            <div className="flex items-center gap-1 shrink-0 ml-2">
+                              {isImage && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingTarget({ type: "attachment", index });
+                                    setIsEditorOpen(true);
+                                  }}
+                                  className="p-1.5 text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors cursor-pointer"
+                                  title="ปรับแต่งรูปภาพแนบนี้"
+                                >
+                                  <Sliders className="w-4 h-4" />
+                                </button>
+                              )}
+                              <button 
+                                type="button" 
+                                onClick={() => removeFile(index)}
+                                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                                title="ลบไฟล์นี้"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
                             </div>
                           </div>
-                          <button 
-                            type="button" 
-                            onClick={() => removeFile(index)}
-                            className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0 ml-2"
-                            title="ลบไฟล์นี้"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -704,6 +954,30 @@ export default function NewIdeaPage() {
           </div>
         </main>
       </ProtectedRoute>
+
+      {/* Interactive Image Editor Modal */}
+      <ImageEditorModal
+        isOpen={isEditorOpen}
+        file={
+          editingTarget === "cover"
+            ? coverImage
+            : editingTarget?.type === "attachment"
+            ? files[editingTarget.index]
+            : null
+        }
+        title={
+          editingTarget === "cover"
+            ? "ปรับแต่งและครอบตัดรูปภาพหน้าปก"
+            : "ปรับแต่งรูปภาพไฟล์แนบ"
+        }
+        defaultAspectRatio={editingTarget === "cover" ? "16:9" : "original"}
+        onClose={() => {
+          setIsEditorOpen(false);
+          setEditingTarget(null);
+        }}
+        onSave={handleEditorSave}
+      />
+
       <Footer />
     </>
   );
