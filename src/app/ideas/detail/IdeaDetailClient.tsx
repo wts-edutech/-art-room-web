@@ -811,6 +811,14 @@ export default function IdeaDetailClient() {
                           <textarea 
                             value={commentText}
                             onChange={(e) => setCommentText(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && !e.shiftKey) {
+                                e.preventDefault();
+                                if (commentText.trim() && !isSubmittingComment) {
+                                  handlePostComment(e as unknown as React.FormEvent);
+                                }
+                              }
+                            }}
                             placeholder={`แสดงความคิดเห็นในชื่อ ${authorName}...`}
                             className="w-full h-24 p-4 pr-14 rounded-2xl border border-gray-200 bg-white focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 outline-none transition-all resize-none text-sm text-gray-800"
                           />
