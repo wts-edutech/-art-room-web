@@ -18,7 +18,6 @@ export default function Navbar() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const [time, setTime] = useState<Date | null>(null);
   const [isTeachersEnabled, setIsTeachersEnabled] = useState(false);
 
   const updateUserData = () => {
@@ -31,11 +30,6 @@ export default function Navbar() {
   };
 
   useEffect(() => {
-    setTime(new Date());
-    const interval = setInterval(() => {
-      setTime(new Date());
-    }, 1000);
-
     updateUserData();
 
     // Listen for profile changes from ProfileSettingsModal
@@ -52,7 +46,6 @@ export default function Navbar() {
       .catch(() => {});
 
     return () => {
-      clearInterval(interval);
       window.removeEventListener("artroom_profile_updated", updateUserData);
     };
   }, []);
@@ -83,54 +76,12 @@ export default function Navbar() {
 
   const resolvedAvatar = resolveUserAvatar(userAvatar, userName);
 
-  // Format date and time in Thai with Buddhist Era (Asia/Bangkok timezone)
-  const formatThaiDate = (date: Date) => {
-    return new Intl.DateTimeFormat("th-TH", {
-      timeZone: "Asia/Bangkok",
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    }).format(date);
-  };
-
-  const formatThaiTime = (date: Date) => {
-    return new Intl.DateTimeFormat("th-TH", {
-      timeZone: "Asia/Bangkok",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: false,
-    }).format(date);
-  };
-
-  let formattedDate = time ? formatThaiDate(time) : "";
-  if (formattedDate && !formattedDate.includes("พ.ศ.")) {
-    const parts = formattedDate.split(" ");
-    if (parts.length > 0) {
-      const year = parts.pop();
-      formattedDate = `${parts.join(" ")} พ.ศ. ${year}`;
-    }
-  }
-
   return (
     <header className="fixed top-0 left-0 right-0 w-full z-50 bg-white border-b border-gray-200 shadow-sm transition-all duration-300 pointer-events-auto">
       {/* Integrated LiveClock Bar (Always 32px at very top, strictly unified with Navbar) */}
       <div className="w-full bg-gradient-to-r from-orange-500 to-pink-500 text-white h-8 overflow-hidden flex items-center">
         <div className="container mx-auto px-4 h-full flex items-center justify-center sm:justify-end gap-3 text-[10px] sm:text-xs font-medium">
-          {time && (
-            <>
-              <div className="flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-white/90" />
-                <span>{formattedDate}</span>
-              </div>
-              <div className="w-px h-3 bg-white/30"></div>
-              <div className="flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-white/90" />
-                <span className="font-bold tracking-wider">{formatThaiTime(time)} น.</span>
-              </div>
-            </>
-          )}
+          <NavbarLiveClock />
         </div>
       </div>
 
@@ -553,3 +504,62 @@ export default function Navbar() {
     </header>
   );
 }
+
+// Isolated Live Clock Component to prevent Navbar re-rendering every second
+function NavbarLiveClock() {
+  const [time, setTime] = useState<Date | null>(null);
+
+  useEffect(() => {
+    setTime(new Date());
+    const interval = setInterval(() => {
+      setTime(new Date());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (!time) return null;
+
+  const formatThaiDate = (date: Date) => {
+    return new Intl.DateTimeFormat("th-TH", {
+      timeZone: "Asia/Bangkok",
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }).format(date);
+  };
+
+  const formatThaiTime = (date: Date) => {
+    return new Intl.DateTimeFormat("th-TH", {
+      timeZone: "Asia/Bangkok",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    }).format(date);
+  };
+
+  let formattedDate = formatThaiDate(time);
+  if (formattedDate && !formattedDate.includes("พ.ศ.")) {
+    const parts = formattedDate.split(" ");
+    if (parts.length > 0) {
+      const year = parts.pop();
+      formattedDate = `${parts.join(" ")} พ.ศ. ${year}`;
+    }
+  }
+
+  return (
+    <>
+      <div className="flex items-center gap-1.5">
+        <Calendar className="w-3.5 h-3.5 text-white/90" />
+        <span>{formattedDate}</span>
+      </div>
+      <div className="w-px h-3 bg-white/30"></div>
+      <div className="flex items-center gap-1.5">
+        <Clock className="w-3.5 h-3.5 text-white/90" />
+        <span className="font-bold tracking-wider">{formatThaiTime(time)} น.</span>
+      </div>
+    </>
+  );
+}
+

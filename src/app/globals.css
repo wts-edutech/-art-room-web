@@ -46,6 +46,19 @@
     cursor: pointer;
   }
 
+  /* Offset for fixed navbar on all anchor jumps */
+  [id] {
+    scroll-margin-top: 5.5rem;
+  }
+
+  /* Prevent dev indicator overlay from blocking clicks */
+  nextjs-portal,
+  [data-nextjs-toast],
+  [data-next-dev-indicator],
+  [data-nextjs-dev-indicator] {
+    pointer-events: none !important;
+  }
+
   /* Prevent iOS zoom on inputs for mobile viewports */
   @media (max-width: 640px) {
     input[type="text"], input[type="email"], input[type="number"], input[type="password"], textarea, select {

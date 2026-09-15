@@ -305,6 +305,25 @@ export default function CommunityDiscussion({
       return; // Prevent submission immediately!
     }
 
+    const commentText = newComment.trim();
+    const tempId = `temp-${Date.now()}`;
+    const optimisticComment: CommentItem = {
+      id: tempId,
+      lessonId: topicId,
+      author: effectiveAuthor,
+      authorEmail: userEmail || "",
+      authorImage: userAvatar || "",
+      text: commentText,
+      time: new Date().toISOString(),
+    };
+
+    // INSTANT 0ms OPTIMISTIC UPDATE: Render comment immediately and clear input
+    setComments((prev) => [optimisticComment, ...prev]);
+    setNewComment("");
+    setActivePrompt(null);
+    setPostSuccess(true);
+    setTimeout(() => setPostSuccess(false), 2500);
+
     setIsPosting(true);
     setPostError(null);
 
@@ -320,7 +339,7 @@ export default function CommunityDiscussion({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           lessonId: topicId,
-          text: newComment.trim(),
+          text: commentText,
           author: effectiveAuthor,
           authorEmail: userEmail || "",
           authorImage: userAvatar || "",
@@ -329,12 +348,12 @@ export default function CommunityDiscussion({
 
       if (res.ok) {
         const posted = await res.json();
-        setComments((prev) => [posted, ...prev]);
-        setNewComment("");
-        setActivePrompt(null);
-        setPostSuccess(true);
-        setTimeout(() => setPostSuccess(false), 3000);
+        // Silently replace temporary ID with permanent DB ID
+        setComments((prev) => prev.map((c) => (c.id === tempId ? posted : c)));
       } else {
+        // Revert on error
+        setComments((prev) => prev.filter((c) => c.id !== tempId));
+        setNewComment(commentText);
         const errData = await res.json().catch(() => ({}));
         if (errData.isProfanity || (errData.error && errData.error.includes("ถ้อยคำที่ไม่เหมาะสม"))) {
           setShowProfanityModal(true);
@@ -343,23 +362,31 @@ export default function CommunityDiscussion({
         }
       }
     } catch (err) {
+      setComments((prev) => prev.filter((c) => c.id !== tempId));
+      setNewComment(commentText);
       setPostError("ไม่สามารถเชื่อมต่อระบบได้ กรุณาลองใหม่อีกครั้ง");
     } finally {
       setIsPosting(false);
     }
   };
 
-  // Delete comment
+  // Delete comment with instant optimistic feedback
   const handleDelete = async (commentId: string) => {
     if (!confirm("คุณต้องการลบความคิดเห็นนี้ใช่หรือไม่?")) return;
+    const previousComments = [...comments];
+    // Instant 0ms removal
+    setComments((prev) => prev.filter((c) => c.id !== commentId));
+
     try {
       const res = await fetch(`/api/comments?id=${encodeURIComponent(commentId)}`, {
         method: "DELETE",
       });
-      if (res.ok) {
-        setComments((prev) => prev.filter((c) => c.id !== commentId));
+      if (!res.ok) {
+        setComments(previousComments);
+        alert("ไม่สามารถลบความคิดเห็นได้ กรุณาลองใหม่อีกครั้ง");
       }
     } catch (err) {
+      setComments(previousComments);
       console.error("Failed to delete comment", err);
     }
   };
