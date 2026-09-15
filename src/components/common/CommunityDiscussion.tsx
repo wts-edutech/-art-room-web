@@ -5,7 +5,7 @@ import Link from "next/link";
 import { 
   MessageSquare, Send, Heart, Reply, Trash2, Sparkles, 
   User, Check, AlertCircle, Loader2, LogIn, MessageCircleHeart,
-  CornerDownRight, Smile
+  CornerDownRight, Smile, Search, GraduationCap, ShieldCheck
 } from "lucide-react";
 import { resolveUserAvatar } from "@/lib/art-avatars";
 
@@ -50,6 +50,7 @@ export default function CommunityDiscussion({
   const [isLoading, setIsLoading] = useState(true);
   const [newComment, setNewComment] = useState("");
   const [selectedTag, setSelectedTag] = useState("ทั้งหมด");
+  const [discussionSearch, setDiscussionSearch] = useState("");
   const [activePrompt, setActivePrompt] = useState<string | null>(null);
   const [isPosting, setIsPosting] = useState(false);
   const [postError, setPostError] = useState<string | null>(null);
@@ -230,11 +231,15 @@ export default function CommunityDiscussion({
     }
   };
 
-  // Reply click
-  const handleReplyClick = (authorName: string) => {
+  // Reply click with context quote
+  const handleReplyClick = (authorName: string, textSnippet?: string) => {
     const mention = `@${authorName} `;
     setNewComment((prev) => {
-      if (prev.includes(mention)) return prev;
+      if (prev.includes(`@${authorName}`)) return prev;
+      if (textSnippet) {
+        const cleanSnippet = textSnippet.replace(/\n+/g, " ").trim().slice(0, 70);
+        return `> @${authorName}: "${cleanSnippet}..."\n\n${mention}${prev}`;
+      }
       return `${mention}${prev}`;
     });
     if (textareaRef.current) {
@@ -242,15 +247,25 @@ export default function CommunityDiscussion({
     }
   };
 
-  // Filtered comments
+  // Filtered comments (by Tag and by Search Keyword)
   const filteredComments = useMemo(() => {
-    if (selectedTag === "ทั้งหมด") return comments;
-    const cleanTag = selectedTag.replace(/^[^\s]+\s*/, "").trim(); // strip emoji prefix
-    return comments.filter((c) => 
-      c.text.toLowerCase().includes(cleanTag.toLowerCase()) || 
-      c.text.toLowerCase().includes(selectedTag.toLowerCase())
-    );
-  }, [comments, selectedTag]);
+    let list = comments;
+    if (selectedTag !== "ทั้งหมด") {
+      const cleanTag = selectedTag.replace(/^[^\s]+\s*/, "").trim(); // strip emoji prefix
+      list = list.filter((c) => 
+        c.text.toLowerCase().includes(cleanTag.toLowerCase()) || 
+        c.text.toLowerCase().includes(selectedTag.toLowerCase())
+      );
+    }
+    if (discussionSearch.trim()) {
+      const q = discussionSearch.toLowerCase();
+      list = list.filter((c) =>
+        c.text.toLowerCase().includes(q) ||
+        c.author.toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [comments, selectedTag, discussionSearch]);
 
   // Color theme classes
   const colorThemes = {
@@ -321,28 +336,51 @@ export default function CommunityDiscussion({
             {subtitle}
           </p>
 
-          {/* Category Filter Pills Bar */}
-          {tags && tags.length > 0 && (
-            <div className="mt-5 pt-4 border-t border-gray-100/80 flex items-center gap-2 overflow-x-auto pb-1.5 scrollbar-none">
-              <span className="text-xs text-gray-400 font-medium shrink-0 mr-1 hidden sm:inline whitespace-nowrap">
-                เลือกหมวดหมู่:
-              </span>
-              {tags.map((tag) => (
+          {/* Category Filter Pills & Discussion Search Bar */}
+          <div className="mt-5 pt-4 border-t border-gray-100/80 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            {tags && tags.length > 0 && (
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 scrollbar-none flex-1">
+                <span className="text-xs text-gray-400 font-medium shrink-0 mr-1 hidden sm:inline whitespace-nowrap">
+                  หมวดหมู่:
+                </span>
+                {tags.map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => setSelectedTag(tag)}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
+                      selectedTag === tag
+                        ? `${theme.badgeBg} shadow-xs scale-102 font-bold`
+                        : "bg-gray-100/90 text-gray-600 hover:bg-gray-200/80 hover:text-gray-900"
+                    }`}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Quick Discussion Search */}
+            <div className="relative shrink-0 sm:w-60">
+              <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={discussionSearch}
+                onChange={(e) => setDiscussionSearch(e.target.value)}
+                placeholder="ค้นหาในกระดานถาม-ตอบ..."
+                className="w-full pl-8 pr-7 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-500 focus:bg-white transition-colors"
+              />
+              {discussionSearch && (
                 <button
-                  key={tag}
                   type="button"
-                  onClick={() => setSelectedTag(tag)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
-                    selectedTag === tag
-                      ? `${theme.badgeBg} shadow-xs scale-102 font-bold`
-                      : "bg-gray-100/90 text-gray-600 hover:bg-gray-200/80 hover:text-gray-900"
-                  }`}
+                  onClick={() => setDiscussionSearch("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs cursor-pointer"
                 >
-                  {tag}
+                  ✕
                 </button>
-              ))}
+              )}
             </div>
-          )}
+          </div>
         </div>
 
         {/* Post Comment Input Box */}
@@ -530,15 +568,24 @@ export default function CommunityDiscussion({
                 (userName && comment.author === userName) ||
                 (userName && comment.author?.startsWith(userName));
 
-              const isStaff =
-                comment.author.includes("(Admin)") ||
+              const isTeacher =
                 comment.author.includes("ครู") ||
-                comment.author.toLowerCase().includes("teacher");
+                comment.author.includes("อาจารย์") ||
+                comment.author.toLowerCase().includes("teacher") ||
+                Boolean(comment.authorEmail && comment.authorEmail.toLowerCase().includes("teacher"));
+
+              const isAdmin =
+                comment.author.includes("(Admin)") ||
+                Boolean(comment.authorEmail && comment.authorEmail.toLowerCase().includes("admin"));
 
               return (
                 <div
                   key={comment.id}
-                  className="group flex gap-3.5 p-4 sm:p-5 rounded-2xl bg-[#FDFDFD] hover:bg-[#F9FAFB] border border-gray-100/90 transition-all duration-200"
+                  className={`group flex gap-3.5 p-4 sm:p-5 rounded-2xl transition-all duration-200 ${
+                    isTeacher 
+                      ? "bg-emerald-50/40 border border-emerald-200/90 shadow-2xs" 
+                      : "bg-[#FDFDFD] hover:bg-[#F9FAFB] border border-gray-100/90"
+                  }`}
                 >
                   {/* Avatar */}
                   <div className="w-10 h-10 rounded-full overflow-hidden bg-white shadow-xs border border-gray-200/80 flex items-center justify-center shrink-0 mt-0.5">
@@ -556,16 +603,22 @@ export default function CommunityDiscussion({
                   <div className="flex-1 min-w-0">
                     {/* Author Meta Row */}
                     <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
-                      <div className="flex items-center gap-2 min-w-0">
+                      <div className="flex items-center gap-2 min-w-0 flex-wrap">
                         <span className="font-bold text-sm text-gray-900 truncate">
                           {comment.author}
                         </span>
 
-                        {isStaff && (
-                          <span className="text-[10px] bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded-md shrink-0">
-                            {comment.author.includes("(Admin)") ? "ผู้ดูแลระบบ" : "คุณครู"}
+                        {isTeacher ? (
+                          <span className="text-[10px] sm:text-[11px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-md border border-emerald-200 shrink-0 flex items-center gap-1 shadow-2xs">
+                            <GraduationCap className="w-3 h-3 text-emerald-700" />
+                            <span>คุณครูผู้สอน</span>
                           </span>
-                        )}
+                        ) : isAdmin ? (
+                          <span className="text-[10px] bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded-md shrink-0 flex items-center gap-1">
+                            <ShieldCheck className="w-3 h-3 text-red-600" />
+                            <span>ผู้ดูแลระบบ</span>
+                          </span>
+                        ) : null}
                       </div>
 
                       <div className="flex items-center gap-3 shrink-0">
@@ -608,11 +661,12 @@ export default function CommunityDiscussion({
                         <span>{likesCount > 0 ? likesCount : "ถูกใจ"}</span>
                       </button>
 
-                      {/* Reply Button */}
+                      {/* Reply Button with Quote */}
                       <button
                         type="button"
-                        onClick={() => handleReplyClick(comment.author)}
+                        onClick={() => handleReplyClick(comment.author, comment.text)}
                         className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gray-100/60 hover:bg-orange-50 hover:text-orange-600 text-gray-500 text-xs font-semibold transition-colors cursor-pointer"
+                        title="อ้างอิงและตอบกลับความคิดเห็นนี้"
                       >
                         <Reply className="w-3.5 h-3.5" />
                         <span>ตอบกลับ</span>

@@ -12,6 +12,7 @@ import {
   Eye, MessageCircle, Bookmark, Heart, Reply
 } from "lucide-react";
 import { resolveUserAvatar } from "@/lib/art-avatars";
+import { isIdeaBookmarked, toggleIdeaBookmark, BOOKMARKS_EVENT } from "@/lib/bookmarks";
 
 interface CommentItem {
   id: string;
@@ -230,7 +231,7 @@ export default function IdeaDetailClient() {
 
     if (id) {
       // Load saved interaction states
-      const savedBookmark = localStorage.getItem(`artroom_idea_bookmark_${id}`) === "true";
+      const savedBookmark = isIdeaBookmarked(id) || localStorage.getItem(`artroom_idea_bookmark_${id}`) === "true";
       const savedStarry = localStorage.getItem(`artroom_idea_starry_${id}`) === "true";
       const savedFlower = localStorage.getItem(`artroom_idea_flower_${id}`) === "true";
       const savedStarryCount = Number(localStorage.getItem(`artroom_idea_starry_count_${id}`)) || 0;
@@ -309,13 +310,19 @@ export default function IdeaDetailClient() {
   };
 
   const handleToggleBookmark = () => {
-    setIsBookmarked((prev) => {
-      const next = !prev;
-      if (id) {
-        localStorage.setItem(`artroom_idea_bookmark_${id}`, String(next));
-      }
-      return next;
+    if (!idea) return;
+    const nowSaved = toggleIdeaBookmark({
+      id: idea.id,
+      title: idea.title,
+      description: idea.description,
+      category: idea.category,
+      authorName: idea.authorName,
+      coverImageUrl: idea.coverImageUrl,
     });
+    setIsBookmarked(nowSaved);
+    if (id) {
+      localStorage.setItem(`artroom_idea_bookmark_${id}`, String(nowSaved));
+    }
   };
 
   const handlePostComment = async (e: React.FormEvent) => {

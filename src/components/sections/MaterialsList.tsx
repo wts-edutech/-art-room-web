@@ -7,9 +7,14 @@ import {
   Search, BookOpen, Video, Image as ImageIcon, Star, Grid, 
   Download, ExternalLink, GraduationCap, FileText, Presentation, 
   Filter, CheckCircle2, ArrowRight, X, Sparkles, Eye, CloudDownload,
-  Loader2, MessageSquare
+  Loader2, MessageSquare, Heart, Bookmark
 } from "lucide-react";
 import { DownloadItem } from "@/data/default-downloads";
+import { 
+  getBookmarkedMaterials, 
+  toggleMaterialBookmark, 
+  BOOKMARKS_EVENT 
+} from "@/lib/bookmarks";
 
 interface MaterialsListProps {
   initialLessons: any[];
@@ -36,6 +41,23 @@ export default function MaterialsList({
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ title: string; message: string; type: "success" | "loading" | "info" } | null>(null);
   const [downloadCounts, setDownloadCounts] = useState<Record<string, number>>({});
+  const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
+
+  const syncBookmarks = () => {
+    const saved = getBookmarkedMaterials();
+    const idSet = new Set<string>();
+    saved.forEach((item) => {
+      idSet.add(item.id);
+      if (item.rawId) idSet.add(item.rawId);
+    });
+    setBookmarkedIds(idSet);
+  };
+
+  useEffect(() => {
+    syncBookmarks();
+    window.addEventListener(BOOKMARKS_EVENT, syncBookmarks);
+    return () => window.removeEventListener(BOOKMARKS_EVENT, syncBookmarks);
+  }, []);
 
   const handleView = (item: any) => {
     setPreviewItem(item);
@@ -145,6 +167,7 @@ export default function MaterialsList({
 
   const categories = [
     { id: "ทั้งหมด", label: "หมวดหมู่ทั้งหมด", icon: <Grid className="w-5 h-5 text-gray-700" /> },
+    { id: "saved", label: "⭐ ที่บันทึกไว้", icon: <Heart className="w-5 h-5 text-rose-500 fill-rose-500" /> },
     { id: "สื่อวิดีทัศน์", label: "สื่อวิดีทัศน์", icon: <Video className="w-5 h-5 text-red-500" /> },
     { id: "ใบงาน", label: "ใบงานและแบบฝึกหัด", icon: <FileText className="w-5 h-5 text-emerald-500" /> },
     { id: "ใบความรู้", label: "ใบความรู้และชีตสรุป", icon: <BookOpen className="w-5 h-5 text-blue-500" /> },
@@ -240,7 +263,10 @@ export default function MaterialsList({
       }
 
       // 4. Category filter
-      if (activeCategory !== "ทั้งหมด") {
+      if (activeCategory === "saved") {
+        const isSaved = bookmarkedIds.has(item.id) || (item.rawId && bookmarkedIds.has(item.rawId));
+        if (!isSaved) return false;
+      } else if (activeCategory !== "ทั้งหมด") {
         if (activeCategory === "ใบงาน" && item.isWorksheet && item.category === "แบบฝึกหัด") {
           // matches
         } else if (item.category !== activeCategory) {
@@ -250,7 +276,7 @@ export default function MaterialsList({
 
       return true;
     });
-  }, [unifiedItems, searchQuery, selectedGrade, selectedMediaType, activeCategory]);
+  }, [unifiedItems, searchQuery, selectedGrade, selectedMediaType, activeCategory, bookmarkedIds]);
 
   return (
     <div className="flex flex-col lg:flex-row gap-8 items-start w-full">
@@ -364,24 +390,45 @@ export default function MaterialsList({
         {/* 3. Unified Feed Grid */}
         {filteredItems.length === 0 ? (
           <div className="text-center py-20 px-4 bg-white rounded-3xl border border-dashed border-gray-200">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400">
-              <Search className="w-8 h-8" />
-            </div>
-            <h4 className="text-base font-bold text-gray-800 mb-1">ไม่พบสื่อการสอนหรือใบงานในหมวดหมู่นี้</h4>
-            <p className="text-xs text-gray-500 max-w-sm mx-auto mb-4">
-              ลองกดเลือกดูระดับชั้นอื่น หรือกดรีเซ็ตตัวกรองเพื่อดูสื่อการสอนทั้งหมด
-            </p>
-            <button
-              onClick={() => {
-                setSelectedGrade("all");
-                setSelectedMediaType("all");
-                setActiveCategory("ทั้งหมด");
-                setSearchQuery("");
-              }}
-              className="px-4 py-2 bg-red-50 text-red-600 font-bold text-xs rounded-xl hover:bg-red-100 transition-colors"
-            >
-              รีเซ็ตตัวกรองทั้งหมด
-            </button>
+            {activeCategory === "saved" ? (
+              <div className="max-w-md mx-auto">
+                <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-4 text-rose-500 shadow-xs">
+                  <Heart className="w-8 h-8 fill-rose-500" />
+                </div>
+                <h4 className="text-lg font-bold text-gray-800 mb-1">ยังไม่มีสื่อการสอนที่บันทึกไว้</h4>
+                <p className="text-xs sm:text-sm text-gray-500 mb-6 leading-relaxed">
+                  คลิกที่ไอคอนหัวใจ ❤️ บนการ์ดสื่อการสอนหรือใบงาน เพื่อบันทึกเก็บไว้ดูหรือดาวน์โหลดได้สะดวกทุกเวลา
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setActiveCategory("ทั้งหมด")}
+                  className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs sm:text-sm rounded-xl transition-all shadow-md shadow-rose-600/20 active:scale-95 cursor-pointer"
+                >
+                  สำรวจสื่อการสอนทั้งหมด
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400">
+                  <Search className="w-8 h-8" />
+                </div>
+                <h4 className="text-base font-bold text-gray-800 mb-1">ไม่พบสื่อการสอนหรือใบงานในหมวดหมู่นี้</h4>
+                <p className="text-xs text-gray-500 max-w-sm mx-auto mb-4">
+                  ลองกดเลือกดูระดับชั้นอื่น หรือกดรีเซ็ตตัวกรองเพื่อดูสื่อการสอนทั้งหมด
+                </p>
+                <button
+                  onClick={() => {
+                    setSelectedGrade("all");
+                    setSelectedMediaType("all");
+                    setActiveCategory("ทั้งหมด");
+                    setSearchQuery("");
+                  }}
+                  className="px-4 py-2 bg-red-50 text-red-600 font-bold text-xs rounded-xl hover:bg-red-100 transition-colors"
+                >
+                  รีเซ็ตตัวกรองทั้งหมด
+                </button>
+              </>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -441,6 +488,52 @@ export default function MaterialsList({
                           </span>
                         )}
                       </div>
+
+                      {/* Floating Bookmark Toggle Button on Thumbnail */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const nowSaved = toggleMaterialBookmark({
+                            id: item.id,
+                            rawId: item.rawId,
+                            title: item.title,
+                            description: item.description,
+                            category: item.category,
+                            topic: item.topic,
+                            grade: item.grade,
+                            mediaType: item.mediaType,
+                            imageUrl: item.imageUrl,
+                            fileUrl: item.fileUrl,
+                            fileName: item.fileName,
+                          });
+                          setToast({
+                            title: nowSaved ? "บันทึกในรายการโปรดแล้ว" : "นำออกจากรายการที่บันทึกแล้ว",
+                            message: item.title,
+                            type: nowSaved ? "success" : "info",
+                          });
+                          setTimeout(() => setToast(null), 2500);
+                        }}
+                        className={`absolute bottom-3 right-3 z-10 w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-md ${
+                          bookmarkedIds.has(item.id) || (item.rawId && bookmarkedIds.has(item.rawId))
+                            ? "bg-rose-500 text-white hover:bg-rose-600 scale-105 ring-2 ring-white"
+                            : "bg-white/90 hover:bg-white text-gray-600 hover:text-rose-500 backdrop-blur-xs"
+                        }`}
+                        title={
+                          bookmarkedIds.has(item.id) || (item.rawId && bookmarkedIds.has(item.rawId))
+                            ? "นำออกจากรายการที่บันทึกไว้"
+                            : "บันทึกไว้ดูภายหลัง"
+                        }
+                      >
+                        <Heart
+                          className={`w-4 h-4 transition-transform ${
+                            bookmarkedIds.has(item.id) || (item.rawId && bookmarkedIds.has(item.rawId))
+                              ? "fill-white text-white scale-110"
+                              : "hover:scale-110"
+                          }`}
+                        />
+                      </button>
                     </div>
 
                     {/* Card Content Area */}
@@ -546,13 +639,59 @@ export default function MaterialsList({
                   {previewItem.title}
                 </h3>
               </div>
-              <button
-                type="button"
-                onClick={() => setPreviewItem(null)}
-                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-800 flex items-center justify-center transition-colors shrink-0 cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nowSaved = toggleMaterialBookmark({
+                      id: previewItem.id,
+                      rawId: previewItem.rawId,
+                      title: previewItem.title,
+                      description: previewItem.description,
+                      category: previewItem.category,
+                      topic: previewItem.topic,
+                      grade: previewItem.grade,
+                      mediaType: previewItem.mediaType,
+                      imageUrl: previewItem.imageUrl,
+                      fileUrl: previewItem.fileUrl,
+                      fileName: previewItem.fileName,
+                    });
+                    setToast({
+                      title: nowSaved ? "บันทึกในรายการโปรดแล้ว" : "นำออกจากรายการที่บันทึกแล้ว",
+                      message: previewItem.title,
+                      type: nowSaved ? "success" : "info",
+                    });
+                    setTimeout(() => setToast(null), 2500);
+                  }}
+                  className={`px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border ${
+                    bookmarkedIds.has(previewItem.id) || (previewItem.rawId && bookmarkedIds.has(previewItem.rawId))
+                      ? "bg-rose-50 text-rose-600 border-rose-200 shadow-2xs"
+                      : "bg-gray-50 hover:bg-gray-100 text-gray-600 border-gray-200"
+                  }`}
+                  title="บันทึกหรือยกเลิกการบันทึกสื่อนี้"
+                >
+                  <Heart
+                    className={`w-3.5 h-3.5 ${
+                      bookmarkedIds.has(previewItem.id) || (previewItem.rawId && bookmarkedIds.has(previewItem.rawId))
+                        ? "fill-rose-500 text-rose-500"
+                        : "text-gray-500"
+                    }`}
+                  />
+                  <span>
+                    {bookmarkedIds.has(previewItem.id) || (previewItem.rawId && bookmarkedIds.has(previewItem.rawId))
+                      ? "บันทึกแล้ว"
+                      : "บันทึก"}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPreviewItem(null)}
+                  className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-800 flex items-center justify-center transition-colors shrink-0 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
             {/* Modal Content */}

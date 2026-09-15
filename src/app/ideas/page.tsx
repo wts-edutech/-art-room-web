@@ -7,7 +7,8 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import StudentVideoShowcase from "@/components/ideas/StudentVideoShowcase";
 import CommunityDiscussion from "@/components/common/CommunityDiscussion";
-import { Lightbulb, Search, Plus, X, Share2, Check, ArrowUpDown, MessageCircle } from "lucide-react";
+import { Lightbulb, Search, Plus, X, Share2, Check, ArrowUpDown, MessageCircle, Heart } from "lucide-react";
+import { getBookmarkedIdeas, toggleIdeaBookmark, BOOKMARKS_EVENT } from "@/lib/bookmarks";
 
 interface IdeaItem {
   id: string;
@@ -35,10 +36,23 @@ export default function IdeasPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showGuestModal, setShowGuestModal] = useState(false);
+  const [savedIdeaIds, setSavedIdeaIds] = useState<Set<string>>(new Set());
   const router = useRouter();
+
+  const syncSavedIdeas = () => {
+    const list = getBookmarkedIdeas();
+    setSavedIdeaIds(new Set(list.map((i) => i.id)));
+  };
+
+  useEffect(() => {
+    syncSavedIdeas();
+    window.addEventListener(BOOKMARKS_EVENT, syncSavedIdeas);
+    return () => window.removeEventListener(BOOKMARKS_EVENT, syncSavedIdeas);
+  }, []);
 
   const categories = [
     "ทั้งหมด",
+    "⭐ บันทึกไว้",
     "ใบงาน",
     "รูปภาพ",
     "กิจกรรม",
@@ -93,6 +107,7 @@ export default function IdeasPage() {
         (idea.authorName || "").toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory =
         selectedCategory === "ทั้งหมด" ||
+        (selectedCategory === "⭐ บันทึกไว้" && savedIdeaIds.has(idea.id)) ||
         idea.category === selectedCategory ||
         (!idea.category && selectedCategory === "ทั่วไป");
       return matchesSearch && matchesCategory;
@@ -107,7 +122,7 @@ export default function IdeasPage() {
       // Latest default
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
-  }, [ideas, searchTerm, selectedCategory, sortBy]);
+  }, [ideas, searchTerm, selectedCategory, sortBy, savedIdeaIds]);
 
 
   return (
@@ -251,17 +266,27 @@ export default function IdeasPage() {
             ) : filteredAndSortedIdeas.length === 0 ? (
               <div className="bg-white rounded-3xl p-12 text-center shadow-sm border border-gray-100 max-w-xl mx-auto">
                 <div className="w-16 h-16 bg-orange-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-orange-400">
-                  <Lightbulb className="w-8 h-8" />
+                  {selectedCategory === "⭐ บันทึกไว้" ? (
+                    <Heart className="w-8 h-8 fill-rose-500 text-rose-500" />
+                  ) : (
+                    <Lightbulb className="w-8 h-8" />
+                  )}
                 </div>
-                <h3 className="text-xl font-bold text-gray-800 mb-2">ไม่พบไอเดียในหมวดหมู่นี้</h3>
+                <h3 className="text-xl font-bold text-gray-800 mb-2">
+                  {selectedCategory === "⭐ บันทึกไว้" ? "ยังไม่มีไอเดียที่บันทึกไว้" : "ไม่พบไอเดียในหมวดหมู่นี้"}
+                </h3>
                 <p className="text-gray-500 text-sm mb-6">
-                  {searchTerm ? "ลองค้นหาด้วยคำอื่น หรือเลือกหมวดหมู่อื่นดูนะ" : "ยังไม่มีไอเดียในหมวดหมู่นี้ ร่วมเป็นคนแรกที่แบ่งปันไอเดียดีๆ กันเลย!"}
+                  {selectedCategory === "⭐ บันทึกไว้"
+                    ? "คุณสามารถคลิกที่ไอคอนหัวใจ ❤️ บนการ์ดไอเดียเพื่อบันทึกผลงานหรือแรงบันดาลใจที่ชอบไว้ดูภายหลังได้"
+                    : searchTerm
+                      ? "ลองค้นหาด้วยคำอื่น หรือเลือกหมวดหมู่อื่นดูนะ"
+                      : "ยังไม่มีไอเดียในหมวดหมู่นี้ ร่วมเป็นคนแรกที่แบ่งปันไอเดียดีๆ กันเลย!"}
                 </p>
                 <button
-                  onClick={handleShareClick}
-                  className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-xl transition-all shadow-sm"
+                  onClick={selectedCategory === "⭐ บันทึกไว้" ? () => setSelectedCategory("ทั้งหมด") : handleShareClick}
+                  className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-xl transition-all shadow-sm cursor-pointer"
                 >
-                  + แบ่งปันไอเดียตอนนี้
+                  {selectedCategory === "⭐ บันทึกไว้" ? "ดูไอเดียทั้งหมด" : "+ แบ่งปันไอเดียตอนนี้"}
                 </button>
               </div>
             ) : (
@@ -272,23 +297,26 @@ export default function IdeasPage() {
                     : (Array.isArray(idea.comments) ? idea.comments.length : 0);
                   const filesCount = Array.isArray(idea.files) ? idea.files.length : 0;
                   const isCopied = copiedId === idea.id;
+                  const isIdeaSaved = savedIdeaIds.has(idea.id);
 
                   return (
                     <div 
                       key={idea.id} 
                       className="group flex flex-col bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl border border-gray-100/80 transition-all duration-300 hover:-translate-y-1.5"
                     >
-                      <Link href={`/ideas/detail?id=${idea.id}`} className="block relative aspect-[4/3] w-full bg-gray-100 overflow-hidden">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img 
-                          src={idea.coverImageUrl || "https://placehold.co/800x600/FFF7ED/EA580C?text=Art+Idea"} 
-                          alt={idea.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          onError={(e) => (e.currentTarget.src = "https://placehold.co/800x600/FFF7ED/EA580C?text=Art+Idea")}
-                        />
+                      <div className="relative aspect-[4/3] w-full bg-gray-100 overflow-hidden">
+                        <Link href={`/ideas/detail?id=${idea.id}`} className="block w-full h-full">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img 
+                            src={idea.coverImageUrl || "https://placehold.co/800x600/FFF7ED/EA580C?text=Art+Idea"} 
+                            alt={idea.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            onError={(e) => (e.currentTarget.src = "https://placehold.co/800x600/FFF7ED/EA580C?text=Art+Idea")}
+                          />
+                        </Link>
                         
                         {/* Badges on Cover */}
-                        <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
+                        <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 pointer-events-none">
                           {idea.category && (
                             <span className="bg-white/95 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-orange-600 shadow-sm border border-orange-100">
                               {idea.category}
@@ -297,11 +325,40 @@ export default function IdeasPage() {
                         </div>
 
                         {filesCount > 0 && (
-                          <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full text-xs font-semibold text-white shadow-sm flex items-center gap-1">
+                          <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full text-xs font-semibold text-white shadow-sm flex items-center gap-1 pointer-events-none">
                             📎 {filesCount} ไฟล์
                           </div>
                         )}
-                      </Link>
+
+                        {/* Floating Bookmark Button */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            toggleIdeaBookmark({
+                              id: idea.id,
+                              title: idea.title,
+                              description: idea.description,
+                              category: idea.category,
+                              authorName: idea.authorName,
+                              coverImageUrl: idea.coverImageUrl,
+                            });
+                          }}
+                          className={`absolute bottom-3 right-3 z-20 w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-md ${
+                            isIdeaSaved
+                              ? "bg-rose-500 text-white hover:bg-rose-600 scale-105 ring-2 ring-white"
+                              : "bg-white/90 hover:bg-white text-gray-600 hover:text-rose-500 backdrop-blur-xs"
+                          }`}
+                          title={isIdeaSaved ? "นำออกจากไอเดียที่บันทึกไว้" : "บันทึกไอเดียนี้"}
+                        >
+                          <Heart
+                            className={`w-4 h-4 transition-transform ${
+                              isIdeaSaved ? "fill-white text-white scale-110" : "hover:scale-110"
+                            }`}
+                          />
+                        </button>
+                      </div>
                       
                       <div className="p-6 flex-1 flex flex-col justify-between">
                         <div>

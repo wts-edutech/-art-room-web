@@ -10,8 +10,18 @@ import { resolveUserAvatar } from "@/lib/art-avatars";
 import { 
   User, Settings, GraduationCap, Phone, Mail, 
   ShieldCheck, Sparkles, BookOpen, Lightbulb, Heart, 
-  Share2, ArrowRight, LogOut, ChevronRight
+  Share2, ArrowRight, LogOut, ChevronRight, Bookmark,
+  Download, Trash2
 } from "lucide-react";
+import { 
+  getBookmarkedMaterials, 
+  getBookmarkedIdeas, 
+  removeMaterialBookmark, 
+  removeIdeaBookmark, 
+  BOOKMARKS_EVENT,
+  BookmarkedMaterial,
+  BookmarkedIdea
+} from "@/lib/bookmarks";
 
 export default function ProfilePageClient() {
   const router = useRouter();
@@ -26,6 +36,14 @@ export default function ProfilePageClient() {
   const [studentId, setStudentId] = useState<string>("");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [savedMaterials, setSavedMaterials] = useState<BookmarkedMaterial[]>([]);
+  const [savedIdeas, setSavedIdeas] = useState<BookmarkedIdea[]>([]);
+  const [activeCollectionTab, setActiveCollectionTab] = useState<"materials" | "ideas">("materials");
+
+  const loadBookmarks = () => {
+    setSavedMaterials(getBookmarkedMaterials());
+    setSavedIdeas(getBookmarkedIdeas());
+  };
 
   const loadProfile = () => {
     const name = localStorage.getItem("artroom_author_name") || "";
@@ -56,8 +74,13 @@ export default function ProfilePageClient() {
 
   useEffect(() => {
     loadProfile();
+    loadBookmarks();
     window.addEventListener("artroom_profile_updated", loadProfile);
-    return () => window.removeEventListener("artroom_profile_updated", loadProfile);
+    window.addEventListener(BOOKMARKS_EVENT, loadBookmarks);
+    return () => {
+      window.removeEventListener("artroom_profile_updated", loadProfile);
+      window.removeEventListener(BOOKMARKS_EVENT, loadBookmarks);
+    };
   }, []);
 
   const resolvedAvatar = resolveUserAvatar(avatarValue, userName);
@@ -265,6 +288,209 @@ export default function ProfilePageClient() {
                 </Link>
               </div>
             </div>
+          </div>
+
+          {/* My Saved Collection (คลังที่บันทึกไว้ของฉัน) */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200/80 shadow-xs space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+                  <Heart className="w-5 h-5 fill-rose-500 text-rose-500" />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold text-gray-900">
+                    คลังที่บันทึกไว้ของฉัน
+                  </h3>
+                  <p className="text-xs text-gray-500 font-light">
+                    รวบรวมสื่อการสอน ใบงาน และไอเดียสร้างสรรค์ที่คุณกดบันทึกไว้
+                  </p>
+                </div>
+              </div>
+
+              {/* Collection Tabs Switcher */}
+              <div className="flex items-center gap-1.5 bg-gray-100/80 p-1 rounded-2xl self-start sm:self-auto">
+                <button
+                  type="button"
+                  onClick={() => setActiveCollectionTab("materials")}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    activeCollectionTab === "materials"
+                      ? "bg-white text-gray-900 shadow-2xs"
+                      : "text-gray-500 hover:text-gray-800"
+                  }`}
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  <span>สื่อการสอน</span>
+                  <span className="px-1.5 py-0.2 rounded-full bg-rose-100 text-rose-700 text-[10px]">
+                    {savedMaterials.length}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveCollectionTab("ideas")}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    activeCollectionTab === "ideas"
+                      ? "bg-white text-gray-900 shadow-2xs"
+                      : "text-gray-500 hover:text-gray-800"
+                  }`}
+                >
+                  <Lightbulb className="w-3.5 h-3.5" />
+                  <span>ไอเดียศิลปะ</span>
+                  <span className="px-1.5 py-0.2 rounded-full bg-orange-100 text-orange-700 text-[10px]">
+                    {savedIdeas.length}
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            {/* Tab 1: Saved Materials */}
+            {activeCollectionTab === "materials" && (
+              <div>
+                {savedMaterials.length === 0 ? (
+                  <div className="py-12 text-center rounded-2xl border border-dashed border-gray-200 bg-gray-50/50 p-6">
+                    <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-400 flex items-center justify-center mx-auto mb-3">
+                      <Heart className="w-6 h-6" />
+                    </div>
+                    <p className="text-sm font-bold text-gray-800 mb-1">ยังไม่มีสื่อการสอนที่บันทึกไว้</p>
+                    <p className="text-xs text-gray-500 mb-4 max-w-sm mx-auto font-light">
+                      เมื่อคุณพบบทเรียน วิดีโอสอน หรือใบงานที่สนใจ สามารถกดบันทึกเพื่อเก็บไว้ดูในหน้านี้ได้
+                    </p>
+                    <Link
+                      href="/materials"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all shadow-sm shadow-rose-600/20"
+                    >
+                      <span>สำรวจคลังสื่อการสอน</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {savedMaterials.map((item) => (
+                      <div
+                        key={item.id}
+                        className="group flex flex-col justify-between bg-white rounded-2xl border border-gray-200/80 hover:border-rose-200 hover:shadow-md transition-all overflow-hidden p-4"
+                      >
+                        <div className="space-y-2.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-100">
+                              {item.category || "สื่อการสอน"}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => removeMaterialBookmark(item.id)}
+                              className="text-gray-400 hover:text-red-500 p-1 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                              title="ลบออกจากรายการที่บันทึก"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+
+                          <h4 className="text-sm font-bold text-gray-900 line-clamp-2 leading-snug group-hover:text-rose-600 transition-colors">
+                            {item.title}
+                          </h4>
+
+                          {item.description && (
+                            <p className="text-xs text-gray-500 line-clamp-2 font-light">
+                              {item.description}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="pt-3 border-t border-gray-100 mt-3 flex items-center justify-between gap-2">
+                          <Link
+                            href={item.rawId ? `/materials/detail?id=${item.rawId}` : "/materials"}
+                            className="inline-flex items-center gap-1 text-xs font-bold text-rose-600 hover:text-rose-700 transition-colors"
+                          >
+                            <span>เข้าสู่บทเรียน</span>
+                            <ArrowRight className="w-3 h-3" />
+                          </Link>
+
+                          {item.fileUrl && (
+                            <a
+                              href={item.fileUrl}
+                              download={item.fileName || "material.pdf"}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
+                              title="ดาวน์โหลดเอกสาร"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Tab 2: Saved Ideas */}
+            {activeCollectionTab === "ideas" && (
+              <div>
+                {savedIdeas.length === 0 ? (
+                  <div className="py-12 text-center rounded-2xl border border-dashed border-gray-200 bg-gray-50/50 p-6">
+                    <div className="w-12 h-12 rounded-full bg-orange-50 text-orange-400 flex items-center justify-center mx-auto mb-3">
+                      <Lightbulb className="w-6 h-6" />
+                    </div>
+                    <p className="text-sm font-bold text-gray-800 mb-1">ยังไม่มีไอเดียที่บันทึกไว้</p>
+                    <p className="text-xs text-gray-500 mb-4 max-w-sm mx-auto font-light">
+                      เมื่อพบไอเดียศิลปะหรือชิ้นงานสร้างสรรค์ที่ชอบ สามารถกดหัวใจเพื่อบันทึกไว้ในหน้านี้
+                    </p>
+                    <Link
+                      href="/ideas"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold transition-all shadow-sm shadow-orange-600/20"
+                    >
+                      <span>สำรวจไอเดียศิลปะ</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {savedIdeas.map((idea) => (
+                      <div
+                        key={idea.id}
+                        className="group flex flex-col justify-between bg-white rounded-2xl border border-gray-200/80 hover:border-orange-200 hover:shadow-md transition-all overflow-hidden p-4"
+                      >
+                        <div className="space-y-2.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-orange-50 text-orange-700 border border-orange-100">
+                              {idea.category || "ไอเดียศิลปะ"}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => removeIdeaBookmark(idea.id)}
+                              className="text-gray-400 hover:text-red-500 p-1 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                              title="ลบออกจากรายการที่บันทึก"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+
+                          <h4 className="text-sm font-bold text-gray-900 line-clamp-2 leading-snug group-hover:text-orange-600 transition-colors">
+                            {idea.title}
+                          </h4>
+
+                          <p className="text-xs text-gray-500 line-clamp-2 font-light">
+                            โดย: {idea.authorName}
+                          </p>
+                        </div>
+
+                        <div className="pt-3 border-t border-gray-100 mt-3 flex items-center justify-between gap-2">
+                          <Link
+                            href={`/ideas/detail?id=${idea.id}`}
+                            className="inline-flex items-center gap-1 text-xs font-bold text-orange-600 hover:text-orange-700 transition-colors"
+                          >
+                            <span>ดูรายละเอียด</span>
+                            <ArrowRight className="w-3 h-3" />
+                          </Link>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

@@ -4,12 +4,17 @@ import { useState, useEffect } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { User, MessageSquare, ArrowLeft, Eye, Star, Mail, Download } from "lucide-react";
+import { User, MessageSquare, ArrowLeft, Eye, Star, Mail, Download, Heart, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import CommunityDiscussion from "@/components/common/CommunityDiscussion";
 import { DEFAULT_DOWNLOADS } from "@/data/default-downloads";
+import { 
+  isMaterialBookmarked, 
+  toggleMaterialBookmark, 
+  BOOKMARKS_EVENT 
+} from "@/lib/bookmarks";
 
 export default function LessonDetailPage() {
   const searchParams = useSearchParams();
@@ -24,6 +29,8 @@ export default function LessonDetailPage() {
   const [isPosting, setIsPosting] = useState(false);
   const [hasRated, setHasRated] = useState(false);
   const [hoveredStar, setHoveredStar] = useState(0);
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [toast, setToast] = useState<{ title: string; message: string; type: "success" | "info" } | null>(null);
   
   const [authorName, setAuthorName] = useState("");
   const [authorEmail, setAuthorEmail] = useState("");
@@ -99,6 +106,20 @@ export default function LessonDetailPage() {
     };
     fetchData();
   }, [id, router]);
+
+  useEffect(() => {
+    if (!lesson) return;
+    const isSaved = isMaterialBookmarked(lesson.id) || (lesson.rawId ? isMaterialBookmarked(lesson.rawId) : false);
+    setIsBookmarked(isSaved);
+
+    const handleUpdate = () => {
+      const updated = isMaterialBookmarked(lesson.id) || (lesson.rawId ? isMaterialBookmarked(lesson.rawId) : false);
+      setIsBookmarked(updated);
+    };
+
+    window.addEventListener(BOOKMARKS_EVENT, handleUpdate);
+    return () => window.removeEventListener(BOOKMARKS_EVENT, handleUpdate);
+  }, [lesson]);
 
   const handlePostComment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -181,7 +202,18 @@ export default function LessonDetailPage() {
     <>
       <Navbar />
       <ProtectedRoute studentOnly={true}>
-        <main className="flex-1 flex flex-col pt-24 pb-24 bg-gray-50/50 min-h-screen">
+        <main className="flex-1 flex flex-col pt-24 pb-24 bg-gray-50/50 min-h-screen relative">
+          {/* Toast Notification */}
+          {toast && (
+            <div className="fixed bottom-6 right-6 z-50 bg-gray-900 text-white px-5 py-3.5 rounded-2xl shadow-xl border border-gray-800 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-5 duration-200">
+              <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+              <div>
+                <p className="text-xs font-bold">{toast.title}</p>
+                <p className="text-[11px] text-gray-300 font-normal truncate max-w-xs">{toast.message}</p>
+              </div>
+            </div>
+          )}
+
           <div className="container mx-auto px-4 sm:px-6 max-w-4xl">
             
             {/* Breadcrumb */}
@@ -228,27 +260,74 @@ export default function LessonDetailPage() {
                   {lesson.title}
                 </h1>
                 
-                {(lesson.fileUrl || lesson.pdfUrl) && (
-                  <div className="mb-6 flex items-center gap-3 flex-wrap">
-                    <a 
-                      href={lesson.pdfUrl || lesson.fileUrl} 
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-sm rounded-xl shadow-xs transition-all cursor-pointer"
-                    >
-                      <Eye className="w-4 h-4 text-gray-600" /> ดูพรีวิว
-                    </a>
-                    <a 
-                      href={lesson.pdfUrl || lesson.fileUrl} 
-                      download={lesson.attachmentName || "art-material.pdf"} 
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-sm rounded-xl shadow-sm shadow-red-500/20 transition-all hover:-translate-y-0.5 cursor-pointer"
-                    >
-                      <Download className="w-4 h-4" /> ดาวน์โหลดเอกสาร
-                    </a>
-                  </div>
-                )}
+                {/* Action Bar (Bookmark, Preview, Download, Q&A) */}
+                <div className="mb-6 flex items-center gap-3 flex-wrap">
+                  {/* Bookmark Button */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const nowSaved = toggleMaterialBookmark({
+                        id: lesson.id,
+                        rawId: lesson.rawId,
+                        title: lesson.title,
+                        description: lesson.description,
+                        category: lesson.category,
+                        topic: lesson.topic,
+                        grade: lesson.grade || lesson.type,
+                        mediaType: lesson.mediaType,
+                        imageUrl: lesson.imageUrl,
+                        fileUrl: lesson.fileUrl || lesson.pdfUrl,
+                        fileName: lesson.attachmentName,
+                      });
+                      setIsBookmarked(nowSaved);
+                      setToast({
+                        title: nowSaved ? "บันทึกในรายการโปรดแล้ว" : "นำออกจากรายการที่บันทึกแล้ว",
+                        message: lesson.title,
+                        type: nowSaved ? "success" : "info",
+                      });
+                      setTimeout(() => setToast(null), 2500);
+                    }}
+                    className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm shadow-2xs transition-all cursor-pointer border ${
+                      isBookmarked
+                        ? "bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100 shadow-sm"
+                        : "bg-white hover:bg-gray-100 text-gray-700 border-gray-200"
+                    }`}
+                  >
+                    <Heart className={`w-4 h-4 transition-transform ${isBookmarked ? "fill-rose-500 text-rose-500 scale-110" : "text-gray-500"}`} />
+                    <span>{isBookmarked ? "บันทึกบทเรียนแล้ว" : "บันทึกบทเรียนนี้"}</span>
+                  </button>
+
+                  {/* Jump to QA */}
+                  <a 
+                    href="#comments"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-orange-50 hover:bg-orange-100 text-orange-700 font-bold text-sm rounded-xl border border-orange-200/80 shadow-2xs transition-all cursor-pointer"
+                  >
+                    <MessageSquare className="w-4 h-4 text-orange-600" />
+                    <span>ถาม-ตอบบทเรียน</span>
+                  </a>
+
+                  {(lesson.fileUrl || lesson.pdfUrl) && (
+                    <>
+                      <a 
+                        href={lesson.pdfUrl || lesson.fileUrl} 
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-sm rounded-xl shadow-xs transition-all cursor-pointer"
+                      >
+                        <Eye className="w-4 h-4 text-gray-600" /> ดูพรีวิว
+                      </a>
+                      <a 
+                        href={lesson.pdfUrl || lesson.fileUrl} 
+                        download={lesson.attachmentName || "art-material.pdf"} 
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-sm rounded-xl shadow-sm shadow-red-500/20 transition-all hover:-translate-y-0.5 cursor-pointer"
+                      >
+                        <Download className="w-4 h-4" /> ดาวน์โหลดเอกสาร
+                      </a>
+                    </>
+                  )}
+                </div>
                 
                 {/* Metrics & Rating */}
                 <div className="flex flex-wrap items-center gap-6 mb-8 bg-gray-50 p-4 rounded-2xl border border-gray-100">
