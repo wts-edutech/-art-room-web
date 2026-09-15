@@ -1,15 +1,97 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import { ArrowLeft, Image as ImageIcon, FileText, Upload, Plus, X, CheckCircle, AlertCircle, Sparkles, Video, Palette, ListOrdered } from "lucide-react";
+import { ArrowLeft, Image as ImageIcon, FileText, Upload, Plus, X, CheckCircle, AlertCircle, Sparkles, Video, Palette, ListOrdered, ChevronDown, Check } from "lucide-react";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 const MAX_COVER_SIZE = 5 * 1024 * 1024; // 5 MB
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+
+interface CategoryOption {
+  value: string;
+  label: string;
+  subtitle: string;
+  emoji: string;
+  tag?: string;
+  tagColor?: string;
+  iconBg: string;
+}
+
+const CATEGORY_OPTIONS: CategoryOption[] = [
+  {
+    value: "ทั่วไป",
+    label: "ทั่วไป",
+    subtitle: "เรื่องราวทั่วไป ข้อคิดเห็น และเนื้อหาศิลปะทั่วไป",
+    emoji: "💡",
+    iconBg: "bg-amber-100 text-amber-700",
+  },
+  {
+    value: "วิธีทำ",
+    label: "วิธีทำ DIY / ขั้นตอนการสร้างสรรค์",
+    subtitle: "งานประดิษฐ์ สาธิตวิธีทำทีละขั้นตอน และเทคนิคศิลปะ",
+    emoji: "🎨",
+    tag: "ยอดนิยม",
+    tagColor: "bg-rose-100 text-rose-700 border-rose-200",
+    iconBg: "bg-rose-100 text-rose-700",
+  },
+  {
+    value: "วีดีโอ",
+    label: "วิดีทัศน์ / คลิปผลงาน",
+    subtitle: "คลิปวิดีโอสาธิต ไทม์แลปส์ผลงาน หรือคลิปรีวิว",
+    emoji: "🎥",
+    tag: "วิดีโอ HD",
+    tagColor: "bg-purple-100 text-purple-700 border-purple-200",
+    iconBg: "bg-purple-100 text-purple-700",
+  },
+  {
+    value: "โปรเจกต์",
+    label: "โปรเจกต์สร้างสรรค์นักเรียน",
+    subtitle: "ผลงานชิ้นเอก โครงงานศิลปะ และนิทรรศการสร้างสรรค์",
+    emoji: "✨",
+    tag: "แนะนำ",
+    tagColor: "bg-amber-100 text-amber-800 border-amber-200",
+    iconBg: "bg-amber-100 text-amber-700",
+  },
+  {
+    value: "ใบงาน",
+    label: "ใบงานและแบบฝึกหัด",
+    subtitle: "เอกสารสำหรับดาวน์โหลด พิมพ์แจก และแบบฝึกปฏิบัติต่างๆ",
+    emoji: "📄",
+    iconBg: "bg-blue-100 text-blue-700",
+  },
+  {
+    value: "รูปภาพ",
+    label: "รูปภาพและผลงาน",
+    subtitle: "ภาพวาด ลายเส้น งานจิตรกรรม และแกลเลอรีภาพถ่าย",
+    emoji: "🖼️",
+    iconBg: "bg-emerald-100 text-emerald-700",
+  },
+  {
+    value: "กิจกรรม",
+    label: "กิจกรรมสร้างสรรค์",
+    subtitle: "กิจกรรมกลุ่ม เวิร์กช็อป และการทดลองในห้องเรียน",
+    emoji: "🎭",
+    iconBg: "bg-fuchsia-100 text-fuchsia-700",
+  },
+  {
+    value: "สื่อการสอน",
+    label: "สื่อและบทเรียน",
+    subtitle: "สไลด์การสอน สื่อประกอบบทเรียน และคู่มือการเรียนรู้",
+    emoji: "📚",
+    iconBg: "bg-indigo-100 text-indigo-700",
+  },
+  {
+    value: "เกมส์",
+    label: "เกมและการเรียนรู้",
+    subtitle: "เกมศิลปะ ควิซทายภาพ และกิจกรรมเชิงโต้ตอบแสนสนุก",
+    emoji: "🎮",
+    iconBg: "bg-orange-100 text-orange-700",
+  },
+];
 
 export default function NewIdeaPage() {
   const router = useRouter();
@@ -20,6 +102,8 @@ export default function NewIdeaPage() {
   const [materialsInput, setMaterialsInput] = useState("");
   const [stepsInput, setStepsInput] = useState("");
   const [category, setCategory] = useState("ทั่วไป");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
   const [files, setFiles] = useState<File[]>([]);
@@ -53,6 +137,27 @@ export default function NewIdeaPage() {
       setCoverPreviewUrl(null);
     }
   }, [coverImage]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
+  const currentOption = CATEGORY_OPTIONS.find((c) => c.value === category) || CATEGORY_OPTIONS[0];
 
   const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setErrorMsg("");
@@ -215,24 +320,167 @@ export default function NewIdeaPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-gray-800 mb-2">
-                    หมวดหมู่สื่อ / กิจกรรม <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className="w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 outline-none transition-all bg-white text-gray-800 font-medium cursor-pointer"
-                  >
-                    <option value="ทั่วไป">ทั่วไป</option>
-                    <option value="วิธีทำ">🎨 วิธีทำ DIY / ขั้นตอนการสร้างสรรค์</option>
-                    <option value="วีดีโอ">🎥 วิดีทัศน์ / คลิปผลงาน</option>
-                    <option value="โปรเจกต์">✨ โปรเจกต์สร้างสรรค์นักเรียน</option>
-                    <option value="ใบงาน">ใบงานและแบบฝึกหัด</option>
-                    <option value="รูปภาพ">รูปภาพและผลงาน</option>
-                    <option value="กิจกรรม">กิจกรรมสร้างสรรค์</option>
-                    <option value="สื่อการสอน">สื่อและบทเรียน</option>
-                    <option value="เกมส์">เกมและการเรียนรู้</option>
-                  </select>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-bold text-gray-800">
+                      หมวดหมู่สื่อ / กิจกรรม <span className="text-red-500">*</span>
+                    </label>
+                    <span className="text-xs text-orange-600 font-medium hidden sm:flex items-center gap-1">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      เลือกประเภทผลงานที่ตรงใจ
+                    </span>
+                  </div>
+
+                  {/* Custom Creative Dropdown */}
+                  <div className="relative" ref={dropdownRef}>
+                    <button
+                      type="button"
+                      id="category-dropdown-trigger"
+                      onClick={() => setIsDropdownOpen((prev) => !prev)}
+                      aria-haspopup="listbox"
+                      aria-expanded={isDropdownOpen}
+                      className={`w-full min-h-[58px] px-4 py-2.5 rounded-2xl border text-left flex items-center justify-between gap-3 transition-all duration-200 bg-white ${
+                        isDropdownOpen
+                          ? "border-orange-500 ring-4 ring-orange-500/15 shadow-lg shadow-orange-500/10"
+                          : "border-gray-200 hover:border-orange-400 hover:shadow-xs"
+                      }`}
+                    >
+                      {/* Current Selected Option Display */}
+                      <div className="flex items-center gap-3.5 min-w-0">
+                        <div
+                          className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 ${currentOption.iconBg} shadow-xs`}
+                        >
+                          {currentOption.emoji}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-gray-900 text-sm sm:text-base leading-tight truncate">
+                              {currentOption.label}
+                            </span>
+                            {currentOption.tag && (
+                              <span
+                                className={`text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-full border ${currentOption.tagColor}`}
+                              >
+                                {currentOption.tag}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-500 font-light truncate mt-0.5">
+                            {currentOption.subtitle}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Right Indicator / Chevron */}
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="hidden sm:inline-block text-xs font-semibold text-orange-600 bg-orange-50 px-2.5 py-1 rounded-lg border border-orange-200/70">
+                          เลือกหมวด
+                        </span>
+                        <div
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100 text-gray-600 transition-transform duration-200 ${
+                            isDropdownOpen ? "rotate-180 bg-orange-100 text-orange-600" : ""
+                          }`}
+                        >
+                          <ChevronDown className="w-4 h-4" />
+                        </div>
+                      </div>
+                    </button>
+
+                    {/* Custom Animated Dropdown Menu Panel */}
+                    {isDropdownOpen && (
+                      <div
+                        className="absolute left-0 right-0 top-full mt-2 z-40 bg-white/95 backdrop-blur-md rounded-2xl border border-orange-200/90 shadow-2xl shadow-orange-950/15 p-2 animate-in fade-in zoom-in-95 duration-150"
+                        role="listbox"
+                      >
+                        {/* Header inside popup */}
+                        <div className="flex items-center justify-between px-3 py-2 mb-1 border-b border-gray-100">
+                          <div className="flex items-center gap-1.5 text-xs font-bold text-gray-700">
+                            <Sparkles className="w-3.5 h-3.5 text-orange-500" />
+                            <span>เลือกหมวดหมู่ที่เหมาะสมกับผลงานของคุณ</span>
+                          </div>
+                          <span className="text-[11px] font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md">
+                            {CATEGORY_OPTIONS.length} หมวดหมู่
+                          </span>
+                        </div>
+
+                        {/* Options List */}
+                        <div className="max-h-72 overflow-y-auto space-y-1.5 pr-1 scrollbar-thin scrollbar-thumb-orange-200 scrollbar-track-transparent">
+                          {CATEGORY_OPTIONS.map((opt) => {
+                            const isSelected = category === opt.value;
+                            return (
+                              <button
+                                key={opt.value}
+                                type="button"
+                                role="option"
+                                aria-selected={isSelected}
+                                onClick={() => {
+                                  setCategory(opt.value);
+                                  setIsDropdownOpen(false);
+                                }}
+                                className={`w-full text-left p-2.5 rounded-xl flex items-center justify-between gap-3 transition-all duration-150 group ${
+                                  isSelected
+                                    ? "bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-orange-500/5 border border-orange-300/80 shadow-xs"
+                                    : "hover:bg-orange-50/60 border border-transparent hover:border-orange-200/60 hover:translate-x-1"
+                                }`}
+                              >
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <div
+                                    className={`w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0 ${opt.iconBg} transition-transform group-hover:scale-110 shadow-xs`}
+                                  >
+                                    {opt.emoji}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <span
+                                        className={`text-sm font-bold leading-tight truncate ${
+                                          isSelected
+                                            ? "text-orange-950"
+                                            : "text-gray-800 group-hover:text-orange-600"
+                                        }`}
+                                      >
+                                        {opt.label}
+                                      </span>
+                                      {opt.tag && (
+                                        <span
+                                          className={`text-[10px] font-bold px-1.5 py-0.2 rounded border ${opt.tagColor}`}
+                                        >
+                                          {opt.tag}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <p className="text-xs text-gray-500 font-light truncate mt-0.5">
+                                      {opt.subtitle}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <div className="shrink-0 pl-2">
+                                  {isSelected ? (
+                                    <div className="w-6 h-6 rounded-full bg-orange-500 text-white flex items-center justify-center shadow-xs">
+                                      <Check className="w-3.5 h-3.5 stroke-[3]" />
+                                    </div>
+                                  ) : (
+                                    <div className="w-5 h-5 rounded-full border border-gray-200 group-hover:border-orange-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                  )}
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {/* Footer hint */}
+                        <div className="mt-2 pt-2 border-t border-gray-100 px-3 flex items-center justify-between text-[11px] text-gray-400">
+                          <span>💡 ช่วยให้เพื่อนครูและนักเรียนค้นพบผลงานได้ง่ายขึ้น</span>
+                          <button
+                            type="button"
+                            onClick={() => setIsDropdownOpen(false)}
+                            className="text-gray-500 hover:text-gray-700 font-semibold hover:underline"
+                          >
+                            ปิด
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Video URL Input (Inspiring Young Creators) */}
