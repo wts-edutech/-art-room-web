@@ -2,13 +2,12 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import MaterialsList from "@/components/sections/MaterialsList";
 import GuestBlockModal from "@/components/modals/GuestBlockModal";
-import CommunityDiscussion from "@/components/common/CommunityDiscussion";
 import { getDb } from "@/db";
 import { lessons } from "@/db/schema";
 import { desc } from "drizzle-orm";
 import { DEFAULT_DOWNLOADS, DownloadItem } from "@/data/default-downloads";
 import { Suspense } from "react";
-import { Sparkles, BookOpen, FileText, MessageSquare, ChevronDown } from "lucide-react";
+import { Sparkles, BookOpen, FileText } from "lucide-react";
 import { getSession, checkIsAdmin } from "@/lib/api-auth";
 import { redirect } from "next/navigation";
 
@@ -99,7 +98,7 @@ export default async function MaterialsPage() {
               </p>
 
               {/* Stats Counters */}
-              <div className="grid grid-cols-2 gap-4 sm:gap-6 max-w-sm mx-auto mb-6">
+              <div className="grid grid-cols-2 gap-4 sm:gap-6 max-w-sm mx-auto">
                 <div className="bg-white/90 backdrop-blur-md p-4 rounded-2xl border border-gray-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 text-center">
                   <div className="flex items-center justify-center gap-1.5 text-xs text-gray-500 font-semibold mb-1">
                     <BookOpen className="w-3.5 h-3.5 text-red-500" />
@@ -118,28 +117,12 @@ export default async function MaterialsPage() {
                   <p className="text-2xl sm:text-3xl font-black text-emerald-600 tracking-tight">{totalDownloads}</p>
                 </div>
               </div>
-
-              {/* Jump to Discussion Shortcut */}
-              <div className="flex items-center justify-center">
-                <a
-                  href="#materials-community-discussion"
-                  className="group inline-flex items-center gap-2.5 px-6 sm:px-7 py-3 rounded-full bg-white hover:bg-red-50/30 text-gray-800 hover:text-red-600 font-bold text-xs sm:text-sm border border-red-100/90 hover:border-red-200 shadow-2xs hover:shadow-md transition-all duration-200 active:scale-98 cursor-pointer"
-                >
-                  <div className="w-6 h-6 rounded-full bg-red-50 text-red-500 group-hover:bg-red-500 group-hover:text-white transition-colors flex items-center justify-center shrink-0">
-                    <MessageSquare className="w-3.5 h-3.5" />
-                  </div>
-                  <span className="whitespace-nowrap font-bold text-gray-800 group-hover:text-red-600 transition-colors">
-                    กระดานสนทนา & ถาม-ตอบ สื่อการสอน
-                  </span>
-                  <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-red-500 group-hover:translate-y-0.5 transition-all shrink-0" />
-                </a>
-              </div>
             </div>
           </div>
         </section>
 
         {/* Unified Feed Section */}
-        <section className="container mx-auto px-4 sm:px-6 max-w-7xl pt-10">
+        <section className="container mx-auto px-4 sm:px-6 max-w-7xl pt-10 pb-16">
           <Suspense fallback={
             <div className="py-20 text-center text-gray-400">
               <div className="animate-spin rounded-full h-10 w-10 border-2 border-red-300 border-t-red-600 mx-auto mb-3"></div>
@@ -152,25 +135,6 @@ export default async function MaterialsPage() {
               basePath="/materials"
             />
           </Suspense>
-        </section>
-
-        {/* Learning Materials Community Discussion & Q&A Board */}
-        <section className="container mx-auto px-4 sm:px-6 max-w-7xl pt-16">
-          <CommunityDiscussion
-            id="materials-community-discussion"
-            topicId="materials-hub"
-            title="กระดานสนทนา & ถาม-ตอบ สื่อการสอน"
-            subtitle="ร่วมพูดคุย สอบถามเทคนิคในบทเรียน แลกเปลี่ยนวิธีการทำงานศิลปะ หรือเสนอแนะสื่อการสอนใหม่ๆ ที่ต้องการให้คุณครูจัดทำ"
-            accentColor="red"
-            tags={["ทั้งหมด", "❓ ถามเรื่องบทเรียน", "🎨 เทคนิคและอุปกรณ์", "💡 เสนอแนะสื่อใหม่", "💬 พูดคุยทั่วไป"]}
-            quickPrompts={[
-              "ชอบเทคนิควิดีโอนี้มากครับ ทำตามได้เข้าใจง่าย 👍",
-              "ขอสอบถามเรื่องการเกลี่ยน้ำหนักสีไม้ครับ 🎨",
-              "อยากให้คุณครูทำคลิปสอนเทคนิคสีน้ำเพิ่มครับ 💡",
-              "มีใบงานสำหรับฝึกวาดเพิ่มเติมไหมครับ 📄"
-            ]}
-            emptyMessage="ยังไม่มีข้อความสนทนาในกระดานสื่อการสอน มาเป็นคนแรกที่สอบถามหรือพูดคุยกับคุณครูกันเถอะ!"
-          />
         </section>
       </main>
       <Footer />
