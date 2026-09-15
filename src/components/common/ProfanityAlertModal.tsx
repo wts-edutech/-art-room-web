@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Sparkles, HeartHandshake, X } from "lucide-react";
 import { PROFANITY_ALERT_MESSAGE } from "@/lib/profanity-filter";
 
@@ -15,22 +16,37 @@ export default function ProfanityAlertModal({
   onClose,
   message = PROFANITY_ALERT_MESSAGE,
 }: ProfanityAlertModalProps) {
-  // Listen for Escape key
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Listen for Escape key and lock body scroll
   useEffect(() => {
     if (!isOpen) return;
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         onClose();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
-    <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
+  return createPortal(
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+      {/* Backdrop overlay clickable to close */}
+      <div className="absolute inset-0" onClick={onClose} />
       {/* Modal Container */}
       <div 
         role="dialog"
@@ -91,6 +107,7 @@ export default function ProfanityAlertModal({
           เข้าใจแล้ว ปรับแก้ข้อความ
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
