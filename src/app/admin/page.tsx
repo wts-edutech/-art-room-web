@@ -78,8 +78,8 @@ export default function AdminPage() {
   return (
     <div className="flex h-screen bg-gray-50 font-prompt">
       {/* Sidebar */}
-      <aside className="w-64 bg-gray-900 text-white flex flex-col hidden md:flex">
-        <div className="p-6 border-b border-gray-800">
+      <aside className="w-64 bg-white border-r border-gray-100 text-gray-800 flex flex-col hidden md:flex">
+        <div className="p-6 border-b border-gray-100">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center font-bold text-xl shadow-inner overflow-hidden">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -96,8 +96,8 @@ export default function AdminPage() {
               onClick={() => setActiveTab("lessons")}
               className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${
                 activeTab === "lessons" 
-                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/20" 
-                  : "text-gray-400 hover:text-white hover:bg-gray-800"
+                  ? "bg-orange-500 text-white shadow-md shadow-orange-500/20" 
+                  : "text-gray-500 hover:text-orange-600 hover:bg-orange-50"
               }`}
             >
               <BookOpen className="w-5 h-5" />
@@ -107,8 +107,8 @@ export default function AdminPage() {
               onClick={() => setActiveTab("m3Lessons")}
               className={`w-full flex items-center justify-between px-3 py-3 rounded-xl transition-all ${
                 activeTab === "m3Lessons" 
-                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/20" 
-                  : "text-gray-400 hover:text-white hover:bg-gray-800"
+                  ? "bg-orange-500 text-white shadow-md shadow-orange-500/20" 
+                  : "text-gray-500 hover:text-orange-600 hover:bg-orange-50"
               }`}
             >
               <div className="flex items-center gap-3">
@@ -117,8 +117,8 @@ export default function AdminPage() {
               </div>
               <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                 isM3Enabled 
-                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40" 
-                  : "bg-gray-800 text-gray-400 border border-gray-700"
+                  ? "bg-emerald-50 text-emerald-600 border border-emerald-200" 
+                  : "bg-gray-100 text-gray-500 border border-gray-200"
               }`}>
                 {isM3Enabled ? "เปิด" : "ปิด"}
               </span>
@@ -127,8 +127,8 @@ export default function AdminPage() {
               onClick={() => setActiveTab("m4Lessons")}
               className={`w-full flex items-center justify-between px-3 py-3 rounded-xl transition-all ${
                 activeTab === "m4Lessons" 
-                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/20" 
-                  : "text-gray-400 hover:text-white hover:bg-gray-800"
+                  ? "bg-orange-500 text-white shadow-md shadow-orange-500/20" 
+                  : "text-gray-500 hover:text-orange-600 hover:bg-orange-50"
               }`}
             >
               <div className="flex items-center gap-3">
@@ -137,8 +137,8 @@ export default function AdminPage() {
               </div>
               <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                 isM4Enabled 
-                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40" 
-                  : "bg-gray-800 text-gray-400 border border-gray-700"
+                  ? "bg-emerald-50 text-emerald-600 border border-emerald-200" 
+                  : "bg-gray-100 text-gray-500 border border-gray-200"
               }`}>
                 {isM4Enabled ? "เปิด" : "ปิด"}
               </span>
@@ -147,8 +147,8 @@ export default function AdminPage() {
               onClick={() => setActiveTab("awards")}
               className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${
                 activeTab === "awards" 
-                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/20" 
-                  : "text-gray-400 hover:text-white hover:bg-gray-800"
+                  ? "bg-orange-500 text-white shadow-md shadow-orange-500/20" 
+                  : "text-gray-500 hover:text-orange-600 hover:bg-orange-50"
               }`}
             >
               <Award className="w-5 h-5" />
@@ -158,8 +158,8 @@ export default function AdminPage() {
               onClick={() => setActiveTab("artworks")}
               className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${
                 activeTab === "artworks" 
-                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/20" 
-                  : "text-gray-400 hover:text-white hover:bg-gray-800"
+                  ? "bg-orange-500 text-white shadow-md shadow-orange-500/20" 
+                  : "text-gray-500 hover:text-orange-600 hover:bg-orange-50"
               }`}
             >
               <ImageIcon className="w-5 h-5" />
@@ -169,8 +169,8 @@ export default function AdminPage() {
               onClick={() => setActiveTab("news")}
               className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${
                 activeTab === "news" 
-                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/20" 
-                  : "text-gray-400 hover:text-white hover:bg-gray-800"
+                  ? "bg-orange-500 text-white shadow-md shadow-orange-500/20" 
+                  : "text-gray-500 hover:text-orange-600 hover:bg-orange-50"
               }`}
             >
               <Newspaper className="w-5 h-5" />
@@ -180,8 +180,8 @@ export default function AdminPage() {
               onClick={() => setActiveTab("activities")}
               className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${
                 activeTab === "activities" 
-                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/20" 
-                  : "text-gray-400 hover:text-white hover:bg-gray-800"
+                  ? "bg-orange-500 text-white shadow-md shadow-orange-500/20" 
+                  : "text-gray-500 hover:text-orange-600 hover:bg-orange-50"
               }`}
             >
               <Calendar className="w-5 h-5" />
@@ -191,8 +191,8 @@ export default function AdminPage() {
               onClick={() => setActiveTab("students")}
               className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${
                 activeTab === "students" 
-                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/20" 
-                  : "text-gray-400 hover:text-white hover:bg-gray-800"
+                  ? "bg-orange-500 text-white shadow-md shadow-orange-500/20" 
+                  : "text-gray-500 hover:text-orange-600 hover:bg-orange-50"
               }`}
             >
               <Users className="w-5 h-5" />
@@ -202,8 +202,8 @@ export default function AdminPage() {
               onClick={() => setActiveTab("guests")}
               className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${
                 activeTab === "guests" 
-                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/20" 
-                  : "text-gray-400 hover:text-white hover:bg-gray-800"
+                  ? "bg-orange-500 text-white shadow-md shadow-orange-500/20" 
+                  : "text-gray-500 hover:text-orange-600 hover:bg-orange-50"
               }`}
             >
               <Users className="w-5 h-5" />
@@ -213,8 +213,8 @@ export default function AdminPage() {
               onClick={() => setActiveTab("teachers")}
               className={`w-full flex items-center justify-between px-3 py-3 rounded-xl transition-all ${
                 activeTab === "teachers" 
-                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/20" 
-                  : "text-gray-400 hover:text-white hover:bg-gray-800"
+                  ? "bg-orange-500 text-white shadow-md shadow-orange-500/20" 
+                  : "text-gray-500 hover:text-orange-600 hover:bg-orange-50"
               }`}
             >
               <div className="flex items-center gap-3">
@@ -223,8 +223,8 @@ export default function AdminPage() {
               </div>
               <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                 isTeachersEnabled 
-                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40" 
-                  : "bg-gray-800 text-gray-400 border border-gray-700"
+                  ? "bg-emerald-50 text-emerald-600 border border-emerald-200" 
+                  : "bg-gray-100 text-gray-500 border border-gray-200"
               }`}>
                 {isTeachersEnabled ? "เปิด" : "ปิด"}
               </span>
@@ -233,8 +233,8 @@ export default function AdminPage() {
               onClick={() => setActiveTab("testimonials")}
               className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${
                 activeTab === "testimonials" 
-                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/20" 
-                  : "text-gray-400 hover:text-white hover:bg-gray-800"
+                  ? "bg-orange-500 text-white shadow-md shadow-orange-500/20" 
+                  : "text-gray-500 hover:text-orange-600 hover:bg-orange-50"
               }`}
             >
               <BookOpen className="w-5 h-5" />
@@ -244,8 +244,8 @@ export default function AdminPage() {
               onClick={() => setActiveTab("ideas")}
               className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${
                 activeTab === "ideas" 
-                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/20" 
-                  : "text-gray-400 hover:text-white hover:bg-gray-800"
+                  ? "bg-orange-500 text-white shadow-md shadow-orange-500/20" 
+                  : "text-gray-500 hover:text-orange-600 hover:bg-orange-50"
               }`}
             >
               <Lightbulb className="w-5 h-5" />
@@ -255,8 +255,8 @@ export default function AdminPage() {
               onClick={() => setActiveTab("downloads")}
               className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${
                 activeTab === "downloads" 
-                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/20" 
-                  : "text-gray-400 hover:text-white hover:bg-gray-800"
+                  ? "bg-orange-500 text-white shadow-md shadow-orange-500/20" 
+                  : "text-gray-500 hover:text-orange-600 hover:bg-orange-50"
               }`}
             >
               <FolderDown className="w-5 h-5" />
@@ -265,10 +265,10 @@ export default function AdminPage() {
           </nav>
         </div>
 
-        <div className="p-4 border-t border-gray-800">
+        <div className="p-4 border-t border-gray-100">
           <button 
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3 py-3 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-xl transition-colors"
+            className="w-full flex items-center gap-3 px-3 py-3 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-xl transition-colors"
           >
             <LogOut className="w-5 h-5" />
             ออกจากระบบ
@@ -279,19 +279,19 @@ export default function AdminPage() {
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto">
         {/* Mobile Header */}
-        <div className="md:hidden bg-gray-900 text-white p-4 flex justify-between items-center">
+        <div className="md:hidden bg-white border-b border-gray-100 text-gray-900 p-4 flex justify-between items-center">
           <div className="font-bold flex items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/school-logo.png" alt="School Logo" className="w-6 h-6 object-cover rounded-full bg-white" />
             Admin System Art room
           </div>
-          <button onClick={handleLogout} className="p-2 text-red-400"><LogOut className="w-5 h-5" /></button>
+          <button onClick={handleLogout} className="p-2 text-red-600"><LogOut className="w-5 h-5" /></button>
         </div>
 
         <div className="p-6 md:p-10 max-w-6xl mx-auto">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
-              <LayoutDashboard className="w-8 h-8 text-blue-600" />
+              <LayoutDashboard className="w-8 h-8 text-orange-500" />
               {activeTab === "lessons" && "จัดการคลังสื่อการสอน Art Room (Lessons)"}
               {activeTab === "m3Lessons" && "จัดการบทเรียน ม.3 (M3 Lessons)"}
               {activeTab === "m4Lessons" && "จัดการบทเรียน ม.4 (M4 Lessons)"}
@@ -313,7 +313,7 @@ export default function AdminPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-full bg-blue-50 text-orange-500 flex items-center justify-center">
                 <Users className="w-6 h-6" />
               </div>
               <div>

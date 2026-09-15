@@ -114,7 +114,7 @@ export default function ActivitiesTab() {
               <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
                   <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                    <Calendar className="text-blue-500 w-5 h-5" /> 
+                    <Calendar className="text-orange-500 w-5 h-5" /> 
                     ปฏิทินกิจกรรม
                   </h2>
                 </div>
@@ -128,7 +128,7 @@ export default function ActivitiesTab() {
               <div className="lg:col-span-1">
                 <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 sticky top-8">
                   <div className="flex items-center gap-2 mb-6 border-b border-gray-100 pb-4">
-                    {editingActivityId ? <Pencil className="text-blue-600" /> : <Plus className="text-blue-600" />}
+                    {editingActivityId ? <Pencil className="text-orange-500" /> : <Plus className="text-orange-500" />}
                     <h2 className="text-lg font-bold text-gray-900">
                       {editingActivityId ? "แก้ไขกิจกรรม" : "เพิ่มกิจกรรมใหม่"}
                     </h2>
@@ -136,19 +136,19 @@ export default function ActivitiesTab() {
                   <form onSubmit={handleAddActivity} className="space-y-4">
                     <div>
                       <label className="text-sm font-medium text-gray-700 block mb-1">หัวข้อกิจกรรม</label>
-                      <input type="text" required value={activityTitle} onChange={(e) => setActivityTitle(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm" />
+                      <input type="text" required value={activityTitle} onChange={(e) => setActivityTitle(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none text-sm" />
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-700 block mb-1">รายละเอียดกิจกรรม</label>
-                      <textarea required value={activityDesc} onChange={(e) => setActivityDesc(e.target.value)} className="w-full h-24 p-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-none text-sm" />
+                      <textarea required value={activityDesc} onChange={(e) => setActivityDesc(e.target.value)} className="w-full h-24 p-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none resize-none text-sm" />
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-700 block mb-1">วันที่ (เช่น 12 ตุลาคม 2566)</label>
-                      <input type="text" required value={activityDate} onChange={(e) => setActivityDate(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm" />
+                      <input type="text" required value={activityDate} onChange={(e) => setActivityDate(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none text-sm" />
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-700 block mb-1">สถานที่ (เช่น โรงเรียนวชิรธรรมสาธิต)</label>
-                      <input type="text" value={activityLocation} onChange={(e) => setActivityLocation(e.target.value)} placeholder="ระบุสถานที่ (ไม่บังคับ)" className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm" />
+                      <input type="text" value={activityLocation} onChange={(e) => setActivityLocation(e.target.value)} placeholder="ระบุสถานที่ (ไม่บังคับ)" className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none text-sm" />
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-700 block mb-2">
@@ -172,11 +172,11 @@ export default function ActivitiesTab() {
                         <div className="flex flex-col items-center justify-center relative z-0">
                           <div className="flex items-center justify-center gap-2 mb-3">
                             <span className="text-4xl drop-shadow-sm">☁️</span>
-                            <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center text-white shadow-md">
+                            <div className="w-10 h-10 bg-orange-500 rounded-2xl flex items-center justify-center text-white shadow-md">
                               <span className="text-2xl drop-shadow-sm leading-none pb-1">⬆️</span>
                             </div>
                           </div>
-                          <p className="text-indigo-900 font-medium text-sm mb-1 group-hover:text-blue-700 transition-colors">คลิกหรือลากไฟล์ภาพมาที่นี่</p>
+                          <p className="text-indigo-900 font-medium text-sm mb-1 group-hover:text-orange-600 transition-colors">คลิกหรือลากไฟล์ภาพมาที่นี่</p>
                           <p className="text-indigo-400 text-xs">รองรับไฟล์ JPG, PNG (ไม่เกิน 10MB)</p>
                         </div>
                       </div>
@@ -191,13 +191,13 @@ export default function ActivitiesTab() {
                         <div className="mt-3 relative w-full aspect-video bg-gray-100 rounded-xl overflow-hidden border border-gray-200 shadow-inner">
                            {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={activityImageUrl} alt="preview" className="w-full h-full object-contain" onError={(e) => (e.currentTarget.src = "https://placehold.co/600x400/eeeeee/999999?text=Image+Not+Found")} />
-                          <div className="absolute top-2 left-2 bg-black/50 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-md">รูปเดิม</div>
+                          <div className="absolute top-2 left-2 bg-black/50 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-xl">รูปเดิม</div>
                         </div>
                       ) : null}
                     </div>
                     
                     <div className="flex gap-2 pt-4 border-t border-gray-100">
-                      <Button type="submit" className="flex-1 rounded-xl bg-blue-600 hover:bg-blue-700 text-white">
+                      <Button type="submit" className="flex-1 rounded-xl bg-orange-500 hover:bg-orange-600 text-white">
                         {editingActivityId ? "บันทึก" : "เพิ่ม"}
                       </Button>
                       {editingActivityId && (
@@ -212,7 +212,7 @@ export default function ActivitiesTab() {
                 <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
                   <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
                     <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                      <Calendar className="text-blue-500 w-5 h-5" /> 
+                      <Calendar className="text-orange-500 w-5 h-5" /> 
                       รายการกิจกรรมทั้งหมด
                     </h2>
                     <span className="text-sm font-medium text-gray-500 bg-white px-3 py-1 rounded-full shadow-sm border border-gray-100">
@@ -230,7 +230,7 @@ export default function ActivitiesTab() {
                           <div className="w-full h-40 bg-gray-100 relative">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={activity.imageUrl} alt={activity.title} className="w-full h-full object-cover" onError={(e) => (e.currentTarget.src = "https://placehold.co/600x400/eeeeee/999999?text=Image+Not+Found")} />
-                            <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-gray-900 text-xs font-bold px-2 py-1 rounded-md shadow-sm">
+                            <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-gray-900 text-xs font-bold px-2 py-1 rounded-xl shadow-sm">
                               {activity.date}
                             </div>
                           </div>
@@ -238,10 +238,10 @@ export default function ActivitiesTab() {
                             <h3 className="font-bold text-gray-900 truncate mb-1 text-base">{activity.title}</h3>
                             <p className="text-sm text-gray-600 line-clamp-2">{activity.description}</p>
                             <div className="flex gap-2 mt-4 pt-3 border-t border-gray-100">
-                              <button onClick={() => handleEditActivity(activity)} className="flex-1 h-8 rounded-lg flex items-center justify-center text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors">
+                              <button onClick={() => handleEditActivity(activity)} className="flex-1 h-8 rounded-2xl flex items-center justify-center text-xs font-medium text-orange-500 bg-orange-50 hover:bg-orange-100 transition-colors">
                                 <Pencil className="w-3 h-3 mr-1" /> แก้ไข
                               </button>
-                              <button onClick={() => handleDeleteActivity(activity.id)} className="flex-1 h-8 rounded-lg flex items-center justify-center text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 transition-colors">
+                              <button onClick={() => handleDeleteActivity(activity.id)} className="flex-1 h-8 rounded-2xl flex items-center justify-center text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 transition-colors">
                                 <Trash2 className="w-3 h-3 mr-1" /> ลบ
                               </button>
                             </div>

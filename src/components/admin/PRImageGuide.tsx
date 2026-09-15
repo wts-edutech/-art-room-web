@@ -12,8 +12,8 @@ export default function PRImageGuide() {
       size: "1200 x 630 px",
       ratio: "1.91:1 (แนวนอน)",
       icon: ImageIcon,
-      color: "from-blue-500 to-indigo-600",
-      badgeColor: "bg-blue-100 text-blue-800 border-blue-200",
+      color: "from-orange-500 to-orange-600",
+      badgeColor: "bg-orange-100 text-orange-800 border-orange-200",
       previewAspect: "aspect-[1.91/1]",
       benefit: "เป็นขนาดมาตรฐาน 1.91:1 ที่ดีที่สุด เมื่อนำลิงก์ข่าวไปแชร์บน Facebook, LINE หรือ X (Twitter) ภาพพรีวิวจะแสดงผลได้เต็ม สวยงาม ไม่โดนตัดขอบ",
     },
@@ -61,7 +61,7 @@ export default function PRImageGuide() {
         </div>
         <button 
           type="button"
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-white/60 transition-colors"
+          className="w-8 h-8 rounded-2xl flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-white/60 transition-colors"
         >
           {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </button>
@@ -78,17 +78,17 @@ export default function PRImageGuide() {
               >
                 <div className="flex items-start justify-between gap-2 mb-1.5">
                   <div className="flex items-center gap-2">
-                    <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${g.color} text-white flex items-center justify-center shadow-xs flex-shrink-0`}>
+                    <div className={`w-6 h-6 rounded-2xl bg-gradient-to-br ${g.color} text-white flex items-center justify-center shadow-xs flex-shrink-0`}>
                       <Icon className="w-3.5 h-3.5" />
                     </div>
                     <span className="text-xs font-bold text-gray-900">{g.title}</span>
                   </div>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${g.badgeColor} flex-shrink-0`}>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-xl border ${g.badgeColor} flex-shrink-0`}>
                     {g.ratio}
                   </span>
                 </div>
 
-                <div className="text-xs font-semibold text-indigo-950 bg-indigo-50/50 px-2.5 py-1 rounded-lg mb-1.5 flex items-center gap-1.5">
+                <div className="text-xs font-semibold text-indigo-950 bg-indigo-50/50 px-2.5 py-1 rounded-2xl mb-1.5 flex items-center gap-1.5">
                   <span className="text-[11px] text-indigo-500 font-normal">ขนาดแนะนำ:</span>
                   <span className="font-mono text-indigo-700 font-bold">{g.size}</span>
                 </div>

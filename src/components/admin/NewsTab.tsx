@@ -113,7 +113,7 @@ export default function NewsTab() {
               <div className="lg:col-span-1">
                 <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 sticky top-8">
                   <div className="flex items-center gap-2 mb-6 border-b border-gray-100 pb-4">
-                    {editingNewsId ? <Pencil className="text-blue-600" /> : <Plus className="text-blue-600" />}
+                    {editingNewsId ? <Pencil className="text-orange-500" /> : <Plus className="text-orange-500" />}
                     <h2 className="text-lg font-bold text-gray-900">
                       {editingNewsId ? "แก้ไขข่าวสาร" : "เพิ่มข่าวสารใหม่"}
                     </h2>
@@ -121,19 +121,19 @@ export default function NewsTab() {
                   <form onSubmit={handleAddNews} className="space-y-4">
                     <div>
                       <label className="text-sm font-medium text-gray-700 block mb-1">หัวข้อข่าวสาร</label>
-                      <input type="text" required value={newsTitle} onChange={(e) => setNewsTitle(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm" />
+                      <input type="text" required value={newsTitle} onChange={(e) => setNewsTitle(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none text-sm" />
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-700 block mb-1">เนื้อหาย่อ</label>
-                      <textarea required value={newsExcerpt} onChange={(e) => setNewsExcerpt(e.target.value)} className="w-full h-20 p-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm resize-none" />
+                      <textarea required value={newsExcerpt} onChange={(e) => setNewsExcerpt(e.target.value)} className="w-full h-20 p-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none text-sm resize-none" />
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-700 block mb-1">แหล่งที่มา / ผู้เขียน</label>
-                      <input type="text" value={newsSource} onChange={(e) => setNewsSource(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm" />
+                      <input type="text" value={newsSource} onChange={(e) => setNewsSource(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none text-sm" />
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-700 block mb-1">วันที่ (เช่น 6 พ.ย. 2568)</label>
-                      <input type="text" required value={newsDate} onChange={(e) => setNewsDate(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm" />
+                      <input type="text" required value={newsDate} onChange={(e) => setNewsDate(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none text-sm" />
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-700 block mb-2">
@@ -167,19 +167,19 @@ export default function NewsTab() {
                       {newsImageFile ? (
                         <div className="mt-3 relative w-full min-h-[180px] max-h-[280px] flex items-center justify-center bg-gray-900/5 rounded-xl overflow-hidden border border-gray-200 p-2 shadow-inner">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={URL.createObjectURL(newsImageFile)} alt="preview" className="max-h-[260px] w-auto max-w-full object-contain rounded-lg" />
+                          <img src={URL.createObjectURL(newsImageFile)} alt="preview" className="max-h-[260px] w-auto max-w-full object-contain rounded-2xl" />
                         </div>
                       ) : editingNewsId && newsImageUrl ? (
                         <div className="mt-3 relative w-full min-h-[180px] max-h-[280px] flex items-center justify-center bg-gray-900/5 rounded-xl overflow-hidden border border-gray-200 p-2 shadow-inner">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={newsImageUrl} alt="preview" className="max-h-[260px] w-auto max-w-full object-contain rounded-lg" onError={(e) => (e.currentTarget.src = "https://placehold.co/600x400/eeeeee/999999?text=Image+Not+Found")} />
-                          <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-md">รูปเดิม</div>
+                          <img src={newsImageUrl} alt="preview" className="max-h-[260px] w-auto max-w-full object-contain rounded-2xl" onError={(e) => (e.currentTarget.src = "https://placehold.co/600x400/eeeeee/999999?text=Image+Not+Found")} />
+                          <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-xl">รูปเดิม</div>
                         </div>
                       ) : null}
                     </div>
                     
                     <div className="flex gap-2 pt-4 border-t border-gray-100">
-                      <Button type="submit" className="flex-1 rounded-xl bg-blue-600 hover:bg-blue-700 text-white">
+                      <Button type="submit" className="flex-1 rounded-xl bg-orange-500 hover:bg-orange-600 text-white">
                         {editingNewsId ? "บันทึก" : "เพิ่ม"}
                       </Button>
                       {editingNewsId && (
@@ -215,7 +215,7 @@ export default function NewsTab() {
                             <p className="text-sm text-gray-600 line-clamp-2">{news.excerpt}</p>
                           </div>
                           <div className="flex flex-col justify-center gap-2 flex-shrink-0 px-2">
-                            <button onClick={() => handleEditNews(news)} className="w-10 h-10 rounded-xl flex items-center justify-center text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors">
+                            <button onClick={() => handleEditNews(news)} className="w-10 h-10 rounded-xl flex items-center justify-center text-orange-500 bg-orange-50 hover:bg-orange-100 transition-colors">
                               <Pencil className="w-4 h-4" />
                             </button>
                             <button onClick={() => handleDeleteNews(news.id)} className="w-10 h-10 rounded-xl flex items-center justify-center text-red-600 bg-red-50 hover:bg-red-100 transition-colors">

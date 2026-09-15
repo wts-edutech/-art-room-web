@@ -181,7 +181,7 @@ export default function IdeasTab() {
             onClick={() => setFilterStatus("all")}
             className={`p-4 rounded-2xl border transition-all cursor-pointer ${
               filterStatus === "all" 
-                ? "bg-blue-50/70 border-blue-300 ring-2 ring-blue-400/20" 
+                ? "bg-orange-50/70 border-orange-300 ring-2 ring-orange-400/20" 
                 : "bg-white border-gray-100 hover:border-gray-200"
             }`}
           >
@@ -342,7 +342,7 @@ export default function IdeasTab() {
                           </div>
                           <div className="text-xs text-gray-400 mt-0.5 flex items-center gap-1.5">
                             {idea.category && (
-                              <span className="bg-orange-50 text-orange-700 px-2 py-0.5 rounded-md font-semibold text-[11px]">
+                              <span className="bg-orange-50 text-orange-700 px-2 py-0.5 rounded-xl font-semibold text-[11px]">
                                 {idea.category}
                               </span>
                             )}
@@ -355,7 +355,7 @@ export default function IdeasTab() {
                         </td>
                         <td className="p-4">
                           <div className="flex items-center gap-2 text-xs">
-                            <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-md font-medium">
+                            <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-xl font-medium">
                               📎 {filesCount}
                             </span>
                             <span className="text-gray-500 flex items-center gap-1 font-medium">
@@ -402,7 +402,7 @@ export default function IdeasTab() {
                             </button>
                             <button 
                               onClick={() => openPreview(idea)} 
-                              className="p-2 rounded-xl text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors"
+                              className="p-2 rounded-xl text-orange-500 bg-orange-50 hover:bg-orange-100 transition-colors"
                               title="ตรวจสอบรายละเอียด"
                             >
                               <Eye className="w-4 h-4" />
@@ -512,7 +512,7 @@ export default function IdeasTab() {
                         href={previewIdea.link.startsWith('http') ? previewIdea.link : `https://${previewIdea.link}`} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 text-orange-600 rounded-lg border border-orange-100 hover:bg-orange-100 transition-colors text-xs font-medium break-all"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 text-orange-600 rounded-2xl border border-orange-100 hover:bg-orange-100 transition-colors text-xs font-medium break-all"
                       >
                         <LinkIcon className="w-3.5 h-3.5" />
                         <span>{previewIdea.link}</span>
@@ -567,7 +567,7 @@ export default function IdeasTab() {
                         </div>
                         <button
                           onClick={() => handleDeleteCommentInPreview(comment.id)}
-                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors ml-3"
+                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-colors ml-3"
                           title="ลบความคิดเห็นที่ไม่เหมาะสมนี้"
                         >
                           <Trash2 className="w-3.5 h-3.5" />

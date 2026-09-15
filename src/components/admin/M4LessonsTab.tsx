@@ -246,7 +246,7 @@ export default function M4LessonsTab() {
         <div className="lg:col-span-1">
           <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 sticky top-8">
             <div className="flex items-center gap-2 mb-6 border-b border-gray-100 pb-4">
-              {editingM4Id ? <Pencil className="text-blue-600" /> : <Plus className="text-blue-600" />}
+              {editingM4Id ? <Pencil className="text-orange-500" /> : <Plus className="text-orange-500" />}
               <h2 className="text-lg font-bold text-gray-900">
                 {editingM4Id ? "แก้ไขบทเรียน ม.4" : "เพิ่มบทเรียน ม.4 ใหม่"}
               </h2>
@@ -257,7 +257,7 @@ export default function M4LessonsTab() {
                 <select 
                   value={m4Category} 
                   onChange={(e) => setM4Category(e.target.value)} 
-                  className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm bg-white"
+                  className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none text-sm bg-white"
                 >
                   <option value="สื่อวิดีทัศน์">สื่อวิดีทัศน์ (YouTube)</option>
                   <option value="สื่อภาพ">สื่อภาพ (อัปโหลดรูป)</option>
@@ -267,11 +267,11 @@ export default function M4LessonsTab() {
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700 block mb-1">ชื่อสื่อการสอน</label>
-                <input type="text" required value={m4Title} onChange={(e) => setM4Title(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm" />
+                <input type="text" required value={m4Title} onChange={(e) => setM4Title(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none text-sm" />
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700 block mb-1">รายละเอียด</label>
-                <textarea required value={m4Description} onChange={(e) => setM4Description(e.target.value)} className="w-full h-20 p-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm resize-none" />
+                <textarea required value={m4Description} onChange={(e) => setM4Description(e.target.value)} className="w-full h-20 p-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none text-sm resize-none" />
               </div>
               
               {m4Category === "สื่อเอกสาร PDF" ? (
@@ -291,14 +291,14 @@ export default function M4LessonsTab() {
               ) : m4Category !== "สื่อภาพ" ? (
                 <div>
                   <label className="text-sm font-medium text-gray-700 block mb-1">ลิงก์ YouTube (หรือ ID)</label>
-                  <input type="text" required={m4Category !== "สื่อภาพ"} value={m4VideoId} onChange={(e) => setM4VideoId(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm" />
+                  <input type="text" required={m4Category !== "สื่อภาพ"} value={m4VideoId} onChange={(e) => setM4VideoId(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none text-sm" />
                 </div>
               ) : (
                 <div>
                   <label className="text-sm font-medium text-gray-700 block mb-2">
                     รูปภาพสื่อการสอน {editingM4Id && <span className="text-xs font-normal text-gray-500">(ไม่ต้องเลือกหากใช้รูปเดิม)</span>}
                   </label>
-                  <div className="relative border-2 border-dashed border-blue-300 bg-blue-50/50 hover:bg-blue-50 transition-colors rounded-2xl p-6 text-center cursor-pointer overflow-hidden group">
+                  <div className="relative border-2 border-dashed border-orange-300 bg-orange-50/50 hover:bg-orange-50 transition-colors rounded-2xl p-6 text-center cursor-pointer overflow-hidden group">
                     <input 
                       id="m4LessonImageInput"
                       type="file" 
@@ -314,7 +314,7 @@ export default function M4LessonsTab() {
                     />
                     <div className="flex flex-col items-center justify-center relative z-0">
                       <span className="text-2xl drop-shadow-sm mb-2">🖼️</span>
-                      <p className="text-blue-900 font-medium text-sm mb-1 group-hover:text-blue-700 transition-colors">คลิกหรือลากไฟล์ภาพมาที่นี่</p>
+                      <p className="text-orange-900 font-medium text-sm mb-1 group-hover:text-orange-600 transition-colors">คลิกหรือลากไฟล์ภาพมาที่นี่</p>
                     </div>
                   </div>
                   {m4LessonImageFile ? (
@@ -326,14 +326,14 @@ export default function M4LessonsTab() {
                     <div className="mt-3 relative w-full aspect-video bg-gray-100 rounded-xl overflow-hidden border border-gray-200 shadow-inner">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={m4LessonImageUrl} alt="preview" className="w-full h-full object-contain" onError={(e) => (e.currentTarget.src = "https://placehold.co/600x400/eeeeee/999999?text=Image+Not+Found")} />
-                      <div className="absolute top-2 left-2 bg-black/50 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-md">รูปเดิม</div>
+                      <div className="absolute top-2 left-2 bg-black/50 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-xl">รูปเดิม</div>
                     </div>
                   ) : null}
                 </div>
               )}
 
               <div className="flex gap-2 pt-2">
-                <Button type="submit" className="flex-1 rounded-xl bg-blue-600 hover:bg-blue-700 text-white">
+                <Button type="submit" className="flex-1 rounded-xl bg-orange-500 hover:bg-orange-600 text-white">
                   {editingM4Id ? "บันทึกการแก้ไข" : "เพิ่มบทเรียน ม.4"}
                 </Button>
                 {editingM4Id && (
@@ -377,10 +377,10 @@ export default function M4LessonsTab() {
                       <div className="text-[10px] text-gray-400 mt-2 bg-white px-2 py-0.5 rounded border border-gray-100 inline-block">ID: {lesson.id}</div>
                     </div>
                     <div className="flex flex-col justify-center gap-1 flex-shrink-0 px-2">
-                      <button onClick={() => handleEditM4Lesson(lesson)} className="w-8 h-8 rounded-lg flex items-center justify-center text-blue-500 hover:bg-blue-100 transition-colors" title="แก้ไข">
+                      <button onClick={() => handleEditM4Lesson(lesson)} className="w-8 h-8 rounded-2xl flex items-center justify-center text-orange-500 hover:bg-orange-100 transition-colors" title="แก้ไข">
                         <Pencil className="w-4 h-4" />
                       </button>
-                      <button onClick={() => handleDeleteM4Lesson(lesson.id)} className="w-8 h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-100 transition-colors" title="ลบ">
+                      <button onClick={() => handleDeleteM4Lesson(lesson.id)} className="w-8 h-8 rounded-2xl flex items-center justify-center text-red-500 hover:bg-red-100 transition-colors" title="ลบ">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>

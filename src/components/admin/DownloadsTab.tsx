@@ -465,13 +465,13 @@ export default function DownloadsTab() {
                     <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">ระดับชั้น</span>
                     <h3 className="font-bold text-gray-900 text-base">{g.label}</h3>
                     <div className="flex items-center gap-2 mt-1.5">
-                      <span className={`text-xs px-2 py-0.5 rounded-md font-medium ${
-                        count > 0 ? "bg-blue-50 text-blue-700" : "bg-gray-100 text-gray-500"
+                      <span className={`text-xs px-2 py-0.5 rounded-xl font-medium ${
+                        count > 0 ? "bg-orange-50 text-orange-600" : "bg-gray-100 text-gray-500"
                       }`}>
                         {count} เอกสารเฉพาะชั้น
                       </span>
                       {count === 0 && (
-                        <span className="text-[10px] text-amber-700 font-semibold bg-amber-50 px-2 py-0.5 rounded-md border border-amber-100">
+                        <span className="text-[10px] text-amber-700 font-semibold bg-amber-50 px-2 py-0.5 rounded-xl border border-amber-100">
                           ไม่มีเอกสาร
                         </span>
                       )}
@@ -528,8 +528,8 @@ export default function DownloadsTab() {
       <section className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-gray-100">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold mb-2">
-              <FolderDown className="w-3.5 h-3.5 text-blue-600" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-50 text-orange-600 text-xs font-bold mb-2">
+              <FolderDown className="w-3.5 h-3.5 text-orange-500" />
               <span>รายการเอกสารทั้งหมด ({downloads.length} รายการ)</span>
             </div>
             <h2 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">
@@ -626,10 +626,10 @@ export default function DownloadsTab() {
                   </div>
                   <div>
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span className="bg-red-100 text-red-700 text-[10px] font-bold px-2 py-0.5 rounded-md">
+                      <span className="bg-red-100 text-red-700 text-[10px] font-bold px-2 py-0.5 rounded-xl">
                         {item.grade === "all" ? "ทุกระดับชั้น" : item.grade.toUpperCase()}
                       </span>
-                      <span className="bg-gray-100 text-gray-600 text-[10px] font-semibold px-2 py-0.5 rounded-md">
+                      <span className="bg-gray-100 text-gray-600 text-[10px] font-semibold px-2 py-0.5 rounded-xl">
                         {item.category}
                       </span>
                       <span className="text-[11px] text-gray-400">
@@ -659,21 +659,21 @@ export default function DownloadsTab() {
                     href={item.fileUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    className="p-2 text-gray-500 hover:text-orange-500 hover:bg-orange-50 rounded-2xl transition-colors"
                     title="เปิดดูไฟล์ต้นฉบับ"
                   >
                     <ExternalLink className="w-4 h-4" />
                   </a>
                   <button
                     onClick={() => handleOpenEditModal(item)}
-                    className="p-2 text-gray-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
+                    className="p-2 text-gray-500 hover:text-amber-600 hover:bg-amber-50 rounded-2xl transition-colors cursor-pointer"
                     title="แก้ไขเอกสาร"
                   >
                     <Pencil className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => handleDelete(item.id, item.title)}
-                    className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                    className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-colors cursor-pointer"
                     title="ลบเอกสาร"
                   >
                     <Trash2 className="w-4 h-4" />

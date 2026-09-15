@@ -134,7 +134,7 @@ export default function AwardsTab() {
       <div className="xl:col-span-1">
         <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 sticky top-8">
           <div className="flex items-center gap-2 mb-6 border-b border-gray-100 pb-4">
-            {editingAwardId ? <Pencil className="text-blue-600" /> : <Plus className="text-blue-600" />}
+            {editingAwardId ? <Pencil className="text-orange-500" /> : <Plus className="text-orange-500" />}
             <h2 className="text-lg font-bold text-gray-900">
               {editingAwardId ? "แก้ไขรางวัล" : "เพิ่มรางวัลใหม่"}
             </h2>
@@ -142,23 +142,23 @@ export default function AwardsTab() {
           <form onSubmit={handleAddAward} className="space-y-4">
             <div>
               <label className="text-sm font-medium text-gray-700 block mb-1">วันที่ (เช่น 25/07/2569)</label>
-              <input type="text" value={awardDate} onChange={(e) => setAwardDate(e.target.value)} placeholder="วว/ดด/ปปปป" className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm" />
+              <input type="text" value={awardDate} onChange={(e) => setAwardDate(e.target.value)} placeholder="วว/ดด/ปปปป" className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none text-sm" />
             </div>
             <div>
               <label className="text-sm font-medium text-gray-700 block mb-1">ปีที่ได้รับ (เช่น 2569)</label>
-              <input type="text" value={awardYear} onChange={(e) => setAwardYear(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm" />
+              <input type="text" value={awardYear} onChange={(e) => setAwardYear(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none text-sm" />
             </div>
             <div>
               <label className="text-sm font-medium text-gray-700 block mb-1">ชื่อกิจกรรม</label>
-              <input type="text" required value={awardTitle} onChange={(e) => setAwardTitle(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm" />
+              <input type="text" required value={awardTitle} onChange={(e) => setAwardTitle(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none text-sm" />
             </div>
             <div>
               <label className="text-sm font-medium text-gray-700 block mb-1">ชื่อนักเรียน</label>
-              <input type="text" required value={awardStudent} onChange={(e) => setAwardStudent(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm" />
+              <input type="text" required value={awardStudent} onChange={(e) => setAwardStudent(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none text-sm" />
             </div>
             <div>
               <label className="text-sm font-medium text-gray-700 block mb-1">ระดับรางวัล/ผลงาน</label>
-              <select value={awardLevel} onChange={(e) => setAwardLevel(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm bg-white">
+              <select value={awardLevel} onChange={(e) => setAwardLevel(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none text-sm bg-white">
                 <option value="">-- เลือกระดับรางวัล --</option>
                 <option value="รางวัลชนะเลิศ">รางวัลชนะเลิศ</option>
                 <option value="รางวัลรองชนะเลิศอันดับที่ 1">รางวัลรองชนะเลิศอันดับที่ 1</option>
@@ -174,7 +174,7 @@ export default function AwardsTab() {
             </div>
             <div>
               <label className="text-sm font-medium text-gray-700 block mb-1">ระดับการแข่งขัน</label>
-              <select value={competitionLevel} onChange={(e) => setCompetitionLevel(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm bg-white">
+              <select value={competitionLevel} onChange={(e) => setCompetitionLevel(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none text-sm bg-white">
                 <option value="">-- เลือกระดับการแข่งขัน --</option>
                 <option value="ระดับสถานศึกษา/กลุ่มโรงเรียนฯ">ระดับสถานศึกษา/กลุ่มโรงเรียนฯ</option>
                 <option value="ระดับเขตพื้นที่/ระดับจังหวัด">ระดับเขตพื้นที่/ระดับจังหวัด</option>
@@ -186,22 +186,22 @@ export default function AwardsTab() {
             </div>
             <div>
               <label className="text-sm font-medium text-gray-700 block mb-1">หน่วยงานที่จัด (เช่น EduPLOYS)</label>
-              <input type="text" value={organization} onChange={(e) => setOrganization(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm" />
+              <input type="text" value={organization} onChange={(e) => setOrganization(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none text-sm" />
             </div>
             <div>
               <label className="text-sm font-medium text-gray-700 block mb-1">รายละเอียดกิจกรรม</label>
-              <textarea value={awardDescription} onChange={(e) => setAwardDescription(e.target.value)} className="w-full h-24 p-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm resize-none" />
+              <textarea value={awardDescription} onChange={(e) => setAwardDescription(e.target.value)} className="w-full h-24 p-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none text-sm resize-none" />
             </div>
             
-            <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-xl border border-blue-100">
+            <div className="flex items-center gap-2 p-3 bg-orange-50 rounded-xl border border-orange-100">
               <input 
                 type="checkbox" 
                 id="isHighlight" 
                 checked={isHighlight} 
                 onChange={(e) => setIsHighlight(e.target.checked)}
-                className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                className="w-4 h-4 text-orange-500 rounded border-gray-300 focus:ring-orange-500"
               />
-              <label htmlFor="isHighlight" className="text-sm font-medium text-blue-900 cursor-pointer">
+              <label htmlFor="isHighlight" className="text-sm font-medium text-orange-900 cursor-pointer">
                 แสดงผลเป็นแบนเนอร์เด่นในหน้ารางวัล
               </label>
             </div>
@@ -231,11 +231,11 @@ export default function AwardsTab() {
                 <div className="flex flex-col items-center justify-center relative z-0">
                   <div className="flex items-center justify-center gap-2 mb-2">
                     <span className="text-3xl drop-shadow-sm">☁️</span>
-                    <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center text-white shadow-md">
+                    <div className="w-8 h-8 bg-orange-500 rounded-2xl flex items-center justify-center text-white shadow-md">
                       <span className="text-xl drop-shadow-sm leading-none pb-1">⬆️</span>
                     </div>
                   </div>
-                  <p className="text-indigo-900 font-medium text-sm mb-1 group-hover:text-blue-700 transition-colors">คลิกหรือลากไฟล์ภาพมาที่นี่</p>
+                  <p className="text-indigo-900 font-medium text-sm mb-1 group-hover:text-orange-600 transition-colors">คลิกหรือลากไฟล์ภาพมาที่นี่</p>
                   <p className="text-indigo-400 text-xs">รองรับ JPG, PNG, WebP (Banner 1.91:1, โปสเตอร์ 3:4, จัตุรัส 1:1)</p>
                 </div>
               </div>
@@ -244,19 +244,19 @@ export default function AwardsTab() {
               {awardImageFile ? (
                 <div className="mt-3 relative w-full min-h-[180px] max-h-[300px] flex items-center justify-center bg-gray-900/5 rounded-xl overflow-hidden border border-gray-200 p-2 shadow-inner">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={URL.createObjectURL(awardImageFile)} alt="preview" className="max-h-[280px] w-auto max-w-full object-contain rounded-lg" />
+                  <img src={URL.createObjectURL(awardImageFile)} alt="preview" className="max-h-[280px] w-auto max-w-full object-contain rounded-2xl" />
                 </div>
               ) : editingAwardId && awardImageUrl ? (
                 <div className="mt-3 relative w-full min-h-[180px] max-h-[300px] flex items-center justify-center bg-gray-900/5 rounded-xl overflow-hidden border border-gray-200 p-2 shadow-inner">
                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={awardImageUrl} alt="preview" className="max-h-[280px] w-auto max-w-full object-contain rounded-lg" onError={(e) => (e.currentTarget.src = "https://placehold.co/600x400/eeeeee/999999?text=Image+Not+Found")} />
-                  <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-md">รูปเดิม</div>
+                  <img src={awardImageUrl} alt="preview" className="max-h-[280px] w-auto max-w-full object-contain rounded-2xl" onError={(e) => (e.currentTarget.src = "https://placehold.co/600x400/eeeeee/999999?text=Image+Not+Found")} />
+                  <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-xl">รูปเดิม</div>
                 </div>
               ) : null}
             </div>
             
             <div className="flex gap-2 pt-4 border-t border-gray-100">
-              <Button type="submit" className="flex-1 rounded-xl bg-blue-600 hover:bg-blue-700 text-white">
+              <Button type="submit" className="flex-1 rounded-xl bg-orange-500 hover:bg-orange-600 text-white">
                 {editingAwardId ? "บันทึก" : "เพิ่ม"}
               </Button>
               {editingAwardId && (
@@ -296,10 +296,10 @@ export default function AwardsTab() {
                     <p className="text-xs text-gray-500 truncate mb-1">นักเรียน: {award.student}</p>
                     <p className="text-[10px] text-gray-400 mt-auto">รางวัล: {award.awardLevel || '-'} | ระดับ: {award.competitionLevel || '-'}</p>
                     <div className="flex gap-2 mt-4 pt-3 border-t border-gray-100">
-                      <button onClick={() => handleEditAward(award)} className="flex-1 h-8 rounded-lg flex items-center justify-center text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors">
+                      <button onClick={() => handleEditAward(award)} className="flex-1 h-8 rounded-2xl flex items-center justify-center text-xs font-medium text-orange-500 bg-orange-50 hover:bg-orange-100 transition-colors">
                         <Pencil className="w-3 h-3 mr-1" /> แก้ไข
                       </button>
-                      <button onClick={() => handleDeleteAward(award.id)} className="flex-1 h-8 rounded-lg flex items-center justify-center text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 transition-colors">
+                      <button onClick={() => handleDeleteAward(award.id)} className="flex-1 h-8 rounded-2xl flex items-center justify-center text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 transition-colors">
                         <Trash2 className="w-3 h-3 mr-1" /> ลบ
                       </button>
                     </div>

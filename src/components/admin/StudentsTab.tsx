@@ -142,7 +142,7 @@ export default function StudentsTab() {
               <div className="lg:col-span-1">
                 <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 sticky top-8">
                   <div className="flex items-center gap-2 mb-6 border-b border-gray-100 pb-4">
-                    <Plus className="text-blue-600" />
+                    <Plus className="text-orange-500" />
                     <h2 className="text-lg font-bold text-gray-900">
                       เพิ่มนักเรียนใหม่
                     </h2>
@@ -156,7 +156,7 @@ export default function StudentsTab() {
                         value={studentIdInput} 
                         onChange={(e) => setStudentIdInput(e.target.value)} 
                         placeholder="เช่น 12345"
-                        className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm" 
+                        className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none text-sm" 
                       />
                     </div>
                     <div>
@@ -167,12 +167,12 @@ export default function StudentsTab() {
                         value={studentNameInput} 
                         onChange={(e) => setStudentNameInput(e.target.value)} 
                         placeholder="เช่น เด็กชายรักดี เรียนเก่ง"
-                        className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm" 
+                        className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none text-sm" 
                       />
                     </div>
                     
                     <div className="pt-4 border-t border-gray-100">
-                      <Button type="submit" className="w-full rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20">
+                      <Button type="submit" className="w-full rounded-xl bg-orange-500 hover:bg-orange-600 text-white shadow-md shadow-orange-500/20">
                         เพิ่มรายชื่อนักเรียน
                       </Button>
                     </div>
@@ -185,7 +185,7 @@ export default function StudentsTab() {
                 <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
                   <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row items-center justify-between bg-gray-50/50 gap-4">
                     <div className="flex items-center gap-3 w-full sm:w-auto">
-                      <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-blue-500 shadow-sm border border-gray-100">
+                      <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-orange-500 shadow-sm border border-gray-100">
                         <Users className="w-5 h-5" />
                       </div>
                       <div>
@@ -203,7 +203,7 @@ export default function StudentsTab() {
                         placeholder="ค้นหาชื่อ หรือ รหัสนักเรียน..."
                         value={searchStudentInput}
                         onChange={(e) => setSearchStudentInput(e.target.value)}
-                        className="w-full h-10 pl-10 pr-4 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm bg-white"
+                        className="w-full h-10 pl-10 pr-4 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none text-sm bg-white"
                       />
                     </div>
                   </div>
@@ -220,7 +220,7 @@ export default function StudentsTab() {
                       />
                       <label 
                         htmlFor="excelUpload"
-                        className="h-9 px-4 inline-flex items-center justify-center gap-2 rounded-lg text-sm font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 cursor-pointer transition-colors shadow-sm"
+                        className="h-9 px-4 inline-flex items-center justify-center gap-2 rounded-2xl text-sm font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 cursor-pointer transition-colors shadow-sm"
                       >
                         <Upload className="w-4 h-4" />
                         นำเข้ารายชื่อ (Excel/CSV)
@@ -229,7 +229,7 @@ export default function StudentsTab() {
                     
                     <button 
                       onClick={handleDeleteAllStudents}
-                      className="h-9 px-4 inline-flex items-center justify-center gap-2 rounded-lg text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 transition-colors shadow-sm"
+                      className="h-9 px-4 inline-flex items-center justify-center gap-2 rounded-2xl text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 transition-colors shadow-sm"
                     >
                       <AlertTriangle className="w-4 h-4" />
                       ล้างข้อมูลทั้งหมด
@@ -258,9 +258,9 @@ export default function StudentsTab() {
                               (s.name && String(s.name).toLowerCase().includes(searchStudentInput.toLowerCase()))
                             )
                             .map((student) => (
-                            <tr key={student.id} className="hover:bg-blue-50/50 transition-colors group">
+                            <tr key={student.id} className="hover:bg-orange-50/50 transition-colors group">
                               <td className="px-6 py-4">
-                                <span className="font-mono font-medium text-gray-900 bg-gray-100 px-2 py-1 rounded-md">{student.id}</span>
+                                <span className="font-mono font-medium text-gray-900 bg-gray-100 px-2 py-1 rounded-xl">{student.id}</span>
                               </td>
                               <td className="px-6 py-4">
                                 <span className="font-medium text-gray-700">{student.name}</span>
@@ -269,7 +269,7 @@ export default function StudentsTab() {
                                 <div className="flex justify-center">
                                   <button 
                                     onClick={() => handleDeleteStudent(student.id)} 
-                                    className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors" 
+                                    className="w-8 h-8 rounded-2xl flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors" 
                                     title="ลบรายชื่อ"
                                   >
                                     <Trash2 className="w-4 h-4" />

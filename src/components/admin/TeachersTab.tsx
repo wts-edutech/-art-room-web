@@ -465,7 +465,7 @@ export default function TeachersTab() {
                   <button
                     type="button"
                     onClick={() => openEditModal(t)}
-                    className="flex-1 h-9 rounded-xl bg-gray-50 hover:bg-blue-50 text-gray-700 hover:text-blue-600 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                    className="flex-1 h-9 rounded-xl bg-gray-50 hover:bg-orange-50 text-gray-700 hover:text-orange-500 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                   >
                     <Pencil className="w-3.5 h-3.5" />
                     <span>แก้ไข</span>
@@ -676,7 +676,7 @@ export default function TeachersTab() {
                       type="file"
                       accept="image/*"
                       onChange={handleImageFileChange}
-                      className="block w-full text-xs text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100 cursor-pointer"
+                      className="block w-full text-xs text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded-2xl file:border-0 file:text-xs file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100 cursor-pointer"
                     />
                     <input
                       type="url"
@@ -686,7 +686,7 @@ export default function TeachersTab() {
                         if (!imageFile) setPreviewImage(e.target.value);
                       }}
                       placeholder="หรือใส่ลิงก์รูปภาพ เช่น https://..."
-                      className="w-full h-9 px-3 rounded-lg border border-gray-200 text-xs focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all"
+                      className="w-full h-9 px-3 rounded-2xl border border-gray-200 text-xs focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all"
                     />
                   </div>
 

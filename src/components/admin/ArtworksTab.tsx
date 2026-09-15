@@ -108,7 +108,7 @@ export default function ArtworksTab() {
               <div className="lg:col-span-1">
                 <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 sticky top-8">
                   <div className="flex items-center gap-2 mb-6 border-b border-gray-100 pb-4">
-                    {editingArtworkId ? <Pencil className="text-blue-600" /> : <Plus className="text-blue-600" />}
+                    {editingArtworkId ? <Pencil className="text-orange-500" /> : <Plus className="text-orange-500" />}
                     <h2 className="text-lg font-bold text-gray-900">
                       {editingArtworkId ? "แก้ไขผลงาน" : "เพิ่มผลงานใหม่"}
                     </h2>
@@ -116,15 +116,15 @@ export default function ArtworksTab() {
                   <form onSubmit={handleAddArtwork} className="space-y-4">
                     <div>
                       <label className="text-sm font-medium text-gray-700 block mb-1">ชื่อผลงาน</label>
-                      <input type="text" required value={artworkTitle} onChange={(e) => setArtworkTitle(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm" />
+                      <input type="text" required value={artworkTitle} onChange={(e) => setArtworkTitle(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none text-sm" />
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-700 block mb-1">ชื่อนักเรียน</label>
-                      <input type="text" required value={studentName} onChange={(e) => setStudentName(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm" />
+                      <input type="text" required value={studentName} onChange={(e) => setStudentName(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none text-sm" />
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-700 block mb-1">ระดับชั้น (ทางเลือก)</label>
-                      <input type="text" value={grade} onChange={(e) => setGrade(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm" />
+                      <input type="text" value={grade} onChange={(e) => setGrade(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none text-sm" />
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-700 block mb-2">
@@ -148,11 +148,11 @@ export default function ArtworksTab() {
                         <div className="flex flex-col items-center justify-center relative z-0">
                           <div className="flex items-center justify-center gap-2 mb-3">
                             <span className="text-4xl drop-shadow-sm">☁️</span>
-                            <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center text-white shadow-md">
+                            <div className="w-10 h-10 bg-orange-500 rounded-2xl flex items-center justify-center text-white shadow-md">
                               <span className="text-2xl drop-shadow-sm leading-none pb-1">⬆️</span>
                             </div>
                           </div>
-                          <p className="text-indigo-900 font-medium text-sm mb-1 group-hover:text-blue-700 transition-colors">คลิกหรือลากไฟล์ภาพมาที่นี่</p>
+                          <p className="text-indigo-900 font-medium text-sm mb-1 group-hover:text-orange-600 transition-colors">คลิกหรือลากไฟล์ภาพมาที่นี่</p>
                           <p className="text-indigo-400 text-xs">รองรับไฟล์ JPG, PNG (ไม่เกิน 10MB)</p>
                         </div>
                       </div>
@@ -167,13 +167,13 @@ export default function ArtworksTab() {
                         <div className="mt-3 relative w-full aspect-video bg-gray-100 rounded-xl overflow-hidden border border-gray-200 shadow-inner">
                            {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={imageUrl} alt="preview" className="w-full h-full object-contain" onError={(e) => (e.currentTarget.src = "https://placehold.co/600x400/eeeeee/999999?text=Image+Not+Found")} />
-                          <div className="absolute top-2 left-2 bg-black/50 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-md">รูปเดิม</div>
+                          <div className="absolute top-2 left-2 bg-black/50 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-xl">รูปเดิม</div>
                         </div>
                       ) : null}
                     </div>
                     
                     <div className="flex gap-2 pt-4 border-t border-gray-100">
-                      <Button type="submit" className="flex-1 rounded-xl bg-blue-600 hover:bg-blue-700 text-white">
+                      <Button type="submit" className="flex-1 rounded-xl bg-orange-500 hover:bg-orange-600 text-white">
                         {editingArtworkId ? "บันทึก" : "เพิ่ม"}
                       </Button>
                       {editingArtworkId && (
@@ -208,10 +208,10 @@ export default function ArtworksTab() {
                             <p className="text-xs text-gray-500 truncate">{artwork.studentName}</p>
                             <p className="text-[10px] text-gray-400 mt-1">{artwork.grade}</p>
                             <div className="flex gap-2 mt-4 pt-3 border-t border-gray-100">
-                              <button onClick={() => handleEditArtwork(artwork)} className="flex-1 h-8 rounded-lg flex items-center justify-center text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors">
+                              <button onClick={() => handleEditArtwork(artwork)} className="flex-1 h-8 rounded-2xl flex items-center justify-center text-xs font-medium text-orange-500 bg-orange-50 hover:bg-orange-100 transition-colors">
                                 <Pencil className="w-3 h-3 mr-1" /> แก้ไข
                               </button>
-                              <button onClick={() => handleDeleteArtwork(artwork.id)} className="flex-1 h-8 rounded-lg flex items-center justify-center text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 transition-colors">
+                              <button onClick={() => handleDeleteArtwork(artwork.id)} className="flex-1 h-8 rounded-2xl flex items-center justify-center text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 transition-colors">
                                 <Trash2 className="w-3 h-3 mr-1" /> ลบ
                               </button>
                             </div>
