@@ -537,10 +537,10 @@ export default function MaterialsList({
                     </div>
 
                     {/* Card Content Area */}
-                    <div className="p-5 sm:p-6 pb-2">
+                    <div className="p-5 sm:p-6 pb-3">
                       {/* Title */}
                       <h3 
-                        className={`text-base sm:text-lg font-bold mb-2 line-clamp-2 min-h-[2.6rem] leading-snug transition-colors ${
+                        className={`text-[15px] sm:text-base font-bold mb-2 line-clamp-2 min-h-[2.8rem] leading-snug transition-colors ${
                           isRedTitle 
                             ? "text-[#DC2626]" 
                             : "text-gray-900 group-hover:text-red-600"
@@ -551,52 +551,48 @@ export default function MaterialsList({
                       </h3>
 
                       {/* Description */}
-                      <p className="text-gray-500 text-xs sm:text-[13px] line-clamp-2 mb-4 leading-relaxed font-light">
+                      <p className="text-gray-500 text-xs sm:text-[13px] line-clamp-2 leading-relaxed font-light min-h-[2.4rem]">
                         {item.description || "สื่อการสอนศิลปะโดยกลุ่มสาระการเรียนรู้ศิลปะ โรงเรียนวชิรธรรมสาธิต"}
                       </p>
                     </div>
                   </div>
 
                   {/* Bottom Action Bar */}
-                  <div className="px-4 sm:px-5 pb-4 pt-3 border-t border-gray-50 flex items-center justify-between gap-2 overflow-hidden">
-                    {/* Left: Downloads Count & Quick QA link */}
-                    <div className="flex items-center gap-2 text-xs text-gray-500 shrink-0">
-                      <div className="flex items-center gap-1 text-gray-400 font-normal" title="จำนวนดาวน์โหลด">
+                  <div className="px-4 sm:px-5 pb-4 pt-3 border-t border-gray-100/80 space-y-2.5">
+                    {/* Row 1: Downloads Count & Quick QA link */}
+                    <div className="flex items-center justify-between gap-2 text-xs">
+                      <div className="flex items-center gap-1.5 text-gray-500 font-medium" title="จำนวนดาวน์โหลด">
                         <Download className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                        <span className="whitespace-nowrap font-medium text-gray-500">
-                          {downloadCounts[item.id] ?? item.downloadsCount ?? 342}
-                        </span>
+                        <span>{downloadCounts[item.id] ?? item.downloadsCount ?? 342} ครั้ง</span>
                       </div>
-
-                      <span className="text-gray-200 select-none">•</span>
 
                       <Link
                         href={item.rawId ? `${basePath}/detail?id=${item.rawId}#comments` : "#materials-community-discussion"}
-                        className="inline-flex items-center gap-1 text-xs text-orange-600 hover:text-orange-700 font-semibold transition-colors hover:underline whitespace-nowrap group/qa"
+                        className="inline-flex items-center gap-1 text-xs text-orange-600 hover:text-orange-700 font-semibold transition-colors hover:underline"
                         title="ถาม-ตอบเกี่ยวกับบทเรียนนี้"
                       >
-                        <MessageSquare className="w-3.5 h-3.5 text-orange-500 shrink-0 transition-transform group-hover/qa:scale-110" />
-                        <span className="whitespace-nowrap">ถาม-ตอบ</span>
+                        <MessageSquare className="w-3.5 h-3.5 text-orange-500 shrink-0" />
+                        <span>ถาม-ตอบ</span>
                       </Link>
                     </div>
 
-                    {/* Right: Actions [ 👁 ดู ] and [ ☁ ดาวน์โหลด ] */}
-                    <div className="flex items-center gap-1.5 shrink-0">
+                    {/* Row 2: Actions [ 👁 ดูตัวอย่าง ] and [ ☁ ดาวน์โหลด ] */}
+                    <div className="grid grid-cols-2 gap-2">
                       <button
                         type="button"
                         onClick={() => handleView(item)}
-                        className="px-3 py-1.5 rounded-full bg-gray-100/90 hover:bg-gray-200 text-gray-700 text-xs font-semibold flex items-center gap-1 transition-all active:scale-95 cursor-pointer shadow-2xs whitespace-nowrap"
+                        className="w-full py-2 px-2.5 rounded-xl bg-gray-100/90 hover:bg-gray-200 text-gray-700 text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-2xs"
                         title="ดูตัวอย่างเอกสารหรือบทเรียน"
                       >
                         <Eye className="w-3.5 h-3.5 text-gray-600 shrink-0" />
-                        <span>ดู</span>
+                        <span>ดูตัวอย่าง</span>
                       </button>
 
                       <button
                         type="button"
                         onClick={(e) => handleDownload(e, item)}
                         disabled={downloadingId === item.id}
-                        className="px-3.5 py-1.5 rounded-full bg-[#FFF0F3] hover:bg-[#FFE4E8] text-[#E11D48] text-xs font-semibold flex items-center gap-1.5 transition-all border border-pink-100/80 active:scale-95 cursor-pointer shadow-2xs disabled:opacity-75 whitespace-nowrap"
+                        className="w-full py-2 px-2.5 rounded-xl bg-[#FFF0F3] hover:bg-[#FFE4E8] text-[#E11D48] text-xs font-bold flex items-center justify-center gap-1.5 transition-all border border-pink-100/80 active:scale-95 cursor-pointer shadow-2xs disabled:opacity-75"
                         title="ดาวน์โหลดไฟล์ลงเครื่อง"
                       >
                         {downloadingId === item.id ? (
@@ -604,7 +600,7 @@ export default function MaterialsList({
                         ) : (
                           <CloudDownload className="w-3.5 h-3.5 text-[#E11D48] shrink-0" />
                         )}
-                        <span>{downloadingId === item.id ? "กำลังโหลด..." : "ดาวน์โหลด"}</span>
+                        <span className="truncate">{downloadingId === item.id ? "กำลังโหลด..." : "ดาวน์โหลด"}</span>
                       </button>
                     </div>
                   </div>
