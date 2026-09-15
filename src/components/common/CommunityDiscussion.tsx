@@ -364,13 +364,15 @@ export default function CommunityDiscussion({
             {/* Quick Discussion Search & Status Counter Bar */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-0.5">
               <div className="relative flex-1 sm:max-w-md">
-                <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+                  <Search className="w-4 h-4" />
+                </div>
                 <input
                   type="text"
                   value={discussionSearch}
                   onChange={(e) => setDiscussionSearch(e.target.value)}
                   placeholder="ค้นหาในกระดานถาม-ตอบ (พิมพ์คำถาม หรือชื่อผู้ถาม)..."
-                  className="w-full pl-9.5 pr-8 py-2 text-xs sm:text-sm bg-gray-50/90 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-500 focus:bg-white transition-all shadow-2xs placeholder-gray-400"
+                  className="w-full pl-10 pr-9 py-2 text-xs sm:text-sm bg-gray-50/90 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-500 focus:bg-white transition-all shadow-2xs placeholder-gray-400"
                 />
                 {discussionSearch && (
                   <button
