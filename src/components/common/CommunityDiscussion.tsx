@@ -281,8 +281,8 @@ export default function CommunityDiscussion({
   };
 
   // Submit comment
-  const handlePost = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handlePost = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     const effectiveAuthor = isLoggedIn ? userName : guestName.trim();
     if (!newComment.trim() || isPosting) return;
 
@@ -633,6 +633,12 @@ export default function CommunityDiscussion({
                   type="text"
                   value={guestName}
                   onChange={(e) => setGuestName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      textareaRef.current?.focus();
+                    }
+                  }}
                   placeholder="ใส่ชื่อหรือนามแฝงของคุณ (เช่น ด.ช. ศิลป์ดี หรือ ผู้ปกครองน้องอิง)..."
                   className="w-full h-10 px-4 rounded-xl border border-gray-200 bg-white text-xs sm:text-sm font-medium focus:border-orange-400 focus:ring-2 focus:ring-orange-400/10 outline-none transition-all shadow-2xs"
                 />
@@ -648,8 +654,18 @@ export default function CommunityDiscussion({
                   setNewComment(e.target.value);
                   if (postError) setPostError(null);
                 }}
+                onKeyDown={(e) => {
+                  // Press Enter without Shift to submit
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    if (e.nativeEvent.isComposing) return;
+                    e.preventDefault();
+                    if (newComment.trim() && !isPosting) {
+                      handlePost();
+                    }
+                  }
+                }}
                 rows={3}
-                placeholder="พิมพ์ข้อความเพื่อสอบถามคุณครู แลกเปลี่ยนเทคนิค หรือร่วมสนทนากับเพื่อนๆ..."
+                placeholder="พิมพ์ข้อความเพื่อสอบถามคุณครู แลกเปลี่ยนเทคนิค หรือร่วมสนทนากับเพื่อนๆ... (กด Enter เพื่อส่งข้อความ)"
                 className={`w-full p-4 rounded-2xl border border-gray-200 bg-white text-sm text-gray-800 placeholder-gray-400 outline-none transition-all resize-none shadow-2xs ${theme.borderFocus}`}
               />
             </div>
@@ -694,6 +710,9 @@ export default function CommunityDiscussion({
             <div className="mt-3 flex items-center justify-between pt-2">
               <span className="text-[11px] text-gray-400">
                 ความยาว: {newComment.length} / 1,000 ตัวอักษร
+                <span className="hidden sm:inline ml-2 text-gray-400 font-light">
+                  • กด <kbd className="px-1.5 py-0.5 rounded bg-gray-200/70 text-gray-700 font-sans text-[10px] font-semibold">Enter</kbd> ส่งข้อความ, <kbd className="px-1.5 py-0.5 rounded bg-gray-200/70 text-gray-700 font-sans text-[10px] font-semibold">Shift + Enter</kbd> ขึ้นบรรทัดใหม่
+                </span>
               </span>
 
               <button
