@@ -337,10 +337,11 @@ export default function CommunityDiscussion({
           </p>
 
           {/* Category Filter Pills & Discussion Search Bar */}
-          <div className="mt-5 pt-4 border-t border-gray-100/80 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="mt-5 pt-4 border-t border-gray-100/80 flex flex-col gap-3.5">
+            {/* Category Filter Pills (Wrapping cleanly, balanced with screen width) */}
             {tags && tags.length > 0 && (
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 scrollbar-none flex-1">
-                <span className="text-xs text-gray-400 font-medium shrink-0 mr-1 hidden sm:inline whitespace-nowrap">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-medium text-gray-400 shrink-0 mr-1 hidden sm:inline">
                   หมวดหมู่:
                 </span>
                 {tags.map((tag) => (
@@ -348,9 +349,9 @@ export default function CommunityDiscussion({
                     key={tag}
                     type="button"
                     onClick={() => setSelectedTag(tag)}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
+                    className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
                       selectedTag === tag
-                        ? `${theme.badgeBg} shadow-xs scale-102 font-bold`
+                        ? `${theme.badgeBg} shadow-xs scale-102 font-bold ring-2 ring-orange-400/20`
                         : "bg-gray-100/90 text-gray-600 hover:bg-gray-200/80 hover:text-gray-900"
                     }`}
                   >
@@ -360,25 +361,53 @@ export default function CommunityDiscussion({
               </div>
             )}
 
-            {/* Quick Discussion Search */}
-            <div className="relative shrink-0 sm:w-60">
-              <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={discussionSearch}
-                onChange={(e) => setDiscussionSearch(e.target.value)}
-                placeholder="ค้นหาในกระดานถาม-ตอบ..."
-                className="w-full pl-8 pr-7 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-500 focus:bg-white transition-colors"
-              />
-              {discussionSearch && (
-                <button
-                  type="button"
-                  onClick={() => setDiscussionSearch("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs cursor-pointer"
-                >
-                  ✕
-                </button>
-              )}
+            {/* Quick Discussion Search & Status Counter Bar */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-0.5">
+              <div className="relative flex-1 sm:max-w-md">
+                <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  value={discussionSearch}
+                  onChange={(e) => setDiscussionSearch(e.target.value)}
+                  placeholder="ค้นหาในกระดานถาม-ตอบ (พิมพ์คำถาม หรือชื่อผู้ถาม)..."
+                  className="w-full pl-9.5 pr-8 py-2 text-xs sm:text-sm bg-gray-50/90 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-500 focus:bg-white transition-all shadow-2xs placeholder-gray-400"
+                />
+                {discussionSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setDiscussionSearch("")}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs cursor-pointer p-1 rounded-md hover:bg-gray-200/60"
+                    title="ล้างคำค้นหา"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+
+              {/* Status / Active Filter Summary */}
+              <div className="flex items-center gap-2 text-xs text-gray-500 shrink-0">
+                {(selectedTag !== "ทั้งหมด" || discussionSearch) ? (
+                  <>
+                    <span className="font-medium text-gray-700">
+                      พบ <span className="text-orange-600 font-bold">{filteredComments.length}</span> ข้อความ
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedTag("ทั้งหมด");
+                        setDiscussionSearch("");
+                      }}
+                      className="text-orange-600 hover:text-orange-700 hover:underline font-bold cursor-pointer ml-1"
+                    >
+                      ล้างตัวกรอง
+                    </button>
+                  </>
+                ) : (
+                  <span className="text-gray-400 font-normal">
+                    แสดงทั้งหมด {comments.length} บทสนทนา
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -473,7 +502,7 @@ export default function CommunityDiscussion({
 
             {/* Quick Prompts Chips */}
             {quickPrompts && quickPrompts.length > 0 && (
-              <div className="mt-2.5 flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+              <div className="mt-2.5 flex flex-wrap items-center gap-1.5 pt-1">
                 <span className="text-[11px] text-gray-400 shrink-0 mr-1 flex items-center gap-1">
                   <Sparkles className="w-3 h-3 text-amber-500" />
                   ข้อความด่วน:
@@ -483,7 +512,7 @@ export default function CommunityDiscussion({
                     key={idx}
                     type="button"
                     onClick={() => handleQuickPromptClick(prompt)}
-                    className="shrink-0 px-2.5 py-1 rounded-lg bg-white hover:bg-orange-50 border border-gray-200/80 hover:border-orange-200 text-[11px] font-normal text-gray-600 hover:text-orange-700 transition-all shadow-2xs active:scale-95"
+                    className="shrink-0 px-2.5 py-1 rounded-lg bg-white hover:bg-orange-50 border border-gray-200/80 hover:border-orange-200 text-[11px] font-normal text-gray-600 hover:text-orange-700 transition-all shadow-2xs active:scale-95 cursor-pointer"
                   >
                     {prompt}
                   </button>
