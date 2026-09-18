@@ -271,7 +271,7 @@ export default function StudentVideoShowcase() {
               className="w-[280px] sm:w-[320px] shrink-0 snap-start bg-white rounded-3xl overflow-hidden border border-orange-100/80 shadow-xs hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col cursor-pointer group"
             >
               {/* Thumbnail Container (16:9) */}
-              <div className="relative aspect-video w-full overflow-hidden bg-gray-900">
+              <div className="relative aspect-video w-full overflow-hidden bg-gray-900 rounded-t-3xl">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img 
                   src={video.thumbnailUrl} 
@@ -402,7 +402,7 @@ export default function StudentVideoShowcase() {
             <div className="p-4 sm:p-6 space-y-5 max-h-[78vh] overflow-y-auto">
               {/* Responsive Video Player Container */}
               <div className="space-y-2">
-                <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-black shadow-md border border-gray-200">
+                <div className="relative aspect-video w-full rounded-3xl overflow-hidden bg-black shadow-md border border-gray-200">
                   <iframe 
                     src={`https://www.youtube.com/embed/${selectedVideo.youtubeId}?autoplay=1&rel=0`}
                     title={selectedVideo.title}

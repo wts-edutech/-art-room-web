@@ -4,21 +4,22 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Menu, X, ChevronDown, LogOut, Calendar, Clock, Settings, User } from "lucide-react";
+import { Menu, X, ChevronDown, LogOut, Calendar, Clock, Settings, User, Newspaper, CalendarDays, GraduationCap, PhoneCall, Trophy, Palette, Building2, Landmark } from "lucide-react";
 import ProfileSettingsModal from "@/components/modals/ProfileSettingsModal";
 import { resolveUserAvatar } from "@/lib/art-avatars";
+import { performGlobalLogout, syncAuthWithServer } from "@/lib/client-auth";
 
 export default function Navbar() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isActivitiesOpen, setIsActivitiesOpen] = useState(false);
   const [isArtworksOpen, setIsArtworksOpen] = useState(false);
   const [isOrgMediaOpen, setIsOrgMediaOpen] = useState(false);
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const [isTeachersEnabled, setIsTeachersEnabled] = useState(false);
+  const [isTeachersEnabled, setIsTeachersEnabled] = useState(true);
 
   const updateUserData = () => {
     const name = localStorage.getItem("artroom_author_name");
@@ -32,13 +33,18 @@ export default function Navbar() {
   useEffect(() => {
     updateUserData();
 
-    // Listen for profile changes from ProfileSettingsModal
+    // Verify and sync with server session token
+    syncAuthWithServer().then(() => {
+      updateUserData();
+    });
+
+    // Listen for profile changes from ProfileSettingsModal or other tabs
     window.addEventListener("artroom_profile_updated", updateUserData);
 
     // Check if teachers directory is enabled by admin
     fetch('/api/teachers/status')
       .then(res => res.json())
-      .then(data => {
+      .then((data: any) => {
         if (data && typeof data.enabled === 'boolean') {
           setIsTeachersEnabled(data.enabled);
         }
@@ -56,22 +62,7 @@ export default function Navbar() {
   }, [pathname]);
 
   const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-    } catch (e) {
-      // proceed with client-side cleanup
-    }
-    localStorage.removeItem("artroom_author_name");
-    localStorage.removeItem("artroom_author_email");
-    localStorage.removeItem("artroom_role");
-    localStorage.removeItem("artroom_user_role");
-    localStorage.removeItem("artroom_phone");
-    localStorage.removeItem("artroom_display_name");
-    localStorage.removeItem("artroom_avatar");
-    localStorage.removeItem("artroom_student_grade");
-    setUserName(null);
-    setUserAvatar(null);
-    window.location.reload();
+    await performGlobalLogout("/");
   };
 
   const resolvedAvatar = resolveUserAvatar(userAvatar, userName);
@@ -111,132 +102,209 @@ export default function Navbar() {
         
         {/* Desktop Navigation (Visible on XL screens 1280px+) */}
         <nav className="hidden xl:flex items-center gap-5 lg:gap-6 text-[15px] font-medium text-gray-700 h-full ml-4">
+          {/* 1. หน้าแรก */}
           <Link 
             href="/" 
-            className={`h-full flex items-center px-1 border-b-[3px] transition-colors whitespace-nowrap flex-shrink-0 ${pathname === "/" ? "border-red-500 text-red-500" : "border-transparent hover:border-red-500 hover:text-red-500"}`}
+            className={`h-full flex items-center px-1 border-b-[3px] transition-colors whitespace-nowrap flex-shrink-0 ${pathname === "/" ? "border-red-500 text-red-500 font-bold" : "border-transparent hover:border-red-500 hover:text-red-500"}`}
           >
             หน้าแรก
           </Link>
 
+          {/* 2. สื่อการสอน */}
           <Link 
             href="/materials" 
-            className={`h-full flex items-center px-1 border-b-[3px] transition-colors whitespace-nowrap flex-shrink-0 ${pathname.startsWith("/materials") || pathname.startsWith("/downloads") ? "border-red-500 text-red-500 font-bold" : "border-transparent hover:border-red-500 hover:text-red-500"}`}
+            className={`h-full flex items-center px-1 border-b-[3px] transition-colors whitespace-nowrap flex-shrink-0 ${pathname.startsWith("/materials") ? "border-red-500 text-red-500 font-bold" : "border-transparent hover:border-red-500 hover:text-red-500"}`}
           >
-            คลังสื่อการสอน
+            สื่อการสอน
           </Link>
 
+          {/* 3. ส่งงาน (NEW) */}
           <Link 
-            href="/news" 
-            className={`h-full flex items-center px-1 border-b-[3px] transition-colors whitespace-nowrap flex-shrink-0 ${pathname.startsWith("/news") ? "border-red-500 text-red-500" : "border-transparent hover:border-red-500 hover:text-red-500"}`}
+            href="/submissions" 
+            className={`h-full flex items-center gap-1.5 px-1 border-b-[3px] transition-colors whitespace-nowrap flex-shrink-0 ${pathname.startsWith("/submissions") ? "border-red-500 text-red-500 font-bold" : "border-transparent hover:border-red-500 hover:text-red-500"}`}
           >
-            ข่าวสาร
+            <span>ส่งงาน</span>
+            <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-orange-100 text-orange-700">NEW</span>
           </Link>
 
-          <Link 
-            href="/ideas" 
-            className={`h-full flex items-center px-1 border-b-[3px] transition-colors whitespace-nowrap flex-shrink-0 ${pathname.startsWith("/ideas") ? "border-red-500 text-red-500" : "border-transparent hover:border-red-500 hover:text-red-500"}`}
-          >
-            แชร์ไอเดีย
-          </Link>
-
-          {/* Artworks Dropdown Menu */}
+          {/* 4. ผลงานนักเรียน Dropdown Menu */}
           <div className="relative group h-full flex items-center flex-shrink-0">
             <Link 
               href="/artworks"
-              className={`whitespace-nowrap flex items-center gap-1.5 px-1 h-full border-b-[3px] transition-colors focus:outline-none ${pathname.startsWith("/artworks") || pathname.startsWith("/awards") ? "border-red-500 text-red-500" : "border-transparent hover:border-red-500 hover:text-red-500"}`}
+              className={`whitespace-nowrap flex items-center gap-1.5 px-1 h-full border-b-[3px] transition-colors focus:outline-none ${pathname.startsWith("/artworks") || pathname.startsWith("/awards") ? "border-red-500 text-red-500 font-bold" : "border-transparent hover:border-red-500 hover:text-red-500"}`}
             >
               ผลงานนักเรียน <ChevronDown className="w-4 h-4 transition-transform duration-300 group-hover:rotate-180" />
             </Link>
             
-            <div className="absolute top-full -left-4 pt-2 w-48 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-              <div className="bg-white rounded-2xl shadow-xl border border-gray-100 py-2 flex flex-col">
+            <div className="absolute top-full -left-4 pt-2 w-64 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+              <div className="bg-white rounded-2xl shadow-xl border border-gray-100 py-2 px-1.5 flex flex-col gap-0.5">
                 <Link 
                   href="/awards" 
-                  className="px-4 py-2 hover:bg-gray-50 text-gray-700 hover:text-red-600 transition-colors whitespace-nowrap"
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-50/80 transition-colors group/item ${
+                    pathname.startsWith("/awards") ? "bg-red-50 text-red-600 font-bold" : "text-gray-700 hover:text-red-600"
+                  }`}
                 >
-                  รางวัลที่ได้รับ
+                  <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center shrink-0 group-hover/item:scale-105 transition-transform">
+                    <Trophy className="w-4 h-4" />
+                  </div>
+                  <div className="flex flex-col text-left">
+                    <span className="text-sm font-semibold leading-tight">รางวัลที่ได้รับ</span>
+                    <span className="text-[11px] text-gray-400 font-normal leading-tight mt-0.5">ผลงานการประกวดและการแข่งขัน</span>
+                  </div>
                 </Link>
                 <Link 
                   href="/artworks" 
-                  className="px-4 py-2 hover:bg-gray-50 text-gray-700 hover:text-red-600 transition-colors whitespace-nowrap"
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-50/80 transition-colors group/item ${
+                    pathname.startsWith("/artworks") ? "bg-red-50 text-red-600 font-bold" : "text-gray-700 hover:text-red-600"
+                  }`}
                 >
-                  ผลงานนักเรียน
-                </Link>
-              </div>
-            </div>
-          </div>
-          
-          {/* Activities Dropdown Menu */}
-          <div className="relative group h-full flex items-center flex-shrink-0">
-            <Link 
-              href="/activities"
-              className={`whitespace-nowrap flex items-center gap-1.5 px-1 h-full border-b-[3px] transition-colors focus:outline-none ${pathname.startsWith("/activities") ? "border-red-500 text-red-500" : "border-transparent hover:border-red-500 hover:text-red-500"}`}
-            >
-              กิจกรรมต่างๆ <ChevronDown className="w-4 h-4 transition-transform duration-300 group-hover:rotate-180" />
-            </Link>
-            
-            <div className="absolute top-full -left-4 pt-2 w-48 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-              <div className="bg-white rounded-2xl shadow-xl border border-gray-100 py-2 flex flex-col">
-                <Link 
-                  href="/activities" 
-                  className="px-4 py-2 hover:bg-gray-50 text-gray-700 hover:text-red-600 transition-colors whitespace-nowrap"
-                >
-                  ปฏิทินกิจกรรม
+                  <div className="w-8 h-8 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center shrink-0 group-hover/item:scale-105 transition-transform">
+                    <Palette className="w-4 h-4" />
+                  </div>
+                  <div className="flex flex-col text-left">
+                    <span className="text-sm font-semibold leading-tight">ผลงานนักเรียน</span>
+                    <span className="text-[11px] text-gray-400 font-normal leading-tight mt-0.5">แกลเลอรีผลงานศิลปะสร้างสรรค์</span>
+                  </div>
                 </Link>
               </div>
             </div>
           </div>
 
-          {isTeachersEnabled && (
-            <Link 
-              href="/teachers" 
-              className={`h-full flex items-center px-1 border-b-[3px] transition-colors whitespace-nowrap flex-shrink-0 ${pathname === "/teachers" ? "border-red-500 text-red-500" : "border-transparent hover:border-red-500 hover:text-red-500"}`}
-            >
-              ทำเนียบครู
-            </Link>
-          )}
+          {/* 5. แชร์ไอเดีย */}
+          <Link 
+            href="/ideas" 
+            className={`h-full flex items-center px-1 border-b-[3px] transition-colors whitespace-nowrap flex-shrink-0 ${pathname.startsWith("/ideas") ? "border-red-500 text-red-500 font-bold" : "border-transparent hover:border-red-500 hover:text-red-500"}`}
+          >
+            แชร์ไอเดีย
+          </Link>
 
-          {/* Organization Media Dropdown Menu */}
+          {/* 6. คลังสื่อองค์กร Dropdown Menu */}
           <div className="relative group h-full flex items-center flex-shrink-0">
             <button 
+              type="button"
               className="whitespace-nowrap flex items-center gap-1.5 px-1 h-full border-b-[3px] border-transparent hover:border-red-500 hover:text-red-500 transition-colors focus:outline-none cursor-pointer"
             >
               คลังสื่อองค์กร <ChevronDown className="w-4 h-4 transition-transform duration-300 group-hover:rotate-180" />
             </button>
             
-            <div className="absolute top-full -left-4 pt-2 w-64 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-              <div className="bg-white rounded-2xl shadow-xl border border-gray-100 py-2 flex flex-col">
+            <div className="absolute top-full -left-6 pt-2 w-72 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+              <div className="bg-white rounded-2xl shadow-xl border border-gray-100 py-2 px-1.5 flex flex-col gap-0.5">
                 <Link 
                   href="https://media-center.moe.go.th/Home" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="px-4 py-2 hover:bg-gray-50 text-gray-700 hover:text-red-600 transition-colors text-sm"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-50/80 transition-colors group/item"
                 >
-                  ศูนย์รวมการเรียนรู้ (กระทรวงศึกษาธิการ)
+                  <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center shrink-0 group-hover/item:scale-105 transition-transform">
+                    <Building2 className="w-4 h-4" />
+                  </div>
+                  <div className="flex flex-col text-left">
+                    <span className="text-sm font-semibold leading-tight text-gray-800 group-hover/item:text-red-600 transition-colors">ศูนย์รวมการเรียนรู้ (ศธ.)</span>
+                    <span className="text-[11px] text-gray-400 font-normal leading-tight mt-0.5">กระทรวงศึกษาธิการ</span>
+                  </div>
                 </Link>
                 <Link 
                   href="https://elibrary-bacc.hibrary.me/" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="px-4 py-2 hover:bg-gray-50 text-gray-700 hover:text-red-600 transition-colors text-sm"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-50/80 transition-colors group/item"
                 >
-                  ห้องสมุด หอศิลปวัฒนธรรมแห่งกรุงเทพมหานคร
+                  <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center shrink-0 group-hover/item:scale-105 transition-transform">
+                    <Landmark className="w-4 h-4" />
+                  </div>
+                  <div className="flex flex-col text-left">
+                    <span className="text-sm font-semibold leading-tight text-gray-800 group-hover/item:text-red-600 transition-colors">ห้องสมุด หอศิลปวัฒนธรรมฯ</span>
+                    <span className="text-[11px] text-gray-400 font-normal leading-tight mt-0.5">e-Library BACC กรุงเทพมหานคร</span>
+                  </div>
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* 7. เกี่ยวกับเรา Dropdown Menu (รวม: ข่าวสาร, กิจกรรมต่างๆ, ทำเนียบครู, ติดต่อเรา) */}
+          <div className="relative group h-full flex items-center flex-shrink-0">
+            <button 
+              type="button"
+              className={`whitespace-nowrap flex items-center gap-1.5 px-1 h-full border-b-[3px] transition-colors focus:outline-none cursor-pointer ${
+                pathname.startsWith("/news") || pathname.startsWith("/activities") || pathname.startsWith("/teachers") || pathname === "/contact"
+                  ? "border-red-500 text-red-500 font-bold" 
+                  : "border-transparent hover:border-red-500 hover:text-red-500 text-gray-700"
+              }`}
+            >
+              <span>เกี่ยวกับเรา</span>
+              <ChevronDown className="w-4 h-4 transition-transform duration-300 group-hover:rotate-180" />
+            </button>
+            
+            <div className="absolute top-full -left-6 pt-2 w-64 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+              <div className="bg-white rounded-2xl shadow-xl border border-gray-100 py-2 px-1.5 flex flex-col gap-0.5">
+                <Link 
+                  href="/news" 
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-50/80 transition-colors group/item ${
+                    pathname.startsWith("/news") ? "bg-red-50 text-red-600 font-bold" : "text-gray-700 hover:text-red-600"
+                  }`}
+                >
+                  <div className="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center shrink-0 group-hover/item:scale-105 transition-transform">
+                    <Newspaper className="w-4 h-4" />
+                  </div>
+                  <div className="flex flex-col text-left">
+                    <span className="text-sm font-semibold leading-tight">ข่าวสารและประกาศ</span>
+                    <span className="text-[11px] text-gray-400 font-normal leading-tight mt-0.5">อัปเดตข่าวประชาสัมพันธ์</span>
+                  </div>
+                </Link>
+
+                <Link 
+                  href="/activities" 
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-50/80 transition-colors group/item ${
+                    pathname.startsWith("/activities") ? "bg-red-50 text-red-600 font-bold" : "text-gray-700 hover:text-red-600"
+                  }`}
+                >
+                  <div className="w-8 h-8 rounded-lg bg-pink-100 text-pink-600 flex items-center justify-center shrink-0 group-hover/item:scale-105 transition-transform">
+                    <CalendarDays className="w-4 h-4" />
+                  </div>
+                  <div className="flex flex-col text-left">
+                    <span className="text-sm font-semibold leading-tight">กิจกรรมต่างๆ</span>
+                    <span className="text-[11px] text-gray-400 font-normal leading-tight mt-0.5">ปฏิทินและภาพกิจกรรมศิลปะ</span>
+                  </div>
+                </Link>
+
+                {isTeachersEnabled && (
+                  <Link 
+                    href="/teachers" 
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-50/80 transition-colors group/item ${
+                      pathname.startsWith("/teachers") ? "bg-red-50 text-red-600 font-bold" : "text-gray-700 hover:text-red-600"
+                    }`}
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0 group-hover/item:scale-105 transition-transform">
+                      <GraduationCap className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col text-left">
+                      <span className="text-sm font-semibold leading-tight">Teacher Profile & Awards</span>
+                      <span className="text-[11px] text-gray-400 font-normal leading-tight mt-0.5">ประวัติและรางวัลครูผู้สอน</span>
+                    </div>
+                  </Link>
+                )}
+
+                <Link 
+                  href="/contact" 
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-50/80 transition-colors group/item ${
+                    pathname === "/contact" ? "bg-red-50 text-red-600 font-bold" : "text-gray-700 hover:text-red-600"
+                  }`}
+                >
+                  <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 group-hover/item:scale-105 transition-transform">
+                    <PhoneCall className="w-4 h-4" />
+                  </div>
+                  <div className="flex flex-col text-left">
+                    <span className="text-sm font-semibold leading-tight">ติดต่อเรา</span>
+                    <span className="text-[11px] text-gray-400 font-normal leading-tight mt-0.5">ช่องทางติดต่อกลุ่มสาระฯ ศิลปะ</span>
+                  </div>
                 </Link>
               </div>
             </div>
           </div>
         </nav>
 
-        {/* Right Section: Contact, User Profile / Login & Hamburger Button */}
+        {/* Right Section: User Profile / Login & Hamburger Button */}
         <div className="flex items-center gap-2 sm:gap-3 h-full flex-shrink-0">
-          <Link 
-            href="/contact" 
-            className={`hidden xl:flex items-center px-1 h-full border-b-[3px] transition-colors text-[15px] font-medium whitespace-nowrap flex-shrink-0 ${pathname === "/contact" ? "border-red-500 text-red-500" : "border-transparent hover:border-red-500 hover:text-red-500 text-gray-700"}`}
-          >
-            ติดต่อเรา
-          </Link>
-          
-          <div className="hidden xl:flex items-center h-4 w-px bg-gray-300 mx-1"></div>
 
           {userName ? (
             <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
@@ -328,6 +396,7 @@ export default function Navbar() {
         </div>
         
         <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-1">
+          {/* 1. หน้าแรก */}
           <Link 
             href="/" 
             className={`px-4 py-3 font-medium rounded-xl transition-colors cursor-pointer ${pathname === "/" ? "bg-red-50 text-red-600 font-bold" : "text-gray-700 hover:bg-gray-50"}`} 
@@ -335,34 +404,30 @@ export default function Navbar() {
           >
             หน้าแรก
           </Link>
-          
+
+          {/* 2. สื่อการสอน */}
           <Link 
             href="/materials" 
-            className={`px-4 py-3 font-medium rounded-xl transition-colors cursor-pointer ${pathname.startsWith("/materials") || pathname.startsWith("/downloads") ? "bg-red-50 text-red-600 font-bold" : "text-gray-700 hover:bg-gray-50"}`} 
+            className={`px-4 py-3 font-medium rounded-xl transition-colors cursor-pointer ${pathname.startsWith("/materials") ? "bg-red-50 text-red-600 font-bold" : "text-gray-700 hover:bg-gray-50"}`} 
             onClick={() => setIsMobileMenuOpen(false)}
           >
-            คลังสื่อการสอน
-          </Link>
-          
-          <Link 
-            href="/news" 
-            className={`px-4 py-3 font-medium rounded-xl transition-colors cursor-pointer ${pathname.startsWith("/news") ? "bg-red-50 text-red-600 font-bold" : "text-gray-700 hover:bg-gray-50"}`} 
-            onClick={() => setIsMobileMenuOpen(false)}
-          >
-            ข่าวสาร
+            สื่อการสอน
           </Link>
 
+          {/* 3. ส่งงานนักเรียน */}
           <Link 
-            href="/ideas" 
-            className={`px-4 py-3 font-medium rounded-xl transition-colors cursor-pointer ${pathname.startsWith("/ideas") ? "bg-red-50 text-red-600 font-bold" : "text-gray-700 hover:bg-gray-50"}`} 
+            href="/submissions" 
+            className={`px-4 py-3 font-medium rounded-xl transition-colors cursor-pointer flex items-center justify-between ${pathname.startsWith("/submissions") ? "bg-red-50 text-red-600 font-bold" : "text-gray-700 hover:bg-gray-50"}`} 
             onClick={() => setIsMobileMenuOpen(false)}
           >
-            แชร์ไอเดีย
+            <span>ส่งงานนักเรียน</span>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-orange-700">NEW</span>
           </Link>
           
-          {/* Artworks Mobile Dropdown */}
+          {/* 4. ผลงานนักเรียน Mobile Dropdown */}
           <div className="flex flex-col">
             <button 
+              type="button"
               onClick={() => setIsArtworksOpen(!isArtworksOpen)}
               className="px-4 py-3 text-gray-700 font-medium hover:bg-gray-50 rounded-xl flex items-center justify-between text-left cursor-pointer"
             >
@@ -371,47 +436,43 @@ export default function Navbar() {
             </button>
             <div className={`overflow-hidden transition-all duration-300 ${isArtworksOpen ? "max-h-32 opacity-100 mt-1" : "max-h-0 opacity-0"}`}>
               <div className="ml-4 flex flex-col border-l-2 border-red-200 pl-2 space-y-1">
-                <Link href="/awards" className="px-3 py-2 text-gray-600 hover:text-red-600 font-medium text-sm rounded-lg hover:bg-red-50/50 cursor-pointer" onClick={() => setIsMobileMenuOpen(false)}>
-                  รางวัลที่ได้รับ
+                <Link 
+                  href="/awards" 
+                  className={`px-3 py-2 flex items-center gap-2.5 font-medium text-sm rounded-lg cursor-pointer ${
+                    pathname.startsWith("/awards") ? "text-red-600 font-bold bg-red-50/80" : "text-gray-600 hover:text-red-600 hover:bg-red-50/50"
+                  }`} 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Trophy className="w-4 h-4 text-amber-500 shrink-0" />
+                  <span>รางวัลที่ได้รับ</span>
                 </Link>
-                <Link href="/artworks" className="px-3 py-2 text-gray-600 hover:text-red-600 font-medium text-sm rounded-lg hover:bg-red-50/50 cursor-pointer" onClick={() => setIsMobileMenuOpen(false)}>
-                  ผลงานนักเรียน
-                </Link>
-              </div>
-            </div>
-          </div>
-          
-          {/* Activities Mobile Dropdown */}
-          <div className="flex flex-col">
-            <button 
-              onClick={() => setIsActivitiesOpen(!isActivitiesOpen)}
-              className="px-4 py-3 text-gray-700 font-medium hover:bg-gray-50 rounded-xl flex items-center justify-between text-left cursor-pointer"
-            >
-              <span>กิจกรรมต่างๆ</span>
-              <ChevronDown className={`w-4 h-4 transition-transform ${isActivitiesOpen ? "rotate-180 text-red-600" : ""}`} />
-            </button>
-            <div className={`overflow-hidden transition-all duration-300 ${isActivitiesOpen ? "max-h-24 opacity-100 mt-1" : "max-h-0 opacity-0"}`}>
-              <div className="ml-4 flex flex-col border-l-2 border-red-200 pl-2 space-y-1">
-                <Link href="/activities" className="px-3 py-2 text-gray-600 hover:text-red-600 font-medium text-sm rounded-lg hover:bg-red-50/50 cursor-pointer" onClick={() => setIsMobileMenuOpen(false)}>
-                  ปฏิทินกิจกรรม
+                <Link 
+                  href="/artworks" 
+                  className={`px-3 py-2 flex items-center gap-2.5 font-medium text-sm rounded-lg cursor-pointer ${
+                    pathname.startsWith("/artworks") ? "text-red-600 font-bold bg-red-50/80" : "text-gray-600 hover:text-red-600 hover:bg-red-50/50"
+                  }`} 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Palette className="w-4 h-4 text-rose-500 shrink-0" />
+                  <span>ผลงานนักเรียน</span>
                 </Link>
               </div>
             </div>
           </div>
 
-          {isTeachersEnabled && (
-            <Link 
-              href="/teachers" 
-              className={`px-4 py-3 font-medium rounded-xl transition-colors cursor-pointer ${pathname === "/teachers" ? "bg-red-50 text-red-600 font-bold" : "text-gray-700 hover:bg-gray-50"}`} 
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              ทำเนียบครูผู้สอน
-            </Link>
-          )}
+          {/* 5. แชร์ไอเดีย */}
+          <Link 
+            href="/ideas" 
+            className={`px-4 py-3 font-medium rounded-xl transition-colors cursor-pointer ${pathname.startsWith("/ideas") ? "bg-red-50 text-red-600 font-bold" : "text-gray-700 hover:bg-gray-50"}`} 
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            แชร์ไอเดีย
+          </Link>
 
-          {/* Organization Media Mobile Dropdown */}
+          {/* 6. คลังสื่อองค์กร Mobile Dropdown */}
           <div className="flex flex-col">
             <button 
+              type="button"
               onClick={() => setIsOrgMediaOpen(!isOrgMediaOpen)}
               className="px-4 py-3 text-gray-700 font-medium hover:bg-gray-50 rounded-xl flex items-center justify-between text-left cursor-pointer"
             >
@@ -420,23 +481,91 @@ export default function Navbar() {
             </button>
             <div className={`overflow-hidden transition-all duration-300 ${isOrgMediaOpen ? "max-h-36 opacity-100 mt-1" : "max-h-0 opacity-0"}`}>
               <div className="ml-4 flex flex-col border-l-2 border-red-200 pl-2 space-y-1">
-                <Link href="https://media-center.moe.go.th/Home" target="_blank" rel="noopener noreferrer" className="px-3 py-2 text-gray-600 hover:text-red-600 font-medium text-xs rounded-lg hover:bg-red-50/50 cursor-pointer" onClick={() => setIsMobileMenuOpen(false)}>
-                  ศูนย์รวมการเรียนรู้ (ศธ.)
+                <Link 
+                  href="https://media-center.moe.go.th/Home" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="px-3 py-2 flex items-center gap-2.5 font-medium text-sm text-gray-600 hover:text-red-600 hover:bg-red-50/50 rounded-lg cursor-pointer" 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Building2 className="w-4 h-4 text-blue-500 shrink-0" />
+                  <span>ศูนย์รวมการเรียนรู้ (ศธ.)</span>
                 </Link>
-                <Link href="https://elibrary-bacc.hibrary.me/" target="_blank" rel="noopener noreferrer" className="px-3 py-2 text-gray-600 hover:text-red-600 font-medium text-xs rounded-lg hover:bg-red-50/50 cursor-pointer" onClick={() => setIsMobileMenuOpen(false)}>
-                  ห้องสมุด (BACC)
+                <Link 
+                  href="https://elibrary-bacc.hibrary.me/" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="px-3 py-2 flex items-center gap-2.5 font-medium text-sm text-gray-600 hover:text-red-600 hover:bg-red-50/50 rounded-lg cursor-pointer" 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Landmark className="w-4 h-4 text-purple-500 shrink-0" />
+                  <span>ห้องสมุด (BACC)</span>
                 </Link>
               </div>
             </div>
           </div>
-          
-          <Link 
-            href="/contact" 
-            className={`px-4 py-3 font-medium rounded-xl transition-colors cursor-pointer ${pathname === "/contact" ? "bg-red-50 text-red-600 font-bold" : "text-gray-700 hover:bg-gray-50"}`} 
-            onClick={() => setIsMobileMenuOpen(false)}
-          >
-            ติดต่อเรา
-          </Link>
+
+          {/* 7. เกี่ยวกับเรา Mobile Accordion */}
+          <div className="flex flex-col">
+            <button 
+              type="button"
+              onClick={() => setIsAboutOpen(!isAboutOpen)}
+              className={`px-4 py-3 font-medium hover:bg-gray-50 rounded-xl flex items-center justify-between text-left cursor-pointer ${
+                pathname.startsWith("/news") || pathname.startsWith("/activities") || pathname.startsWith("/teachers") || pathname === "/contact"
+                  ? "text-red-600 font-bold bg-red-50/50"
+                  : "text-gray-700"
+              }`}
+            >
+              <span>เกี่ยวกับเรา</span>
+              <ChevronDown className={`w-4 h-4 transition-transform ${isAboutOpen ? "rotate-180 text-red-600" : ""}`} />
+            </button>
+            <div className={`overflow-hidden transition-all duration-300 ${isAboutOpen ? "max-h-64 opacity-100 mt-1" : "max-h-0 opacity-0"}`}>
+              <div className="ml-4 flex flex-col border-l-2 border-red-200 pl-2 space-y-1">
+                <Link 
+                  href="/news" 
+                  className={`px-3 py-2 flex items-center gap-2.5 font-medium text-sm rounded-lg cursor-pointer ${
+                    pathname.startsWith("/news") ? "text-red-600 font-bold bg-red-50/80" : "text-gray-600 hover:text-red-600 hover:bg-red-50/50"
+                  }`} 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Newspaper className="w-4 h-4 text-orange-500 shrink-0" />
+                  <span>ข่าวสารและประกาศ</span>
+                </Link>
+                <Link 
+                  href="/activities" 
+                  className={`px-3 py-2 flex items-center gap-2.5 font-medium text-sm rounded-lg cursor-pointer ${
+                    pathname.startsWith("/activities") ? "text-red-600 font-bold bg-red-50/80" : "text-gray-600 hover:text-red-600 hover:bg-red-50/50"
+                  }`} 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <CalendarDays className="w-4 h-4 text-pink-500 shrink-0" />
+                  <span>กิจกรรมต่างๆ</span>
+                </Link>
+                {isTeachersEnabled && (
+                  <Link 
+                    href="/teachers" 
+                    className={`px-3 py-2 flex items-center gap-2.5 font-medium text-sm rounded-lg cursor-pointer ${
+                      pathname === "/teachers" ? "text-red-600 font-bold bg-red-50/80" : "text-gray-600 hover:text-red-600 hover:bg-red-50/50"
+                    }`} 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <GraduationCap className="w-4 h-4 text-indigo-500 shrink-0" />
+                    <span>Teacher Profile & Awards</span>
+                  </Link>
+                )}
+                <Link 
+                  href="/contact" 
+                  className={`px-3 py-2 flex items-center gap-2.5 font-medium text-sm rounded-lg cursor-pointer ${
+                    pathname === "/contact" ? "text-red-600 font-bold bg-red-50/80" : "text-gray-600 hover:text-red-600 hover:bg-red-50/50"
+                  }`} 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <PhoneCall className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <span>ติดต่อเรา</span>
+                </Link>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Drawer Bottom Action */}

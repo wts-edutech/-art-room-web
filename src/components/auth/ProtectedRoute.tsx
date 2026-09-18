@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import Link from "next/link";
-import { X, Lock } from "lucide-react";
-import GuestBlockModal from "@/components/modals/GuestBlockModal";
+import StudentAccessGuard from "@/components/auth/StudentAccessGuard";
+import { syncAuthWithServer } from "@/lib/client-auth";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -14,81 +13,71 @@ interface ProtectedRouteProps {
 export default function ProtectedRoute({ children, studentOnly = false }: ProtectedRouteProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const [authState, setAuthState] = useState<"checking" | "authorized" | "unauthorized" | "guest_blocked">("checking");
+  const [isChecking, setIsChecking] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    // Check if the user is logged in
-    const isLoggedIn = localStorage.getItem("artroom_author_name");
-    const role = localStorage.getItem("artroom_role");
-    
-    if (!isLoggedIn) {
-      if (studentOnly) {
-        const search = typeof window !== "undefined" ? window.location.search || "" : "";
-        const target = `${pathname}${search}`;
-        router.replace(`/login?tab=student&redirect=${encodeURIComponent(target)}&notice=student_only`);
-        return;
-      }
-      setAuthState("unauthorized");
-    } else if (studentOnly && role !== "student") {
-      setAuthState("guest_blocked");
-    } else {
-      setAuthState("authorized");
+    // If it's a student-only route, let StudentAccessGuard handle the entire verification & in-page card
+    if (studentOnly) {
+      setIsChecking(false);
+      return;
     }
+
+    // For general protected routes (e.g. /ideas/new):
+    const verifyAuth = async () => {
+      try {
+        const serverAuth = await syncAuthWithServer();
+        if (serverAuth.authenticated && serverAuth.user) {
+          setIsLoggedIn(true);
+          setIsChecking(false);
+          return;
+        }
+
+        const localAuthor = localStorage.getItem("artroom_author_name");
+        const localRole = localStorage.getItem("artroom_role");
+        if (localAuthor && (localRole === "student" || localRole === "guest" || localRole === "admin" || localRole === "teacher")) {
+          setIsLoggedIn(true);
+          setIsChecking(false);
+          return;
+        }
+
+        // Not authenticated -> redirect to /login with return path
+        const q = typeof window !== "undefined" && window.location.search ? window.location.search.replace(/^\?/, "") : "";
+        const target = q ? `${pathname}?${q}` : pathname;
+        router.replace(`/login?redirect=${encodeURIComponent(target)}`);
+      } catch (err) {
+        console.error("ProtectedRoute auth error:", err);
+        const q = typeof window !== "undefined" && window.location.search ? window.location.search.replace(/^\?/, "") : "";
+        const target = q ? `${pathname}?${q}` : pathname;
+        router.replace(`/login?redirect=${encodeURIComponent(target)}`);
+      } finally {
+        setIsChecking(false);
+      }
+    };
+
+    verifyAuth();
   }, [pathname, studentOnly, router]);
 
-  // While checking authorization, show a loading spinner
-  if (authState === "checking") {
+  // If student-only, delegate directly to StudentAccessGuard
+  if (studentOnly) {
+    return <StudentAccessGuard>{children}</StudentAccessGuard>;
+  }
+
+  // While checking general auth
+  if (isChecking) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FDF9F1]">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-red-200 border-t-red-600"></div>
+      <div className="min-h-[50vh] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-3 border-orange-200 border-t-orange-500" />
       </div>
     );
   }
 
-  // If student-only route and user is logged in as guest
-  if (authState === "guest_blocked") {
-    const search = typeof window !== "undefined" ? window.location.search || "" : "";
-    return <GuestBlockModal redirectPath={`${pathname}${search}`} />;
+  // If general auth passed (logged in as student or guest)
+  if (isLoggedIn) {
+    return <>{children}</>;
   }
 
-  // If not authorized, show the elegant modal
-  if (authState === "unauthorized") {
-    return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-        <div className="bg-white rounded-2xl p-6 sm:p-7 max-w-sm w-full relative shadow-xl border border-zinc-200 text-center animate-in fade-in zoom-in-95 duration-150 z-10">
-          <button 
-            onClick={() => router.push("/")}
-            className="absolute top-4 right-4 w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 rounded-full transition-all cursor-pointer text-xs"
-          >
-            <X className="w-4 h-4" />
-          </button>
-          
-          <div className="w-12 h-12 rounded-2xl bg-zinc-100 border border-zinc-200/80 flex items-center justify-center text-zinc-700 mx-auto mb-4">
-            <Lock className="w-5 h-5 text-zinc-700" />
-          </div>
-
-          <h3 className="text-lg font-bold text-zinc-900 mb-1.5 tracking-tight">เข้าสู่ระบบเพื่อดำเนินการต่อ</h3>
-          <p className="text-zinc-500 text-xs leading-relaxed font-normal mb-5">
-            กรุณาเข้าสู่ระบบเพื่อเข้าถึงเนื้อหาและร่วมแบ่งปันผลงาน
-          </p>
-
-          <div className="flex flex-col gap-2">
-            <Link href={`/login?redirect=${encodeURIComponent(pathname)}`} className="w-full">
-              <button className="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-xs sm:text-sm rounded-xl transition-all shadow-xs cursor-pointer">
-                เข้าสู่ระบบ
-              </button>
-            </Link>
-            <button
-              onClick={() => router.push("/")}
-              className="w-full py-2 text-zinc-500 hover:text-zinc-700 font-medium text-xs transition-colors cursor-pointer"
-            >
-              กลับสู่หน้าหลัก
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return <>{children}</>;
+  // Fallback while redirecting
+  return null;
 }
+

@@ -1,20 +1,5 @@
 "use client";
 
-export interface BookmarkedMaterial {
-  id: string;
-  title: string;
-  description?: string;
-  category?: string;
-  topic?: string;
-  grade?: string;
-  mediaType?: "pdf" | "video" | "canva" | "image" | string;
-  imageUrl?: string;
-  fileUrl?: string;
-  fileName?: string;
-  rawId?: string;
-  savedAt: string;
-}
-
 export interface BookmarkedIdea {
   id: string;
   title: string;
@@ -25,85 +10,30 @@ export interface BookmarkedIdea {
   savedAt: string;
 }
 
-const MATERIALS_KEY = "artroom_saved_materials";
+export interface BookmarkedMaterial {
+  id: string;
+  rawId?: string;
+  title: string;
+  description?: string;
+  category?: string;
+  topic?: string;
+  authorName?: string;
+  fileName?: string;
+  grade?: string;
+  imageUrl?: string;
+  fileUrl?: string;
+  mediaType?: string;
+  savedAt: string;
+  [key: string]: any;
+}
+
 const IDEAS_KEY = "artroom_saved_ideas";
+const MATERIALS_KEY = "artroom_saved_materials";
 export const BOOKMARKS_EVENT = "artroom_bookmarks_updated";
 
 function notifyChange() {
   if (typeof window !== "undefined") {
     window.dispatchEvent(new Event(BOOKMARKS_EVENT));
-  }
-}
-
-// ==========================================
-// Materials Bookmarking
-// ==========================================
-export function getBookmarkedMaterials(): BookmarkedMaterial[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(MATERIALS_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch (e) {
-    console.error("Error reading saved materials:", e);
-    return [];
-  }
-}
-
-export function isMaterialBookmarked(id: string): boolean {
-  if (typeof window === "undefined" || !id) return false;
-  const list = getBookmarkedMaterials();
-  return list.some((item) => item.id === id || (item.rawId && item.rawId === id));
-}
-
-export function toggleMaterialBookmark(item: Partial<BookmarkedMaterial> & { id: string; title: string }): boolean {
-  if (typeof window === "undefined") return false;
-  try {
-    const list = getBookmarkedMaterials();
-    const existingIndex = list.findIndex(
-      (m) => m.id === item.id || (item.rawId && m.rawId === item.rawId)
-    );
-
-    let isSavedNow = false;
-    if (existingIndex >= 0) {
-      list.splice(existingIndex, 1);
-      isSavedNow = false;
-    } else {
-      list.unshift({
-        id: item.id,
-        title: item.title,
-        description: item.description,
-        category: item.category,
-        topic: item.topic,
-        grade: item.grade,
-        mediaType: item.mediaType,
-        imageUrl: item.imageUrl,
-        fileUrl: item.fileUrl,
-        fileName: item.fileName,
-        rawId: item.rawId,
-        savedAt: new Date().toISOString(),
-      });
-      isSavedNow = true;
-    }
-
-    localStorage.setItem(MATERIALS_KEY, JSON.stringify(list));
-    notifyChange();
-    return isSavedNow;
-  } catch (e) {
-    console.error("Error toggling material bookmark:", e);
-    return false;
-  }
-}
-
-export function removeMaterialBookmark(id: string): void {
-  if (typeof window === "undefined") return;
-  try {
-    const list = getBookmarkedMaterials().filter(
-      (m) => m.id !== id && m.rawId !== id
-    );
-    localStorage.setItem(MATERIALS_KEY, JSON.stringify(list));
-    notifyChange();
-  } catch (e) {
-    console.error("Error removing material bookmark:", e);
   }
 }
 
@@ -167,5 +97,73 @@ export function removeIdeaBookmark(id: string): void {
     notifyChange();
   } catch (e) {
     console.error("Error removing idea bookmark:", e);
+  }
+}
+
+// ==========================================
+// Materials Bookmarking
+// ==========================================
+export function getBookmarkedMaterials(): BookmarkedMaterial[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(MATERIALS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    console.error("Error reading saved materials:", e);
+    return [];
+  }
+}
+
+export function isMaterialBookmarked(id: string): boolean {
+  if (typeof window === "undefined" || !id) return false;
+  const list = getBookmarkedMaterials();
+  return list.some((item) => item.id === id || item.rawId === id);
+}
+
+export function toggleMaterialBookmark(item: Partial<BookmarkedMaterial> & { id: string; title: string }): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const list = getBookmarkedMaterials();
+    const existingIndex = list.findIndex((m) => m.id === item.id || (item.rawId && m.rawId === item.rawId));
+
+    let isSavedNow = false;
+    if (existingIndex >= 0) {
+      list.splice(existingIndex, 1);
+      isSavedNow = false;
+    } else {
+      list.unshift({
+        id: item.id,
+        rawId: item.rawId,
+        title: item.title,
+        description: item.description,
+        category: item.category,
+        topic: item.topic,
+        authorName: item.authorName,
+        grade: item.grade,
+        imageUrl: item.imageUrl,
+        fileUrl: item.fileUrl,
+        mediaType: item.mediaType,
+        savedAt: new Date().toISOString(),
+      });
+      isSavedNow = true;
+    }
+
+    localStorage.setItem(MATERIALS_KEY, JSON.stringify(list));
+    notifyChange();
+    return isSavedNow;
+  } catch (e) {
+    console.error("Error toggling material bookmark:", e);
+    return false;
+  }
+}
+
+export function removeMaterialBookmark(id: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    const list = getBookmarkedMaterials().filter((m) => m.id !== id && m.rawId !== id);
+    localStorage.setItem(MATERIALS_KEY, JSON.stringify(list));
+    notifyChange();
+  } catch (e) {
+    console.error("Error removing material bookmark:", e);
   }
 }

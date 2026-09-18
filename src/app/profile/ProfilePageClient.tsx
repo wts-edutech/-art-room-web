@@ -13,13 +13,10 @@ import {
   Share2, ArrowRight, LogOut, ChevronRight, Bookmark,
   Download, Trash2
 } from "lucide-react";
-import { 
-  getBookmarkedMaterials, 
+import {
   getBookmarkedIdeas, 
-  removeMaterialBookmark, 
   removeIdeaBookmark, 
   BOOKMARKS_EVENT,
-  BookmarkedMaterial,
   BookmarkedIdea
 } from "@/lib/bookmarks";
 
@@ -36,12 +33,10 @@ export default function ProfilePageClient() {
   const [studentId, setStudentId] = useState<string>("");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [savedMaterials, setSavedMaterials] = useState<BookmarkedMaterial[]>([]);
   const [savedIdeas, setSavedIdeas] = useState<BookmarkedIdea[]>([]);
-  const [activeCollectionTab, setActiveCollectionTab] = useState<"materials" | "ideas">("materials");
+  const [activeCollectionTab, setActiveCollectionTab] = useState<"ideas">("ideas");
 
   const loadBookmarks = () => {
-    setSavedMaterials(getBookmarkedMaterials());
     setSavedIdeas(getBookmarkedIdeas());
   };
 
@@ -279,12 +274,12 @@ export default function ProfilePageClient() {
                 </Link>
 
                 <Link 
-                  href="/materials" 
+                  href="/ideas" 
                   className="p-3.5 rounded-2xl bg-amber-50/50 hover:bg-amber-50 border border-amber-100 text-left transition-all group"
                 >
-                  <BookOpen className="w-5 h-5 text-amber-600 mb-1.5 group-hover:scale-110 transition-transform" />
-                  <div className="text-xs font-bold text-gray-900">คลังสื่อการสอน</div>
-                  <div className="text-[11px] text-gray-500 font-normal">เรียนรู้เนื้อหาศิลปะ</div>
+                  <Lightbulb className="w-5 h-5 text-amber-600 mb-1.5 group-hover:scale-110 transition-transform" />
+                  <div className="text-xs font-bold text-gray-900">สำรวจไอเดียศิลปะ</div>
+                  <div className="text-[11px] text-gray-500 font-normal">ดูผลงานอื่นๆ</div>
                 </Link>
               </div>
             </div>
@@ -307,123 +302,7 @@ export default function ProfilePageClient() {
                 </div>
               </div>
 
-              {/* Collection Tabs Switcher */}
-              <div className="flex items-center gap-1.5 bg-gray-100/80 p-1 rounded-2xl self-start sm:self-auto">
-                <button
-                  type="button"
-                  onClick={() => setActiveCollectionTab("materials")}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                    activeCollectionTab === "materials"
-                      ? "bg-white text-gray-900 shadow-2xs"
-                      : "text-gray-500 hover:text-gray-800"
-                  }`}
-                >
-                  <BookOpen className="w-3.5 h-3.5" />
-                  <span>สื่อการสอน</span>
-                  <span className="px-1.5 py-0.2 rounded-full bg-rose-100 text-rose-700 text-[10px]">
-                    {savedMaterials.length}
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setActiveCollectionTab("ideas")}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                    activeCollectionTab === "ideas"
-                      ? "bg-white text-gray-900 shadow-2xs"
-                      : "text-gray-500 hover:text-gray-800"
-                  }`}
-                >
-                  <Lightbulb className="w-3.5 h-3.5" />
-                  <span>ไอเดียศิลปะ</span>
-                  <span className="px-1.5 py-0.2 rounded-full bg-orange-100 text-orange-700 text-[10px]">
-                    {savedIdeas.length}
-                  </span>
-                </button>
-              </div>
             </div>
-
-            {/* Tab 1: Saved Materials */}
-            {activeCollectionTab === "materials" && (
-              <div>
-                {savedMaterials.length === 0 ? (
-                  <div className="py-12 text-center rounded-2xl border border-dashed border-gray-200 bg-gray-50/50 p-6">
-                    <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-400 flex items-center justify-center mx-auto mb-3">
-                      <Heart className="w-6 h-6" />
-                    </div>
-                    <p className="text-sm font-bold text-gray-800 mb-1">ยังไม่มีสื่อการสอนที่บันทึกไว้</p>
-                    <p className="text-xs text-gray-500 mb-4 max-w-sm mx-auto font-light">
-                      เมื่อคุณพบบทเรียน วิดีโอสอน หรือใบงานที่สนใจ สามารถกดบันทึกเพื่อเก็บไว้ดูในหน้านี้ได้
-                    </p>
-                    <Link
-                      href="/materials"
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all shadow-sm shadow-rose-600/20"
-                    >
-                      <span>สำรวจคลังสื่อการสอน</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {savedMaterials.map((item) => (
-                      <div
-                        key={item.id}
-                        className="group flex flex-col justify-between bg-white rounded-2xl border border-gray-200/80 hover:border-rose-200 hover:shadow-md transition-all overflow-hidden p-4"
-                      >
-                        <div className="space-y-2.5">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-100">
-                              {item.category || "สื่อการสอน"}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => removeMaterialBookmark(item.id)}
-                              className="text-gray-400 hover:text-red-500 p-1 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
-                              title="ลบออกจากรายการที่บันทึก"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-
-                          <h4 className="text-sm font-bold text-gray-900 line-clamp-2 leading-snug group-hover:text-rose-600 transition-colors">
-                            {item.title}
-                          </h4>
-
-                          {item.description && (
-                            <p className="text-xs text-gray-500 line-clamp-2 font-light">
-                              {item.description}
-                            </p>
-                          )}
-                        </div>
-
-                        <div className="pt-3 border-t border-gray-100 mt-3 flex items-center justify-between gap-2">
-                          <Link
-                            href={item.rawId ? `/materials/detail?id=${item.rawId}` : "/materials"}
-                            className="inline-flex items-center gap-1 text-xs font-bold text-rose-600 hover:text-rose-700 transition-colors"
-                          >
-                            <span>เข้าสู่บทเรียน</span>
-                            <ArrowRight className="w-3 h-3" />
-                          </Link>
-
-                          {item.fileUrl && (
-                            <a
-                              href={item.fileUrl}
-                              download={item.fileName || "material.pdf"}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
-                              title="ดาวน์โหลดเอกสาร"
-                            >
-                              <Download className="w-3.5 h-3.5" />
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
 
             {/* Tab 2: Saved Ideas */}
             {activeCollectionTab === "ideas" && (

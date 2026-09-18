@@ -1,28 +1,22 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Quote } from "lucide-react";
 
-import fs from "fs";
-import path from "path";
+export default function TestimonialsSection() {
+  const [testimonials, setTestimonials] = useState<any[]>([]);
 
-// Helper to get testimonials on server side
-function getTestimonials() {
-  try {
-    const dbPath = path.join(process.cwd(), 'data', 'db.json');
-    if (!fs.existsSync(dbPath)) return [];
-    const data = fs.readFileSync(dbPath, 'utf-8');
-    const db = JSON.parse(data);
-    return db.testimonials || [];
-  } catch (error) {
-    console.error("Failed to read db", error);
-    return [];
-  }
-}
-
-export default async function TestimonialsSection() {
-  const testimonials = getTestimonials();
-
-  // If no testimonials are available, we can optionally hide the section or show a message.
-  // For now, let's just render it normally, but if empty, it'll just show the title.
+  useEffect(() => {
+    fetch("/api/testimonials")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setTestimonials(data);
+        }
+      })
+      .catch((err) => console.error("Failed to fetch testimonials:", err));
+  }, []);
 
   return (
     <section id="testimonials" className="py-24 bg-transparent">
@@ -40,8 +34,16 @@ export default async function TestimonialsSection() {
           {(Array.isArray(testimonials) ? testimonials : []).map((testimonial: any, index: number) => (
             <Card key={index} className="group h-full border border-gray-100 shadow-md hover:shadow-2xl transition-all duration-300 rounded-[2rem] hover:-translate-y-1 bg-gradient-to-br from-white to-gray-50/50">
               <CardContent className="p-8 md:p-12 flex flex-col h-full relative overflow-hidden">
-                <Quote className="absolute top-8 right-8 w-24 h-24 text-gray-50 opacity-50 group-hover:scale-110 transition-transform duration-500 group-hover:text-red-50" />
-                <p className="text-gray-700 text-lg md:text-[19px] mb-12 flex-grow leading-relaxed font-light relative z-10">
+                <Quote className="absolute top-8 right-8 w-24 h-24 text-gray-50 opacity-50 group-hover:scale-110 transition-transform duration-500 group-hover:text-red-50 z-0" />
+                
+                {testimonial.univImageUrl && (
+                  <div className="absolute top-6 right-6 md:top-8 md:right-8 w-16 h-16 md:w-20 md:h-20 z-10 group-hover:scale-105 transition-all duration-300">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={testimonial.univImageUrl} alt="University Logo" className="w-full h-full object-contain drop-shadow-md" />
+                  </div>
+                )}
+
+                <p className="text-gray-700 text-lg md:text-[19px] mb-12 flex-grow leading-relaxed font-light relative z-10 pr-14 md:pr-24">
                   &quot;{testimonial.quote}&quot;
                 </p>
                 <div className="flex items-center gap-5 mt-auto relative z-10">
@@ -55,13 +57,15 @@ export default async function TestimonialsSection() {
                       </svg>
                     )}
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <h4 className="font-heading font-bold text-xl md:text-2xl text-gray-900 mb-1">
                       {testimonial.name}
                     </h4>
-                    <p className="text-(--color-primary-500) font-medium text-sm md:text-base">
-                      {testimonial.university}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-orange-500 font-medium text-sm md:text-base">
+                        {testimonial.university}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </CardContent>

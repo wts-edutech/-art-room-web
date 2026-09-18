@@ -9,6 +9,7 @@ import StudentVideoShowcase from "@/components/ideas/StudentVideoShowcase";
 import CommunityDiscussion from "@/components/common/CommunityDiscussion";
 import { Lightbulb, Search, Plus, X, Share2, Check, ArrowUpDown, MessageCircle, Heart } from "lucide-react";
 import { getBookmarkedIdeas, toggleIdeaBookmark, BOOKMARKS_EVENT } from "@/lib/bookmarks";
+import { syncAuthWithServer } from "@/lib/client-auth";
 
 interface IdeaItem {
   id: string;
@@ -65,9 +66,17 @@ export default function IdeasPage() {
   ];
 
   useEffect(() => {
-    // Check login status
+    // Check login status (local + server cookie)
     const authorName = localStorage.getItem("artroom_author_name");
-    setIsLoggedIn(!!authorName);
+    if (authorName) {
+      setIsLoggedIn(true);
+    } else {
+      syncAuthWithServer().then((auth) => {
+        if (auth.authenticated) {
+          setIsLoggedIn(true);
+        }
+      });
+    }
 
     // Fetch approved ideas
     fetch("/api/ideas")
@@ -85,7 +94,7 @@ export default function IdeasPage() {
 
   const handleShareClick = () => {
     if (!isLoggedIn) {
-      setShowGuestModal(true);
+      router.push("/login?redirect=/ideas/new");
     } else {
       router.push("/ideas/new");
     }

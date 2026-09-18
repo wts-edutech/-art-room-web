@@ -1,4 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=Itim&family=Kanit:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,600;1,700&family=Mali:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,600;1,700&display=swap');
 @import "tailwindcss";
+
+/* ==========================================================================
+   HANDWRITING FONTS @font-face DECLARATIONS (public/fonts/)
+   ========================================================================== */
+@font-face {
+  font-family: 'FH Hamsters';
+  src: url('/fonts/FH-Hamsters.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Matchanamphung';
+  src: url('/fonts/Matchanamphung.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'KanchaEasy';
+  src: url('/fonts/KanchaEasy.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'EBWriter';
+  src: url('/fonts/EBWriter.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --user-font: 'Prompt';
+}
 
 @theme {
   --color-background: #ffffff;
@@ -7,15 +47,17 @@
   --color-primary-400: #ff914d;
   --color-accent-yellow: #fcd848;
   --color-accent-blue: #3533cd;
-  --font-sans: var(--font-prompt), Arial, sans-serif;
-  --font-heading: var(--font-kanit), Arial, sans-serif;
+  --font-sans: var(--user-font, 'Prompt'), 'Prompt', var(--font-prompt), sans-serif;
+  --font-heading: var(--user-font, 'Prompt'), 'Prompt', var(--font-prompt), sans-serif;
+  --font-prompt: var(--user-font, 'Prompt'), 'Prompt', var(--font-prompt), sans-serif;
+  --font-kanit: var(--user-font, 'Prompt'), 'Prompt', var(--font-prompt), sans-serif;
 }
 
 @layer base {
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    font-family: var(--font-sans);
+    font-family: var(--user-font, 'Prompt'), 'Prompt', var(--font-prompt), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     overflow-x: hidden; /* Prevent horizontal scroll */
     min-height: 100vh;
     min-height: -webkit-fill-available;
@@ -24,6 +66,7 @@
   html {
     height: -webkit-fill-available;
     scroll-behavior: smooth;
+    font-family: var(--user-font, 'Prompt'), 'Prompt', var(--font-prompt), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
 
   /* Support for iPhone safe areas */
@@ -33,8 +76,29 @@
   .safe-pr { padding-right: env(safe-area-inset-right); }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-heading);
+    font-family: var(--user-font, 'Prompt'), 'Prompt', var(--font-prompt), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
+
+  button, input, select, textarea {
+    font-family: inherit;
+  }
+
+  /* Support legacy classnames to map to active font 100% across the site */
+  .font-kanit,
+  .font-prompt {
+    font-family: var(--user-font, 'Prompt'), 'Prompt', var(--font-prompt), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  }
+
+  /* Individual Preview Classes for Font Switcher Menu */
+  .font-preview-prompt { font-family: 'Prompt', sans-serif !important; }
+  .font-preview-sarabun { font-family: 'Sarabun', sans-serif !important; }
+  .font-preview-kanit { font-family: 'Kanit', sans-serif !important; }
+  .font-preview-matchanamphung { font-family: 'Matchanamphung', 'Prompt', sans-serif !important; }
+  .font-preview-hamsters { font-family: 'FH Hamsters', 'Prompt', sans-serif !important; }
+  .font-preview-kancha-easy { font-family: 'KanchaEasy', 'Prompt', sans-serif !important; }
+  .font-preview-ebwriter { font-family: 'EBWriter', 'Prompt', sans-serif !important; }
+  .font-preview-mali { font-family: 'Mali', cursive, sans-serif !important; }
+  .font-preview-itim { font-family: 'Itim', cursive, sans-serif !important; }
 
   /* iOS Safari Touch & Click Optimization */
   * {
@@ -128,4 +192,43 @@
   .profile-grid-layout {
     grid-template-columns: 280px minmax(0, 1fr) !important;
   }
+}
+
+/* ==========================================================================
+   AI ART MODEL HERO BUTTON (Luxury Glow, 3D Surface & Animated Shimmer)
+   ========================================================================== */
+@keyframes aiButtonShimmer {
+  0% {
+    transform: translateX(-160%) skewX(-25deg);
+  }
+  35%, 100% {
+    transform: translateX(260%) skewX(-25deg);
+  }
+}
+
+.ai-button-glow {
+  background: radial-gradient(ellipse at center, rgba(255, 23, 68, 0.75) 0%, rgba(224, 0, 40, 0.35) 50%, transparent 75%);
+  filter: blur(14px);
+}
+
+.ai-button-surface {
+  background: linear-gradient(135deg, #ff1744 0%, #e00028 45%, #a8001a 100%) !important;
+  box-shadow: 
+    inset 0 1.5px 1px rgba(255, 255, 255, 0.45),
+    inset 0 -2.5px 5px rgba(0, 0, 0, 0.35),
+    0 12px 28px -4px rgba(220, 0, 40, 0.5),
+    0 4px 12px rgba(255, 26, 72, 0.35) !important;
+}
+
+.ai-button-surface:hover {
+  background: linear-gradient(135deg, #ff2955 0%, #f5002b 45%, #b8001d 100%) !important;
+  box-shadow: 
+    inset 0 1.5px 1.5px rgba(255, 255, 255, 0.6),
+    inset 0 -2.5px 5px rgba(0, 0, 0, 0.4),
+    0 16px 36px -4px rgba(255, 20, 60, 0.65),
+    0 6px 18px rgba(255, 40, 80, 0.45) !important;
+}
+
+.ai-shimmer-beam {
+  animation: aiButtonShimmer 3.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }

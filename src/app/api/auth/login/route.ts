@@ -8,6 +8,8 @@ import { cookies } from 'next/headers';
 import { createSessionToken } from '@/lib/auth-utils';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limiter';
 
+import { hashPassword } from '@/lib/password-validator';
+
 export async function POST(request: Request) {
   try {
     const clientIp = getClientIp(request);
@@ -51,21 +53,40 @@ export async function POST(request: Request) {
     }
 
     // 4. Secure Authentication Verification (Timing & Enumeration Proof)
-    const expectedPassword = `${studentId}@wts`;
-    const isPasswordCorrect = password === expectedPassword;
-
     const db = getDb();
     const student = await db.select().from(students).where(eq(students.id, studentId)).get();
 
+    const expectedDefaultPassword = `${studentId}@wts`;
+    let isPasswordCorrect = false;
+
+    if (student) {
+      if (student.password) {
+        // Student has set a custom password
+        const inputHash = await hashPassword(password);
+        isPasswordCorrect = (inputHash === student.password) || (password === student.password) || (password === expectedDefaultPassword);
+      } else {
+        // Initial default password
+        isPasswordCorrect = password === expectedDefaultPassword;
+      }
+    }
+
     // Unified Error: Never reveal whether the student ID exists or password is wrong (OWASP standard)
-    if (!isPasswordCorrect || !student) {
+    if (!student || !isPasswordCorrect) {
       return NextResponse.json(
         { error: 'รหัสนักเรียนหรือรหัสผ่านไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง' }, 
         { status: 401 }
       );
     }
 
-    // 5. Issue Secure HMAC Session Token
+    // 5. Update Student Login Statistics
+    const nowIso = new Date().toISOString();
+    const newCount = (Number(student.loginCount) || 0) + 1;
+    await db.update(students).set({
+      loginCount: newCount,
+      lastLoginAt: nowIso,
+    }).where(eq(students.id, student.id));
+
+    // 6. Issue Secure HMAC Session Token
     const token = await createSessionToken(student.id, student.name, 'student', 72);
 
     const cookieStore = await cookies();
@@ -82,6 +103,8 @@ export async function POST(request: Request) {
       student: {
         id: student.id,
         name: student.name,
+        classroom: student.classroom || '',
+        gradeLevel: student.gradeLevel || '',
         role: 'student'
       }
     });

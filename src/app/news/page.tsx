@@ -29,14 +29,28 @@ async function getNews() {
   }
 }
 
+// Helper to get activities for calendar on server side
+async function getActivities() {
+  try {
+    const db = getDb();
+    return await db.select().from(activities).orderBy(desc(activities.createdAt));
+  } catch (error) {
+    console.error("Failed to load activities:", error);
+    return [];
+  }
+}
+
 export default async function NewsPage() {
-  const newsList = await getNews();
+  const [newsList, activitiesList] = await Promise.all([
+    getNews(),
+    getActivities(),
+  ]);
 
   return (
     <>
       <Navbar />
       <main className="flex-1 flex flex-col pt-24 min-h-screen bg-[#FDF9F1]">
-        <NewsPageClient initialNews={newsList} />
+        <NewsPageClient initialNews={newsList} initialActivities={activitiesList} />
       </main>
       <Footer />
     </>

@@ -113,10 +113,11 @@ export default function NewIdeaPage() {
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
   const coverFileInputRef = useRef<HTMLInputElement>(null);
-  const [coverFitMode, setCoverFitMode] = useState<"cover" | "contain">("cover");
+  const [coverFitMode, setCoverFitMode] = useState<"cover" | "contain">("contain");
   const [isEditorOpen, setIsEditorOpen] = useState<boolean>(false);
   const [editingTarget, setEditingTarget] = useState<"cover" | { type: "attachment"; index: number } | null>(null);
   const [isQuickRotating, setIsQuickRotating] = useState<boolean>(false);
+  const [isAiEnhancing, setIsAiEnhancing] = useState<boolean>(false);
   const [attachmentPreviews, setAttachmentPreviews] = useState<Record<number, string>>({});
 
   const [files, setFiles] = useState<File[]>([]);
@@ -186,9 +187,53 @@ export default function NewIdeaPage() {
 
   const currentOption = CATEGORY_OPTIONS.find((c) => c.value === category) || CATEGORY_OPTIONS[0];
 
+  // 1-Click AI Auto Enhance for Cover Image
+  const handleAiAutoEnhanceCover = async () => {
+    if (!coverImage || isAiEnhancing || isQuickRotating) return;
+    setIsAiEnhancing(true);
+    try {
+      const url = URL.createObjectURL(coverImage);
+      const img = new Image();
+      img.src = url;
+      await new Promise((resolve) => {
+        img.onload = resolve;
+      });
+
+      const canvas = document.createElement("canvas");
+      canvas.width = img.naturalWidth || img.width;
+      canvas.height = img.naturalHeight || img.height;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.filter = "contrast(115%) saturate(118%) brightness(103%)";
+        ctx.drawImage(img, 0, 0);
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              const originalName = coverImage.name.replace(/\.[^/.]+$/, "");
+              const enhancedFile = new File([blob], `${originalName}-ai-enhanced.jpg`, {
+                type: "image/jpeg",
+                lastModified: Date.now(),
+              });
+              setCoverImage(enhancedFile);
+            }
+            setIsAiEnhancing(false);
+          },
+          "image/jpeg",
+          0.92
+        );
+      } else {
+        setIsAiEnhancing(false);
+      }
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("AI enhance failed:", err);
+      setIsAiEnhancing(false);
+    }
+  };
+
   // Quick 1-click rotate cover image 90 degrees
   const handleQuickRotateCover = async () => {
-    if (!coverImage || isQuickRotating) return;
+    if (!coverImage || isQuickRotating || isAiEnhancing) return;
     setIsQuickRotating(true);
     try {
       const url = URL.createObjectURL(coverImage);
@@ -733,23 +778,35 @@ export default function NewIdeaPage() {
                       {/* Interactive Editing Toolbar */}
                       <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
                         <div className="flex flex-wrap items-center gap-2">
+                          {/* 1-Click AI Auto Enhance */}
+                          <button
+                            type="button"
+                            disabled={isAiEnhancing || isQuickRotating}
+                            onClick={handleAiAutoEnhanceCover}
+                            className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-orange-500 via-rose-500 to-pink-500 hover:opacity-95 text-white text-xs font-bold shadow-xs active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                            title="AI ช่วยปรับแสงเงา สีสัน และความคมชัดของภาพหน้าปกให้อัตโนมัติในคลิกเดียว"
+                          >
+                            <Sparkles className={`w-3.5 h-3.5 text-yellow-200 ${isAiEnhancing ? "animate-spin" : ""}`} />
+                            <span>{isAiEnhancing ? "กำลังปรับ..." : "✨ AI ปรับภาพสวย"}</span>
+                          </button>
+
                           <button
                             type="button"
                             onClick={() => {
                               setEditingTarget("cover");
                               setIsEditorOpen(true);
                             }}
-                            className="px-3.5 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold shadow-sm hover:shadow transition-all flex items-center gap-1.5 cursor-pointer"
+                            className="px-3.5 py-2 rounded-xl bg-white hover:bg-orange-50 text-gray-800 hover:text-orange-600 border border-gray-300 hover:border-orange-300 text-xs font-semibold shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
                           >
-                            <Sliders className="w-3.5 h-3.5" />
+                            <Sliders className="w-3.5 h-3.5 text-orange-500" />
                             <span>ปรับแต่ง & ครอบตัดภาพ</span>
                           </button>
 
                           <button
                             type="button"
-                            disabled={isQuickRotating}
+                            disabled={isQuickRotating || isAiEnhancing}
                             onClick={handleQuickRotateCover}
-                            className="px-3 py-2 rounded-xl border border-gray-200 hover:border-orange-300 hover:bg-orange-50/40 text-gray-700 text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
+                            className="px-3 py-2 rounded-xl border border-gray-200 hover:border-orange-300 hover:bg-orange-50/40 text-gray-700 text-xs font-semibold shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
                             title="หมุนตามเข็มนาฬิกา 90 องศา"
                           >
                             <RotateCw className={`w-3.5 h-3.5 text-orange-500 ${isQuickRotating ? "animate-spin" : ""}`} />
@@ -759,7 +816,7 @@ export default function NewIdeaPage() {
                           <button
                             type="button"
                             onClick={() => coverFileInputRef.current?.click()}
-                            className="px-3 py-2 rounded-xl border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-600 text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
+                            className="px-3 py-2 rounded-xl border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-600 text-xs font-semibold shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
                           >
                             <RefreshCw className="w-3.5 h-3.5 text-gray-400" />
                             <span>เปลี่ยนรูป</span>

@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Eye } from "lucide-react";
+import Link from "next/link";
+import { Eye, Lock } from "lucide-react";
 
 export default function Footer() {
   const [visitorCount, setVisitorCount] = useState(0);
@@ -45,11 +46,44 @@ export default function Footer() {
         
         {/* Bottom Legal & PDPA */}
         <div className="pt-5 flex flex-col md:flex-row items-center justify-between gap-2 text-xs text-gray-500 font-light text-center md:text-left">
-          <p>
-            &copy; 2569 ART ROOM กลุ่มสาระการเรียนรู้ศิลปะ โรงเรียนวชิรธรรมสาธิต | ออกแบบและพัฒนาเว็บไซต์โดย นางสาวสีวลี ยืนยาว
+          <p className="flex items-center gap-2 justify-center md:justify-start">
+            <span>&copy; 2569 ART ROOM กลุ่มสาระการเรียนรู้ศิลปะ โรงเรียนวชิรธรรมสาธิต | ออกแบบและพัฒนาเว็บไซต์โดย นางสาวสีวลี ยืนยาว</span>
+            <Link 
+              href="/admin" 
+              className="text-gray-300 hover:text-orange-500 transition-colors p-1 rounded-md hover:bg-orange-50 inline-flex items-center" 
+              title="ระบบจัดการหลังบ้าน (Admin Dashboard)"
+            >
+              <Lock className="w-3.5 h-3.5" />
+            </Link>
           </p>
-          <p className="text-[11px] text-gray-400">
-            ผลงานและภาพถ่ายบนเว็บไซต์นี้จัดทำขึ้นเพื่อการศึกษาและการประชาสัมพันธ์ตาม พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล (PDPA)
+          <p className="text-[11px] text-gray-400 flex items-center gap-2 justify-center md:justify-end">
+            <span>ผลงานและภาพถ่ายบนเว็บไซต์นี้จัดทำขึ้นเพื่อการศึกษาและการประชาสัมพันธ์ตาม พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล (PDPA)</span>
+            <span>•</span>
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  window.dispatchEvent(new CustomEvent("openHomeWelcomePopup"));
+                }
+              }}
+              className="text-gray-400 hover:text-orange-600 underline transition-colors cursor-pointer"
+              title="เปิดป๊อปอัปข้อความต้อนรับและประกาศ"
+            >
+              ป๊อปอัปต้อนรับ
+            </button>
+            <span>•</span>
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  window.dispatchEvent(new CustomEvent("openCookieSettings"));
+                }
+              }}
+              className="text-gray-400 hover:text-orange-600 underline transition-colors cursor-pointer"
+              title="เปิดตั้งค่าการยินยอมคุกกี้"
+            >
+              ตั้งค่าคุกกี้
+            </button>
           </p>
         </div>
       </div>

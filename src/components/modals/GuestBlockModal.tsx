@@ -7,9 +7,19 @@ import Footer from "@/components/layout/Footer";
 
 interface GuestBlockModalProps {
   redirectPath?: string;
+  title?: string;
+  description?: string;
+  instruction?: string;
+  badgeText?: string;
 }
 
-export default function GuestBlockModal({ redirectPath = "/materials" }: GuestBlockModalProps) {
+export default function GuestBlockModal({ 
+  redirectPath = "/materials",
+  title = "พื้นที่เฉพาะนักเรียน",
+  description = "คลังสื่อการสอนและเอกสารใบงานเปิดให้เข้าใช้งานเฉพาะบัญชีนักเรียน โรงเรียนวชิรธรรมสาธิต เท่านั้น",
+  instruction = "กรุณาเข้าสู่ระบบด้วยรหัสประจำตัวนักเรียน 5 หลัก เพื่อเข้าถึงเนื้อหาบทเรียนและใบงาน",
+  badgeText = "สงวนสิทธิ์เฉพาะนักเรียน"
+}: GuestBlockModalProps) {
   const router = useRouter();
 
   const handleSwitchToStudent = () => {
@@ -35,17 +45,17 @@ export default function GuestBlockModal({ redirectPath = "/materials" }: GuestBl
 
           {/* Status Badge */}
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-zinc-100 text-zinc-600 text-[11px] font-medium tracking-wide mb-2.5 border border-zinc-200/60">
-            <span>สงวนสิทธิ์เฉพาะนักเรียน</span>
+            <span>{badgeText}</span>
           </div>
 
           {/* Heading */}
           <h1 className="text-xl sm:text-2xl font-bold text-zinc-900 tracking-tight mb-2">
-            พื้นที่เฉพาะนักเรียน
+            {title}
           </h1>
 
           {/* Description */}
           <p className="text-xs sm:text-sm text-zinc-500 leading-relaxed font-normal mb-5 max-w-sm mx-auto">
-            คลังสื่อการสอนและเอกสารใบงานเปิดให้เข้าใช้งานเฉพาะบัญชีนักเรียน โรงเรียนวชิรธรรมสาธิต เท่านั้น
+            {description}
           </p>
 
           {/* Clean Account Status Box */}
@@ -55,7 +65,7 @@ export default function GuestBlockModal({ redirectPath = "/materials" }: GuestBl
               <span className="font-semibold text-zinc-700">บุคคลทั่วไป (Guest)</span>
             </div>
             <p className="text-[11px] text-zinc-500 leading-relaxed pt-0.5">
-              กรุณาเข้าสู่ระบบด้วยรหัสประจำตัวนักเรียน 5 หลัก เพื่อเข้าถึงเนื้อหาบทเรียนและใบงาน
+              {instruction}
             </p>
           </div>
 

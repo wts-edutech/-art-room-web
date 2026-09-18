@@ -5,7 +5,8 @@ import Link from "next/link";
 import { 
   MessageSquare, Send, Heart, Reply, Trash2, Sparkles, 
   User, Check, AlertCircle, Loader2, LogIn, MessageCircleHeart,
-  CornerDownRight, Smile, Search, GraduationCap, ShieldCheck
+  CornerDownRight, Smile, Search, GraduationCap, ShieldCheck,
+  LayoutGrid, HelpCircle, Palette, Lightbulb
 } from "lucide-react";
 import { resolveUserAvatar } from "@/lib/art-avatars";
 import { checkProfanity } from "@/lib/profanity-filter";
@@ -33,144 +34,29 @@ interface CommunityDiscussionProps {
   id?: string;
 }
 
-// ==========================================
-// Handcrafted Cartoon Line Art Characters (ลายเส้นน่ารักสำหรับหมวดหมู่)
-// ==========================================
-
-// 1. "ทั้งหมด" - Little Artist Mascot with Beret
-function CartoonArtistAll({ className = "w-4.5 h-4.5", isSelected = false }: { className?: string; isSelected?: boolean }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      {/* Beret / Artist Hat */}
-      <path d="M5 8.5c0-2.8 3.1-4.5 7-4.5s7 1.7 7 4.5c0 1-2.2 1.5-3.5 1.5H8.5C7.2 10 5 9.5 5 8.5z" fill={isSelected ? "rgba(255,255,255,0.25)" : "#FFEDD5"} />
-      <path d="M12 4V2.2" />
-      {/* Cute Head */}
-      <circle cx="12" cy="14" r="6.8" fill={isSelected ? "rgba(255,255,255,0.15)" : "#FFFDF8"} />
-      {/* Happy Eyes ^ ^ */}
-      <path d="M9.5 13.5c.5-.8 1.5-.8 2 0" />
-      <path d="M12.5 13.5c.5-.8 1.5-.8 2 0" />
-      {/* Rosy Cheeks */}
-      <ellipse cx="8.2" cy="15.2" rx="1" ry="0.6" fill={isSelected ? "#FED7AA" : "#FCA5A5"} stroke="none" />
-      <ellipse cx="15.8" cy="15.2" rx="1" ry="0.6" fill={isSelected ? "#FED7AA" : "#FCA5A5"} stroke="none" />
-      {/* Cute Smile */}
-      <path d="M11 16.2c.6.6 1.4.6 2 0" />
-    </svg>
-  );
-}
-
-// 2. "ถามเรื่องเทคนิค / บทเรียน" - Curious Questioning Character
-function CartoonWonderQuestion({ className = "w-4.5 h-4.5", isSelected = false }: { className?: string; isSelected?: boolean }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      {/* Head */}
-      <circle cx="10" cy="13.5" r="6.5" fill={isSelected ? "rgba(255,255,255,0.15)" : "#FFFDF8"} />
-      {/* Curious Big Eyes */}
-      <circle cx="8" cy="12.5" r="1.1" fill="currentColor" stroke="none" />
-      <circle cx="12" cy="12.5" r="1.1" fill="currentColor" stroke="none" />
-      {/* Rosy Cheeks */}
-      <ellipse cx="6.8" cy="14.5" rx="0.9" ry="0.5" fill={isSelected ? "#FED7AA" : "#FCA5A5"} stroke="none" />
-      <ellipse cx="13.2" cy="14.5" rx="0.9" ry="0.5" fill={isSelected ? "#FED7AA" : "#FCA5A5"} stroke="none" />
-      {/* Wonder 'o' Mouth */}
-      <circle cx="10" cy="15.5" r="0.8" fill="currentColor" stroke="none" />
-      {/* Scratching Hand */}
-      <path d="M5.5 18c1.5.5 2.8 0 2.8-1.5" />
-      {/* Floating Cute Question Mark */}
-      <path d="M17.5 5.5c0-1.2 1-2 2-2s2 .8 2 1.8c0 1.2-1.5 1.5-1.5 2.5v.6" strokeWidth="2" stroke={isSelected ? "#FEF08A" : "#EA580C"} />
-      <circle cx="20" cy="11" r="0.9" fill={isSelected ? "#FEF08A" : "#EA580C"} stroke="none" />
-    </svg>
-  );
-}
-
-// 3. "อุปกรณ์ที่ใช้ / เทคนิคและอุปกรณ์" - Cute Palette & Brush Artist
-function CartoonPaletteTools({ className = "w-4.5 h-4.5", isSelected = false }: { className?: string; isSelected?: boolean }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      {/* Character Head */}
-      <circle cx="9.5" cy="12" r="6" fill={isSelected ? "rgba(255,255,255,0.15)" : "#FFFDF8"} />
-      {/* Wink & Smile */}
-      <path d="M7 11c.4-.6 1.2-.6 1.6 0" />
-      <circle cx="12" cy="11" r="1" fill="currentColor" stroke="none" />
-      <path d="M8.5 14c.6.6 1.4.6 2 0" />
-      <ellipse cx="6.5" cy="12.5" rx="0.8" ry="0.5" fill={isSelected ? "#FED7AA" : "#FCA5A5"} stroke="none" />
-      <ellipse cx="12.5" cy="12.5" rx="0.8" ry="0.5" fill={isSelected ? "#FED7AA" : "#FCA5A5"} stroke="none" />
-      {/* Paint Palette */}
-      <path d="M4 18c0-1.8 1.4-3 3-3 .8 0 1.5.6 1.5 1.5 0 .4-.2.8-.5 1 .5.6.3 1.6-.8 2-1.4.5-3.2-.3-3.2-1.5z" fill={isSelected ? "rgba(255,255,255,0.25)" : "#FED7AA"} />
-      <circle cx="5.2" cy="17" r="0.6" fill={isSelected ? "#FFFFFF" : "#EF4444"} stroke="none" />
-      <circle cx="6.5" cy="18.2" r="0.6" fill={isSelected ? "#FEF08A" : "#3B82F6"} stroke="none" />
-      {/* Paint Brush */}
-      <path d="M16 6.5l4 4" strokeWidth="2" stroke={isSelected ? "#FEF08A" : "#D97706"} />
-      <path d="M18.5 9l-4 4" />
-      <path d="M20 5c.5-.5 1.2-.5 1.5 0s0 1.2-.5 1.5l-1 1-1-1 1-1.5z" fill={isSelected ? "#FEF08A" : "#EA580C"} stroke="none" />
-    </svg>
-  );
-}
-
-// 4. "ข้อแนะนำเพิ่มเติม / เสนอแนะสื่อใหม่ / ไอเดียการสอน" - Inspired Lightbulb Character
-function CartoonIdeaLightbulb({ className = "w-4.5 h-4.5", isSelected = false }: { className?: string; isSelected?: boolean }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      {/* Cute Head */}
-      <circle cx="12" cy="14" r="6.5" fill={isSelected ? "rgba(255,255,255,0.15)" : "#FFFDF8"} />
-      {/* Big Happy Smile & Sparkle Eyes */}
-      <circle cx="9.5" cy="13" r="1.1" fill="currentColor" stroke="none" />
-      <circle cx="14.5" cy="13" r="1.1" fill="currentColor" stroke="none" />
-      <path d="M10 16c.8.8 3.2.8 4 0" />
-      <ellipse cx="7.8" cy="14.5" rx="0.9" ry="0.5" fill={isSelected ? "#FED7AA" : "#FCA5A5"} stroke="none" />
-      <ellipse cx="16.2" cy="14.5" rx="0.9" ry="0.5" fill={isSelected ? "#FED7AA" : "#FCA5A5"} stroke="none" />
-      {/* Lightbulb popping on top */}
-      <path d="M10 5.5a2.5 2.5 0 0 1 4 0c.5.6.5 1.2.3 1.8h-4.6c-.2-.6-.2-1.2.3-1.8z" fill={isSelected ? "#FEF08A" : "#FDE047"} stroke={isSelected ? "#FEF08A" : "#F59E0B"} strokeWidth="1.6" />
-      <path d="M11 7.3h2" stroke={isSelected ? "#FFFFFF" : "#F59E0B"} strokeWidth="1.6" />
-      {/* Glow rays */}
-      <path d="M12 1.5v1.2" stroke={isSelected ? "#FEF08A" : "#F59E0B"} strokeWidth="1.6" />
-      <path d="M7.5 3.5l1 1" stroke={isSelected ? "#FEF08A" : "#F59E0B"} strokeWidth="1.6" />
-      <path d="M16.5 3.5l-1 1" stroke={isSelected ? "#FEF08A" : "#F59E0B"} strokeWidth="1.6" />
-    </svg>
-  );
-}
-
-// 5. "พูดคุยทั่วไป / ชุมชนพูดคุย" - Chatting Friend with Speech Bubble
-function CartoonChatFriend({ className = "w-4.5 h-4.5", isSelected = false }: { className?: string; isSelected?: boolean }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      {/* Main Friendly Character */}
-      <circle cx="9" cy="13.5" r="6" fill={isSelected ? "rgba(255,255,255,0.15)" : "#FFFDF8"} />
-      {/* Cute Face */}
-      <circle cx="7" cy="12.5" r="1" fill="currentColor" stroke="none" />
-      <circle cx="11" cy="12.5" r="1" fill="currentColor" stroke="none" />
-      <path d="M8 15c.6.6 1.4.6 2 0" />
-      <ellipse cx="6" cy="13.8" rx="0.8" ry="0.4" fill={isSelected ? "#FED7AA" : "#FCA5A5"} stroke="none" />
-      <ellipse cx="12" cy="13.8" rx="0.8" ry="0.4" fill={isSelected ? "#FED7AA" : "#FCA5A5"} stroke="none" />
-      {/* Speech Bubble with Heart */}
-      <path d="M14.5 3.8h4.5a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1.5L15 13v-2.2h-.5a2 2 0 0 1-2-2V5.8a2 2 0 0 1 2-2z" fill={isSelected ? "rgba(255,255,255,0.25)" : "#F3E8FF"} stroke={isSelected ? "#E9D5FF" : "#9333EA"} strokeWidth="1.6" />
-      {/* Mini heart in bubble */}
-      <path d="M16.8 6.5c-.4-.7-1.3-.2-1.3.3 0 .6 1.3 1.3 1.3 1.3s1.3-.7 1.3-1.3c0-.5-.9-1-1.3-.3z" fill={isSelected ? "#FFFFFF" : "#EC4899"} stroke="none" />
-    </svg>
-  );
-}
-
-// Helper to select cartoon character icon based on category tag
+// Helper to select formal icon based on category tag
 function getCategoryCartoonIcon(tag: string, isSelected: boolean) {
   const lower = tag.toLowerCase();
-  const iconClass = `w-4 h-4 sm:w-4.5 sm:h-4.5 shrink-0 transition-transform duration-200 ${
-    isSelected ? "scale-110" : "group-hover:scale-115"
+  const iconClass = `w-4 h-4 shrink-0 transition-transform duration-200 ${
+    isSelected ? "scale-110 text-orange-600" : "text-gray-500 group-hover:scale-110"
   }`;
 
   if (lower.includes("ทั้งหมด") || lower.includes("all")) {
-    return <CartoonArtistAll className={iconClass} isSelected={isSelected} />;
+    return <LayoutGrid className={iconClass} />;
   }
   if (lower.includes("เทคนิค") || lower.includes("บทเรียน") || lower.includes("ถาม") || lower.includes("ปรึกษา")) {
-    return <CartoonWonderQuestion className={iconClass} isSelected={isSelected} />;
+    return <HelpCircle className={iconClass} />;
   }
   if (lower.includes("อุปกรณ์") || lower.includes("เครื่องมือ") || lower.includes("สี")) {
-    return <CartoonPaletteTools className={iconClass} isSelected={isSelected} />;
+    return <Palette className={iconClass} />;
   }
   if (lower.includes("แนะนำ") || lower.includes("ไอเดีย") || lower.includes("เสนอแนะ") || lower.includes("tips")) {
-    return <CartoonIdeaLightbulb className={iconClass} isSelected={isSelected} />;
+    return <Lightbulb className={iconClass} />;
   }
   if (lower.includes("พูดคุย") || lower.includes("สนทนา") || lower.includes("ชุมชน") || lower.includes("chat")) {
-    return <CartoonChatFriend className={iconClass} isSelected={isSelected} />;
+    return <MessageSquare className={iconClass} />;
   }
-  return <CartoonArtistAll className={iconClass} isSelected={isSelected} />;
+  return <LayoutGrid className={iconClass} />;
 }
 
 // Helper to strip existing emojis from tag label cleanly

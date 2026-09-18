@@ -10,6 +10,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import CommunityDiscussion from "@/components/common/CommunityDiscussion";
 import { DEFAULT_DOWNLOADS } from "@/data/default-downloads";
+import DigitalLessonWorksheet from "@/components/materials/DigitalLessonWorksheet";
 import { 
   isMaterialBookmarked, 
   toggleMaterialBookmark, 
@@ -66,13 +67,15 @@ export default function LessonDetailPage() {
               category: dlItem.category,
               mediaType: dlItem.mediaType || (isPdfItem ? "pdf" : "video"),
               videoId: dlItem.videoId || (isPdfItem ? undefined : "AB1QIlCEDDU"),
-              views: dlItem.downloadsCount || 512,
+              views: dlItem.downloadsCount || 342,
               type: dlItem.grade || "general",
               fileUrl: dlItem.fileUrl,
               pdfUrl: dlItem.fileUrl,
               imageUrl: dlItem.imageUrl,
               attachmentName: dlItem.fileName,
               createdAt: new Date().toISOString(),
+              ratingSum: 137,
+              ratingCount: 28,
             };
           }
         }
@@ -82,6 +85,7 @@ export default function LessonDetailPage() {
           return;
         }
         setLesson(foundLesson);
+        setIsBookmarked(isMaterialBookmarked(foundLesson.id));
 
         // Fetch comments
         const commentsRes = await fetch(`/api/comments?lessonId=${id}`);
@@ -236,8 +240,18 @@ export default function LessonDetailPage() {
                 const isImage = lesson.mediaType === "image" || lesson.category === "สื่อภาพ";
                 const contentUrl = lesson.pdfUrl || lesson.fileUrl;
 
+                if (lesson.id === "dl-1" || lesson.title?.includes("จุด")) {
+                  return (
+                    <DigitalLessonWorksheet 
+                      title={lesson.title} 
+                      pdfUrl={contentUrl} 
+                      attachmentName={lesson.attachmentName} 
+                    />
+                  );
+                }
+
                 return (
-                  <div className={`w-full ${isImage ? "bg-gray-100 min-h-[400px] flex items-center justify-center" : isPdf ? "bg-gray-100" : "aspect-video bg-gray-900 relative"}`}>
+                  <div className={`w-full overflow-hidden rounded-t-3xl ${isImage ? "bg-gray-100 min-h-[400px] flex items-center justify-center" : isPdf ? "bg-gray-100" : "aspect-video bg-gray-900 relative"}`}>
                     {isImage ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img 
@@ -250,7 +264,7 @@ export default function LessonDetailPage() {
                       <iframe 
                         className="w-full min-h-[70vh] border-0"
                         src={contentUrl}
-                        title={lesson.title}
+                        title={lesson.title} 
                       >
                       </iframe>
                     ) : (

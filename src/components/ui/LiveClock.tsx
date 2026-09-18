@@ -9,15 +9,19 @@ export default function LiveClock() {
   const [time, setTime] = useState<Date | null>(null);
 
   useEffect(() => {
-    // Initial set
-    setTime(new Date());
+    const timer = setTimeout(() => {
+      setTime(new Date());
+    }, 0);
     
     // Update every second
     const interval = setInterval(() => {
       setTime(new Date());
     }, 1000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(timer);
+      clearInterval(interval);
+    };
   }, []);
 
   if (!time) return null; // Avoid hydration mismatch

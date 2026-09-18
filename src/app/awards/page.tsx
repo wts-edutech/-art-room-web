@@ -12,6 +12,7 @@ export const runtime = 'edge';
 export default async function AwardsPage() {
   const db = getDb();
   const allAwards = await db.select().from(awards).orderBy(desc(awards.createdAt));
+  const validAwards = allAwards.filter(a => a.title && a.title !== "Untitled" && a.student !== "Unknown");
 
   return (
     <>
@@ -23,43 +24,41 @@ export default async function AwardsPage() {
           <div className="inline-flex items-center justify-center w-14 h-14 bg-red-100 rounded-full mb-4">
             <Medal className="w-7 h-7 text-red-600" />
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black text-gray-900">รางวัลที่ได้รับ</h1>
+          <h1 className="text-3xl sm:text-4xl font-black text-gray-900 font-heading">รางวัลที่ได้รับ</h1>
         </div>
 
         {/* Banner Section */}
-        <AwardsBanner awards={allAwards} />
+        <AwardsBanner awards={validAwards} />
 
-        <div className="container mx-auto px-4 sm:px-6 py-12 max-w-7xl">
+        <div className="w-full max-w-[1650px] mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
           
           {/* Stats Boxes */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12 max-w-2xl mx-auto">
-            <div className="bg-white rounded-3xl p-6 shadow-sm border border-red-500/20 flex items-center justify-between border-l-4 border-l-red-500 relative overflow-hidden group">
-              <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-red-50 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
-              <div className="relative z-10">
-                <p className="text-sm font-medium text-gray-500 mb-1">ผลการค้นหา (รายการ)</p>
-                <p className="text-4xl font-black text-gray-900">{allAwards.length}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-10 max-w-3xl mx-auto">
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-gray-500 mb-1">ผลรางวัลทั้งหมด</p>
+                <p className="text-3xl font-black text-gray-900">{validAwards.length} <span className="text-sm font-normal text-gray-500">รายการ</span></p>
               </div>
-              <div className="w-12 h-12 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center relative z-10 shadow-sm">
-                <Sparkles className="w-6 h-6" />
+              <div className="w-11 h-11 bg-red-50 text-red-600 rounded-xl flex items-center justify-center">
+                <Sparkles className="w-5 h-5" />
               </div>
             </div>
 
-            <div className="bg-white rounded-3xl p-6 shadow-sm border border-red-500/20 flex items-center justify-between border-l-4 border-l-red-400 relative overflow-hidden group">
-              <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-red-50 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
-              <div className="relative z-10">
-                <p className="text-sm font-medium text-gray-500 mb-1">นักเรียนที่ได้รับรางวัล</p>
-                <p className="text-4xl font-black text-gray-900">
-                  {new Set(allAwards.map(a => a.student)).size}
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-gray-500 mb-1">นักเรียนที่ได้รับรางวัล</p>
+                <p className="text-3xl font-black text-gray-900">
+                  {new Set(validAwards.map(a => a.student)).size} <span className="text-sm font-normal text-gray-500">คน</span>
                 </p>
               </div>
-              <div className="w-12 h-12 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center relative z-10 shadow-sm">
-                <GraduationCap className="w-6 h-6" />
+              <div className="w-11 h-11 bg-red-50 text-red-600 rounded-xl flex items-center justify-center">
+                <GraduationCap className="w-5 h-5" />
               </div>
             </div>
           </div>
 
           {/* Table Section */}
-          <AwardsTable awards={allAwards} />
+          <AwardsTable awards={validAwards} />
         </div>
       </main>
       <Footer />

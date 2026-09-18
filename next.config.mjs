@@ -8,6 +8,8 @@ if (process.env.NODE_ENV === 'development') {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  allowedDevOrigins: ['192.168.72.125', 'localhost', '127.0.0.1'],
+  devIndicators: false,
   typescript: {
     ignoreBuildErrors: true,
   },

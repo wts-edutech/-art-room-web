@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { ideas, comments } from '@/db/schema';
 import { eq, desc, sql } from 'drizzle-orm';
-import { checkIsAdmin } from '@/lib/api-auth';
+import { checkIsAdmin, getSession } from '@/lib/api-auth';
 
 let migrationDone = false;
 async function ensureIsFeaturedColumn(db: any) {
@@ -76,6 +76,12 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const session = await getSession();
+    const isAdmin = await checkIsAdmin();
+    if (!session && !isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized — กรุณาเข้าสู่ระบบก่อนแชร์ไอเดีย' }, { status: 401 });
+    }
+
     const formData = await request.formData();
     const db = getDb();
     await ensureIsFeaturedColumn(db);
@@ -114,7 +120,6 @@ export async function POST(request: Request) {
     newEntry.isFeatured = 1;
 
     // Approve submission so it shows up in "แนะนำไอเดียใหม่" and can be moderated by admin
-    const isAdmin = await checkIsAdmin();
     if (newEntry.status === 'pending' && isAdmin) {
       newEntry.status = 'pending';
     } else {

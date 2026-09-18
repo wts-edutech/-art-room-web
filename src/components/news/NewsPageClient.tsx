@@ -1,7 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { Search, Calendar, User, Tag, Share2, Sparkles, ExternalLink, X, ChevronRight, Newspaper, Check, Info } from "lucide-react";
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import dynamic from "next/dynamic";
+import { Search, Calendar, User, Tag, Share2, Sparkles, ExternalLink, X, ChevronRight, Newspaper, Check, Info, Images, ArrowUpRight } from "lucide-react";
+
+// Dynamic load of CalendarView to prevent SSR date mismatch
+const CalendarView = dynamic(() => import("@/components/ui/CalendarView"), {
+  ssr: false,
+  loading: () => <div className="w-full h-[400px] bg-white rounded-2xl border border-gray-200 animate-pulse flex items-center justify-center text-xs text-gray-400">กำลังโหลดปฏิทินกิจกรรม...</div>
+});
 
 export interface NewsItem {
   id: string;
@@ -132,7 +140,13 @@ export const DEMO_NEWS_LIST: NewsItem[] = [
 
 const CATEGORIES = ["ทั้งหมด", "นิทรรศการ", "เวิร์กช็อป & กิจกรรม", "ประกาศทั่วไป"];
 
-export default function NewsPageClient({ initialNews = [] }: { initialNews?: any[] }) {
+export default function NewsPageClient({ 
+  initialNews = [], 
+  initialActivities = [] 
+}: { 
+  initialNews?: any[]; 
+  initialActivities?: any[];
+}) {
   // Combine real database news with demo news if database has fewer items
   const combinedNews: NewsItem[] = initialNews.length > 0 
     ? initialNews.map((n, idx) => ({
@@ -154,6 +168,19 @@ export default function NewsPageClient({ initialNews = [] }: { initialNews?: any
   const [searchTerm, setSearchTerm] = useState("");
   const [activeModalNews, setActiveModalNews] = useState<NewsItem | null>(null);
   const [copied, setCopied] = useState(false);
+  const [activities, setActivities] = useState<any[]>(initialActivities);
+
+  // Sync fresh activities from API
+  useEffect(() => {
+    fetch("/api/activities")
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setActivities(data);
+        }
+      })
+      .catch(err => console.error("Failed to load activities for calendar:", err));
+  }, []);
 
   // Featured News is either the first featured or the very first item
   const featured = combinedNews.find(n => n.isFeatured) || combinedNews[0];
@@ -234,190 +261,237 @@ export default function NewsPageClient({ initialNews = [] }: { initialNews?: any
         </div>
       </section>
 
-      <div className="container mx-auto px-4 sm:px-6 max-w-6xl py-10">
-        {/* Featured Hero News (1.91:1 Standard Banner) */}
-        {featured && selectedCategory === "ทั้งหมด" && !searchTerm && (
-          <div className="mb-14">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <span className="w-2.5 h-6 bg-red-600 rounded-full"></span>
-                ข่าวเด่นน่าสนใจ (Featured News)
-              </h2>
-              <span className="text-xs font-medium text-red-600 bg-red-50 px-3 py-1 rounded-full border border-red-100">
-                สัดส่วนมาตรฐาน Banner 1.91:1
-              </span>
-            </div>
-
-            <div 
-              onClick={() => setActiveModalNews(featured)}
-              className="bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl border border-gray-100 flex flex-col lg:flex-row cursor-pointer group transition-all duration-300"
-            >
-              {/* Banner Image Container */}
-              <div className="relative w-full lg:w-3/5 min-h-[280px] sm:min-h-[360px] lg:h-[400px] overflow-hidden bg-gray-900 flex items-center justify-center">
-                {/* Ambient blur */}
-                <div 
-                  className="absolute inset-0 bg-cover bg-center blur-lg opacity-40 scale-110 pointer-events-none"
-                  style={{ backgroundImage: `url(${featured.imageUrl})` }}
-                />
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img 
-                  src={featured.imageUrl} 
-                  alt={featured.title}
-                  className="relative z-10 max-h-full max-w-full object-contain transform group-hover:scale-102 transition-transform duration-500 rounded-xl drop-shadow-md"
-                  onError={(e) => (e.currentTarget.src = "/images/news/hero-exhibition.jpg")}
-                />
-                <div className="absolute top-4 left-4 z-20">
-                  <span className="px-3.5 py-1.5 bg-red-600 text-white text-xs font-bold rounded-full shadow-md flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5" /> ไฮไลต์เด่น
+      <div className="container mx-auto px-4 sm:px-6 max-w-7xl py-10">
+        <div className="flex flex-col xl:flex-row gap-8 xl:gap-10 items-start">
+          
+          {/* Main Column: News Content */}
+          <div className="flex-1 min-w-0 w-full space-y-10">
+            {/* Featured Hero News (1.91:1 Standard Banner) */}
+            {featured && selectedCategory === "ทั้งหมด" && !searchTerm && (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                    <span className="w-2.5 h-6 bg-red-600 rounded-full"></span>
+                    ข่าวเด่นน่าสนใจ (Featured News)
+                  </h2>
+                  <span className="text-xs font-medium text-red-600 bg-red-50 px-3 py-1 rounded-full border border-red-100">
+                    Banner ไฮไลต์
                   </span>
                 </div>
-              </div>
 
-              {/* Banner Info */}
-              <div className="w-full lg:w-2/5 p-6 sm:p-8 flex flex-col justify-between bg-gradient-to-br from-white to-gray-50/50">
-                <div>
-                  <div className="flex items-center gap-3 text-xs text-gray-500 mb-3">
-                    <span className="inline-flex items-center gap-1 font-medium text-red-600">
-                      <User className="w-3.5 h-3.5" /> {featured.source}
-                    </span>
-                    <span>•</span>
-                    <span className="inline-flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5" /> {featured.date}
-                    </span>
-                  </div>
-
-                  <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 leading-snug group-hover:text-red-600 transition-colors">
-                    {featured.title}
-                  </h3>
-
-                  <p className="text-gray-600 text-sm leading-relaxed line-clamp-4 font-light">
-                    {featured.excerpt}
-                  </p>
-                </div>
-
-                <div className="pt-6 border-t border-gray-100 flex items-center justify-between mt-4">
-                  <div className="flex flex-wrap gap-1.5">
-                    {featured.tags?.map((t) => (
-                      <span key={t} className="text-[11px] bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded-md">
-                        #{t}
-                      </span>
-                    ))}
-                  </div>
-
-                  <span className="inline-flex items-center gap-1 text-sm font-semibold text-red-600 group-hover:translate-x-1 transition-transform">
-                    อ่านต่อ <ChevronRight className="w-4 h-4" />
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Section Heading for All News */}
-        <div className="flex items-center justify-between mb-6 border-b border-gray-200/70 pb-4">
-          <div>
-            <h2 className="text-xl font-bold text-gray-900">
-              {selectedCategory === "ทั้งหมด" ? "ข่าวสารและกิจกรรมทั้งหมด" : `หมวดหมู่: ${selectedCategory}`}
-            </h2>
-            <p className="text-xs text-gray-500 mt-0.5">พบทั้งหมด {filteredNews.length} รายการ</p>
-          </div>
-
-          <div className="hidden sm:flex items-center gap-2 text-xs text-gray-500">
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500"></span> Banner 1.91:1</span>
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500"></span> โปสเตอร์ 3:4</span>
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> จัตุรัส 1:1</span>
-          </div>
-        </div>
-
-        {/* News Grid (Showcasing all 3 PR formats) */}
-        {filteredNews.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredNews.map((news) => {
-              // Badge colors based on image type
-              const isPoster = news.imageType === "poster";
-              const isSquare = news.imageType === "square";
-
-              return (
                 <div 
-                  key={news.id}
-                  onClick={() => setActiveModalNews(news)}
-                  className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full cursor-pointer group"
+                  onClick={() => setActiveModalNews(featured)}
+                  className="bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl border border-gray-100 flex flex-col md:flex-row cursor-pointer group transition-all duration-300"
                 >
-                  {/* Image Container */}
-                  <div className={`relative w-full ${isPoster ? "h-64 sm:h-72" : isSquare ? "h-56 sm:h-60" : "h-48 sm:h-52"} bg-gray-900 overflow-hidden flex items-center justify-center`}>
-                    {/* Blurred backdrop */}
+                  {/* Banner Image Container */}
+                  <div className="relative w-full md:w-3/5 min-h-[260px] sm:min-h-[320px] md:h-[360px] overflow-hidden bg-gray-900 flex items-center justify-center">
+                    {/* Ambient blur */}
                     <div 
-                      className="absolute inset-0 bg-cover bg-center blur-md opacity-35 scale-110 pointer-events-none"
-                      style={{ backgroundImage: `url(${news.imageUrl})` }}
+                      className="absolute inset-0 bg-cover bg-center blur-lg opacity-40 scale-110 pointer-events-none"
+                      style={{ backgroundImage: `url(${featured.imageUrl})` }}
                     />
-                    
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img 
-                      src={news.imageUrl} 
-                      alt={news.title}
-                      className="relative z-10 max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-500 drop-shadow-sm"
+                      src={featured.imageUrl} 
+                      alt={featured.title}
+                      className="relative z-10 max-h-full max-w-full object-contain transform group-hover:scale-102 transition-transform duration-500 rounded-xl drop-shadow-md"
                       onError={(e) => (e.currentTarget.src = "/images/news/hero-exhibition.jpg")}
                     />
-
-                    {/* Format Tag Badge */}
-                    <div className="absolute top-3 left-3 z-20">
-                      <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full shadow-xs text-white ${
-                        isPoster ? "bg-amber-600" : isSquare ? "bg-emerald-600" : "bg-blue-600"
-                      }`}>
-                        {isPoster ? "โปสเตอร์ PR (3:4)" : isSquare ? "ภาพกิจกรรม (1:1)" : "Banner (1.91:1)"}
-                      </span>
-                    </div>
-
-                    <div className="absolute top-3 right-3 z-20">
-                      <span className="text-[10px] font-medium px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-white">
-                        {news.category}
+                    <div className="absolute top-4 left-4 z-20">
+                      <span className="px-3.5 py-1.5 bg-red-600 text-white text-xs font-bold rounded-full shadow-md flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5" /> ไฮไลต์เด่น
                       </span>
                     </div>
                   </div>
 
-                  {/* Body Content */}
-                  <div className="p-5 flex-1 flex flex-col justify-between">
+                  {/* Banner Info */}
+                  <div className="w-full md:w-2/5 p-6 sm:p-7 flex flex-col justify-between bg-gradient-to-br from-white to-gray-50/50">
                     <div>
-                      <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
-                        <span className="font-medium text-red-600">{news.source}</span>
+                      <div className="flex items-center gap-3 text-xs text-gray-500 mb-3">
+                        <span className="inline-flex items-center gap-1 font-medium text-red-600">
+                          <User className="w-3.5 h-3.5" /> {featured.source}
+                        </span>
                         <span>•</span>
-                        <span>{news.date}</span>
+                        <span className="inline-flex items-center gap-1">
+                          <Calendar className="w-3.5 h-3.5" /> {featured.date}
+                        </span>
                       </div>
 
-                      <h4 className="font-bold text-gray-900 text-base mb-2 group-hover:text-red-600 transition-colors leading-snug line-clamp-2">
-                        {news.title}
-                      </h4>
+                      <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 leading-snug group-hover:text-red-600 transition-colors font-heading">
+                        {featured.title}
+                      </h3>
 
-                      <p className="text-gray-500 text-xs sm:text-sm leading-relaxed line-clamp-3 font-light mb-4">
-                        {news.excerpt}
+                      <p className="text-gray-600 text-sm leading-relaxed line-clamp-4 font-light">
+                        {featured.excerpt}
                       </p>
                     </div>
 
-                    <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-xs">
-                      <span className="text-gray-400 font-medium">คลิกเพื่ออ่านเนื้อหา</span>
-                      <span className="inline-flex items-center gap-1 text-red-600 font-semibold group-hover:translate-x-1 transition-transform">
-                        รายละเอียด <ChevronRight className="w-3.5 h-3.5" />
+                    <div className="pt-5 border-t border-gray-100 flex items-center justify-between mt-4">
+                      <div className="flex flex-wrap gap-1.5">
+                        {featured.tags?.map((t) => (
+                          <span key={t} className="text-[11px] bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded-md">
+                            #{t}
+                          </span>
+                        ))}
+                      </div>
+
+                      <span className="inline-flex items-center gap-1 text-sm font-semibold text-red-600 group-hover:translate-x-1 transition-transform">
+                        อ่านต่อ <ChevronRight className="w-4 h-4" />
                       </span>
                     </div>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="bg-white rounded-3xl p-12 text-center border border-gray-100 shadow-sm max-w-xl mx-auto my-8">
-            <Newspaper className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <h3 className="text-lg font-bold text-gray-800 mb-1">ไม่พบข่าวสารที่ค้นหา</h3>
-            <p className="text-sm text-gray-500 mb-4">ลองเปลี่ยนคำค้นหา หรือเลือกหมวดหมู่อื่นเพื่อค้นหาข่าวสาร</p>
-            <button 
-              onClick={() => { setSelectedCategory("ทั้งหมด"); setSearchTerm(""); }}
-              className="px-4 py-2 bg-red-600 text-white text-xs font-semibold rounded-xl hover:bg-red-700 transition-colors"
-            >
-              ดูข่าวสารทั้งหมด
-            </button>
-          </div>
-        )}
+              </div>
+            )}
 
+            {/* Section Heading for All News */}
+            <div>
+              <div className="flex items-center justify-between mb-6 border-b border-gray-200/70 pb-4">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900 font-heading">
+                    {selectedCategory === "ทั้งหมด" ? "ข่าวสารและประกาศทั้งหมด" : `หมวดหมู่: ${selectedCategory}`}
+                  </h2>
+                  <p className="text-xs text-gray-500 mt-0.5">พบทั้งหมด {filteredNews.length} รายการ</p>
+                </div>
+
+                <div className="hidden sm:flex items-center gap-2 text-xs text-gray-500">
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500"></span> Banner</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500"></span> โปสเตอร์</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> จัตุรัส</span>
+                </div>
+              </div>
+
+              {/* News Grid (2 Columns on Desktop) */}
+              {filteredNews.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {filteredNews.map((news) => {
+                    const isPoster = news.imageType === "poster";
+                    const isSquare = news.imageType === "square";
+
+                    return (
+                      <div 
+                        key={news.id}
+                        onClick={() => setActiveModalNews(news)}
+                        className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-xs hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full cursor-pointer group"
+                      >
+                        {/* Image Container */}
+                        <div className={`relative w-full ${isPoster ? "h-60 sm:h-64" : isSquare ? "h-52 sm:h-56" : "h-44 sm:h-48"} bg-gray-900 overflow-hidden flex items-center justify-center`}>
+                          {/* Blurred backdrop */}
+                          <div 
+                            className="absolute inset-0 bg-cover bg-center blur-md opacity-35 scale-110 pointer-events-none"
+                            style={{ backgroundImage: `url(${news.imageUrl})` }}
+                          />
+                          
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img 
+                            src={news.imageUrl} 
+                            alt={news.title}
+                            className="relative z-10 max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-500 drop-shadow-sm"
+                            onError={(e) => (e.currentTarget.src = "/images/news/hero-exhibition.jpg")}
+                          />
+
+                          {/* Format Tag Badge */}
+                          <div className="absolute top-3 left-3 z-20">
+                            <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full shadow-xs text-white ${
+                              isPoster ? "bg-amber-600" : isSquare ? "bg-emerald-600" : "bg-blue-600"
+                            }`}>
+                              {isPoster ? "โปสเตอร์ PR (3:4)" : isSquare ? "ภาพกิจกรรม (1:1)" : "Banner (1.91:1)"}
+                            </span>
+                          </div>
+
+                          <div className="absolute top-3 right-3 z-20">
+                            <span className="text-[10px] font-medium px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-white">
+                              {news.category}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Body Content */}
+                        <div className="p-5 flex-1 flex flex-col justify-between">
+                          <div>
+                            <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
+                              <span className="font-medium text-red-600">{news.source}</span>
+                              <span>•</span>
+                              <span>{news.date}</span>
+                            </div>
+
+                            <h4 className="font-bold text-gray-900 text-base mb-2 group-hover:text-red-600 transition-colors leading-snug line-clamp-2 font-heading">
+                              {news.title}
+                            </h4>
+
+                            <p className="text-gray-500 text-xs sm:text-sm leading-relaxed line-clamp-3 font-light mb-4">
+                              {news.excerpt}
+                            </p>
+                          </div>
+
+                          <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-xs">
+                            <span className="text-gray-400 font-medium">คลิกเพื่ออ่านเนื้อหา</span>
+                            <span className="inline-flex items-center gap-1 text-red-600 font-semibold group-hover:translate-x-1 transition-transform">
+                              รายละเอียด <ChevronRight className="w-3.5 h-3.5" />
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="bg-white rounded-3xl p-12 text-center border border-gray-100 shadow-sm max-w-xl mx-auto my-8">
+                  <Newspaper className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <h3 className="text-lg font-bold text-gray-800 mb-1">ไม่พบข่าวสารที่ค้นหา</h3>
+                  <p className="text-sm text-gray-500 mb-4">ลองเปลี่ยนคำค้นหา หรือเลือกหมวดหมู่อื่นเพื่อค้นหาข่าวสาร</p>
+                  <button 
+                    onClick={() => { setSelectedCategory("ทั้งหมด"); setSearchTerm(""); }}
+                    className="px-4 py-2 bg-red-600 text-white text-xs font-semibold rounded-xl hover:bg-red-700 transition-colors cursor-pointer"
+                  >
+                    ดูข่าวสารทั้งหมด
+                  </button>
+                </div>
+              )}
+            </div>
+
+          </div>
+
+          {/* Sidebar Column: Sticky Calendar & Activity Albums Link */}
+          <aside className="w-full xl:w-[380px] shrink-0 xl:sticky xl:top-24 space-y-6">
+            
+            {/* Calendar Component */}
+            <div className="bg-white rounded-2xl overflow-hidden shadow-xs border border-gray-100">
+              <CalendarView activities={activities} />
+            </div>
+
+            {/* Quick Link Card: Activity Photo Albums */}
+            <div className="bg-gradient-to-br from-amber-500/10 via-red-500/5 to-white p-5 rounded-2xl border border-amber-200/60 shadow-2xs space-y-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-2xs shrink-0">
+                  <Images className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-gray-900 font-heading">
+                    แกลเลอรีประมวลภาพกิจกรรม
+                  </h4>
+                  <p className="text-[11px] text-gray-500">
+                    ภาพกิจกรรมศิลปะ โครงการ และผลงาน
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-xs text-gray-600 leading-relaxed font-light">
+                รับชมภาพบรรยากาศการเรียนการสอน กิจกรรม Workshop และภาพความประทับใจทั้งหมดได้ที่หน้าประมวลภาพ
+              </p>
+
+              <Link
+                href="/activities"
+                className="inline-flex items-center justify-between w-full px-4 py-2.5 rounded-xl bg-white hover:bg-amber-50 text-amber-900 border border-amber-200 text-xs font-bold transition-all group shadow-2xs hover:shadow-xs cursor-pointer"
+              >
+                <span>เข้าชมแกลเลอรีภาพกิจกรรม</span>
+                <ArrowUpRight className="w-4 h-4 text-amber-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+              </Link>
+            </div>
+
+          </aside>
+
+        </div>
       </div>
 
       {/* News Detail Reading Modal */}

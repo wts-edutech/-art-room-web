@@ -579,20 +579,41 @@ export default function IdeaDetailClient() {
             </div>
           </div>
 
-          {/* 3. Cover Image Banner */}
-          <div className="relative aspect-video sm:aspect-[16/9] w-full bg-gray-100 rounded-2xl sm:rounded-3xl overflow-hidden border border-gray-100/90 shadow-sm mb-8">
+          {/* 3. Cover Image Banner - Responsive fitting without cropping */}
+          <div 
+            onClick={() => idea.coverImageUrl && handleOpenPreview({ name: idea.title, url: idea.coverImageUrl })}
+            className="relative min-h-[260px] sm:min-h-[380px] max-h-[560px] w-full bg-slate-900/5 dark:bg-slate-900 rounded-2xl sm:rounded-3xl overflow-hidden border border-gray-100/90 shadow-sm mb-8 flex items-center justify-center group cursor-zoom-in"
+            title="คลิกเพื่อดูรูปภาพเต็มขนาด"
+          >
+            {/* Ambient blurred backdrop for portrait/non-16:9 images */}
+            {idea.coverImageUrl && (
+              <div 
+                className="absolute inset-0 scale-125 blur-2xl opacity-25 pointer-events-none"
+                style={{
+                  backgroundImage: `url(${idea.coverImageUrl})`,
+                  backgroundPosition: "center",
+                  backgroundSize: "cover",
+                }}
+              />
+            )}
+
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img 
               src={idea.coverImageUrl || "https://placehold.co/1200x675/FFF7ED/EA580C?text=Art+Room"} 
               alt={idea.title}
-              className="w-full h-full object-cover"
+              className="relative max-h-[560px] w-auto max-w-full object-contain mx-auto transition-transform duration-300 group-hover:scale-[1.01]"
               onError={(e) => (e.currentTarget.src = "https://placehold.co/1200x675/FFF7ED/EA580C?text=Art+Room")}
             />
+
             {idea.category && (
-              <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-md text-gray-800 font-bold text-xs px-3.5 py-1.5 rounded-full shadow-sm border border-gray-100">
+              <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-md text-gray-800 font-bold text-xs px-3.5 py-1.5 rounded-full shadow-sm border border-gray-100 z-10">
                 {idea.category}
               </div>
             )}
+
+            <div className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-md text-white/90 text-xs font-semibold px-3 py-1.5 rounded-xl border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 z-10">
+              <span>คลิกเพื่อดูภาพขยาย</span>
+            </div>
           </div>
 
           {/* 4. Idea Details Body */}
@@ -609,7 +630,7 @@ export default function IdeaDetailClient() {
                       วิดีโอสาธิตและวิธีทำ (Video Tutorial)
                     </h3>
                   </div>
-                  <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-black shadow-md border border-gray-100">
+                  <div className="relative aspect-video w-full rounded-3xl overflow-hidden bg-black shadow-md border border-gray-100">
                     <iframe
                       src={`https://www.youtube.com/embed/${ytId}?rel=0`}
                       title={idea.title}

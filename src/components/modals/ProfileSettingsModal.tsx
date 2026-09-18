@@ -2,11 +2,13 @@
 
 import { useState, useEffect, useRef } from "react";
 import { 
-  X, Upload, Image as ImageIcon, Sparkles, Check, 
+  X, Upload, Image as ImageIcon, Check, 
   User, Phone, Mail, GraduationCap, ShieldCheck, 
-  Camera, Trash2, ArrowRight, Palette, RefreshCw
+  Camera, Trash2, ArrowRight, Palette, RefreshCw,
+  Lock, Eye, EyeOff, CheckCircle2, AlertCircle
 } from "lucide-react";
 import { ART_AVATAR_PRESETS, getArtAvatarById, resolveUserAvatar, ArtAvatarPreset } from "@/lib/art-avatars";
+import { validatePassword } from "@/lib/password-validator";
 
 interface ProfileSettingsModalProps {
   isOpen: boolean;
@@ -27,6 +29,13 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
   const [room, setRoom] = useState<string>("1");
   const [provider, setProvider] = useState<string>("Google");
 
+  // Password Management State
+  const [newPassword, setNewPassword] = useState<string>("");
+  const [confirmPassword, setConfirmPassword] = useState<string>("");
+  const [showNewPassword, setShowNewPassword] = useState<boolean>(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
+  const [isChangingPassword, setIsChangingPassword] = useState<boolean>(false);
+
   // Avatar Management State
   const [avatarValue, setAvatarValue] = useState<string>("");
   const [avatarMode, setAvatarMode] = useState<"preset" | "upload">("preset");
@@ -43,11 +52,16 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
     if (!isOpen) return;
 
     setErrorMessage("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setShowNewPassword(false);
+    setShowConfirmPassword(false);
+    setIsChangingPassword(false);
     setSaveSuccess(false);
 
     const savedName = localStorage.getItem("artroom_author_name") || "";
     const savedEmail = localStorage.getItem("artroom_author_email") || "";
-    const savedRole = localStorage.getItem("artroom_role") || "student";
+    const savedRole = localStorage.getItem("artroom_role") || "guest";
     let savedUserRole = localStorage.getItem("artroom_user_role") || "ผู้ปกครองนักเรียน";
     if (savedUserRole.includes("ภายนอก")) {
       savedUserRole = "ครู / บุคลากรทางการศึกษา";
@@ -196,6 +210,18 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
       return;
     }
 
+    if (role === "student" && newPassword) {
+      const validation = validatePassword(newPassword);
+      if (!validation.isValid) {
+        setErrorMessage(validation.errors[0]);
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        setErrorMessage("รหัสผ่านใหม่และการยืนยันรหัสผ่านไม่ตรงกัน");
+        return;
+      }
+    }
+
     setIsSaving(true);
 
     try {
@@ -206,10 +232,23 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
       localStorage.setItem("artroom_display_name", (displayName || fullName).trim());
       if (phone.trim()) localStorage.setItem("artroom_phone", phone.trim());
       if (avatarValue) localStorage.setItem("artroom_avatar", avatarValue);
-      if (fullGrade) localStorage.setItem("artroom_student_grade", fullGrade);
+      if (fullGrade) {
+        localStorage.setItem("artroom_student_grade", fullGrade);
+        localStorage.setItem("artroom_classroom", fullGrade);
+      }
+      if (role === "student") {
+        localStorage.setItem("artroom_role", "student");
+        if (studentId) localStorage.setItem("artroom_student_id", studentId.trim());
+      } else {
+        localStorage.setItem("artroom_role", "guest");
+        localStorage.removeItem("artroom_student_id");
+        localStorage.removeItem("artroom_classroom");
+        localStorage.removeItem("artroom_student_grade");
+        localStorage.removeItem("artroom_grade_level");
+      }
 
       // 2. Call API endpoint (safe background sync)
-      await fetch("/api/auth/profile", {
+      const res = await fetch("/api/auth/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -219,8 +258,17 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
           phone: phone.trim(),
           grade: fullGrade,
           avatar: avatarValue,
+          newPassword: (role === "student" && newPassword) ? newPassword : undefined,
+          confirmPassword: (role === "student" && confirmPassword) ? confirmPassword : undefined,
         }),
-      }).catch(() => null);
+      });
+
+      const resData = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setIsSaving(false);
+        setErrorMessage(resData.error || "เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+        return;
+      }
 
       // 3. Dispatch global update event so Navbar & other components re-render immediately
       window.dispatchEvent(new Event("artroom_profile_updated"));
@@ -242,6 +290,8 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
   if (!isOpen) return null;
 
   const currentResolvedAvatar = resolveUserAvatar(avatarValue, fullName);
+  const passValidation = validatePassword(newPassword);
+  const passwordsMatch = Boolean(newPassword && confirmPassword && newPassword === confirmPassword);
 
   return (
     <div 
@@ -442,7 +492,7 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-xs sm:text-[13px] font-semibold text-gray-700 flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    <Palette className="w-3.5 h-3.5 text-orange-600" />
                     <span>เลือกอวาตาร์ไอคอนศิลปะสำเร็จรูป (Preset Art Avatars)</span>
                   </label>
                   <span className="text-[11px] text-gray-400 font-normal">
@@ -620,12 +670,135 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
                   />
                 </div>
               </div>
+
+              {/* Field 4: Password Management (For Students) */}
+              {role === "student" && (
+                <div className="pt-3 border-t border-gray-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-xs sm:text-[13px] font-bold text-gray-700 flex items-center gap-1.5">
+                      <Lock className="w-3.5 h-3.5 text-orange-600" />
+                      <span>ตั้งรหัสผ่านเข้าสู่ระบบ (รหัสผ่านส่วนตัว)</span>
+                    </label>
+                    {isChangingPassword && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsChangingPassword(false);
+                          setNewPassword("");
+                          setConfirmPassword("");
+                        }}
+                        className="text-xs text-gray-400 hover:text-gray-600 cursor-pointer"
+                      >
+                        ยกเลิก
+                      </button>
+                    )}
+                  </div>
+
+                  {!isChangingPassword ? (
+                    <div className="p-3 rounded-xl bg-gray-50 border border-gray-200 text-xs text-gray-600 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                        <span>สถานะ: สามารถเข้าสู่ระบบด้วยรหัสผ่านส่วนตัวหรือรหัสเริ่มต้น</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsChangingPassword(true)}
+                        className="text-xs text-orange-600 font-semibold hover:underline cursor-pointer"
+                      >
+                        เปลี่ยนรหัสผ่าน
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200 space-y-3 animate-in fade-in duration-200">
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                          รหัสผ่านใหม่
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={showNewPassword ? "text" : "password"}
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            placeholder="กำหนดรหัสผ่านใหม่ (ไม่ต่ำกว่า 8 ตัวอักษร)"
+                            className="w-full h-10 pl-3.5 pr-10 rounded-xl border border-gray-200 bg-white text-xs outline-none focus:border-orange-500 font-mono transition-all"
+                            autoComplete="new-password"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowNewPassword(!showNewPassword)}
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer"
+                            tabIndex={-1}
+                            title={showNewPassword ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"}
+                          >
+                            {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                          ยืนยันรหัสผ่านใหม่
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={showConfirmPassword ? "text" : "password"}
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            placeholder="พิมพ์รหัสผ่านใหม่อีกครั้งเพื่อยืนยัน"
+                            className="w-full h-10 pl-3.5 pr-10 rounded-xl border border-gray-200 bg-white text-xs outline-none focus:border-orange-500 font-mono transition-all"
+                            autoComplete="new-password"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer"
+                            tabIndex={-1}
+                            title={showConfirmPassword ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"}
+                          >
+                            {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Real-time Checklist */}
+                      <div className="pt-2 border-t border-gray-200/80 text-[11px] space-y-1.5">
+                        <span className="font-semibold text-gray-700 block mb-1">เกณฑ์ความปลอดภัยของรหัสผ่าน:</span>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                          <div className={`flex items-center gap-1.5 ${passValidation.hasMinLength ? 'text-emerald-700 font-medium' : 'text-gray-400'}`}>
+                            <CheckCircle2 className={`w-3.5 h-3.5 ${passValidation.hasMinLength ? 'text-emerald-600' : 'text-gray-300'}`} />
+                            <span>ความยาวไม่ต่ำกว่า 8 ตัวอักษร</span>
+                          </div>
+                          <div className={`flex items-center gap-1.5 ${passValidation.hasUpper ? 'text-emerald-700 font-medium' : 'text-gray-400'}`}>
+                            <CheckCircle2 className={`w-3.5 h-3.5 ${passValidation.hasUpper ? 'text-emerald-600' : 'text-gray-300'}`} />
+                            <span>มีตัวอักษรพิมพ์ใหญ่ (A-Z) อย่างน้อย 1 ตัว</span>
+                          </div>
+                          <div className={`flex items-center gap-1.5 ${passValidation.hasLower ? 'text-emerald-700 font-medium' : 'text-gray-400'}`}>
+                            <CheckCircle2 className={`w-3.5 h-3.5 ${passValidation.hasLower ? 'text-emerald-600' : 'text-gray-300'}`} />
+                            <span>มีตัวอักษรพิมพ์เล็ก (a-z) อย่างน้อย 1 ตัว</span>
+                          </div>
+                          <div className={`flex items-center gap-1.5 ${passValidation.hasNumber ? 'text-emerald-700 font-medium' : 'text-gray-400'}`}>
+                            <CheckCircle2 className={`w-3.5 h-3.5 ${passValidation.hasNumber ? 'text-emerald-600' : 'text-gray-300'}`} />
+                            <span>มีตัวเลข (0-9) อย่างน้อย 1 ตัว</span>
+                          </div>
+                          {confirmPassword && (
+                            <div className={`sm:col-span-2 flex items-center gap-1.5 ${passwordsMatch ? 'text-emerald-700 font-medium' : 'text-red-600'}`}>
+                              <CheckCircle2 className={`w-3.5 h-3.5 ${passwordsMatch ? 'text-emerald-600' : 'text-red-400'}`} />
+                              <span>{passwordsMatch ? 'รหัสผ่านทั้งสองช่องตรงกัน' : 'รหัสผ่านทั้งสองช่องยังไม่ตรงกัน'}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Error Message Alert */}
             {errorMessage && (
-              <div className="p-3 rounded-xl bg-red-50 text-red-700 border border-red-200 text-xs font-normal animate-in fade-in">
-                ⚠️ {errorMessage}
+              <div className="p-3 rounded-xl bg-red-50 text-red-700 border border-red-200 text-xs font-normal flex items-start gap-2 animate-in fade-in">
+                <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
+                <span>{errorMessage}</span>
               </div>
             )}
 

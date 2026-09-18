@@ -377,18 +377,20 @@ export default function DownloadsTab() {
     }
   };
 
-  // Seed default items
+  // Seed / Reset default items
   const handleSeedDefaults = async () => {
-    if (!confirm("คุณต้องการโหลดชุดใบงานและคู่มือตัวอย่างเริ่มต้นเข้าระบบใช่หรือไม่?")) return;
+    if (!confirm("คุณต้องการคืนค่าข้อมูลสื่อการสอน ใบงาน และคู่มือการเรียน ให้เป็นชุดเริ่มต้นใช่หรือไม่?")) return;
     try {
       const res = await fetch("/api/downloads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "seed" }),
+        body: JSON.stringify({ action: "reset_default_data" }),
       });
       if (res.ok) {
-        alert("โหลดชุดเอกสารเริ่มต้นสำเร็จ");
+        alert("คืนค่าชุดสื่อการสอนดั้งเดิมสำเร็จเรียบร้อยแล้ว!");
         fetchData();
+      } else {
+        alert("ไม่สามารถคืนค่าชุดข้อมูลเริ่มต้นได้");
       }
     } catch (e) {
       console.error(e);

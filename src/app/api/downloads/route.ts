@@ -212,6 +212,29 @@ export async function POST(request: Request) {
 
     const body = await request.json().catch(() => ({}));
 
+    // Action: Reset to Default Data
+    if (body.action === 'reset_default_data') {
+      await d1.prepare(`DELETE FROM downloads`).run();
+      for (const item of DEFAULT_DOWNLOADS) {
+        await d1.prepare(`
+          INSERT INTO downloads (id, title, description, category, grade, file_name, file_size, file_url, downloads_count, order_index)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          item.id,
+          item.title,
+          item.description,
+          item.category,
+          item.grade,
+          item.fileName,
+          item.fileSize,
+          item.fileUrl,
+          item.downloadsCount || 0,
+          item.orderIndex || 1
+        ).run();
+      }
+      return NextResponse.json({ success: true, message: 'Reset to default downloads completed' });
+    }
+
     // Action: Update Grade Availability Settings
     if (body.action === 'update_grades') {
       const newSettings = { ...memoryGradeSettings, ...(body.gradeSettings || {}) };

@@ -6,6 +6,7 @@ import NewsSection from "@/components/sections/NewsSection";
 import TestimonialsSection from "@/components/sections/TestimonialsSection";
 import SocialSection from "@/components/sections/SocialSection";
 import MapSection from "@/components/sections/MapSection";
+import HomeWelcomePopup from "@/components/modals/HomeWelcomePopup";
 
 export default function Home() {
   return (
@@ -25,6 +26,8 @@ export default function Home() {
         <SocialSection />
       </main>
       <Footer />
+      {/* Welcome & Announcement Popup Dialog */}
+      <HomeWelcomePopup />
     </>
   );
 }

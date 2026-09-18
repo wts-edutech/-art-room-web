@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { setStudentAuth, setGuestAuth } from "@/lib/client-auth";
 import { 
   User, 
   Users, 
@@ -113,6 +114,8 @@ export default function LoginPage() {
       setActiveTab("student");
     } else if (params.get("tab") === "guest") {
       setActiveTab("guest");
+    } else if (params.get("tab") === "student") {
+      setActiveTab("student");
     }
   }, []);
 
@@ -133,8 +136,9 @@ export default function LoginPage() {
     return () => clearInterval(interval);
   }, [lockoutTimer]);
 
+  // Always redirect to the Homepage (/) on successful login with welcome signal
   const getRedirectPath = () => {
-    return new URLSearchParams(window.location.search).get("redirect") || "/materials";
+    return "/?welcome=1";
   };
 
   // Student Login Handler with Security Hardening
@@ -188,11 +192,15 @@ export default function LoginPage() {
         return;
       }
       
-      // Success: Reset failure count and save student session
+      // Success: Reset failure count and save verified student session
       setFailedAttempts(0);
-      localStorage.setItem("artroom_author_name", data.student.name);
-      localStorage.setItem("artroom_author_email", `${cleanId}@wachiratham.ac.th`);
-      localStorage.setItem("artroom_role", "student");
+      setStudentAuth({
+        id: cleanId,
+        name: data.student.name,
+        classroom: data.student.classroom,
+        gradeLevel: data.student.gradeLevel,
+        email: `${cleanId}@wachiratham.ac.th`,
+      });
       
       window.location.href = getRedirectPath();
     } catch (error) {
@@ -242,10 +250,13 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (res.ok) {
-        localStorage.setItem("artroom_author_name", trimmedName);
-        localStorage.setItem("artroom_author_email", trimmedEmail);
-        localStorage.setItem("artroom_role", "guest");
-        localStorage.setItem("artroom_user_role", guestRole);
+        setGuestAuth({
+          name: trimmedName,
+          email: trimmedEmail,
+          role: guestRole,
+          phone: guestPhone.trim(),
+          provider: selectedProvider,
+        });
 
         window.location.href = getRedirectPath();
       } else {
@@ -296,7 +307,7 @@ export default function LoginPage() {
                 สงวนสิทธิ์เฉพาะนักเรียน
               </p>
               <p className="text-zinc-500 leading-relaxed font-normal">
-                คลังสื่อการสอนและใบงานเปิดให้เข้าใช้งานเฉพาะบัญชีนักเรียน กรุณาเข้าสู่ระบบด้วยรหัสประจำตัวนักเรียน 5 หลัก
+                คลังสื่อการสอนและระบบส่งงานเปิดให้เข้าใช้งานเฉพาะบัญชีนักเรียน กรุณาเข้าสู่ระบบด้วยรหัสประจำตัวนักเรียน 5 หลัก
               </p>
             </div>
           </div>
@@ -426,21 +437,27 @@ export default function LoginPage() {
                     className="w-full px-3.5 py-2.5 flex items-center justify-between text-[11px] font-semibold text-orange-800 hover:bg-orange-100/50 transition-colors text-left cursor-pointer"
                   >
                     <span className="flex items-center gap-1.5">
-                      <span>💡</span>
-                      <span>คำแนะนำสำหรับนักเรียนที่เข้าสู่ระบบครั้งแรก</span>
+                      <Info className="w-3.5 h-3.5 text-orange-600" />
+                      <span>คำแนะนำเกี่ยวกับรหัสผ่านเข้าสู่ระบบ</span>
                     </span>
                     {showPasswordHint ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                   </button>
 
                   {showPasswordHint && (
-                    <div className="px-3.5 pb-3 pt-1 text-[11px] text-orange-950/90 leading-relaxed border-t border-orange-100/80">
+                    <div className="px-3.5 pb-3 pt-1 text-[11px] text-orange-950/90 leading-relaxed border-t border-orange-100/80 space-y-1.5">
                       <p>
-                        รหัสผ่านเริ่มต้นคือ รหัสประจำตัวนักเรียน 5 หลัก ตามด้วย <code className="font-bold text-orange-800 bg-orange-200/70 px-1 py-0.5 rounded">@wts</code><br/>
-                        <span className="text-gray-600">(ตัวอย่าง: รหัส 12345 รหัสผ่านคือ <code className="font-bold text-gray-800">12345@wts</code>)</span>
+                        • <strong>หากตั้งรหัสผ่านส่วนตัวแล้ว:</strong> ให้กรอกรหัสผ่านที่คุณตั้งไว้
                       </p>
-                      <p className="mt-1.5 text-[10px] text-red-600 font-medium">
-                        ⚠️ บัญชีนี้สำหรับนักเรียนเจ้าของรหัสเท่านั้น ระบบมีระบบบันทึกประวัติและ IP ห้ามนำรหัสของผู้อื่นมาสวมรอย
+                      <p>
+                        • <strong>กรณีเข้าสู่ระบบครั้งแรก (ยังไม่เคยตั้งรหัสผ่าน):</strong> รหัสผ่านเริ่มต้นคือ รหัสนักเรียน 5 หลัก ตามด้วย <code className="font-bold text-orange-800 bg-orange-200/70 px-1 py-0.5 rounded font-mono">@wts</code> (เช่น รหัส 12345 รหัสผ่านคือ <code className="font-bold text-gray-800 font-mono">12345@wts</code>)
                       </p>
+                      <p className="text-[10px] text-gray-600">
+                        * เมื่อเข้าสู่ระบบแล้ว นักเรียนสามารถเข้าไปตั้งรหัสผ่านส่วนตัวใหม่ได้ที่เมนู <strong>"ตั้งค่าโปรไฟล์"</strong>
+                      </p>
+                      <div className="pt-1 flex items-center gap-1.5 text-[10px] text-red-600 font-medium">
+                        <ShieldAlert className="w-3 h-3 flex-shrink-0" />
+                        <span>สงวนสิทธิ์เฉพาะนักเรียนเจ้าของรหัสเท่านั้น ระบบมีบันทึกประวัติความปลอดภัย</span>
+                      </div>
                     </div>
                   )}
                 </div>

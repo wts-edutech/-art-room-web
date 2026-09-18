@@ -19,10 +19,10 @@ export async function optimizeImageToDataUrl(
   options: OptimizeImageOptions = {}
 ): Promise<string> {
   const {
-    maxWidth = 1600,
-    maxHeight = 1600,
-    quality = 0.82,
-    mimeType = 'image/webp'
+    maxWidth = 1200,
+    maxHeight = 1200,
+    quality = 0.75,
+    mimeType = 'image/jpeg'
   } = options;
 
   return new Promise((resolve, reject) => {
@@ -82,3 +82,35 @@ export async function optimizeImageToDataUrl(
     reader.readAsDataURL(file);
   });
 }
+
+/**
+ * Compresses an image File and returns a new optimized File object.
+ */
+export async function optimizeImageToFile(
+  file: File,
+  options: OptimizeImageOptions = {}
+): Promise<File> {
+  // If not an image, return as is
+  if (!file.type || !file.type.startsWith('image/')) {
+    return file;
+  }
+
+  try {
+    const dataUrl = await optimizeImageToDataUrl(file, {
+      maxWidth: 1200,
+      maxHeight: 1200,
+      quality: 0.75,
+      mimeType: 'image/jpeg',
+      ...options
+    });
+    
+    const res = await fetch(dataUrl);
+    const blob = await res.blob();
+    const newFileName = file.name.replace(/\.[^/.]+$/, "") + ".jpg";
+    return new File([blob], newFileName, { type: 'image/jpeg' });
+  } catch (err) {
+    console.warn("Image optimization fallback to original file:", err);
+    return file;
+  }
+}
+

@@ -1,15 +1,13 @@
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import MaterialsList from "@/components/sections/MaterialsList";
-import GuestBlockModal from "@/components/modals/GuestBlockModal";
 import { getDb } from "@/db";
 import { lessons } from "@/db/schema";
 import { desc } from "drizzle-orm";
 import { DEFAULT_DOWNLOADS, DownloadItem } from "@/data/default-downloads";
 import { Suspense } from "react";
 import { Sparkles, BookOpen, FileText } from "lucide-react";
-import { getSession, checkIsAdmin } from "@/lib/api-auth";
-import { redirect } from "next/navigation";
+// Re-compile trigger: 2026-09-15 22:07
 
 const DEFAULT_LESSONS = [
   {
@@ -50,18 +48,6 @@ async function getLessons() {
 }
 
 export default async function MaterialsPage() {
-  // Authentication Guard: Restricted to Students & Admins
-  const session = await getSession();
-  const isAdmin = await checkIsAdmin();
-
-  if (!session && !isAdmin) {
-    redirect("/login?tab=student&redirect=/materials&notice=student_only");
-  }
-
-  if (!isAdmin && session?.role !== "student") {
-    return <GuestBlockModal redirectPath="/materials" />;
-  }
-
   const allLessons = await getLessons();
   const allDownloads: DownloadItem[] = DEFAULT_DOWNLOADS;
 
@@ -87,34 +73,43 @@ export default async function MaterialsPage() {
               </div>
 
               {/* Main Heading */}
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-gray-900 mb-4 tracking-tight leading-tight">
-                คลังสื่อการสอน <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 via-orange-600 to-amber-600">Art Room</span>
+              <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-gray-900 mb-4 tracking-tight leading-tight">
+                คลังสื่อการสอน{" "}
+                <span className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-red-600 via-orange-500 to-amber-500 py-1">
+                  Art Room
+                </span>
               </h1>
 
               {/* Subtitle */}
-              <p className="text-base sm:text-lg text-gray-600 font-light leading-relaxed mb-8">
+              <p className="text-base sm:text-lg text-gray-600 font-light leading-relaxed mb-8 max-w-2xl mx-auto">
                 รวบรวมสื่อวิดีทัศน์ เทคนิคการสร้างสรรค์ผลงานศิลปะ สไลด์การสอน และศูนย์ดาวน์โหลดใบงาน PDF 
                 สำหรับนักเรียนทุกระดับชั้น เพื่อการเรียนรู้ทั้งในและนอกห้องเรียน
               </p>
 
-              {/* Stats Counters */}
-              <div className="grid grid-cols-2 gap-4 sm:gap-6 max-w-sm mx-auto">
-                <div className="bg-white/90 backdrop-blur-md p-4 rounded-2xl border border-gray-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 text-center">
-                  <div className="flex items-center justify-center gap-1.5 text-xs text-gray-500 font-semibold mb-1">
-                    <BookOpen className="w-3.5 h-3.5 text-red-500" />
-                    <span className="hidden sm:inline">บทเรียนและวิดีโอ</span>
-                    <span className="sm:hidden">บทเรียน</span>
+              {/* Formal Fit-to-Text Compact Stats Pills */}
+              <div className="inline-flex flex-wrap items-center justify-center gap-3 sm:gap-4 max-w-full mx-auto">
+                {/* Lessons Pill */}
+                <div className="inline-flex items-center gap-3 bg-white px-4 sm:px-5 py-2.5 rounded-full border border-gray-300/90 shadow-2xs hover:border-red-300 transition-all">
+                  <div className="w-8 h-8 rounded-full bg-red-50 text-red-600 flex items-center justify-center shrink-0 border border-red-100">
+                    <BookOpen className="w-4 h-4" />
                   </div>
-                  <p className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">{totalLessons}</p>
+                  <span className="text-xs sm:text-sm font-bold text-gray-700 whitespace-nowrap">บทเรียน & วิดีโอ</span>
+                  <div className="flex items-center gap-1 bg-red-50 text-red-700 font-extrabold text-sm sm:text-base px-2.5 py-0.5 rounded-full border border-red-100">
+                    <span>{totalLessons}</span>
+                    <span className="text-[11px] font-normal text-red-500">รายการ</span>
+                  </div>
                 </div>
 
-                <div className="bg-white/90 backdrop-blur-md p-4 rounded-2xl border border-gray-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 text-center">
-                  <div className="flex items-center justify-center gap-1.5 text-xs text-gray-500 font-semibold mb-1">
-                    <FileText className="w-3.5 h-3.5 text-emerald-500" />
-                    <span className="hidden sm:inline">ใบงาน PDF</span>
-                    <span className="sm:hidden">ใบงาน</span>
+                {/* Downloads Pill */}
+                <div className="inline-flex items-center gap-3 bg-white px-4 sm:px-5 py-2.5 rounded-full border border-gray-300/90 shadow-2xs hover:border-emerald-300 transition-all">
+                  <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100">
+                    <FileText className="w-4 h-4" />
                   </div>
-                  <p className="text-2xl sm:text-3xl font-black text-emerald-600 tracking-tight">{totalDownloads}</p>
+                  <span className="text-xs sm:text-sm font-bold text-gray-700 whitespace-nowrap">ใบงาน PDF ดาวน์โหลด</span>
+                  <div className="flex items-center gap-1 bg-emerald-50 text-emerald-700 font-extrabold text-sm sm:text-base px-2.5 py-0.5 rounded-full border border-emerald-100">
+                    <span>{totalDownloads}</span>
+                    <span className="text-[11px] font-normal text-emerald-500">รายการ</span>
+                  </div>
                 </div>
               </div>
             </div>

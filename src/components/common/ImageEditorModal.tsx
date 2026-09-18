@@ -13,7 +13,7 @@ export interface ImageEditorModalProps {
   onClose: () => void;
   onSave: (editedFile: File) => void;
   title?: string;
-  defaultAspectRatio?: "16:9" | "4:3" | "1:1" | "original";
+  defaultAspectRatio?: "16:9" | "4:3" | "3:4" | "4:5" | "1:1" | "original";
 }
 
 type FilterPreset = "normal" | "vivid" | "warm" | "pop" | "bw" | "vintage";
@@ -24,12 +24,12 @@ export default function ImageEditorModal({
   onClose,
   onSave,
   title = "ปรับแต่งรูปภาพ",
-  defaultAspectRatio = "16:9",
+  defaultAspectRatio = "original",
 }: ImageEditorModalProps) {
   const [rotation, setRotation] = useState<number>(0);
   const [isFlippedH, setIsFlippedH] = useState<boolean>(false);
   const [zoom, setZoom] = useState<number>(1);
-  const [aspectRatio, setAspectRatio] = useState<"16:9" | "4:3" | "1:1" | "original">(defaultAspectRatio);
+  const [aspectRatio, setAspectRatio] = useState<"16:9" | "4:3" | "3:4" | "4:5" | "1:1" | "original">(defaultAspectRatio);
   const [activeTab, setActiveTab] = useState<"crop" | "adjust" | "filter">("crop");
 
   // Adjustments
@@ -163,6 +163,8 @@ export default function ImageEditorModal({
       let targetRatio = srcWidth / srcHeight;
       if (aspectRatio === "16:9") targetRatio = 16 / 9;
       if (aspectRatio === "4:3") targetRatio = 4 / 3;
+      if (aspectRatio === "3:4") targetRatio = 3 / 4;
+      if (aspectRatio === "4:5") targetRatio = 4 / 5;
       if (aspectRatio === "1:1") targetRatio = 1 / 1;
 
       // Maximum bounded output dimension (max 1600px for web performance)
@@ -309,6 +311,10 @@ export default function ImageEditorModal({
                   ? "w-full max-w-[620px] aspect-video" 
                   : aspectRatio === "4:3"
                   ? "w-full max-w-[500px] aspect-4/3"
+                  : aspectRatio === "3:4"
+                  ? "w-full max-w-[340px] aspect-[3/4]"
+                  : aspectRatio === "4:5"
+                  ? "w-full max-w-[340px] aspect-[4/5]"
                   : aspectRatio === "1:1"
                   ? "w-full max-w-[420px] aspect-square"
                   : "w-full max-w-[620px] max-h-[380px]"
@@ -378,12 +384,28 @@ export default function ImageEditorModal({
             </div>
           </div>
 
-          {/* Right/Bottom Control Panel */}
-          <div className="w-full md:w-80 bg-white border-t md:border-t-0 md:border-l border-gray-100 flex flex-col justify-between">
-            {/* Control Tabs */}
-            <div className="p-4 sm:p-5 flex-1 overflow-y-auto space-y-5">
-              {/* Tab Navigation */}
-              <div className="flex p-1 bg-gray-100 rounded-xl">
+          {/* Right/Bottom Controls Column */}
+          <div className="w-full md:w-80 lg:w-96 bg-white border-t md:border-t-0 md:border-l border-gray-100 flex flex-col justify-between overflow-y-auto">
+            <div className="p-4 sm:p-5 space-y-4">
+              
+              {/* 1-Click AI Auto-Enhance Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  setBrightness(103);
+                  setContrast(115);
+                  setSaturation(115);
+                  setActiveFilter("vivid");
+                }}
+                className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-orange-500 via-rose-500 to-pink-500 hover:opacity-95 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-orange-500/20 active:scale-95 transition-all cursor-pointer"
+                title="คลิกเดียวปรับแสง สีสัน และความคมชัดให้อัตโนมัติ"
+              >
+                <Sparkles className="w-4 h-4 text-yellow-200" />
+                <span>✨ ปรับภาพให้สวยด้วย AI (Auto-Enhance)</span>
+              </button>
+
+              {/* Navigation Tabs */}
+              <div className="flex rounded-xl bg-gray-100 p-1 border border-gray-200/60">
                 <button
                   type="button"
                   onClick={() => setActiveTab("crop")}
@@ -428,10 +450,10 @@ export default function ImageEditorModal({
                   {/* Aspect Ratio Buttons */}
                   <div>
                     <label className="block text-xs font-bold text-gray-700 mb-2">
-                      สัดส่วนกรอบภาพ
+                      สัดส่วนกรอบภาพ (พอดีหน้าจอ & งานศิลปะ)
                     </label>
-                    <div className="grid grid-cols-4 gap-1.5">
-                      {(["16:9", "4:3", "1:1", "original"] as const).map((ratio) => (
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {(["original", "4:5", "3:4", "16:9", "4:3", "1:1"] as const).map((ratio) => (
                         <button
                           key={ratio}
                           type="button"
@@ -442,7 +464,7 @@ export default function ImageEditorModal({
                               : "border-gray-200 text-gray-600 hover:border-gray-300"
                           }`}
                         >
-                          {ratio === "original" ? "ดั้งเดิม" : ratio}
+                          {ratio === "original" ? "ดั้งเดิม" : ratio === "4:5" ? "4:5 ภาพวาด" : ratio === "3:4" ? "3:4 แนวตั้ง" : ratio}
                         </button>
                       ))}
                     </div>

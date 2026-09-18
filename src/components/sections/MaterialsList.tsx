@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+// Re-compile trigger: 2026-09-15 22:07
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { 
@@ -279,21 +280,7 @@ export default function MaterialsList({
   }, [unifiedItems, searchQuery, selectedGrade, selectedMediaType, activeCategory, bookmarkedIds]);
 
   return (
-    <div className="flex flex-col lg:flex-row gap-8 items-start w-full">
-      {/* Mobile Sidebar Toggle Button */}
-      <button 
-        onClick={() => setIsMobileSidebarOpen(true)}
-        className="lg:hidden w-full bg-white border border-gray-200 rounded-2xl p-4 flex items-center justify-between shadow-xs cursor-pointer hover:border-red-300"
-      >
-        <div className="flex items-center gap-2 font-bold text-gray-800 text-sm">
-          <Filter className="w-4 h-4 text-red-600" />
-          <span>ตัวกรองหมวดหมู่เนื้อหา</span>
-        </div>
-        <span className="text-xs font-bold bg-red-50 text-red-600 px-3 py-1 rounded-full border border-red-100">
-          {activeCategory}
-        </span>
-      </button>
-
+    <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-8 items-start w-full">
       {/* Mobile Drawer Overlay */}
       {isMobileSidebarOpen && (
         <div 
@@ -303,12 +290,16 @@ export default function MaterialsList({
       )}
 
       {/* Left Sidebar Filter */}
-      <aside className={`fixed inset-y-0 left-0 z-[70] w-[300px] bg-white shadow-2xl transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 lg:w-72 lg:shadow-none lg:bg-transparent lg:z-0 flex-shrink-0 flex flex-col h-full lg:h-auto ${isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
+      <aside 
+        className={`fixed inset-y-0 left-0 z-[70] w-[280px] bg-white shadow-2xl transition-transform duration-300 ease-in-out lg:static lg:z-0 lg:w-full lg:shadow-none lg:bg-transparent lg:transform-none lg:transition-none flex flex-col h-full lg:h-auto ${
+          isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        }`}
+      >
         <div className="flex items-center justify-between p-5 border-b border-gray-100 lg:hidden">
           <span className="font-heading font-bold text-lg text-gray-900">ตัวกรองสื่อการสอน</span>
           <button 
             onClick={() => setIsMobileSidebarOpen(false)}
-            className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center text-sm"
+            className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center text-sm cursor-pointer"
           >
             ✕
           </button>
@@ -332,7 +323,7 @@ export default function MaterialsList({
               {searchQuery && (
                 <button 
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm cursor-pointer"
                 >
                   ✕
                 </button>
@@ -358,12 +349,12 @@ export default function MaterialsList({
                       }}
                       className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all text-left text-sm sm:text-[15px] cursor-pointer ${
                         isActive
-                          ? "bg-red-50 text-red-600 border border-red-100 shadow-xs"
-                          : "text-gray-600 hover:text-gray-900 hover:bg-gray-50 border border-transparent"
+                          ? "bg-red-50 text-red-600 border border-red-100 shadow-xs font-semibold"
+                          : "text-gray-600 hover:text-gray-900 hover:bg-gray-50 border border-transparent font-light"
                       }`}
                     >
                       <span className="shrink-0">{cat.icon}</span>
-                      <span className={`flex-1 ${isActive ? "font-normal" : "font-light"}`}>
+                      <span className="flex-1">
                         {cat.label}
                       </span>
                     </button>
@@ -376,16 +367,7 @@ export default function MaterialsList({
       </aside>
 
       {/* Right Main Feed Area */}
-      <div className="flex-1 w-full space-y-6">
-        {/* Results Header */}
-        <div className="flex items-center justify-between pb-2 border-b border-gray-100">
-          <h2 className="text-lg sm:text-xl font-bold text-gray-900 flex items-center gap-2">
-            <span>สื่อการสอน{activeCategory !== "ทั้งหมด" ? ` (${activeCategory})` : ""}</span>
-            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-red-100 text-red-700">
-              {filteredItems.length} รายการ
-            </span>
-          </h2>
-        </div>
+      <div className="w-full min-w-0 space-y-6">
 
         {/* 3. Unified Feed Grid */}
         {filteredItems.length === 0 ? (
@@ -439,11 +421,11 @@ export default function MaterialsList({
               return (
                 <div 
                   key={item.id} 
-                  className="bg-white rounded-[24px] sm:rounded-[28px] overflow-hidden border border-gray-100/90 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group hover:-translate-y-1"
+                  className="group flex flex-col justify-between bg-white rounded-3xl overflow-hidden border border-gray-100/80 shadow-xs hover:shadow-xl transition-all duration-300 hover:-translate-y-1.5"
                 >
                   <div>
                     {/* Top Cover Thumbnail / ART ROOM Video Cover */}
-                    <div className="relative w-full aspect-[16/10] bg-gray-100 overflow-hidden">
+                    <div className="relative w-full aspect-[16/10] bg-gray-100 overflow-hidden rounded-t-3xl">
                       {isVideo && (!item.imageUrl || item.id === "dl-v-1" || item.rawId === "v-1" || item.title.includes("เส้นสร้างสรรค์")) ? (
                         /* Coral-Crimson Red Cover with centered bold white ART ROOM */
                         <div className="w-full h-full bg-gradient-to-r from-[#FF2B5E] via-[#FF3B69] to-[#FF4B72] flex items-center justify-center relative select-none">
@@ -695,7 +677,7 @@ export default function MaterialsList({
               {/* If Video: Embedded YouTube Player */}
               {(previewItem.mediaType === "video" || previewItem.videoId) ? (
                 <div className="space-y-4">
-                  <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-black shadow-md">
+                  <div className="relative aspect-video w-full rounded-3xl overflow-hidden bg-black shadow-md border border-gray-200">
                     {previewItem.videoId ? (
                       <iframe
                         src={`https://www.youtube-nocookie.com/embed/${previewItem.videoId}?autoplay=1`}

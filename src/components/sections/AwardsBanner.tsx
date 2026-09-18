@@ -4,7 +4,10 @@ import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Medal } from "lucide-react";
 
 export default function AwardsBanner({ awards }: { awards: any[] }) {
-  const highlights = awards.filter(a => a.isHighlight);
+  // Fallback to all awards if no explicit highlights are set
+  const highlights = awards.filter(a => a.isHighlight).length > 0 
+    ? awards.filter(a => a.isHighlight) 
+    : awards;
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
@@ -28,39 +31,20 @@ export default function AwardsBanner({ awards }: { awards: any[] }) {
   const current = highlights[currentIndex];
 
   return (
-    <div className="w-full relative bg-[#FDF9F1] py-12 overflow-hidden">
-      {/* Background blurred image */}
-      {current.imageUrl && (
-        <div 
-          className="absolute inset-0 bg-cover bg-center opacity-25 blur-2xl scale-110"
-          style={{ backgroundImage: `url(${current.imageUrl})`, transition: 'background-image 0.5s ease-in-out' }}
-        />
-      )}
-      
-      {/* Background overlay */}
-      <div className="absolute inset-0 bg-white/40 backdrop-blur-sm" />
-
-      <div className="container mx-auto px-4 sm:px-6 relative z-10 max-w-6xl">
-        <div className="flex flex-col md:flex-row items-center gap-8 bg-white/85 backdrop-blur-md rounded-3xl p-6 sm:p-10 shadow-xl border border-white/60">
+    <div className="w-full bg-[#FDF9F1] py-8 sm:py-10 border-b border-red-100/60">
+      <div className="container mx-auto px-4 sm:px-6 max-w-5xl relative">
+        {/* Banner Card */}
+        <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-red-100 flex flex-col md:flex-row items-center gap-6 sm:gap-8">
           
-          {/* Image Container - Supports Banner (1.91:1), Poster (3:4, 4:5), and Square (1:1) without collapsing */}
-          <div className="w-full md:w-1/2 h-[340px] sm:h-[420px] rounded-2xl overflow-hidden shadow-lg border-4 border-red-700/10 bg-gradient-to-br from-red-50/40 via-white to-amber-50/40 relative flex items-center justify-center p-3">
-            {/* Ambient blur behind image */}
-            {current.imageUrl && (
-              <div 
-                className="absolute inset-0 bg-cover bg-center blur-md opacity-20 scale-110 pointer-events-none"
-                style={{ backgroundImage: `url(${current.imageUrl})` }}
-              />
-            )}
-            
-            {/* Actual image */}
+          {/* Image Container */}
+          <div className="w-full md:w-1/2 h-[240px] sm:h-[300px] rounded-xl overflow-hidden border border-red-100 bg-red-50/30 flex items-center justify-center p-2 relative flex-shrink-0">
             {current.imageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img 
                 key={current.id || currentIndex}
                 src={current.imageUrl} 
                 alt={current.title}
-                className="relative z-10 max-h-full max-w-full object-contain rounded-xl drop-shadow-md transition-all duration-300"
+                className="max-h-full max-w-full object-contain rounded-lg drop-shadow-sm transition-all duration-300"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
                   const fallback = e.currentTarget.parentElement?.querySelector('.img-fallback') as HTMLElement;
@@ -69,44 +53,44 @@ export default function AwardsBanner({ awards }: { awards: any[] }) {
               />
             ) : null}
 
-            {/* Fallback Display if image is empty or fails to load */}
+            {/* Fallback Display if image is empty */}
             <div 
-              className="img-fallback flex flex-col items-center justify-center p-6 text-center relative z-10" 
+              className="img-fallback flex flex-col items-center justify-center p-4 text-center" 
               style={{ display: current.imageUrl ? 'none' : 'flex' }}
             >
-              <div className="w-20 h-20 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center shadow-inner mb-3">
-                <Medal className="w-10 h-10" />
+              <div className="w-16 h-16 rounded-xl bg-red-100 text-red-600 flex items-center justify-center mb-2">
+                <Medal className="w-8 h-8" />
               </div>
-              <span className="text-base font-bold text-gray-800 mb-1">{current.awardLevel || "ผลงานนักเรียน"}</span>
+              <span className="text-sm font-bold text-gray-800 mb-1">{current.awardLevel || "ผลงานนักเรียน"}</span>
               <span className="text-xs text-gray-500 max-w-xs line-clamp-2">{current.title}</span>
             </div>
           </div>
           
-          {/* Content */}
+          {/* Details Content */}
           <div className="w-full md:w-1/2 flex flex-col items-center md:items-start text-center md:text-left">
-            <div className="bg-red-700 text-white px-6 py-2 rounded-full font-bold text-lg sm:text-xl shadow-md mb-6 w-full md:w-auto text-center">
+            <span className="inline-block bg-red-700 text-white px-4 py-1 rounded-full font-bold text-xs sm:text-sm mb-3">
               ขอแสดงความยินดีกับ
-            </div>
+            </span>
             
-            <div className="bg-red-50 text-red-800 px-6 py-2 rounded-full font-bold text-xl sm:text-2xl mb-4 border border-red-200">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">
               {current.student}
-            </div>
-            
-            <div className="text-gray-600 mb-2 font-medium">นักเรียนที่ได้รับรางวัล</div>
-            
-            <h2 className="text-2xl sm:text-3xl font-bold text-red-700 mb-2 leading-tight">
-              {current.awardLevel || "รางวัล"}
             </h2>
             
-            <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 leading-tight">
+            <span className="text-xs text-gray-500 mb-3 font-medium">นักเรียนที่ได้รับรางวัล</span>
+            
+            <div className="text-lg sm:text-xl font-bold text-red-700 mb-1">
+              {current.awardLevel || "รางวัล"}
+            </div>
+            
+            <div className="text-sm sm:text-base font-semibold text-gray-800 mb-3 line-clamp-2">
               {current.competitionLevel && `${current.competitionLevel} `}
               {current.title}
-            </h3>
+            </div>
             
             {current.organization && (
-              <p className="text-gray-600 font-medium bg-gray-100 px-4 py-2 rounded-lg">
+              <span className="text-xs text-gray-600 bg-gray-100 px-3 py-1 rounded-md">
                 จัดโดย {current.organization}
-              </p>
+              </span>
             )}
           </div>
         </div>
@@ -116,87 +100,21 @@ export default function AwardsBanner({ awards }: { awards: any[] }) {
           <>
             <button 
               onClick={handlePrev}
-              className="absolute left-0 sm:left-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-white/80 hover:bg-white text-red-700 rounded-full flex items-center justify-center shadow-lg transition-all"
+              className="absolute -left-3 sm:-left-5 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-10 sm:h-10 bg-white hover:bg-red-50 text-red-700 rounded-full flex items-center justify-center shadow-md border border-gray-200 transition-all z-20"
+              aria-label="Previous"
             >
-              <ChevronLeft className="w-6 h-6" />
+              <ChevronLeft className="w-5 h-5" />
             </button>
             <button 
               onClick={handleNext}
-              className="absolute right-0 sm:right-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-white/80 hover:bg-white text-red-700 rounded-full flex items-center justify-center shadow-lg transition-all"
+              className="absolute -right-3 sm:-right-5 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-10 sm:h-10 bg-white hover:bg-red-50 text-red-700 rounded-full flex items-center justify-center shadow-md border border-gray-200 transition-all z-20"
+              aria-label="Next"
             >
-              <ChevronRight className="w-6 h-6" />
+              <ChevronRight className="w-5 h-5" />
             </button>
-
-            {/* Dots */}
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
-              {highlights.map((_, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setCurrentIndex(idx)}
-                  className={`w-2.5 h-2.5 rounded-full transition-all shadow-sm ${
-                    idx === currentIndex ? "bg-red-700 w-6" : "bg-white/80 hover:bg-white"
-                  }`}
-                />
-              ))}
-            </div>
           </>
         )}
       </div>
-
-      {/* Marquee - Infinite Scroll Banner */}
-      {highlights.length > 0 && (
-        <div className="relative mt-6 overflow-hidden">
-          {/* Gradient fades on edges */}
-          <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-[#FDF9F1] to-transparent z-10" />
-          <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-[#FDF9F1] to-transparent z-10" />
-          
-          <div className="flex animate-marquee whitespace-nowrap">
-            {/* Duplicate items for seamless loop */}
-            {[...highlights, ...highlights, ...highlights].map((award, idx) => (
-              <div key={idx} className="inline-flex items-center gap-3 mx-4 flex-shrink-0 bg-white/70 backdrop-blur-sm rounded-2xl px-5 py-3 shadow-sm border border-white/50">
-                <div className="w-14 h-14 rounded-xl overflow-hidden border-2 border-red-200 shadow-sm flex-shrink-0 bg-red-50 flex items-center justify-center">
-                  {award.imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img 
-                      src={award.imageUrl} 
-                      alt={award.student}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                        const fallback = e.currentTarget.parentElement?.querySelector('.marquee-fallback') as HTMLElement;
-                        if (fallback) fallback.style.display = 'flex';
-                      }}
-                    />
-                  ) : null}
-                  <div 
-                    className="marquee-fallback items-center justify-center w-full h-full text-red-600 bg-red-100"
-                    style={{ display: award.imageUrl ? 'none' : 'flex' }}
-                  >
-                    <Medal className="w-7 h-7" />
-                  </div>
-                </div>
-                <div className="flex flex-col">
-                  <span className="font-bold text-gray-900 text-sm whitespace-nowrap">{award.student}</span>
-                  <span className="text-xs text-red-600 font-medium whitespace-nowrap">{award.awardLevel || 'รางวัล'}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <style jsx>{`
-            @keyframes marquee {
-              0% { transform: translateX(0); }
-              100% { transform: translateX(-33.333%); }
-            }
-            .animate-marquee {
-              animation: marquee 20s linear infinite;
-            }
-            .animate-marquee:hover {
-              animation-play-state: paused;
-            }
-          `}</style>
-        </div>
-      )}
     </div>
   );
 }

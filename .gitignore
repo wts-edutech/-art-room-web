@@ -36,6 +36,14 @@ yarn-error.log*
 # vercel
 .vercel
 
+# cloudflare wrangler & local databases
+.wrangler/
+.wrangler
+*.sqlite*
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
