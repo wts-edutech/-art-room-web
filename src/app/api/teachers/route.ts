@@ -6,7 +6,7 @@ import { getRequestContext } from '@cloudflare/next-on-pages';
 
 export const DEFAULT_KRU_KAE = {
   id: "teacher-kae",
-  name: "ครูชญานิษฐ์ ศิลป์ประเสริฐ (ครูเก๋)",
+  name: "นางสาวสีวลี ยืนยาว (ครูเก๋)",
   role: "หัวหน้ากลุ่มสาระการเรียนรู้ศิลปะ",
   position: "ครูชำนาญการพิเศษ",
   grades: "มัธยมศึกษาปีที่ 3 และ มัธยมศึกษาปีที่ 6",

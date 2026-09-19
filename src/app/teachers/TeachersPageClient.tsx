@@ -234,7 +234,7 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
 
             {/* Subtitle */}
             <p className="text-sm sm:text-base text-gray-500 max-w-xl mx-auto font-light leading-relaxed">
-              ประวัติ ผลงานทางวิชาการ และรางวัลเกียรติยศ <strong className="font-semibold text-gray-800">ครูชญานิษฐ์ ศิลป์ประเสริฐ (ครูเก๋)</strong>
+              ประวัติ ผลงานทางวิชาการ และรางวัลเกียรติยศ <strong className="font-semibold text-gray-800">{teacher.name || "นางสาวสีวลี ยืนยาว (ครูเก๋)"}</strong>
             </p>
 
             {/* Clean Quick Jump Navigation Pills */}

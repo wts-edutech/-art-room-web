@@ -71,7 +71,7 @@ export default function TeachersTab() {
 
   // Profile Form States
   const [teacherId, setTeacherId] = useState("teacher-kae");
-  const [name, setName] = useState("ครูชญานิษฐ์ ศิลป์ประเสริฐ (ครูเก๋)");
+  const [name, setName] = useState("นางสาวสีวลี ยืนยาว (ครูเก๋)");
   const [role, setRole] = useState("หัวหน้ากลุ่มสาระการเรียนรู้ศิลปะ");
   const [position, setPosition] = useState("ครูชำนาญการพิเศษ");
   const [grades, setGrades] = useState("มัธยมศึกษาปีที่ 3 และ มัธยมศึกษาปีที่ 6");
@@ -617,7 +617,7 @@ export default function TeachersTab() {
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="เช่น ครูชญานิษฐ์ ศิลป์ประเสริฐ (ครูเก๋)"
+                    placeholder="เช่น นางสาวสีวลี ยืนยาว (ครูเก๋)"
                     className="w-full px-3.5 py-2 text-sm rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 outline-none font-medium"
                     required
                   />
