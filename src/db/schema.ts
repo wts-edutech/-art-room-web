@@ -263,3 +263,22 @@ export const siteSettings = sqliteTable('site_settings', {
   updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
+// --- Downloads & Teaching Materials ---
+export const downloads = sqliteTable('downloads', {
+  id: text('id').primaryKey(),
+  title: text('title').notNull(),
+  description: text('description'),
+  category: text('category').notNull().default('แบบฝึกหัด'),
+  grade: text('grade').notNull().default('all'),
+  fileName: text('file_name'),
+  fileSize: text('file_size'),
+  fileUrl: text('file_url').notNull(),
+  imageUrl: text('image_url'),
+  topic: text('topic'),
+  mediaType: text('media_type').default('pdf'),
+  content: text('content'),
+  downloadsCount: integer('downloads_count').default(0),
+  orderIndex: integer('order_index').default(0),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+});
+

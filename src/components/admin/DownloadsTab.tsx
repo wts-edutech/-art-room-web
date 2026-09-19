@@ -25,6 +25,9 @@ import {
   SlidersHorizontal
 } from "lucide-react";
 
+import AiMaterialStudioModal from "./materials/AiMaterialStudioModal";
+import MaterialLivePreviewModal from "./materials/MaterialLivePreviewModal";
+
 export interface DownloadItem {
   id: string;
   title: string;
@@ -34,6 +37,10 @@ export interface DownloadItem {
   fileName: string;
   fileSize: string;
   fileUrl: string;
+  imageUrl?: string;
+  topic?: string;
+  mediaType?: string;
+  content?: string;
   downloadsCount: number;
   orderIndex: number;
   createdAt?: string;
@@ -84,6 +91,12 @@ export default function DownloadsTab() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGradeFilter, setSelectedGradeFilter] = useState("all");
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("all");
+
+  // AI Studio & Live Preview States
+  const [isAiStudioOpen, setIsAiStudioOpen] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewMaterial, setPreviewMaterial] = useState<any | null>(null);
+  const [publishSuccessMsg, setPublishSuccessMsg] = useState<string | null>(null);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -377,6 +390,59 @@ export default function DownloadsTab() {
     }
   };
 
+  // Handlers for AI Studio & Live Preview
+  const handleOpenPreviewFromAi = (generatedMaterial: any) => {
+    setPreviewMaterial(generatedMaterial);
+    setIsPreviewOpen(true);
+  };
+
+  const handleOpenPreviewForExisting = (item: DownloadItem) => {
+    setPreviewMaterial({
+      ...item,
+      recommendedImageUrl: item.imageUrl,
+      suggestedFileName: item.fileName,
+      contentMarkdown: item.content,
+      aiPersonaName: "Art Room Studio"
+    });
+    setIsPreviewOpen(true);
+  };
+
+  const handleConfirmPublish = async (materialData: any) => {
+    const isEdit = downloads.some((d) => d.id === materialData.id);
+    const method = isEdit ? "PUT" : "POST";
+
+    const payload = {
+      id: materialData.id || `dl_${Date.now()}`,
+      title: materialData.title,
+      description: materialData.description,
+      category: materialData.category,
+      grade: materialData.grade,
+      fileName: materialData.fileName,
+      fileSize: materialData.fileSize || "1.5 MB",
+      fileUrl: materialData.fileUrl || "https://pdfobject.com/pdf/sample.pdf",
+      imageUrl: materialData.imageUrl || materialData.recommendedImageUrl,
+      topic: materialData.topic,
+      mediaType: materialData.mediaType || "pdf",
+      content: materialData.content || materialData.contentMarkdown,
+      orderIndex: Number(materialData.orderIndex) || downloads.length + 1
+    };
+
+    const res = await fetch("/api/downloads", {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || "เกิดข้อผิดพลาดในการเผยแพร่");
+    }
+
+    setPublishSuccessMsg(`เผยแพร่ "${payload.title}" ขึ้นหน้าเว็บจริงเรียบร้อยแล้ว!`);
+    setTimeout(() => setPublishSuccessMsg(null), 4000);
+    fetchData();
+  };
+
   // Seed / Reset default items
   const handleSeedDefaults = async () => {
     if (!confirm("คุณต้องการคืนค่าข้อมูลสื่อการสอน ใบงาน และคู่มือการเรียน ให้เป็นชุดเริ่มต้นใช่หรือไม่?")) return;
@@ -539,12 +605,20 @@ export default function DownloadsTab() {
             </h2>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <Button
+              onClick={() => setIsAiStudioOpen(true)}
+              className="bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl shadow-md shadow-orange-500/20 gap-2 cursor-pointer font-bold text-xs sm:text-sm px-4 py-2 transition-all"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>✨ AI ออกแบบสื่อการสอน (AI Studio)</span>
+            </Button>
             <Button
               onClick={handleOpenCreateModal}
-              className="bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-xs gap-1.5 cursor-pointer font-bold text-xs sm:text-sm px-4 py-2"
+              variant="outline"
+              className="border-gray-300 text-gray-700 hover:bg-gray-50 rounded-xl gap-1.5 cursor-pointer font-semibold text-xs sm:text-sm px-3.5 py-2"
             >
-              <Plus className="w-4 h-4" /> เพิ่มเอกสารใหม่
+              <Plus className="w-4 h-4 text-orange-600" /> เพิ่มเอกสารด้วยตนเอง
             </Button>
             {downloads.length === 0 && (
               <Button
@@ -557,6 +631,14 @@ export default function DownloadsTab() {
             )}
           </div>
         </div>
+
+        {/* Feedback Alert for Publishing */}
+        {publishSuccessMsg && (
+          <div className="mb-4 p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-medium flex items-center gap-2 animate-in fade-in">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>{publishSuccessMsg}</span>
+          </div>
+        )}
 
         {/* Filter & Search Bar */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
@@ -623,11 +705,23 @@ export default function DownloadsTab() {
                 className="p-4 sm:p-5 hover:bg-gray-50/80 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4"
               >
                 <div className="flex items-start gap-3.5">
-                  <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center flex-shrink-0">
-                    <FileText className="w-5 h-5" />
-                  </div>
+                  {item.imageUrl ? (
+                    <div className="w-12 h-12 rounded-xl bg-gray-100 overflow-hidden shrink-0 border border-gray-200 shadow-2xs">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
+                    </div>
+                  ) : (
+                    <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shrink-0">
+                      <FileText className="w-5 h-5" />
+                    </div>
+                  )}
                   <div>
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      {item.topic && (
+                        <span className="bg-orange-100 text-orange-800 text-[10px] font-bold px-2 py-0.5 rounded-xl border border-orange-200/60">
+                          {item.topic}
+                        </span>
+                      )}
                       <span className="bg-red-100 text-red-700 text-[10px] font-bold px-2 py-0.5 rounded-xl">
                         {item.grade === "all" ? "ทุกระดับชั้น" : item.grade.toUpperCase()}
                       </span>
@@ -656,12 +750,20 @@ export default function DownloadsTab() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 self-end sm:self-center flex-shrink-0">
+                <div className="flex items-center gap-1.5 self-end sm:self-center flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenPreviewForExisting(item)}
+                    className="p-2 text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded-2xl transition-colors cursor-pointer"
+                    title="เปิดแสดงตัวอย่าง (Live Preview)"
+                  >
+                    <Eye className="w-4 h-4" />
+                  </button>
                   <a
                     href={item.fileUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="p-2 text-gray-500 hover:text-orange-500 hover:bg-orange-50 rounded-2xl transition-colors"
+                    className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-2xl transition-colors"
                     title="เปิดดูไฟล์ต้นฉบับ"
                   >
                     <ExternalLink className="w-4 h-4" />
@@ -869,6 +971,21 @@ export default function DownloadsTab() {
           </div>
         </div>
       )}
+
+      {/* AI Material Studio Modal */}
+      <AiMaterialStudioModal
+        isOpen={isAiStudioOpen}
+        onClose={() => setIsAiStudioOpen(false)}
+        onOpenPreview={handleOpenPreviewFromAi}
+      />
+
+      {/* Live Preview Modal before Publishing */}
+      <MaterialLivePreviewModal
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        material={previewMaterial}
+        onConfirmPublish={handleConfirmPublish}
+      />
     </div>
   );
 }

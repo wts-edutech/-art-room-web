@@ -23,11 +23,12 @@ import TeachersTab from "@/components/admin/TeachersTab";
 import HeroButtonTab from "@/components/admin/HeroButtonTab";
 import CommentsModerationTab from "@/components/admin/CommentsModerationTab";
 import AdminSecurityTab from "@/components/admin/AdminSecurityTab";
+import DownloadsTab from "@/components/admin/DownloadsTab";
 
 export default function AdminPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<
-    "submissionsCenter" | "teachingSetup" | "assignments" | "grading" | "quizzes" | "artworks" | "awards" | "news" | "activities" | "students" | "guests" | "testimonials" | "ideas" | "teachers" | "heroButton" | "comments" | "adminSecurity"
+    "submissionsCenter" | "teachingSetup" | "assignments" | "grading" | "quizzes" | "downloads" | "artworks" | "awards" | "news" | "activities" | "students" | "guests" | "testimonials" | "ideas" | "teachers" | "heroButton" | "comments" | "adminSecurity"
   >("submissionsCenter");
   const [gradingAssignmentId, setGradingAssignmentId] = useState<string | undefined>(undefined);
   const [visitorStats, setVisitorStats] = useState({ total: 0, today: 0 });
@@ -132,6 +133,17 @@ export default function AdminPage() {
               >
                 <HelpCircle className="w-4 h-4" />
                 <span>4. แบบทดสอบ (Pre-test)</span>
+              </button>
+              <button
+                onClick={() => setActiveTab("downloads")}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-xs font-semibold ${
+                  activeTab === "downloads" 
+                    ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md shadow-orange-500/20" 
+                    : "text-gray-600 hover:text-orange-600 hover:bg-orange-50"
+                }`}
+              >
+                <FolderDown className="w-4 h-4 text-amber-500" />
+                <span>5. สื่อการสอน & ใบงาน (AI Studio)</span>
               </button>
             </nav>
           </div>
@@ -316,6 +328,7 @@ export default function AdminPage() {
                   {activeTab === "assignments" && "ระบบจัดการภาระงานและชิ้นงาน (Assignments)"}
                   {activeTab === "grading" && "ระบบตรวจผลงานและบันทึกคะแนน (Evaluation)"}
                   {activeTab === "quizzes" && "ระบบแบบทดสอบก่อนเรียนและรายงานคะแนน (Pre-tests & Reports)"}
+                  {activeTab === "downloads" && "จัดการสื่อการสอนและใบงาน (AI Teaching Material Studio)"}
                   {activeTab === "awards" && "จัดการรางวัลที่ได้รับ (Awards)"}
                   {activeTab === "artworks" && "จัดการผลงานนักเรียน (Artworks)"}
                   {activeTab === "ideas" && "จัดการห้องสมุดไอเดียสร้างสรรค์ (Ideas Library)"}
@@ -369,6 +382,7 @@ export default function AdminPage() {
               { key: "assignments", label: "มอบหมายงาน", icon: ClipboardList },
               { key: "grading", label: "ตรวจงาน", icon: BookCheck },
               { key: "quizzes", label: "แบบทดสอบ", icon: HelpCircle },
+              { key: "downloads", label: "สื่อการสอน (AI)", icon: FolderDown },
               { key: "teachingSetup", label: "โครงสร้างสอน", icon: School },
               { key: "awards", label: "รางวัล", icon: Award },
               { key: "artworks", label: "ผลงาน", icon: ImageIcon },
@@ -412,6 +426,7 @@ export default function AdminPage() {
             <GradingTab preselectedAssignmentId={gradingAssignmentId} />
           )}
           {activeTab === "quizzes" && <QuizzesTab />}
+          {activeTab === "downloads" && <DownloadsTab />}
           {activeTab === "awards" && <AwardsTab />}
           {activeTab === "artworks" && <ArtworksTab />}
           {activeTab === "news" && <NewsTab />}

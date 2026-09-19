@@ -113,11 +113,28 @@ async function ensureTables(d1: any) {
         file_name TEXT,
         file_size TEXT,
         file_url TEXT NOT NULL,
+        image_url TEXT,
+        topic TEXT,
+        media_type TEXT DEFAULT 'pdf',
+        content TEXT,
         downloads_count INTEGER DEFAULT 0,
         order_index INTEGER DEFAULT 0,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
       )
     `).run();
+
+    // Gracefully add missing columns if table already existed
+    const newCols = [
+      "ALTER TABLE downloads ADD COLUMN image_url TEXT",
+      "ALTER TABLE downloads ADD COLUMN topic TEXT",
+      "ALTER TABLE downloads ADD COLUMN media_type TEXT DEFAULT 'pdf'",
+      "ALTER TABLE downloads ADD COLUMN content TEXT"
+    ];
+    for (const sqlQuery of newCols) {
+      try {
+        await d1.prepare(sqlQuery).run();
+      } catch {}
+    }
 
     await d1.prepare(`
       CREATE TABLE IF NOT EXISTS site_settings (
@@ -169,6 +186,10 @@ export async function GET() {
         file_name as fileName, 
         file_size as fileSize, 
         file_url as fileUrl, 
+        image_url as imageUrl,
+        topic,
+        media_type as mediaType,
+        content,
         downloads_count as downloadsCount, 
         order_index as orderIndex, 
         created_at as createdAt
@@ -217,8 +238,8 @@ export async function POST(request: Request) {
       await d1.prepare(`DELETE FROM downloads`).run();
       for (const item of DEFAULT_DOWNLOADS) {
         await d1.prepare(`
-          INSERT INTO downloads (id, title, description, category, grade, file_name, file_size, file_url, downloads_count, order_index)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO downloads (id, title, description, category, grade, file_name, file_size, file_url, image_url, topic, media_type, downloads_count, order_index)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
           item.id,
           item.title,
@@ -228,6 +249,9 @@ export async function POST(request: Request) {
           item.fileName,
           item.fileSize,
           item.fileUrl,
+          (item as any).imageUrl || null,
+          (item as any).topic || null,
+          (item as any).mediaType || 'pdf',
           item.downloadsCount || 0,
           item.orderIndex || 1
         ).run();
@@ -253,8 +277,8 @@ export async function POST(request: Request) {
     if (body.action === 'seed') {
       for (const item of DEFAULT_DOWNLOADS) {
         await d1.prepare(`
-          INSERT OR REPLACE INTO downloads (id, title, description, category, grade, file_name, file_size, file_url, downloads_count, order_index, created_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT OR REPLACE INTO downloads (id, title, description, category, grade, file_name, file_size, file_url, image_url, topic, media_type, downloads_count, order_index, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
           item.id,
           item.title,
@@ -264,6 +288,9 @@ export async function POST(request: Request) {
           item.fileName || '',
           item.fileSize || '1.0 MB',
           item.fileUrl,
+          (item as any).imageUrl || null,
+          (item as any).topic || null,
+          (item as any).mediaType || 'pdf',
           item.downloadsCount || 0,
           item.orderIndex || 0,
           new Date().toISOString()
@@ -285,6 +312,10 @@ export async function POST(request: Request) {
     const fileName = String(body.fileName || `${title}.pdf`).trim();
     const fileSize = String(body.fileSize || '1.5 MB').trim();
     const fileUrl = String(body.fileUrl || '').trim();
+    const imageUrl = body.imageUrl ? String(body.imageUrl).trim() : null;
+    const topic = body.topic ? String(body.topic).trim() : null;
+    const mediaType = String(body.mediaType || 'pdf').trim();
+    const content = body.content ? String(body.content) : null;
     const orderIndex = Number(body.orderIndex) || 0;
     const createdAt = new Date().toISOString();
 
@@ -293,9 +324,9 @@ export async function POST(request: Request) {
     }
 
     await d1.prepare(`
-      INSERT INTO downloads (id, title, description, category, grade, file_name, file_size, file_url, downloads_count, order_index, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
-    `).bind(id, title, description, category, grade, fileName, fileSize, fileUrl, orderIndex, createdAt).run();
+      INSERT INTO downloads (id, title, description, category, grade, file_name, file_size, file_url, image_url, topic, media_type, content, downloads_count, order_index, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
+    `).bind(id, title, description, category, grade, fileName, fileSize, fileUrl, imageUrl, topic, mediaType, content, orderIndex, createdAt).run();
 
     return NextResponse.json({
       id,
@@ -306,6 +337,10 @@ export async function POST(request: Request) {
       fileName,
       fileSize,
       fileUrl,
+      imageUrl,
+      topic,
+      mediaType,
+      content,
       downloadsCount: 0,
       orderIndex,
       createdAt
@@ -345,13 +380,17 @@ export async function PUT(request: Request) {
     const fileName = String(body.fileName || '').trim();
     const fileSize = String(body.fileSize || '1.0 MB').trim();
     const fileUrl = String(body.fileUrl || '').trim();
+    const imageUrl = body.imageUrl ? String(body.imageUrl).trim() : null;
+    const topic = body.topic ? String(body.topic).trim() : null;
+    const mediaType = String(body.mediaType || 'pdf').trim();
+    const content = body.content ? String(body.content) : null;
     const orderIndex = Number(body.orderIndex) || 0;
 
     await d1.prepare(`
       UPDATE downloads 
-      SET title = ?, description = ?, category = ?, grade = ?, file_name = ?, file_size = ?, file_url = ?, order_index = ?
+      SET title = ?, description = ?, category = ?, grade = ?, file_name = ?, file_size = ?, file_url = ?, image_url = ?, topic = ?, media_type = ?, content = ?, order_index = ?
       WHERE id = ?
-    `).bind(title, description, category, grade, fileName, fileSize, fileUrl, orderIndex, id).run();
+    `).bind(title, description, category, grade, fileName, fileSize, fileUrl, imageUrl, topic, mediaType, content, orderIndex, id).run();
 
     return NextResponse.json({ success: true, id });
 
@@ -360,6 +399,7 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: error?.message || 'Failed to update document' }, { status: 500 });
   }
 }
+
 
 export async function DELETE(request: Request) {
   try {
