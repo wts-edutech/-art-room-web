@@ -4,12 +4,12 @@ const path = require('path');
 
 function getToken() {
   try {
-    const tomlPath = path.join(process.env.USERPROFILE || '', 'AppData', 'Roaming', 'xdg.config', '.wrangler', 'config', 'default.toml');
+    const tomlPath = path.join(process.env.APPDATA || '', 'xdg.config', '.wrangler', 'config', 'default.toml');
     const toml = fs.readFileSync(tomlPath, 'utf8');
     const match = toml.match(/oauth_token\s*=\s*"([^"]+)"/);
     if (match) return match[1];
   } catch (e) {}
-  return 'cfoat_0bUNdVcCcqK1B2QEgKy-1igAlDsTSme0-BAw3xMA_CE.Iq2MBhcc61Fr20GAEIoTKdTWRUuPJigaVANjgpNBd0c';
+  return 'cfoat_QrvsRv2ySVLzZSywPsQZZqpZJV1EwsJ_DOSGLK7WY7M.L3BCkaEmRLKQHQQWYw9A7-OsTsZdgC-7SM_GSC5jg34';
 }
 
 const ACCOUNT_ID = 'e4d1ad7b5737bce23e0af56b3470cf9f';
