@@ -3,31 +3,44 @@ export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { comments } from '@/db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, inArray } from 'drizzle-orm';
 import { getSession, checkIsAdmin } from '@/lib/api-auth';
-import { checkProfanity, PROFANITY_ALERT_MESSAGE } from '@/lib/profanity-filter';
+import { checkProfanity, analyzeComment, PROFANITY_ALERT_MESSAGE } from '@/lib/profanity-filter';
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const lessonId = searchParams.get('lessonId');
+    const isAdminQuery = searchParams.get('admin') === 'true';
 
     const db = getDb();
-    let all;
+    let rows;
     if (lessonId && lessonId !== 'all') {
-      all = await db
+      rows = await db
         .select()
         .from(comments)
         .where(eq(comments.lessonId, lessonId))
-        .orderBy(desc(comments.time));
+        .orderBy(desc(comments.time))
+        .limit(isAdminQuery ? 500 : 100);
     } else {
-      all = await db
+      rows = await db
         .select()
         .from(comments)
         .orderBy(desc(comments.time))
-        .limit(50);
+        .limit(isAdminQuery ? 500 : 100);
     }
-    return NextResponse.json(all);
+
+    // Attach moderation flag analysis
+    const enhanced = (rows || []).map((item) => {
+      const analysis = analyzeComment(item.text);
+      return {
+        ...item,
+        isFlagged: analysis.isFlagged,
+        flaggedWord: analysis.flaggedWord,
+      };
+    });
+
+    return NextResponse.json(enhanced);
   } catch (error) {
     console.error('GET /api/comments error:', error);
     return NextResponse.json({ error: 'Failed to fetch comments' }, { status: 500 });
@@ -93,15 +106,39 @@ export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const commentId = searchParams.get('id') || searchParams.get('commentId');
+    const idsParam = searchParams.get('ids');
 
-    if (!commentId) {
-      return NextResponse.json({ error: 'Comment ID is required' }, { status: 400 });
-    }
+    let bodyIds: string[] = [];
+    try {
+      const body = await request.json().catch(() => null);
+      if (body && Array.isArray(body.ids)) {
+        bodyIds = body.ids.filter(Boolean);
+      }
+    } catch {}
 
     const session = await getSession();
     const isAdmin = await checkIsAdmin();
 
     const db = getDb();
+
+    // Case 1: Bulk delete (Admin only)
+    const targetIds = bodyIds.length > 0 
+      ? bodyIds 
+      : idsParam ? idsParam.split(',').map((s) => s.trim()).filter(Boolean) : [];
+
+    if (targetIds.length > 0) {
+      if (!isAdmin) {
+        return NextResponse.json({ error: 'Unauthorized — เฉพาะผู้ดูแลระบบเท่านั้นที่สามารถลบหลายรายการได้' }, { status: 403 });
+      }
+      await db.delete(comments).where(inArray(comments.id, targetIds));
+      return NextResponse.json({ success: true, count: targetIds.length });
+    }
+
+    // Case 2: Single comment delete
+    if (!commentId) {
+      return NextResponse.json({ error: 'Comment ID is required' }, { status: 400 });
+    }
+
     const existing = await db
       .select()
       .from(comments)

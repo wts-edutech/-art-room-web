@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { BookOpen, Award, Image as ImageIcon, Newspaper, Calendar, Users, LogOut, LayoutDashboard, Lightbulb, Info, ChevronRight, X, GraduationCap, FolderDown, School, ClipboardList, BookCheck, HelpCircle, Sparkles, Camera, Inbox } from "lucide-react";
+import { BookOpen, Award, Image as ImageIcon, Newspaper, Calendar, Users, LogOut, LayoutDashboard, Lightbulb, Info, ChevronRight, X, GraduationCap, FolderDown, School, ClipboardList, BookCheck, HelpCircle, Sparkles, Camera, Inbox, MessageSquare } from "lucide-react";
 
 // Import tabs
 import SubmissionsCenterTab from "@/components/admin/teaching/SubmissionsCenterTab";
@@ -21,11 +21,12 @@ import TestimonialsTab from "@/components/admin/TestimonialsTab";
 import IdeasTab from "@/components/admin/IdeasTab";
 import TeachersTab from "@/components/admin/TeachersTab";
 import HeroButtonTab from "@/components/admin/HeroButtonTab";
+import CommentsModerationTab from "@/components/admin/CommentsModerationTab";
 
 export default function AdminPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<
-    "submissionsCenter" | "teachingSetup" | "assignments" | "grading" | "quizzes" | "artworks" | "awards" | "news" | "activities" | "students" | "guests" | "testimonials" | "ideas" | "teachers" | "heroButton"
+    "submissionsCenter" | "teachingSetup" | "assignments" | "grading" | "quizzes" | "artworks" | "awards" | "news" | "activities" | "students" | "guests" | "testimonials" | "ideas" | "teachers" | "heroButton" | "comments"
   >("submissionsCenter");
   const [gradingAssignmentId, setGradingAssignmentId] = useState<string | undefined>(undefined);
   const [visitorStats, setVisitorStats] = useState({ total: 0, today: 0 });
@@ -236,6 +237,17 @@ export default function AdminPage() {
               <span>จัดการไอเดีย</span>
             </button>
             <button
+              onClick={() => setActiveTab("comments")}
+              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all text-xs font-semibold ${
+                activeTab === "comments" 
+                  ? "bg-orange-500 text-white shadow-xs shadow-orange-500/20" 
+                  : "text-slate-600 hover:text-orange-600 hover:bg-orange-50/70"
+              }`}
+            >
+              <MessageSquare className="w-4 h-4" />
+              <span>จัดการความคิดเห็น & บอร์ด</span>
+            </button>
+            <button
               onClick={() => setActiveTab("heroButton")}
               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all text-xs font-semibold ${
                 activeTab === "heroButton" 
@@ -395,6 +407,7 @@ export default function AdminPage() {
           {activeTab === "teachers" && <TeachersTab />}
           {activeTab === "testimonials" && <TestimonialsTab />}
           {activeTab === "ideas" && <IdeasTab />}
+          {activeTab === "comments" && <CommentsModerationTab />}
           {activeTab === "heroButton" && <HeroButtonTab />}
 
         </div>

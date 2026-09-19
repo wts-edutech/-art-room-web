@@ -23,6 +23,16 @@ const SPECIAL_CONTEXT_RULES: { regex: RegExp; matchedWord: string }[] = [
     regex: /หี(?![บ])/u,
     matchedWord: "หี",
   },
+  // คำว่า "หมา" ที่ใช้ด่าทอ เดี่ยวๆ หรือมีคำนำหน้า
+  {
+    regex: /(?:^|[^\u0E00-\u0E7F])(?:ไอ้?|อี|อิ)?หมา(?=[^\u0E00-\u0E7F]|เอ๊ย|เอ้ย|บ้า|แดก|ตาย|จัญไร|$)/,
+    matchedWord: "หมา",
+  },
+  // คำว่า "ควาย" ที่ใช้ด่าทอ ทั้งเดี่ยวๆ หรือนำหน้า/ต่อท้าย
+  {
+    regex: /(?:^|[^\u0E00-\u0E7F]|ไอ้?|อี|อิ)ควาย(?=[^\u0E00-\u0E7F]|เอ๊ย|เอ้ย|ๆ|$)/,
+    matchedWord: "ควาย",
+  },
 ];
 
 // รายการคำหยาบคาย ถ้อยคำไม่เหมาะสม ลามก อนาจาร หรือด่าทอ (ไทย & อังกฤษ)
@@ -78,11 +88,18 @@ const THAI_PROFANITY_WORDS = [
   "เชี่ย",
   "สัส",
   "สัตว์",
+  "สัตว",
   "ไอ้สัส",
   "อีสัส",
   "ไอ้สัตว์",
   "อีสัตว์",
+  "ไอ้สัตว",
+  "อีสัตว",
+  "ไอสัตว",
   "สัด",
+  "ไอ้สัด",
+  "ไอสัด",
+  "อีสัด",
   "สาส",
   "ไอ้เหี้ย",
   "อีเหี้ย",
@@ -126,13 +143,19 @@ const THAI_PROFANITY_WORDS = [
   "ฉิบหาย",
   "ชิพหาย",
   "ฉิพหาย",
+  "ควาย",
   "ไอ้ควาย",
+  "ไอควาย",
   "อีควาย",
   "อิควาย",
   "ควายเอ๊ย",
   "ควายเอ้ย",
   "ฟาย",
   "ควัย",
+  "ไอ้หมา",
+  "ไอหมา",
+  "อีหมา",
+  "อิหมา",
   "ไอ้ห่า",
   "อีห่า",
   "อิห่า",
@@ -324,3 +347,15 @@ export function checkProfanity(text: string): ProfanityCheckResult {
 export function containsProfanity(text: string): boolean {
   return !checkProfanity(text).isClean;
 }
+
+/**
+ * วิเคราะห์ข้อความเพื่อใช้ในระบบหลังบ้าน (Admin Moderation)
+ */
+export function analyzeComment(text: string): { isFlagged: boolean; flaggedWord?: string } {
+  const result = checkProfanity(text);
+  return {
+    isFlagged: !result.isClean,
+    flaggedWord: result.matchedWord,
+  };
+}
+

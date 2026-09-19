@@ -11,6 +11,7 @@ import {
 import { resolveUserAvatar } from "@/lib/art-avatars";
 import { checkProfanity } from "@/lib/profanity-filter";
 import ProfanityAlertModal from "@/components/common/ProfanityAlertModal";
+import { syncAuthWithServer } from "@/lib/client-auth";
 
 export interface CommentItem {
   id: string;
@@ -120,6 +121,13 @@ export default function CommunityDiscussion({
     setUserAvatar(avatar);
     setUserEmail(email);
     setIsLoggedIn(!!name.trim());
+
+    syncAuthWithServer().then((auth) => {
+      if (auth.isAdmin) {
+        setUserRole("admin");
+        setIsLoggedIn(true);
+      }
+    });
 
     // Load liked comments from localStorage
     try {
@@ -681,6 +689,7 @@ export default function CommunityDiscussion({
               const commentResolvedAvatar = resolveUserAvatar(comment.authorImage, comment.author);
               const canDelete =
                 userRole === "admin" ||
+                userRole === "ผู้ดูแลระบบ" ||
                 (userName && comment.author === userName) ||
                 (userName && comment.author?.startsWith(userName));
 
@@ -746,10 +755,15 @@ export default function CommunityDiscussion({
                           <button
                             type="button"
                             onClick={() => handleDelete(comment.id)}
-                            className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-600 transition-opacity p-1 rounded-lg cursor-pointer"
+                            className={
+                              userRole === "admin" || userRole === "ผู้ดูแลระบบ"
+                                ? "inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-50 hover:bg-red-600 text-red-600 hover:text-white border border-red-200 text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                                : "opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-600 transition-opacity p-1 rounded-lg cursor-pointer"
+                            }
                             title="ลบความคิดเห็นนี้"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
+                            {(userRole === "admin" || userRole === "ผู้ดูแลระบบ") && <span>ลบ</span>}
                           </button>
                         )}
                       </div>
