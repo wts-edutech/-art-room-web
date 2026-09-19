@@ -17,7 +17,8 @@ import {
   ShieldAlert,
   Lock,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  AlertCircle
 } from "lucide-react";
 
 interface SocialProvider {
@@ -461,6 +462,17 @@ export default function LoginPage() {
                     </div>
                   )}
                 </div>
+              </div>
+
+              {/* Forgot Password / Need Help Notice (Always visible for students) */}
+              <div className="mt-3.5 p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200/90 text-amber-950 text-xs shadow-2xs space-y-1.5">
+                <div className="flex items-center gap-2 font-bold text-amber-900">
+                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>จำรหัสผ่านไม่ได้ หรือเข้าสู่ระบบไม่ได้?</span>
+                </div>
+                <p className="text-[11px] text-amber-800/90 leading-relaxed pl-6">
+                  กรุณาติดต่อคุณครูผู้สอนหรือผู้ดูแลระบบประจำห้องเรียนศิลปะ เพื่อขอรีเซ็ตรหัสผ่านกลับเป็นค่าเริ่มต้น (<span className="font-mono font-bold text-gray-900">รหัสนักเรียน@wts</span>)
+                </p>
               </div>
 
               {/* Submit Button */}

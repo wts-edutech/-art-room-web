@@ -256,5 +256,10 @@ export const quizAttempts = sqliteTable('quiz_attempts', {
   status: text('status').notNull().default('completed'), // 'completed', 'timed_out', 'force_submitted'
 });
 
-
+// --- Site Settings (Key-Value configuration) ---
+export const siteSettings = sqliteTable('site_settings', {
+  key: text('key').primaryKey(),
+  value: text('value').notNull(),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
+});
 

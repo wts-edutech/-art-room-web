@@ -31,7 +31,8 @@ import {
   Globe,
   ExternalLink,
   Palette,
-  Layers
+  Layers,
+  Copy
 } from "lucide-react";
 import * as XLSX from "xlsx";
 
@@ -131,6 +132,7 @@ export default function StudentsTab() {
   const [selectedStatusFilter, setSelectedStatusFilter] = useState("all"); // 'all', 'active', 'inactive', 'has_submissions', 'has_quizzes'
   const [sortBy, setSortBy] = useState<"room_seat" | "seat" | "id" | "logins" | "lastLogin">("room_seat");
   const [viewMode, setViewMode] = useState<"table" | "room_grid">("table");
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Teaching Rooms (starred)
   const [teachingRooms, setTeachingRooms] = useState<string[]>(DEFAULT_TEACHING_ROOMS);
@@ -287,7 +289,8 @@ export default function StudentsTab() {
 
   // Reset Student Password
   const handleResetPassword = async (studentId: string, studentName: string) => {
-    const confirmMsg = `ยืนยันการรีเซ็ตรหัสผ่านของนักเรียน:\n${studentName} (รหัส ${studentId})\n\nรหัสผ่านจะถูกรีเซ็ตกลับเป็นค่าเริ่มต้นคือ "${studentId}@wts"`;
+    const defaultPassword = `${studentId}@wts`;
+    const confirmMsg = `ยืนยันการรีเซ็ตรหัสผ่านของนักเรียน:\n${studentName} (รหัส ${studentId})\n\nรหัสผ่านจะถูกรีเซ็ตกลับเป็นค่าเริ่มต้นคือ "${defaultPassword}"\nนักเรียนจะสามารถเข้าสู่ระบบด้วยรหัสดังกล่าวได้ทันที`;
     if (!confirm(confirmMsg)) return;
 
     try {
@@ -301,7 +304,20 @@ export default function StudentsTab() {
       });
 
       if (res.ok) {
-        alert(`รีเซ็ตรหัสผ่านของ ${studentName} สำเร็จ!\nรหัสผ่านใหม่คือ: ${studentId}@wts`);
+        setStudents((prev) =>
+          prev.map((s) => (s.id === studentId ? { ...s, password: null } : s))
+        );
+        setSelectedStudent((prev) =>
+          prev && prev.id === studentId ? { ...prev, password: null } : prev
+        );
+        try {
+          await navigator.clipboard.writeText(defaultPassword);
+          setCopiedId(studentId);
+          setTimeout(() => setCopiedId(null), 2500);
+          alert(`รีเซ็ตรหัสผ่านของ ${studentName} สำเร็จ!\nรหัสผ่านเริ่มต้น: ${defaultPassword}\n(คัดลอกรหัสผ่านลงคลิปบอร์ดแล้ว พร้อมส่งให้นักเรียน)`);
+        } catch {
+          alert(`รีเซ็ตรหัสผ่านของ ${studentName} สำเร็จ!\nรหัสผ่านเริ่มต้นคือ: ${defaultPassword}`);
+        }
       } else {
         const err = await res.json();
         alert(err.error || "ไม่สามารถรีเซ็ตรหัสผ่านได้");
@@ -309,6 +325,18 @@ export default function StudentsTab() {
     } catch (err) {
       console.error("Failed to reset password:", err);
       alert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+    }
+  };
+
+  // Copy Default Password to Clipboard
+  const handleCopyDefaultPassword = async (studentId: string) => {
+    const defaultPwd = `${studentId}@wts`;
+    try {
+      await navigator.clipboard.writeText(defaultPwd);
+      setCopiedId(studentId);
+      setTimeout(() => setCopiedId(null), 2500);
+    } catch {
+      prompt("คัดลอกรหัสผ่านเริ่มต้นของนักเรียน:", defaultPwd);
     }
   };
 
@@ -1482,6 +1510,7 @@ export default function StudentsTab() {
                     <th scope="col" className="px-4 py-3 font-bold">รหัส</th>
                     <th scope="col" className="px-3 py-3 font-bold text-center">ห้อง</th>
                     <th scope="col" className="px-4 py-3 font-bold">ชื่อ - นามสกุล</th>
+                    <th scope="col" className="px-4 py-3 font-bold">สถานะรหัสผ่าน</th>
                     <th scope="col" className="px-4 py-3 font-bold">สถิติการเข้าใช้</th>
                     <th scope="col" className="px-4 py-3 font-bold">ภาระงาน & กิจกรรมหน้าบ้าน</th>
                     <th scope="col" className="px-4 py-3 font-bold text-center w-24">จัดการ</th>
@@ -1521,6 +1550,52 @@ export default function StudentsTab() {
                         {/* Name */}
                         <td className="px-4 py-3 font-medium text-gray-900">
                           {student.name}
+                        </td>
+
+                        {/* Password Status & Reset */}
+                        <td className="px-4 py-3">
+                          {student.password ? (
+                            <div className="flex flex-col gap-1">
+                              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 font-semibold text-[11px] border border-amber-200/80 w-fit">
+                                <Key className="w-3 h-3 text-amber-600" />
+                                <span>ตั้งรหัสเองแล้ว</span>
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleResetPassword(student.id, student.name)}
+                                className="inline-flex items-center gap-1 text-[11px] text-amber-700 hover:text-amber-900 font-bold hover:underline cursor-pointer transition-colors"
+                                title={`รีเซ็ตรหัสผ่านกลับเป็นค่าเริ่มต้น (${student.id}@wts)`}
+                              >
+                                <RotateCcw className="w-3 h-3" />
+                                <span>รีเซ็ตเป็นค่าเริ่มต้น</span>
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col gap-1">
+                              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 font-medium text-[11px] border border-emerald-200/80 w-fit">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                <span>รหัสเริ่มต้น</span>
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleCopyDefaultPassword(student.id)}
+                                className="inline-flex items-center gap-1 text-[10px] text-gray-500 hover:text-orange-600 font-mono cursor-pointer transition-colors"
+                                title="คลิกเพื่อคัดลอกรหัสผ่านเริ่มต้นส่งให้นักเรียน"
+                              >
+                                {copiedId === student.id ? (
+                                  <>
+                                    <Check className="w-3 h-3 text-emerald-600" />
+                                    <span className="text-emerald-700 font-bold">คัดลอกแล้ว!</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="w-3 h-3 text-gray-400 hover:text-orange-600" />
+                                    <span>{student.id}@wts</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          )}
                         </td>
 
                         {/* Usage & Login Statistics */}
@@ -1846,22 +1921,63 @@ export default function StudentsTab() {
                 </div>
               </div>
 
-              {/* Last login info */}
-              <div className="p-3.5 rounded-2xl bg-orange-50/60 border border-orange-200 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 text-orange-950 font-medium">
-                  <Clock className="w-4 h-4 text-orange-600 shrink-0" />
-                  <span>เวลาที่เข้าใช้งานล่าสุด:</span>
-                  <strong className="text-orange-900">{formatThaiDateTime(selectedStudent.lastLoginAt)}</strong>
+              {/* Account Security & Password info */}
+              <div className="p-4 rounded-2xl bg-orange-50/70 border border-orange-200/90 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-orange-200/60 pb-2.5">
+                  <div className="flex items-center gap-2 text-orange-950 font-medium">
+                    <Clock className="w-4 h-4 text-orange-600 shrink-0" />
+                    <span>เข้าใช้งานล่าสุด:</span>
+                    <strong className="text-orange-900">{formatThaiDateTime(selectedStudent.lastLoginAt)}</strong>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] text-gray-500">สถานะรหัสผ่าน:</span>
+                    {selectedStudent.password ? (
+                      <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200 font-bold text-[10px]">
+                        🔒 ตั้งรหัสผ่านเองแล้ว
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-[10px]">
+                        🟢 รหัสเริ่มต้น
+                      </span>
+                    )}
+                  </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => handleResetPassword(selectedStudent.id, selectedStudent.name)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-orange-200 text-orange-700 hover:bg-orange-100/60 font-bold text-[11px] shadow-2xs transition-colors cursor-pointer"
-                >
-                  <Key className="w-3.5 h-3.5" />
-                  <span>รีเซ็ตรหัสผ่าน</span>
-                </button>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-0.5">
+                  <div className="text-[11px] text-orange-950 flex items-center gap-2">
+                    <span className="text-gray-600">รหัสผ่านเริ่มต้น:</span>
+                    <code className="px-2 py-1 rounded-lg bg-white border border-orange-200 font-mono font-bold text-gray-900 shadow-2xs">
+                      {selectedStudent.id}@wts
+                    </code>
+                    <button
+                      type="button"
+                      onClick={() => handleCopyDefaultPassword(selectedStudent.id)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-orange-200 text-orange-700 hover:bg-orange-100/70 text-[11px] font-medium shadow-2xs cursor-pointer transition-colors"
+                      title="คัดลอกรหัสผ่านเริ่มต้นส่งให้นักเรียน"
+                    >
+                      {copiedId === selectedStudent.id ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-600" />
+                          <span className="text-emerald-700 font-bold">คัดลอกแล้ว</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5" />
+                          <span>คัดลอก</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleResetPassword(selectedStudent.id, selectedStudent.name)}
+                    className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold text-[11px] shadow-sm hover:from-amber-600 hover:to-orange-600 transition-all cursor-pointer"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>รีเซ็ตรหัสกลับค่าเริ่มต้น</span>
+                  </button>
+                </div>
               </div>
 
               {/* Submissions History with Artwork Preview */}

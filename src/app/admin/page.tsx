@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { BookOpen, Award, Image as ImageIcon, Newspaper, Calendar, Users, LogOut, LayoutDashboard, Lightbulb, Info, ChevronRight, X, GraduationCap, FolderDown, School, ClipboardList, BookCheck, HelpCircle, Sparkles, Camera, Inbox, MessageSquare } from "lucide-react";
+import { BookOpen, Award, Image as ImageIcon, Newspaper, Calendar, Users, LogOut, LayoutDashboard, Lightbulb, Info, ChevronRight, X, GraduationCap, FolderDown, School, ClipboardList, BookCheck, HelpCircle, Sparkles, Camera, Inbox, MessageSquare, KeyRound } from "lucide-react";
 
 // Import tabs
 import SubmissionsCenterTab from "@/components/admin/teaching/SubmissionsCenterTab";
@@ -22,11 +22,12 @@ import IdeasTab from "@/components/admin/IdeasTab";
 import TeachersTab from "@/components/admin/TeachersTab";
 import HeroButtonTab from "@/components/admin/HeroButtonTab";
 import CommentsModerationTab from "@/components/admin/CommentsModerationTab";
+import AdminSecurityTab from "@/components/admin/AdminSecurityTab";
 
 export default function AdminPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<
-    "submissionsCenter" | "teachingSetup" | "assignments" | "grading" | "quizzes" | "artworks" | "awards" | "news" | "activities" | "students" | "guests" | "testimonials" | "ideas" | "teachers" | "heroButton" | "comments"
+    "submissionsCenter" | "teachingSetup" | "assignments" | "grading" | "quizzes" | "artworks" | "awards" | "news" | "activities" | "students" | "guests" | "testimonials" | "ideas" | "teachers" | "heroButton" | "comments" | "adminSecurity"
   >("submissionsCenter");
   const [gradingAssignmentId, setGradingAssignmentId] = useState<string | undefined>(undefined);
   const [visitorStats, setVisitorStats] = useState({ total: 0, today: 0 });
@@ -258,6 +259,17 @@ export default function AdminPage() {
               <Sparkles className="w-4 h-4 text-red-500" />
               <span>ตั้งค่าปุ่ม AI Art Model</span>
             </button>
+            <button
+              onClick={() => setActiveTab("adminSecurity")}
+              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all text-xs font-semibold ${
+                activeTab === "adminSecurity" 
+                  ? "bg-amber-500 text-white shadow-xs shadow-amber-500/20" 
+                  : "text-slate-600 hover:text-amber-600 hover:bg-amber-50/70"
+              }`}
+            >
+              <KeyRound className="w-4 h-4 text-amber-500" />
+              <span>ตั้งค่ารหัสผ่านแอดมิน</span>
+            </button>
           </nav>
         </div>
 
@@ -314,6 +326,7 @@ export default function AdminPage() {
                   {activeTab === "teachers" && "จัดการทำเนียบครูผู้สอน (Teachers)"}
                   {activeTab === "testimonials" && "จัดการรีวิวและเสียงตอบรับจากรุ่นพี่ (Testimonials)"}
                   {activeTab === "heroButton" && "ตั้งค่าปุ่ม AI Art Model (Hero Section Management)"}
+                  {activeTab === "adminSecurity" && "ตั้งค่ารหัสผ่านผู้ดูแลระบบ (Admin Password Security)"}
                 </h1>
                 <p className="text-gray-500 text-xs mt-0.5">
                   ระบบบริหารจัดการข้อมูลทางวิชาการและสารสนเทศเว็บไซต์ห้องเรียนศิลปะ
@@ -367,6 +380,7 @@ export default function AdminPage() {
               { key: "testimonials", label: "รีวิวรุ่นพี่", icon: BookOpen },
               { key: "guests", label: "บุคคลทั่วไป", icon: Users },
               { key: "heroButton", label: "ปุ่ม AI Model", icon: Sparkles },
+              { key: "adminSecurity", label: "รหัสผ่านแอดมิน", icon: KeyRound },
             ].map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
@@ -409,6 +423,7 @@ export default function AdminPage() {
           {activeTab === "ideas" && <IdeasTab />}
           {activeTab === "comments" && <CommentsModerationTab />}
           {activeTab === "heroButton" && <HeroButtonTab />}
+          {activeTab === "adminSecurity" && <AdminSecurityTab />}
 
         </div>
       </main>

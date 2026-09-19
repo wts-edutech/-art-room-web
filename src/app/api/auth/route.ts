@@ -2,20 +2,16 @@ export const runtime = 'edge';
 
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { createAdminToken, verifyAdminToken } from '@/lib/auth-utils';
+import { createAdminToken } from '@/lib/auth-utils';
+import { verifyAdminPassword } from '@/lib/admin-auth';
 
 export async function POST(request: Request) {
   try {
     const { password } = await request.json();
 
-    const adminPassword = process.env.ADMIN_PASSWORD || "admin1234";
-    
-    // if (!adminPassword) {
-    //   console.error('ADMIN_PASSWORD is not set in environment variables');
-    //   return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
-    // }
+    const isValid = await verifyAdminPassword(String(password || '').trim());
 
-    if (password === adminPassword) {
+    if (isValid) {
       const token = await createAdminToken(24); // expires in 24 hours
 
       const cookieStore = await cookies();
