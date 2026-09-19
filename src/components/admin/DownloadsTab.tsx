@@ -65,13 +65,46 @@ const GRADE_CONFIG = [
 ];
 
 const CATEGORY_OPTIONS = [
+  "ใบงานและแบบฝึกหัด",
+  "ใบความรู้และชีตสรุป",
+  "สื่อวิดีทัศน์",
+  "สื่อภาพและเทคนิค",
+  "คู่มือและเกณฑ์ประเมิน",
+  "สไลด์สื่อการสอน (Canva/PPT)",
   "แบบฝึกหัด",
-  "ใบความรู้",
   "เกณฑ์การประเมิน",
   "คู่มือ",
   "ข้อสอบ/แบบทดสอบ",
   "สื่อการเรียนรู้",
 ];
+
+const isCategoryMatch = (itemCat: string | undefined, filterCat: string) => {
+  if (filterCat === "all") return true;
+  if (!itemCat) return false;
+  if (itemCat === filterCat) return true;
+
+  const matchGroups: Record<string, string[]> = {
+    "ใบงานและแบบฝึกหัด": ["ใบงานและแบบฝึกหัด", "ใบงาน", "แบบฝึกหัด"],
+    "ใบงาน": ["ใบงานและแบบฝึกหัด", "ใบงาน", "แบบฝึกหัด"],
+    "แบบฝึกหัด": ["ใบงานและแบบฝึกหัด", "ใบงาน", "แบบฝึกหัด"],
+    "ใบความรู้และชีตสรุป": ["ใบความรู้และชีตสรุป", "ใบความรู้"],
+    "ใบความรู้": ["ใบความรู้และชีตสรุป", "ใบความรู้"],
+    "สื่อวิดีทัศน์": ["สื่อวิดีทัศน์", "วีดีโอ", "วิดีโอ"],
+    "สื่อภาพและเทคนิค": ["สื่อภาพและเทคนิค", "สื่อภาพ"],
+    "สื่อภาพ": ["สื่อภาพและเทคนิค", "สื่อภาพ"],
+    "คู่มือและเกณฑ์ประเมิน": ["คู่มือและเกณฑ์ประเมิน", "คู่มือ", "เกณฑ์การประเมิน"],
+    "คู่มือ": ["คู่มือและเกณฑ์ประเมิน", "คู่มือ", "เกณฑ์การประเมิน"],
+    "เกณฑ์การประเมิน": ["คู่มือและเกณฑ์ประเมิน", "คู่มือ", "เกณฑ์การประเมิน"],
+    "สไลด์สื่อการสอน (Canva/PPT)": ["สไลด์สื่อการสอน (Canva/PPT)", "สไลด์สื่อการสอน", "Canva", "canva"],
+    "ข้อสอบ/แบบทดสอบ": ["ข้อสอบ/แบบทดสอบ", "ข้อสอบ", "แบบทดสอบ"],
+    "สื่อการเรียนรู้": ["สื่อการเรียนรู้", "สื่อการเรียนรู้ทั่วไป"],
+  };
+
+  const group = matchGroups[filterCat];
+  if (group && group.includes(itemCat)) return true;
+
+  return false;
+};
 
 export default function DownloadsTab() {
   const [downloads, setDownloads] = useState<DownloadItem[]>([]);
@@ -236,7 +269,7 @@ export default function DownloadsTab() {
       if (selectedGradeFilter !== "all" && item.grade !== selectedGradeFilter) {
         return false;
       }
-      if (selectedCategoryFilter !== "all" && item.category !== selectedCategoryFilter) {
+      if (!isCategoryMatch(item.category, selectedCategoryFilter)) {
         return false;
       }
       return true;
@@ -248,7 +281,7 @@ export default function DownloadsTab() {
     setEditingId(null);
     setTitle("");
     setDescription("");
-    setCategory("แบบฝึกหัด");
+    setCategory("ใบงานและแบบฝึกหัด");
     setGrade("all");
     setFileName("");
     setFileSize("1.5 MB");
@@ -262,7 +295,7 @@ export default function DownloadsTab() {
     setEditingId(item.id);
     setTitle(item.title);
     setDescription(item.description || "");
-    setCategory(item.category || "แบบฝึกหัด");
+    setCategory(item.category || "ใบงานและแบบฝึกหัด");
     setGrade(item.grade || "all");
     setFileName(item.fileName || "");
     setFileSize(item.fileSize || "1.0 MB");

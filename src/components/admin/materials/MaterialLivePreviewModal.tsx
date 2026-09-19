@@ -39,7 +39,7 @@ export default function MaterialLivePreviewModal({
   // Editable fields in preview
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("แบบฝึกหัด");
+  const [category, setCategory] = useState("ใบงานและแบบฝึกหัด");
   const [grade, setGrade] = useState("all");
   const [topic, setTopic] = useState("");
   const [imageUrl, setImageUrl] = useState("");
@@ -52,7 +52,7 @@ export default function MaterialLivePreviewModal({
     if (material) {
       setTitle(material.title || "");
       setDescription(material.description || "");
-      setCategory(material.category || "แบบฝึกหัด");
+      setCategory(material.category || "ใบงานและแบบฝึกหัด");
       setGrade(material.grade || "all");
       setTopic(material.topic || "");
       setImageUrl(material.recommendedImageUrl || material.imageUrl || "https://images.unsplash.com/photo-1541701494587-cb58502866ab?q=80&w=800&auto=format&fit=crop");
@@ -425,13 +425,19 @@ export default function MaterialLivePreviewModal({
                     <select
                       value={category}
                       onChange={(e) => setCategory(e.target.value)}
-                      className="w-full h-10 px-3 rounded-xl border border-gray-200 bg-gray-50/60 focus:bg-white focus:border-orange-500 outline-none"
+                      className="w-full h-10 px-3 rounded-xl border border-gray-200 bg-gray-50/60 focus:bg-white focus:border-orange-500 outline-none text-xs sm:text-sm"
                     >
-                      <option value="แบบฝึกหัด">แบบฝึกหัด / ใบงาน</option>
-                      <option value="ใบความรู้">ใบความรู้ / ชีตสรุป</option>
-                      <option value="สื่อภาพ">สื่อภาพและเทคนิค</option>
+                      <option value="ใบงานและแบบฝึกหัด">ใบงานและแบบฝึกหัด</option>
+                      <option value="ใบความรู้และชีตสรุป">ใบความรู้และชีตสรุป</option>
+                      <option value="สื่อวิดีทัศน์">สื่อวิดีทัศน์</option>
+                      <option value="สื่อภาพและเทคนิค">สื่อภาพและเทคนิค</option>
+                      <option value="คู่มือและเกณฑ์ประเมิน">คู่มือและเกณฑ์ประเมิน</option>
+                      <option value="สไลด์สื่อการสอน (Canva/PPT)">สไลด์สื่อการสอน (Canva/PPT)</option>
+                      <option value="แบบฝึกหัด">แบบฝึกหัด</option>
                       <option value="เกณฑ์การประเมิน">เกณฑ์การประเมิน</option>
                       <option value="คู่มือ">คู่มือ</option>
+                      <option value="ข้อสอบ/แบบทดสอบ">ข้อสอบ/แบบทดสอบ</option>
+                      <option value="สื่อการเรียนรู้">สื่อการเรียนรู้ทั่วไป</option>
                     </select>
                   </div>
 

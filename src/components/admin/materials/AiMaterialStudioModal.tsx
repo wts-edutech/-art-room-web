@@ -87,7 +87,7 @@ export default function AiMaterialStudioModal({
   const [selectedModel, setSelectedModel] = useState<string>("gpt");
   const [topic, setTopic] = useState<string>("");
   const [grade, setGrade] = useState<string>("all");
-  const [category, setCategory] = useState<string>("แบบฝึกหัด");
+  const [category, setCategory] = useState<string>("ใบงานและแบบฝึกหัด");
   const [customPrompt, setCustomPrompt] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [isCopied, setIsCopied] = useState<boolean>(false);
@@ -370,11 +370,16 @@ export default function AiMaterialStudioModal({
                   onChange={(e) => setCategory(e.target.value)}
                   className="w-full h-10 px-3 rounded-xl border border-gray-200 bg-white focus:border-orange-500 outline-none text-xs font-medium cursor-pointer"
                 >
-                  <option value="แบบฝึกหัด">📄 ใบงาน / แบบฝึกหัด (Worksheet)</option>
-                  <option value="ใบความรู้">📚 ใบความรู้ / ชีตสรุป (Knowledge Sheet)</option>
-                  <option value="สื่อภาพ">🖼️ สื่อภาพและขั้นตอนเทคนิค (Visual Guide)</option>
+                  <option value="ใบงานและแบบฝึกหัด">📄 ใบงานและแบบฝึกหัด (Worksheet)</option>
+                  <option value="ใบความรู้และชีตสรุป">📚 ใบความรู้และชีตสรุป (Knowledge Sheet)</option>
+                  <option value="สื่อวิดีทัศน์">🎬 สื่อวิดีทัศน์ / วิดีโอสอน (Video Lesson)</option>
+                  <option value="สื่อภาพและเทคนิค">🖼️ สื่อภาพและเทคนิค (Visual Guide)</option>
+                  <option value="คู่มือและเกณฑ์ประเมิน">📖 คู่มือและเกณฑ์ประเมิน (Handbook & Rubrics)</option>
+                  <option value="สไลด์สื่อการสอน (Canva/PPT)">🎨 สไลด์สื่อการสอน (Presentation)</option>
+                  <option value="แบบฝึกหัด">✏️ แบบฝึกหัด (Practice)</option>
                   <option value="เกณฑ์การประเมิน">📝 เกณฑ์การประเมินรูบริก (Rubric Guide)</option>
-                  <option value="คู่มือ">📖 คู่มือนักเรียน (Student Handbook)</option>
+                  <option value="ข้อสอบ/แบบทดสอบ">📑 ข้อสอบ / แบบทดสอบ (Quiz & Exam)</option>
+                  <option value="สื่อการเรียนรู้">✨ สื่อการเรียนรู้ทั่วไป (Learning Materials)</option>
                 </select>
               </div>
             </div>

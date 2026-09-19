@@ -8,7 +8,7 @@ import {
   Search, BookOpen, Video, Image as ImageIcon, Star, Grid, 
   Download, ExternalLink, GraduationCap, FileText, Presentation, 
   Filter, CheckCircle2, ArrowRight, X, Sparkles, Eye, CloudDownload,
-  Loader2, MessageSquare, Heart, Bookmark
+  Loader2, MessageSquare, Heart, Bookmark, FileCheck2
 } from "lucide-react";
 import { DownloadItem } from "@/data/default-downloads";
 import { 
@@ -174,6 +174,9 @@ export default function MaterialsList({
     { id: "ใบความรู้", label: "ใบความรู้และชีตสรุป", icon: <BookOpen className="w-5 h-5 text-blue-500" /> },
     { id: "สื่อภาพ", label: "สื่อภาพและเทคนิค", icon: <ImageIcon className="w-5 h-5 text-amber-500" /> },
     { id: "คู่มือ", label: "คู่มือและเกณฑ์ประเมิน", icon: <CheckCircle2 className="w-5 h-5 text-purple-500" /> },
+    { id: "สไลด์สื่อการสอน", label: "สไลด์สื่อการสอน (Canva)", icon: <Presentation className="w-5 h-5 text-pink-500" /> },
+    { id: "ข้อสอบ/แบบทดสอบ", label: "ข้อสอบและแบบทดสอบ", icon: <FileCheck2 className="w-5 h-5 text-indigo-500" /> },
+    { id: "สื่อการเรียนรู้", label: "สื่อการเรียนรู้ทั่วไป", icon: <Sparkles className="w-5 h-5 text-orange-500" /> },
   ];
 
   // Combine lessons and downloads into a unified items array
@@ -268,9 +271,30 @@ export default function MaterialsList({
         const isSaved = bookmarkedIds.has(item.id) || (item.rawId && bookmarkedIds.has(item.rawId));
         if (!isSaved) return false;
       } else if (activeCategory !== "ทั้งหมด") {
-        if (activeCategory === "ใบงาน" && item.isWorksheet && item.category === "แบบฝึกหัด") {
-          // matches
-        } else if (item.category !== activeCategory) {
+        const itemCat = String(item.category || "").trim();
+        const active = String(activeCategory || "").trim();
+
+        const matchGroups: Record<string, string[]> = {
+          "ใบงาน": ["ใบงาน", "ใบงานและแบบฝึกหัด", "แบบฝึกหัด"],
+          "ใบความรู้": ["ใบความรู้", "ใบความรู้และชีตสรุป"],
+          "สื่อวิดีทัศน์": ["สื่อวิดีทัศน์", "วีดีโอ", "วิดีโอ"],
+          "สื่อภาพ": ["สื่อภาพ", "สื่อภาพและเทคนิค"],
+          "คู่มือ": ["คู่มือ", "คู่มือและเกณฑ์ประเมิน", "เกณฑ์การประเมิน"],
+          "สไลด์สื่อการสอน": ["สไลด์สื่อการสอน", "สไลด์สื่อการสอน (Canva/PPT)", "Canva", "canva"],
+          "ข้อสอบ/แบบทดสอบ": ["ข้อสอบ/แบบทดสอบ", "ข้อสอบ", "แบบทดสอบ"],
+          "สื่อการเรียนรู้": ["สื่อการเรียนรู้", "สื่อการเรียนรู้ทั่วไป"],
+        };
+
+        const group = matchGroups[active];
+        const isGroupMatch = group && group.includes(itemCat);
+        const isWorksheetSpecial = active === "ใบงาน" && (item.isWorksheet || itemCat === "แบบฝึกหัด");
+        const isVideoSpecial = active === "สื่อวิดีทัศน์" && item.mediaType === "video";
+        const isImageSpecial = active === "สื่อภาพ" && item.mediaType === "image";
+        const isCanvaSpecial = active === "สไลด์สื่อการสอน" && item.mediaType === "canva";
+
+        if (itemCat === active || isGroupMatch || isWorksheetSpecial || isVideoSpecial || isImageSpecial || isCanvaSpecial) {
+          // match!
+        } else {
           return false;
         }
       }
