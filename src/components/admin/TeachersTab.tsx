@@ -172,9 +172,15 @@ export default function TeachersTab() {
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      alert("ขนาดไฟล์รูปภาพเกินกำหนด (สูงสุด 10MB) กรุณาเลือกไฟล์รูปภาพที่มีขนาดไม่เกิน 10MB ครับ");
+      return;
+    }
+
     setIsUploadingAvatar(true);
     try {
-      const optimized = await optimizeImageToDataUrl(file, { maxWidth: 1000, maxHeight: 1000, quality: 0.85 });
+      const optimized = await optimizeImageToDataUrl(file, { maxWidth: 1200, maxHeight: 1200, quality: 0.85 });
       setImageUrl(optimized);
     } catch (err) {
       console.error("Failed to optimize image:", err);
@@ -242,6 +248,10 @@ export default function TeachersTab() {
   };
 
   const handleAwardImageUpload = async (id: string, file: File) => {
+    if (file.size > 10 * 1024 * 1024) {
+      alert("ขนาดไฟล์รูปภาพเกินกำหนด (สูงสุด 10MB) กรุณาเลือกไฟล์รูปภาพที่มีขนาดไม่เกิน 10MB ครับ");
+      return;
+    }
     try {
       const dataUrl = await optimizeImageToDataUrl(file, { maxWidth: 1200, maxHeight: 1200, quality: 0.82 });
       handleUpdateAward(id, "imageUrl", dataUrl);
@@ -270,6 +280,10 @@ export default function TeachersTab() {
   };
 
   const handleActivityImageFileUpload = async (id: string, file: File) => {
+    if (file.size > 10 * 1024 * 1024) {
+      alert("ขนาดไฟล์รูปภาพเกินกำหนด (สูงสุด 10MB) กรุณาเลือกไฟล์รูปภาพที่มีขนาดไม่เกิน 10MB ครับ");
+      return;
+    }
     try {
       const dataUrl = await optimizeImageToDataUrl(file, { maxWidth: 1400, maxHeight: 1400, quality: 0.82 });
       handleUpdateActivityImage(id, "imageUrl", dataUrl);
@@ -582,7 +596,7 @@ export default function TeachersTab() {
                   />
                 </label>
                 <p className="text-[11px] text-gray-400 font-light">
-                  แนะนำรูปถ่ายหน้าตรง แนวตั้ง ขนาดไม่เกิน 5MB (ระบบบีบอัดภาพให้อัตโนมัติ)
+                  แนะนำรูปถ่ายหน้าตรง แนวตั้ง ขนาดไม่เกิน 10MB (ระบบบีบอัดภาพให้อัตโนมัติ)
                 </p>
               </div>
 

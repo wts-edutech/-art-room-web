@@ -154,8 +154,8 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      setErrorMessage("ขนาดไฟล์ต้องไม่เกิน 5 MB");
+    if (file.size > 10 * 1024 * 1024) {
+      setErrorMessage("ขนาดไฟล์ต้องไม่เกิน 10 MB");
       return;
     }
 

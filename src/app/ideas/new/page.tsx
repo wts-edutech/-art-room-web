@@ -14,7 +14,7 @@ import {
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import ImageEditorModal from "@/components/common/ImageEditorModal";
 
-const MAX_COVER_SIZE = 5 * 1024 * 1024; // 5 MB
+const MAX_COVER_SIZE = 10 * 1024 * 1024; // 10 MB
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
 interface CategoryOption {
@@ -294,7 +294,7 @@ export default function NewIdeaPage() {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > MAX_COVER_SIZE) {
-        setErrorMsg("รูปภาพหน้าปกต้องมีขนาดไม่เกิน 5 MB");
+        setErrorMsg("รูปภาพหน้าปกต้องมีขนาดไม่เกิน 10 MB");
         return;
       }
       setCoverImage(file);
@@ -697,7 +697,7 @@ export default function NewIdeaPage() {
                       รูปภาพหน้าปก <span className="text-red-500">*</span>
                     </label>
                     <span className="text-xs text-gray-400">
-                      แนะนำขนาด 16:9 หรือ 800x600 px (สูงสุด 5 MB)
+                      แนะนำขนาด 16:9 หรือ 800x600 px (สูงสุด 10 MB)
                     </span>
                   </div>
 
@@ -849,7 +849,7 @@ export default function NewIdeaPage() {
                         คลิกเพื่อเลือกรูปภาพหน้าปก
                       </p>
                       <p className="text-xs text-gray-400 mt-1">
-                        รองรับ JPG, PNG, WEBP (สูงสุด 5 MB) • สามารถปรับแต่ง ครอบตัด และหมุนภาพได้ทันทีหลังเลือก
+                        รองรับ JPG, PNG, WEBP (สูงสุด 10 MB) • สามารถปรับแต่ง ครอบตัด และหมุนภาพได้ทันทีหลังเลือก
                       </p>
                     </label>
                   )}
