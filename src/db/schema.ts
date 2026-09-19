@@ -31,6 +31,7 @@ export const students = sqliteTable('students', {
   studentNumber: integer('student_number'), // เลขที่ (เช่น 1, 2, 3...)
   academicYearId: text('academic_year_id'),
   password: text('password'), // Custom hashed student password
+  avatar: text('avatar'), // Profile avatar (preset ID, URL, or data URI)
   loginCount: integer('login_count').default(0), // จำนวนครั้งที่เข้าใช้งาน
   lastLoginAt: text('last_login_at'), // วันเวลาที่เข้าใช้งานล่าสุด
 });

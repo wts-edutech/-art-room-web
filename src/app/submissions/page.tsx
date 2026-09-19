@@ -40,10 +40,13 @@ import {
   UserCheck,
   Palette,
   ClipboardList,
-  Printer
+  Printer,
+  Camera
 } from "lucide-react";
 import ExamLockModal from "@/components/submissions/ExamLockModal";
 import StudentArtworkAlbum from "@/components/submissions/StudentArtworkAlbum";
+import ProfileSettingsModal from "@/components/modals/ProfileSettingsModal";
+import { resolveUserAvatar } from "@/lib/art-avatars";
 
 export default function SubmissionsPage() {
   const [isGuest, setIsGuest] = useState<boolean>(() => {
@@ -52,7 +55,7 @@ export default function SubmissionsPage() {
     return role === "guest";
   });
 
-  const [student, setStudent] = useState<{ id: string; name: string; classroom: string } | null>(() => {
+  const [student, setStudent] = useState<{ id: string; name: string; classroom: string; avatar?: string } | null>(() => {
     if (typeof window === "undefined") return null;
     const role = localStorage.getItem("artroom_role");
     if (role === "guest") return null; // Guests are strictly prohibited from accessing submissions
@@ -60,11 +63,17 @@ export default function SubmissionsPage() {
     const name = localStorage.getItem("artroom_author_name");
     const id = localStorage.getItem("artroom_student_id");
     const room = localStorage.getItem("artroom_classroom") || localStorage.getItem("artroom_student_grade") || "";
+    const avatar = localStorage.getItem("artroom_avatar") || "";
     if (name && id && role === "student") {
-      return { id, name, classroom: room };
+      return { id, name, classroom: room, avatar };
     }
     return null;
   });
+  const [userAvatar, setUserAvatar] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem("artroom_avatar");
+  });
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
   const [isLoadingAuth, setIsLoadingAuth] = useState(false);
 
   // Classrooms for quick room selection if student's room is missing
@@ -136,6 +145,9 @@ export default function SubmissionsPage() {
         }
 
         if (resolvedId) {
+          let resolvedAvatar = localStorage.getItem("artroom_avatar") || "";
+          setUserAvatar(resolvedAvatar);
+
           // 3. Always fetch latest classroom directly from the students database table to bypass any stale localStorage
           try {
             const resFresh = await fetch(`/api/students?id=${encodeURIComponent(resolvedId)}`);
@@ -150,6 +162,11 @@ export default function SubmissionsPage() {
                 resolvedName = freshData.name;
                 localStorage.setItem("artroom_author_name", freshData.name);
               }
+              if (freshData && freshData.avatar) {
+                resolvedAvatar = freshData.avatar;
+                setUserAvatar(freshData.avatar);
+                localStorage.setItem("artroom_avatar", freshData.avatar);
+              }
             }
           } catch (err) {
             console.warn("Could not fetch fresh student room from DB:", err);
@@ -160,6 +177,7 @@ export default function SubmissionsPage() {
             id: resolvedId,
             name: resolvedName,
             classroom: resolvedRoom,
+            avatar: resolvedAvatar,
           });
         } else {
           setIsGuest(false);
@@ -187,9 +205,15 @@ export default function SubmissionsPage() {
     resolveLoggedInStudent();
 
     // Listen for profile changes from ProfileSettingsModal or other tabs
-    window.addEventListener("artroom_profile_updated", resolveLoggedInStudent);
+    const handleProfileUpdate = () => {
+      const updatedAvatar = localStorage.getItem("artroom_avatar");
+      setUserAvatar(updatedAvatar);
+      resolveLoggedInStudent();
+    };
+
+    window.addEventListener("artroom_profile_updated", handleProfileUpdate);
     return () => {
-      window.removeEventListener("artroom_profile_updated", resolveLoggedInStudent);
+      window.removeEventListener("artroom_profile_updated", handleProfileUpdate);
     };
   }, []);
 
@@ -474,9 +498,44 @@ export default function SubmissionsPage() {
               {/* 1. Compact Student Profile Bar */}
               <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-xs border border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-3.5">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-400 to-amber-500 text-white flex items-center justify-center font-bold text-xl shadow-md shadow-orange-500/20 shrink-0">
-                    {student.name.charAt(0)}
-                  </div>
+                  {/* Student Avatar (Linked to student's or guest's changed avatar) */}
+                  {(() => {
+                    const resolvedAvatar = resolveUserAvatar(userAvatar || student?.avatar, student.name);
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => setIsProfileModalOpen(true)}
+                        className="relative group shrink-0 rounded-2xl cursor-pointer"
+                        title="คลิกเพื่อเปลี่ยนรูปโปรไฟล์"
+                      >
+                        <div className="w-12 h-12 sm:w-13 sm:h-13 rounded-2xl overflow-hidden shadow-md shadow-orange-500/10 border-2 border-orange-100 flex items-center justify-center transition-transform group-hover:scale-105 bg-white">
+                          {resolvedAvatar.type === "image" ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img 
+                              src={resolvedAvatar.value} 
+                              alt={student.name} 
+                              className="w-full h-full object-cover" 
+                              onError={(e) => {
+                                e.currentTarget.style.display = "none";
+                              }}
+                            />
+                          ) : resolvedAvatar.type === "preset" ? (
+                            <div className={`w-full h-full flex items-center justify-center ${resolvedAvatar.preset?.colorBg || "bg-orange-50"}`}>
+                              <span className="text-2xl select-none">{resolvedAvatar.value}</span>
+                            </div>
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-orange-400 to-amber-500 text-white flex items-center justify-center font-bold text-xl shadow-inner">
+                              {resolvedAvatar.value}
+                            </div>
+                          )}
+                        </div>
+                        <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-orange-500 text-white border-2 border-white flex items-center justify-center shadow-xs group-hover:bg-orange-600 transition-colors">
+                          <Camera className="w-2.5 h-2.5" />
+                        </div>
+                      </button>
+                    );
+                  })()}
+
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <h2 className="text-base sm:text-lg font-bold text-gray-900 font-kanit">
@@ -1298,6 +1357,16 @@ export default function SubmissionsPage() {
           />
         </div>
       )}
+
+      {/* Profile Settings Modal */}
+      <ProfileSettingsModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        onSaveSuccess={() => {
+          const updatedAvatar = localStorage.getItem("artroom_avatar");
+          setUserAvatar(updatedAvatar);
+        }}
+      />
 
       <Footer />
     </>

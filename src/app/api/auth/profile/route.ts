@@ -44,6 +44,7 @@ export async function GET(request: Request) {
         classroom: studentData?.classroom || '',
         gradeLevel: studentData?.gradeLevel || '',
         studentNumber: studentData?.studentNumber || null,
+        avatar: studentData?.avatar || null,
       } : null,
     });
   } catch (error) {
@@ -92,6 +93,14 @@ export async function POST(request: Request) {
     if (targetStudentId) {
       try {
         const db = getDb();
+        // Auto-migration for avatar column in students table if missing
+        try {
+          const d1 = (globalThis as any)?.__D1_DATABASE || (process.env as any)?.__D1_DATABASE;
+          if (d1?.prepare) {
+            await d1.prepare("ALTER TABLE students ADD COLUMN avatar TEXT;").run();
+          }
+        } catch {}
+
         const existing = await db.select().from(students).where(eq(students.id, targetStudentId)).get();
         if (existing) {
           const updateFields: any = {};
@@ -101,6 +110,9 @@ export async function POST(request: Request) {
             if (String(grade).includes('/')) {
               updateFields.gradeLevel = String(grade).split('/')[0].trim();
             }
+          }
+          if (avatar !== undefined) {
+            updateFields.avatar = String(avatar).trim();
           }
           if (hashedPassword) {
             updateFields.password = hashedPassword;
