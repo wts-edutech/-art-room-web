@@ -43,16 +43,27 @@ export default function HomeWelcomePopup({ forceOpen }: HomeWelcomePopupProps) {
   useEffect(() => {
     checkUserData();
 
-    // Check if user dismissed it for today
+    // ตรวจสอบสถานะว่าเคยแสดงในเซสชันนี้ หรือผู้ใช้เคยปิดไปแล้วหรือยัง
+    const sessionSeen = sessionStorage.getItem("artroom_welcome_popup_seen") === "true";
+    const localSeen = localStorage.getItem("artroom_welcome_popup_seen") === "true";
     const dismissedUntil = localStorage.getItem("artroom_welcome_popup_dismissed_until");
     const isDismissed = dismissedUntil && Date.now() < Number(dismissedUntil);
 
-    // Check query params if just logged in (e.g. ?welcome=1)
+    // Check query params if just logged in (e.g. ?welcome=1 หรือ ?login=success)
     const urlParams = new URLSearchParams(window.location.search);
     const hasWelcomeParam = urlParams.get("welcome") === "1" || urlParams.get("login") === "success";
 
-    if (forceOpen || hasWelcomeParam || !isDismissed) {
-      // Clean smooth popup appearance
+    // หากมี query param ให้ล้างออกจาก URL ให้สะอาดเพื่อไม่ให้รีเฟรชแล้วเด้งซ้ำ
+    if (hasWelcomeParam && typeof window !== "undefined") {
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, cleanUrl);
+    }
+
+    // เด้งเฉพาะเมื่อกดเข้ามาแค่ 1 ครั้งเท่านั้น
+    const shouldShow = forceOpen || (hasWelcomeParam && !sessionSeen) || (!sessionSeen && !localSeen && !isDismissed);
+
+    if (shouldShow) {
+      sessionStorage.setItem("artroom_welcome_popup_seen", "true");
       const timer = setTimeout(() => {
         setIsOpen(true);
       }, 400);
@@ -72,10 +83,16 @@ export default function HomeWelcomePopup({ forceOpen }: HomeWelcomePopupProps) {
   }, [forceOpen]);
 
   const handleClose = () => {
-    if (dontShowToday) {
-      // 24 hours expiry in ms
-      const expiry = Date.now() + 24 * 60 * 60 * 1000;
+    try {
+      // บันทึกทั้ง session และ local storage เพื่อให้เด้งแค่ 1 ครั้งเท่านั้นเมื่อกดเข้ามา ไม่รบกวนซ้ำ
+      sessionStorage.setItem("artroom_welcome_popup_seen", "true");
+      localStorage.setItem("artroom_welcome_popup_seen", "true");
+      // หมดอายุ 24 ชั่วโมง (หรือ 7 วันหากเลือกไม่ต้องแสดงอีก)
+      const duration = dontShowToday ? 7 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+      const expiry = Date.now() + duration;
       localStorage.setItem("artroom_welcome_popup_dismissed_until", String(expiry));
+    } catch (e) {
+      console.warn("Could not save popup dismissal:", e);
     }
     setIsOpen(false);
   };

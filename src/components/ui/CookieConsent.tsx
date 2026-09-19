@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Cookie, Settings2, X, ShieldCheck, Check, ChevronUp, ChevronDown } from "lucide-react";
 import Link from "next/link";
@@ -20,6 +21,7 @@ const defaultPreferences: CookiePreferences = {
 };
 
 export default function CookieConsent() {
+  const pathname = usePathname();
   const [showBanner, setShowBanner] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [preferences, setPreferences] = useState<CookiePreferences>(defaultPreferences);
@@ -38,28 +40,43 @@ export default function CookieConsent() {
 
   useEffect(() => {
     // 1. Restore saved preferences if any
+    let hasSavedConsent = false;
     try {
       const fromCookie = getConsentCookie();
       if (fromCookie) {
         setPreferences(fromCookie);
+        hasSavedConsent = true;
       } else {
         const saved = localStorage.getItem("artroom_cookie_consent");
-        if (saved) setPreferences(JSON.parse(saved));
+        if (saved) {
+          setPreferences(JSON.parse(saved));
+          hasSavedConsent = true;
+        }
       }
     } catch (e) {
       console.warn("Could not read cookie preferences:", e);
     }
 
-    // 2. Automatically pop up from bottom without needing to click!
-    const timer = setTimeout(() => {
-      setShowBanner(true);
-    }, 450);
-    return () => clearTimeout(timer);
-  }, []);
+    // 2. เด้งเฉพาะหน้าแรก (pathname === "/") เพียง 1 ครั้งในการเข้าสู่ระบบ/เข้าชม ไม่ถามซ้ำ
+    const isHandled =
+      hasSavedConsent ||
+      localStorage.getItem("artroom_cookie_consent_handled") === "true" ||
+      sessionStorage.getItem("artroom_cookie_consent_shown") === "true";
+
+    if (pathname === "/" && !isHandled) {
+      sessionStorage.setItem("artroom_cookie_consent_shown", "true");
+      const timer = setTimeout(() => {
+        setShowBanner(true);
+      }, 1200);
+      return () => clearTimeout(timer);
+    }
+  }, [pathname]);
 
   const savePreferences = (prefs: CookiePreferences) => {
     try {
       localStorage.setItem("artroom_cookie_consent", JSON.stringify(prefs));
+      localStorage.setItem("artroom_cookie_consent_handled", "true");
+      sessionStorage.setItem("artroom_cookie_consent_shown", "true");
       document.cookie = `artroom_cookie_consent=${encodeURIComponent(JSON.stringify(prefs))}; path=/; max-age=31536000; SameSite=Lax`;
     } catch (e) {
       console.warn("Could not write cookie preferences:", e);
@@ -81,6 +98,11 @@ export default function CookieConsent() {
   };
 
   const handleSaveExpandedSettings = () => {
+    savePreferences(preferences);
+  };
+
+  const handleDismiss = () => {
+    // ปิดและบันทึกค่าความยินยอมขั้นพื้นฐาน จดจำไว้ไม่ให้เด้งถามซ้ำ
     savePreferences(preferences);
   };
 
@@ -160,7 +182,7 @@ export default function CookieConsent() {
 
                 <button
                   type="button"
-                  onClick={() => setShowBanner(false)}
+                  onClick={handleDismiss}
                   className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer ml-1"
                   title="ปิดแถบแจ้งเตือน"
                 >
