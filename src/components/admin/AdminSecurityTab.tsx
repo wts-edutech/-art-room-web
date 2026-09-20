@@ -24,13 +24,12 @@ import {
   Trash2,
   Users,
   RefreshCw,
-  Radio,
   Search,
-  Activity,
   Shield,
-  AlertOctagon
+  Fingerprint
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import MasterPinConfirmModal from "@/components/modals/MasterPinConfirmModal";
 
 interface SessionItem {
   id: string;
@@ -50,7 +49,7 @@ interface SessionItem {
 }
 
 export default function AdminSecurityTab() {
-  // Form state
+  // Password Form state
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -71,21 +70,43 @@ export default function AdminSecurityTab() {
   const [loadingPassword, setLoadingPassword] = useState(true);
   const [copied, setCopied] = useState(false);
 
+  // Master PIN state
+  const [masterPin, setMasterPin] = useState<string | null>(null);
+  const [showMasterPin, setShowMasterPin] = useState(false);
+  const [loadingMasterPin, setLoadingMasterPin] = useState(true);
+  const [copiedPin, setCopiedPin] = useState(false);
+
+  // Change Master PIN Form state
+  const [currentPinInput, setCurrentPinInput] = useState("");
+  const [newPinInput, setNewPinInput] = useState("");
+  const [confirmPinInput, setConfirmPinInput] = useState("");
+  const [isPinSaving, setIsPinSaving] = useState(false);
+  const [pinSuccess, setPinSuccess] = useState<string | null>(null);
+  const [pinError, setPinError] = useState<string | null>(null);
+
   // Active Sessions state
   const [adminSessions, setAdminSessions] = useState<SessionItem[]>([]);
   const [studentSessions, setStudentSessions] = useState<SessionItem[]>([]);
   const [loadingSessions, setLoadingSessions] = useState(true);
-  const [kickingId, setKickingId] = useState<string | null>(null);
-  const [kickingAllOthers, setKickingAllOthers] = useState(false);
   const [studentSearch, setStudentSearch] = useState("");
   const [sessionActionMsg, setSessionActionMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Fetch current password and sessions on mount
+  // Master PIN Confirmation Modal state
+  const [isPinModalOpen, setIsPinModalOpen] = useState(false);
+  const [pendingKickAction, setPendingKickAction] = useState<{
+    type: 'single' | 'all';
+    sessionId?: string;
+    userName?: string;
+  } | null>(null);
+  const [isModalProcessing, setIsModalProcessing] = useState(false);
+  const [modalErrorMessage, setModalErrorMessage] = useState<string | null>(null);
+
+  // Fetch initial data and setup auto-refresh
   useEffect(() => {
     fetchCurrentPassword();
+    fetchMasterPin();
     fetchSessions();
 
-    // Auto-refresh sessions periodically & when switching back to this tab
     const interval = setInterval(() => {
       fetchSessions();
     }, 10000);
@@ -110,9 +131,23 @@ export default function AdminSecurityTab() {
         setSavedPassword(data.password || null);
       }
     } catch {
-      // Silently fail — will show default hint
     } finally {
       setLoadingPassword(false);
+    }
+  };
+
+  const fetchMasterPin = async () => {
+    setLoadingMasterPin(true);
+    try {
+      const res = await fetch("/api/admin/master-pin");
+      if (res.ok) {
+        const data = await res.json();
+        setMasterPin(data.masterPin || "K1234");
+      }
+    } catch {
+      setMasterPin("K1234");
+    } finally {
+      setLoadingMasterPin(false);
     }
   };
 
@@ -141,63 +176,124 @@ export default function AdminSecurityTab() {
     } catch {}
   };
 
-  // Kick a single session
-  const handleKickSession = async (sessionId: string, userName?: string) => {
-    if (!confirm(`คุณแน่ใจหรือไม่ว่าต้องการเตะอุปกรณ์นี้ (${userName || 'เซสชัน'}) ออกจากระบบ?`)) {
-      return;
-    }
-
-    setKickingId(sessionId);
-    setSessionActionMsg(null);
+  const handleCopyPin = async () => {
+    if (!masterPin) return;
     try {
+      await navigator.clipboard.writeText(masterPin);
+      setCopiedPin(true);
+      setTimeout(() => setCopiedPin(false), 2000);
+    } catch {}
+  };
+
+  // Open modal to kick single device
+  const requestKickSingle = (sessionId: string, userName?: string) => {
+    setPendingKickAction({ type: 'single', sessionId, userName });
+    setModalErrorMessage(null);
+    setIsPinModalOpen(true);
+  };
+
+  // Open modal to kick all other devices
+  const requestKickAllOthers = () => {
+    setPendingKickAction({ type: 'all' });
+    setModalErrorMessage(null);
+    setIsPinModalOpen(true);
+  };
+
+  // Confirm kick with Master PIN
+  const handleConfirmKickWithPin = async (enteredPin: string) => {
+    if (!pendingKickAction) return;
+
+    setIsModalProcessing(true);
+    setModalErrorMessage(null);
+    setSessionActionMsg(null);
+
+    try {
+      const payload: any = { masterPin: enteredPin };
+      if (pendingKickAction.type === 'all') {
+        payload.allOthers = true;
+      } else {
+        payload.sessionId = pendingKickAction.sessionId;
+      }
+
       const res = await fetch("/api/admin/sessions", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId }),
+        body: JSON.stringify(payload),
       });
+
       const data = await res.json();
-      if (res.ok) {
-        setSessionActionMsg({ type: 'success', text: 'เตะอุปกรณ์ออกจากระบบเรียบร้อยแล้ว' });
-        await fetchSessions();
+
+      if (!res.ok) {
+        setModalErrorMessage(data.error || "รหัส Master PIN ไม่ถูกต้อง");
       } else {
-        setSessionActionMsg({ type: 'error', text: data.error || 'ไม่สามารถเตะอุปกรณ์ได้' });
+        setIsPinModalOpen(false);
+        setPendingKickAction(null);
+        setSessionActionMsg({
+          type: 'success',
+          text: data.message || "เตะอุปกรณ์ออกจากระบบเรียบร้อยแล้ว",
+        });
+        await fetchSessions();
       }
     } catch (err) {
-      setSessionActionMsg({ type: 'error', text: 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์' });
+      setModalErrorMessage("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
     } finally {
-      setKickingId(null);
+      setIsModalProcessing(false);
     }
   };
 
-  // Kick all other admin sessions
-  const handleKickAllOtherAdminSessions = async () => {
-    if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการออกจากระบบอุปกรณ์แอดมินอื่นๆ ทั้งหมด ยกเว้นอุปกรณ์นี้?")) {
+  // Handle Changing Master PIN
+  const handleChangeMasterPin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPinError(null);
+    setPinSuccess(null);
+
+    if (!currentPinInput || !newPinInput || !confirmPinInput) {
+      setPinError("กรุณากรอกข้อมูลให้ครบทุกช่อง");
       return;
     }
 
-    setKickingAllOthers(true);
-    setSessionActionMsg(null);
+    if (newPinInput !== confirmPinInput) {
+      setPinError("รหัส Master PIN ใหม่และการยืนยันไม่ตรงกัน");
+      return;
+    }
+
+    if (newPinInput.length < 4) {
+      setPinError("รหัส Master PIN ต้องมีความยาวอย่างน้อย 4 ตัวอักษร");
+      return;
+    }
+
+    setIsPinSaving(true);
+
     try {
-      const res = await fetch("/api/admin/sessions", {
-        method: "DELETE",
+      const res = await fetch("/api/admin/master-pin", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ allOthers: true }),
+        body: JSON.stringify({
+          currentPin: currentPinInput,
+          newPin: newPinInput,
+        }),
       });
+
       const data = await res.json();
-      if (res.ok) {
-        setSessionActionMsg({ type: 'success', text: data.message || 'ออกจากระบบอุปกรณ์แอดมินอื่นทั้งหมดแล้ว' });
-        await fetchSessions();
+
+      if (!res.ok) {
+        setPinError(data.error || "เกิดข้อผิดพลาดในการเปลี่ยน Master PIN");
       } else {
-        setSessionActionMsg({ type: 'error', text: data.error || 'เกิดข้อผิดพลาด' });
+        setPinSuccess("เปลี่ยนรหัส Master PIN สำเร็จแล้ว");
+        setCurrentPinInput("");
+        setNewPinInput("");
+        setConfirmPinInput("");
+        setMasterPin(newPinInput);
+        fetchMasterPin();
       }
-    } catch (err) {
-      setSessionActionMsg({ type: 'error', text: 'เกิดข้อผิดพลาดในการเชื่อมต่อ' });
+    } catch {
+      setPinError("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้");
     } finally {
-      setKickingAllOthers(false);
+      setIsPinSaving(false);
     }
   };
 
-  // Helper format relative time
+  // Format relative time helper
   const formatTimeAgo = (dateStr: string | null) => {
     if (!dateStr) return "ไม่ระบุเวลา";
     try {
@@ -293,7 +389,6 @@ export default function AdminSecurityTab() {
         setCurrentPassword("");
         setNewPassword("");
         setConfirmPassword("");
-        // Refresh the displayed password
         setSavedPassword(null);
         fetchCurrentPassword();
       }
@@ -307,6 +402,21 @@ export default function AdminSecurityTab() {
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto pb-12">
+      {/* Master PIN Confirmation Modal */}
+      <MasterPinConfirmModal
+        isOpen={isPinModalOpen}
+        onClose={() => {
+          setIsPinModalOpen(false);
+          setPendingKickAction(null);
+          setModalErrorMessage(null);
+        }}
+        onConfirm={handleConfirmKickWithPin}
+        isLoading={isModalProcessing}
+        errorMessage={modalErrorMessage}
+        title={pendingKickAction?.type === 'all' ? "ยืนยันเตะอุปกรณ์อื่นทั้งหมด" : `ยืนยันเตะอุปกรณ์: ${pendingKickAction?.userName || 'เซสชัน'}`}
+        description="กรุณากรอกรหัส Master Security PIN (เช่น K1234) เพื่อยืนยันสิทธิ์แอดมินหลักก่อนทำรายการเตะอุปกรณ์"
+      />
+
       {/* Header Card */}
       <div className="bg-white rounded-3xl p-6 border border-gray-200/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
@@ -315,20 +425,161 @@ export default function AdminSecurityTab() {
           </div>
           <div>
             <h2 className="text-xl font-bold font-kanit text-gray-950 flex items-center gap-2">
-              <span>ศูนย์ความปลอดภัย & จัดการอุปกรณ์</span>
+              <span>ศูนย์ความปลอดภัย & จัดการอุปกรณ์แอดมิน</span>
               <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-                Security Center
+                Master Security Center
               </span>
             </h2>
             <p className="text-xs text-gray-500 mt-1">
-              ตรวจสอบอุปกรณ์ที่ล็อกอินอยู่ ตรวจจับผู้บุกรุก/การแฮ็ก สั่งเตะเซสชันแปลกปลอม และเปลี่ยนรหัสผ่านผู้ดูแลระบบ
+              ป้องกันการแฮ็ก สั่งเตะอุปกรณ์แปลกปลอมแบบ LINE พร้อมรหัสยืนยันแอดมินหลัก (Master PIN: K1234)
             </p>
           </div>
         </div>
       </div>
 
       {/* ============================================================ */}
-      {/* ===== SECTION 1: ACTIVE ADMIN SESSIONS / DEVICES ===== */}
+      {/* ===== SECTION 1: MASTER ADMIN PIN MANAGEMENT CARD ===== */}
+      {/* ============================================================ */}
+      <div className="bg-gradient-to-br from-amber-50/80 via-orange-50/40 to-white rounded-3xl p-6 sm:p-8 border border-amber-200 shadow-xs space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-amber-200/70">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center font-bold shadow-md shadow-amber-500/20 shrink-0">
+              <Fingerprint className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold text-gray-950 font-kanit">
+                  รหัสยืนยันแอดมินหลัก (Master Security PIN)
+                </h3>
+                <span className="px-2 py-0.5 rounded-full bg-amber-200 text-amber-950 text-[10px] font-extrabold">
+                  สิทธิ์สูงสุด (Super Admin)
+                </span>
+              </div>
+              <p className="text-xs text-amber-900/80">
+                รหัสนี้ใช้ยืนยันก่อนสั่งเตะอุปกรณ์ทุกครั้ง เพื่อป้องกันไม่ให้ผู้อื่นที่รู้แค่รหัสผ่านเข้าเว็บมาเตะแอดมินหลักได้
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Current Master PIN Display */}
+        <div className="bg-white/90 backdrop-blur-xs rounded-2xl border border-amber-200/90 p-4 sm:p-5 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+              <Lock className="w-3.5 h-3.5 text-amber-500" />
+              <span>รหัส Master PIN ปัจจุบันของคุณ:</span>
+            </span>
+            <span className="text-[10px] text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md font-semibold">
+              ค่าเริ่มต้นระบบ: K1234
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 bg-amber-50/50 rounded-xl border border-amber-200 px-4 py-3">
+            {loadingMasterPin ? (
+              <div className="flex items-center gap-2 text-xs text-gray-400">
+                <div className="w-3.5 h-3.5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+                กำลังโหลด PIN...
+              </div>
+            ) : (
+              <>
+                <span className="flex-1 font-mono text-base font-extrabold text-amber-950 tracking-widest select-all">
+                  {showMasterPin ? masterPin || "K1234" : "••••••••"}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowMasterPin(!showMasterPin)}
+                  className="p-1.5 rounded-lg text-amber-700 hover:text-amber-900 hover:bg-amber-100 transition-colors cursor-pointer"
+                  title={showMasterPin ? "ซ่อน PIN" : "แสดง PIN"}
+                >
+                  {showMasterPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCopyPin}
+                  className="p-1.5 rounded-lg text-amber-700 hover:text-amber-900 hover:bg-amber-100 transition-colors cursor-pointer"
+                  title="คัดลอก PIN"
+                >
+                  {copiedPin ? <Check className="w-4 h-4 text-emerald-600 stroke-[3]" /> : <Copy className="w-4 h-4" />}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Change Master PIN Form Toggle / Form */}
+        <div className="pt-1">
+          <details className="group">
+            <summary className="text-xs font-bold text-amber-900 hover:text-amber-950 cursor-pointer flex items-center justify-between select-none py-1">
+              <span>ต้องการเปลี่ยนรหัส Master PIN ใหม่? (คลิกเพื่อแก้ไข)</span>
+              <span className="text-[11px] text-amber-700 group-open:rotate-180 transition-transform">▼</span>
+            </summary>
+
+            <form onSubmit={handleChangeMasterPin} className="mt-4 bg-white rounded-2xl border border-amber-200/80 p-5 space-y-4">
+              {pinSuccess && (
+                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>{pinSuccess}</span>
+                </div>
+              )}
+              {pinError && (
+                <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-900 text-xs flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+                  <span>{pinError}</span>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-gray-700">Master PIN ปัจจุบัน</label>
+                  <input
+                    type="password"
+                    required
+                    value={currentPinInput}
+                    onChange={(e) => setCurrentPinInput(e.target.value)}
+                    placeholder="รหัสเดิม เช่น K1234"
+                    className="w-full h-10 px-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-amber-500 text-xs font-mono font-bold outline-none"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-gray-700">Master PIN ใหม่</label>
+                  <input
+                    type="text"
+                    required
+                    value={newPinInput}
+                    onChange={(e) => setNewPinInput(e.target.value)}
+                    placeholder="กำหนดรหัสใหม่ (4-20 ตัว)"
+                    className="w-full h-10 px-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-amber-500 text-xs font-mono font-bold outline-none"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-gray-700">ยืนยัน PIN ใหม่</label>
+                  <input
+                    type="text"
+                    required
+                    value={confirmPinInput}
+                    onChange={(e) => setConfirmPinInput(e.target.value)}
+                    placeholder="พิมพ์รหัสใหม่อีกครั้ง"
+                    className="w-full h-10 px-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-amber-500 text-xs font-mono font-bold outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-1">
+                <Button
+                  type="submit"
+                  disabled={isPinSaving || !currentPinInput || !newPinInput || !confirmPinInput}
+                  className="h-9 px-4 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white cursor-pointer transition-all"
+                >
+                  {isPinSaving ? "กำลังบันทึก..." : "บันทึก Master PIN ใหม่"}
+                </Button>
+              </div>
+            </form>
+          </details>
+        </div>
+      </div>
+
+      {/* ============================================================ */}
+      {/* ===== SECTION 2: ACTIVE ADMIN SESSIONS / DEVICES ===== */}
       {/* ============================================================ */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200/80 shadow-xs space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-100">
@@ -346,7 +597,7 @@ export default function AdminSecurityTab() {
                 </span>
               </div>
               <p className="text-xs text-gray-500">
-                หากพบอุปกรณ์แปลกปลอมที่คุณไม่ได้ใช้งาน ให้กด <strong>"เตะออกจากระบบ"</strong> ทันที
+                สั่งเตะอุปกรณ์แปลกปลอมได้ทันที โดยระบบจะถาม <strong>Master PIN (K1234)</strong> เพื่อยืนยันสิทธิ์แอดมินหลัก
               </p>
             </div>
           </div>
@@ -369,12 +620,11 @@ export default function AdminSecurityTab() {
                 type="button"
                 variant="destructive"
                 size="sm"
-                onClick={handleKickAllOtherAdminSessions}
-                disabled={kickingAllOthers}
+                onClick={requestKickAllOthers}
                 className="rounded-xl text-xs h-9 px-3 bg-red-600 hover:bg-red-700 text-white shadow-xs cursor-pointer"
               >
                 <LogOut className="w-3.5 h-3.5 mr-1.5" />
-                {kickingAllOthers ? "กำลังเตะ..." : "เตะอุปกรณ์อื่นทั้งหมด"}
+                เตะอุปกรณ์อื่นทั้งหมด
               </Button>
             )}
           </div>
@@ -404,7 +654,7 @@ export default function AdminSecurityTab() {
           </div>
         ) : adminSessions.length === 0 ? (
           <div className="py-8 text-center text-gray-400 text-xs bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-            ไม่พบประวัติเซสชันแอดมินที่บันทึกไว้ในระบบ (เข้าใช้งานผ่านเซสชันชั่วคราว)
+            ไม่พบประวัติเซสชันแอดมินที่บันทึกไว้ในระบบ
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3">
@@ -466,12 +716,11 @@ export default function AdminSecurityTab() {
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => handleKickSession(session.id, `${session.os} (${session.ipAddress})`)}
-                      disabled={kickingId === session.id}
+                      onClick={() => requestKickSingle(session.id, `${session.os} (${session.ipAddress})`)}
                       className="rounded-xl text-xs h-9 px-3 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-                      {kickingId === session.id ? "กำลังเตะ..." : "เตะออกจากระบบ"}
+                      เตะออกจากระบบ
                     </Button>
                   )}
                 </div>
@@ -482,7 +731,7 @@ export default function AdminSecurityTab() {
       </div>
 
       {/* ============================================================ */}
-      {/* ===== SECTION 2: STUDENT ACTIVE LOGINS MONITOR ===== */}
+      {/* ===== SECTION 3: STUDENT ACTIVE LOGINS MONITOR ===== */}
       {/* ============================================================ */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200/80 shadow-xs space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-100">
@@ -500,7 +749,7 @@ export default function AdminSecurityTab() {
                 </span>
               </div>
               <p className="text-xs text-gray-500">
-                สอดส่องและตรวจจับกรณีนักเรียนถูกแอบล็อกอินซ้อน หรือมีการใช้งานผิดปกติจาก IP แปลกปลอม
+                สอดส่องและตรวจจับกรณีนักเรียนถูกแอบล็อกอินซ้อน หรือมีการใช้งานผิดปกติ
               </p>
             </div>
           </div>
@@ -559,13 +808,12 @@ export default function AdminSecurityTab() {
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={() => handleKickSession(session.id, `${session.userName} (${session.userId})`)}
-                  disabled={kickingId === session.id}
+                  onClick={() => requestKickSingle(session.id, `${session.userName} (${session.userId})`)}
                   className="h-8 px-2 text-[11px] text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg shrink-0 cursor-pointer"
                   title="เตะนักเรียนออกจากระบบ"
                 >
                   <LogOut className="w-3.5 h-3.5 mr-1" />
-                  {kickingId === session.id ? "..." : "เตะออก"}
+                  เตะออก
                 </Button>
               </div>
             ))}
@@ -574,7 +822,7 @@ export default function AdminSecurityTab() {
       </div>
 
       {/* ============================================================ */}
-      {/* ===== SECTION 3: CURRENT ADMIN PASSWORD DISPLAY ===== */}
+      {/* ===== SECTION 4: CURRENT ADMIN PASSWORD DISPLAY ===== */}
       {/* ============================================================ */}
       <div className="bg-white rounded-3xl p-5 sm:p-6 border border-gray-200/80 shadow-xs">
         <div className="flex items-center gap-2.5 mb-3">
@@ -582,7 +830,7 @@ export default function AdminSecurityTab() {
             <Lock className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-gray-900">รหัสผ่านปัจจุบันของระบบ</h3>
+            <h3 className="text-sm font-bold text-gray-900">รหัสผ่านปัจจุบันของระบบ (Admin Password)</h3>
             <p className="text-[11px] text-gray-400">คลิกไอคอนตาเพื่อดูรหัสผ่าน หรือคัดลอก</p>
           </div>
         </div>
@@ -596,7 +844,7 @@ export default function AdminSecurityTab() {
           ) : (
             <>
               <span className="flex-1 font-mono text-base font-bold text-gray-800 tracking-wider select-all">
-                {showSavedPassword ? savedPassword || "admin1234" : "••••••••••"}
+                {showSavedPassword ? savedPassword || "admin@wt" : "••••••••••"}
               </span>
               <button
                 type="button"
@@ -620,7 +868,7 @@ export default function AdminSecurityTab() {
       </div>
 
       {/* ============================================================ */}
-      {/* ===== SECTION 4: CHANGE ADMIN PASSWORD FORM ===== */}
+      {/* ===== SECTION 5: CHANGE ADMIN PASSWORD FORM ===== */}
       {/* ============================================================ */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200/80 shadow-xs space-y-6">
         <div className="flex items-center gap-3 pb-3 border-b border-gray-100">
@@ -782,9 +1030,8 @@ export default function AdminSecurityTab() {
               <span>ข้อควรทราบด้านความปลอดภัย</span>
             </div>
             <ul className="text-[11px] text-amber-900/90 space-y-1 list-disc list-inside leading-relaxed">
-              <li>รหัสผ่านผู้ดูแลระบบมีอำนาจสูงสุดในการจัดการเว็บไซต์ ห้องเรียน คะแนนสอบ และข้อมูลนักเรียนทั้งหมด</li>
-              <li>ตั้งรหัสผ่านที่มีทั้งตัวอักษรพิมพ์เล็ก พิมพ์ใหญ่ หรือตัวเลข ความยาวรวมอย่างน้อย 6 ตัวอักษร</li>
-              <li>เมื่อเปลี่ยนสำเร็จ ระบบจะบันทึกข้อมูลอย่างปลอดภัย (เข้ารหัส SHA-256) ลงในฐานข้อมูล Cloudflare D1</li>
+              <li>รหัสผ่านผู้ดูแลระบบมีอำนาจในการจัดการเว็บไซต์ ห้องเรียน คะแนนสอบ และข้อมูลนักเรียนทั้งหมด</li>
+              <li>การสั่งเตะอุปกรณ์ออกจากระบบ หรือการเปลี่ยนการตั้งค่าความปลอดภัยระดับสูง ต้องใช้รหัสยืนยันแอดมินหลัก (Master PIN: K1234) ทุกครั้ง</li>
             </ul>
           </div>
 

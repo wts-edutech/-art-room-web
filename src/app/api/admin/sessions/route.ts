@@ -57,15 +57,34 @@ export async function GET(request: Request) {
   }
 }
 
+import { verifyMasterPin } from '@/lib/admin-auth';
+
 /**
  * DELETE /api/admin/sessions
  * Revoke a specific session or kick all other sessions.
- * Body: { sessionId?: string, allOthers?: boolean }
+ * Strictly requires Master Admin PIN (e.g. K1234) to authorize kicking.
+ * Body: { sessionId?: string, allOthers?: boolean, masterPin: string }
  */
 export async function DELETE(request: Request) {
   try {
     const adminSession = await requireAdmin();
     const body = await request.json().catch(() => ({}));
+
+    const masterPin = String(body.masterPin || '').trim();
+    if (!masterPin) {
+      return NextResponse.json(
+        { error: 'กรุณากรอกรหัสยืนยันแอดมินหลัก (Master PIN เช่น K1234) ก่อนทำรายการ' },
+        { status: 403 }
+      );
+    }
+
+    const isPinValid = await verifyMasterPin(masterPin);
+    if (!isPinValid) {
+      return NextResponse.json(
+        { error: 'รหัส Master PIN ไม่ถูกต้อง ไม่อนุญาตให้เตะอุปกรณ์' },
+        { status: 403 }
+      );
+    }
 
     if (body.allOthers) {
       // Kick all other admin sessions
