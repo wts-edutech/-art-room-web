@@ -5,48 +5,47 @@ import { getDb } from '@/db';
 import { students } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { cookies } from 'next/headers';
-import { verifySessionToken, verifyAdminToken } from '@/lib/auth-utils';
+import { getSession, getAdminSession } from '@/lib/api-auth';
 
 export async function GET(request: Request) {
   try {
-    const cookieStore = await cookies();
-    const sessionToken = cookieStore.get('session_token')?.value;
-    const adminToken = cookieStore.get('admin_token')?.value;
-
-    let isAdmin = false;
-    if (adminToken) {
-      isAdmin = await verifyAdminToken(adminToken);
-    }
-
-    let session = null;
-    if (sessionToken) {
-      session = await verifySessionToken(sessionToken);
-    }
+    const adminSession = await getAdminSession();
+    const studentSession = await getSession();
 
     let studentData: any = null;
-    if (session && session.role === 'student' && session.userId) {
+    if (studentSession && studentSession.role === 'student' && studentSession.userId) {
       try {
         const db = getDb();
-        studentData = await db.select().from(students).where(eq(students.id, session.userId)).get();
+        studentData = await db.select().from(students).where(eq(students.id, studentSession.userId)).get();
       } catch (e) {
         console.warn('Error fetching student record:', e);
       }
     }
 
-    return NextResponse.json({
-      authenticated: !!session,
-      isAdmin,
-      user: session ? {
-        id: session.userId,
-        userId: session.userId,
-        name: studentData?.name || session.name,
-        role: session.role,
+    const response = NextResponse.json({
+      authenticated: !!studentSession,
+      isAdmin: adminSession.isAdmin,
+      user: studentSession ? {
+        id: studentSession.userId,
+        userId: studentSession.userId,
+        name: studentData?.name || studentSession.name,
+        role: studentSession.role,
         classroom: studentData?.classroom || '',
         gradeLevel: studentData?.gradeLevel || '',
         studentNumber: studentData?.studentNumber || null,
         avatar: studentData?.avatar || null,
       } : null,
     });
+
+    // If session was revoked or invalid, ensure client drops cookies
+    if (!adminSession.isAdmin) {
+      response.cookies.set('admin_token', '', { path: '/', maxAge: 0, expires: new Date(0) });
+    }
+    if (!studentSession) {
+      response.cookies.set('session_token', '', { path: '/', maxAge: 0, expires: new Date(0) });
+    }
+
+    return response;
   } catch (error) {
     console.error("GET /api/auth/profile error:", error);
     return NextResponse.json({ authenticated: false, isAdmin: false, user: null }, { status: 500 });

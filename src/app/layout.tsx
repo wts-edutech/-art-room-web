@@ -3,6 +3,7 @@ import { Prompt, Kanit } from "next/font/google";
 import "./globals.css";
 import CookieConsent from "@/components/ui/CookieConsent";
 import SessionProvider from "@/components/providers/SessionProvider";
+import SecuritySessionWatcher from "@/components/providers/SecuritySessionWatcher";
 import LiveClock from "@/components/ui/LiveClock";
 import FloatingSocialSidebar from "@/components/ui/FloatingSocialSidebar";
 import VisitorTracker from "@/components/VisitorTracker";
@@ -50,6 +51,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col overflow-x-hidden has-bottom-nav">
         <SessionProvider>
+          <SecuritySessionWatcher />
           <VisitorTracker />
           <LiveClock />
           {children}
