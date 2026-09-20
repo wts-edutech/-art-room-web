@@ -91,7 +91,7 @@ export default function AdminSecurityTab() {
   const [studentSearch, setStudentSearch] = useState("");
   const [sessionActionMsg, setSessionActionMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Master PIN Confirmation Modal state
+  // Master PIN Confirmation State (Both Inline and Modal)
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
   const [pendingKickAction, setPendingKickAction] = useState<{
     type: 'single' | 'all';
@@ -101,6 +101,12 @@ export default function AdminSecurityTab() {
   const [isModalProcessing, setIsModalProcessing] = useState(false);
   const [modalErrorMessage, setModalErrorMessage] = useState<string | null>(null);
   const [kickingSessionId, setKickingSessionId] = useState<string | null>(null);
+
+  // Direct Inline PIN verification state
+  const [confirmingSessionId, setConfirmingSessionId] = useState<string | null>(null);
+  const [isKickAllConfirming, setIsKickAllConfirming] = useState(false);
+  const [inlinePinInput, setInlinePinInput] = useState("K1234");
+  const [inlinePinError, setInlinePinError] = useState<string | null>(null);
 
   // Fetch initial data and setup auto-refresh
   useEffect(() => {
@@ -196,21 +202,77 @@ export default function AdminSecurityTab() {
     } catch {}
   };
 
-  // Open modal to kick single device
+  // Trigger inline kick confirmation on a single device
   const requestKickSingle = (sessionId: string, userName?: string) => {
-    setPendingKickAction({ type: 'single', sessionId, userName });
-    setModalErrorMessage(null);
-    setIsPinModalOpen(true);
+    setConfirmingSessionId(sessionId);
+    setIsKickAllConfirming(false);
+    setInlinePinInput(masterPin || "K1234");
+    setInlinePinError(null);
   };
 
-  // Open modal to kick all other devices
+  // Trigger inline kick all other devices confirmation
   const requestKickAllOthers = () => {
-    setPendingKickAction({ type: 'all' });
-    setModalErrorMessage(null);
-    setIsPinModalOpen(true);
+    setIsKickAllConfirming(true);
+    setConfirmingSessionId(null);
+    setInlinePinInput(masterPin || "K1234");
+    setInlinePinError(null);
   };
 
-  // Confirm kick with Master PIN
+  // Direct Inline Kick Executor
+  const handleDirectKick = async (targetSessionId?: string, isAll: boolean = false) => {
+    const pin = inlinePinInput.trim();
+    if (!pin) {
+      setInlinePinError("กรุณากรอกรหัส Master PIN");
+      return;
+    }
+
+    setIsModalProcessing(true);
+    setInlinePinError(null);
+    setSessionActionMsg(null);
+    if (targetSessionId) {
+      setKickingSessionId(targetSessionId);
+    }
+
+    try {
+      const payload: any = { masterPin: pin };
+      if (isAll) {
+        payload.allOthers = true;
+      } else {
+        payload.sessionId = targetSessionId;
+      }
+
+      const res = await fetch("/api/admin/sessions", {
+        method: "DELETE",
+        cache: "no-store",
+        headers: { 
+          "Content-Type": "application/json",
+          "Cache-Control": "no-cache"
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setInlinePinError(data.error || "รหัส Master PIN ไม่ถูกต้อง (ค่าเริ่มต้นคือ K1234)");
+      } else {
+        setConfirmingSessionId(null);
+        setIsKickAllConfirming(false);
+        setSessionActionMsg({
+          type: 'success',
+          text: data.message || "เตะอุปกรณ์ออกจากระบบเรียบร้อยแล้ว",
+        });
+        await fetchSessions();
+      }
+    } catch (err) {
+      setInlinePinError("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์ กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      setIsModalProcessing(false);
+      setKickingSessionId(null);
+    }
+  };
+
+  // Confirm kick with Master PIN (for modal if used)
   const handleConfirmKickWithPin = async (enteredPin: string) => {
     if (!pendingKickAction) return;
 
@@ -649,6 +711,60 @@ export default function AdminSecurityTab() {
           </div>
         </div>
 
+        {/* Kick All Others Inline Confirmation Bar */}
+        {isKickAllConfirming && (
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-red-50 to-amber-50 border-2 border-red-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in duration-150 shadow-xs">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-red-500 text-white flex items-center justify-center shrink-0">
+                <ShieldAlert className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-red-950">ยืนยันเตะอุปกรณ์แอดมินอื่นทั้งหมดออกจากระบบ</p>
+                <p className="text-[11px] text-red-800">
+                  กรุณากรอกรหัส Master PIN (ค่าเริ่มต้น: <strong className="font-mono bg-red-100 px-1 py-0.5 rounded">K1234</strong>)
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <input
+                type="text"
+                autoFocus
+                value={inlinePinInput}
+                onChange={(e) => setInlinePinInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleDirectKick(undefined, true);
+                  if (e.key === 'Escape') setIsKickAllConfirming(false);
+                }}
+                placeholder="รหัส เช่น K1234"
+                className="h-9 px-3 w-36 rounded-xl border-2 border-red-400 bg-white text-xs font-mono font-bold text-gray-900 outline-none focus:border-red-600 focus:ring-2 focus:ring-red-300"
+              />
+              <Button
+                type="button"
+                size="sm"
+                disabled={isModalProcessing || !inlinePinInput.trim()}
+                onClick={() => handleDirectKick(undefined, true)}
+                className="h-9 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold cursor-pointer shadow-xs"
+              >
+                {isModalProcessing ? "กำลังเตะ..." : "ยืนยันเตะทั้งหมด"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => { setIsKickAllConfirming(false); setInlinePinError(null); }}
+                className="h-9 px-3 rounded-xl border-gray-300 text-gray-700 hover:bg-gray-100 text-xs cursor-pointer"
+              >
+                ยกเลิก
+              </Button>
+            </div>
+            {inlinePinError && (
+              <div className="w-full text-xs text-red-600 font-semibold bg-white/80 p-2 rounded-lg border border-red-200">
+                ⚠️ {inlinePinError}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Action feedback message */}
         {sessionActionMsg && (
           <div className={`p-3.5 rounded-2xl text-xs flex items-center gap-2.5 ${
@@ -680,79 +796,141 @@ export default function AdminSecurityTab() {
             {adminSessions.map((session) => (
               <div
                 key={session.id}
-                className={`p-4 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+                className={`p-4 rounded-2xl border transition-all flex flex-col justify-between gap-3 ${
                   session.isCurrent
                     ? 'bg-emerald-50/50 border-emerald-200/90 shadow-xs'
                     : 'bg-slate-50/70 border-slate-200 hover:bg-slate-50'
                 }`}
               >
-                <div className="flex items-start sm:items-center gap-3.5">
-                  <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 shadow-xs ${
-                    session.isCurrent ? 'bg-emerald-100 text-emerald-700' : 'bg-white text-gray-600 border border-gray-200/80'
-                  }`}>
-                    {getDeviceIcon(session.deviceType)}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-start sm:items-center gap-3.5">
+                    <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 shadow-xs ${
+                      session.isCurrent ? 'bg-emerald-100 text-emerald-700' : 'bg-white text-gray-600 border border-gray-200/80'
+                    }`}>
+                      {getDeviceIcon(session.deviceType)}
+                    </div>
+                    <div className="space-y-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-bold text-sm text-gray-900 font-kanit">
+                          {session.os || 'อุปกรณ์ไม่ระบุ'} • {session.browser || 'เบราว์เซอร์'}
+                        </span>
+                        {session.isCurrent ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500 text-white shadow-xs">
+                            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                            อุปกรณ์นี้ (กำลังใช้งาน)
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-200 text-gray-700">
+                            อุปกรณ์อื่น
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 text-[11px] text-gray-500 flex-wrap">
+                        <span className="flex items-center gap-1 font-mono">
+                          <Globe className="w-3 h-3 text-gray-400" />
+                          {session.ipAddress || 'IP ไม่ระบุ'}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <MapPin className="w-3 h-3 text-gray-400" />
+                          {session.location || 'Localhost / ประเทศไทย'}
+                        </span>
+                        <span className="flex items-center gap-1 text-gray-400">
+                          <Clock className="w-3 h-3" />
+                          เข้าสู่ระบบ: {formatTimeAgo(session.createdAt)}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="space-y-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-bold text-sm text-gray-900 font-kanit">
-                        {session.os || 'อุปกรณ์ไม่ระบุ'} • {session.browser || 'เบราว์เซอร์'}
+
+                  <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                    {session.isCurrent ? (
+                      <span className="text-[11px] font-medium text-emerald-700 px-3 py-1.5 rounded-xl bg-emerald-100/80 border border-emerald-200">
+                        เซสชันปัจจุบัน
                       </span>
-                      {session.isCurrent ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500 text-white shadow-xs">
-                          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                          อุปกรณ์นี้ (กำลังใช้งาน)
-                        </span>
-                      ) : (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-200 text-gray-700">
-                          อุปกรณ์อื่น
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-3 text-[11px] text-gray-500 flex-wrap">
-                      <span className="flex items-center gap-1 font-mono">
-                        <Globe className="w-3 h-3 text-gray-400" />
-                        {session.ipAddress || 'IP ไม่ระบุ'}
+                    ) : confirmingSessionId === session.id ? (
+                      <span className="text-xs font-bold text-amber-700 bg-amber-100 px-3 py-1 rounded-xl animate-pulse">
+                        กำลังรอยืนยัน PIN ด้านล่าง ▼
                       </span>
-                      <span className="flex items-center gap-1">
-                        <MapPin className="w-3 h-3 text-gray-400" />
-                        {session.location || 'Localhost / ประเทศไทย'}
-                      </span>
-                      <span className="flex items-center gap-1 text-gray-400">
-                        <Clock className="w-3 h-3" />
-                        เข้าสู่ระบบ: {formatTimeAgo(session.createdAt)}
-                      </span>
-                    </div>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={isModalProcessing || kickingSessionId === session.id}
+                        onClick={() => requestKickSingle(session.id, `${session.os || 'อุปกรณ์'} (${session.ipAddress || 'IP'})`)}
+                        className="rounded-xl text-xs h-9 px-3 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 cursor-pointer disabled:opacity-50 font-bold"
+                      >
+                        {kickingSessionId === session.id ? (
+                          <>
+                            <div className="w-3.5 h-3.5 mr-1.5 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+                            กำลังเตะออก...
+                          </>
+                        ) : (
+                          <>
+                            <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                            เตะออกจากระบบ
+                          </>
+                        )}
+                      </Button>
+                    )}
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
-                  {session.isCurrent ? (
-                    <span className="text-[11px] font-medium text-emerald-700 px-3 py-1.5 rounded-xl bg-emerald-100/80 border border-emerald-200">
-                      เซสชันปัจจุบัน
-                    </span>
-                  ) : (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={isModalProcessing || kickingSessionId === session.id}
-                      onClick={() => requestKickSingle(session.id, `${session.os || 'อุปกรณ์'} (${session.ipAddress || 'IP'})`)}
-                      className="rounded-xl text-xs h-9 px-3 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 cursor-pointer disabled:opacity-50"
-                    >
-                      {kickingSessionId === session.id ? (
-                        <>
-                          <div className="w-3.5 h-3.5 mr-1.5 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
-                          กำลังเตะออก...
-                        </>
-                      ) : (
-                        <>
-                          <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-                          เตะออกจากระบบ
-                        </>
-                      )}
-                    </Button>
-                  )}
-                </div>
+                {/* Inline Master PIN Confirmation Box for this device */}
+                {confirmingSessionId === session.id && (
+                  <div className="w-full pt-3 mt-2 border-t border-amber-200/80 bg-amber-50/90 -mx-4 -mb-4 p-4 rounded-b-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in duration-150">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+                        <KeyRound className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-amber-950">
+                          กรอกรหัสยืนยันแอดมินหลัก (Master PIN) เพื่อเตะอุปกรณ์นี้
+                        </p>
+                        <p className="text-[11px] text-amber-800">
+                          รหัสยืนยันเริ่มต้นคือ <strong className="font-mono bg-amber-200/80 px-1 py-0.5 rounded text-amber-950">K1234</strong>
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <input
+                        type="text"
+                        autoFocus
+                        value={inlinePinInput}
+                        onChange={(e) => setInlinePinInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleDirectKick(session.id);
+                          if (e.key === 'Escape') { setConfirmingSessionId(null); setInlinePinError(null); }
+                        }}
+                        placeholder="กรอก PIN เช่น K1234"
+                        className="h-9 px-3 w-36 rounded-xl border-2 border-amber-400 bg-white text-xs font-mono font-extrabold text-gray-900 outline-none focus:border-amber-600 focus:ring-2 focus:ring-amber-300 shadow-xs"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={isModalProcessing || !inlinePinInput.trim()}
+                        onClick={() => handleDirectKick(session.id)}
+                        className="h-9 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-xs cursor-pointer"
+                      >
+                        {isModalProcessing && kickingSessionId === session.id ? "กำลังเตะ..." : "ยืนยันเตะออก"}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => { setConfirmingSessionId(null); setInlinePinError(null); }}
+                        className="h-9 px-3 rounded-xl border-gray-300 text-gray-700 hover:bg-gray-100 text-xs cursor-pointer"
+                      >
+                        ยกเลิก
+                      </Button>
+                    </div>
+                    {inlinePinError && (
+                      <div className="w-full text-xs text-red-600 font-semibold bg-white p-2 rounded-lg border border-red-200">
+                        ⚠️ {inlinePinError}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -808,49 +986,86 @@ export default function AdminSecurityTab() {
             {filteredStudentSessions.map((session) => (
               <div
                 key={session.id}
-                className="p-3.5 rounded-2xl border border-gray-200 bg-slate-50/60 hover:bg-white hover:border-purple-200 transition-all flex items-center justify-between gap-3 shadow-2xs"
+                className="p-3.5 rounded-2xl border border-gray-200 bg-slate-50/60 hover:bg-white hover:border-purple-200 transition-all flex flex-col justify-between gap-2 shadow-2xs"
               >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-9 h-9 rounded-xl bg-white border border-gray-200 flex items-center justify-center shrink-0">
-                    {getDeviceIcon(session.deviceType)}
-                  </div>
-                  <div className="min-w-0 space-y-0.5">
-                    <div className="flex items-center gap-1.5 truncate">
-                      <span className="font-mono text-xs font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded">
-                        {session.userId}
-                      </span>
-                      <span className="text-xs font-bold text-gray-800 truncate">
-                        {session.userName || 'นักเรียน'}
-                      </span>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-xl bg-white border border-gray-200 flex items-center justify-center shrink-0">
+                      {getDeviceIcon(session.deviceType)}
                     </div>
-                    <div className="text-[10px] text-gray-500 truncate flex items-center gap-1.5">
-                      <span>{session.os}</span>
-                      <span>•</span>
-                      <span>{session.browser}</span>
-                      <span>•</span>
-                      <span className="font-mono text-gray-400">{session.ipAddress}</span>
+                    <div className="min-w-0 space-y-0.5">
+                      <div className="flex items-center gap-1.5 truncate">
+                        <span className="font-mono text-xs font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded">
+                          {session.userId}
+                        </span>
+                        <span className="text-xs font-bold text-gray-800 truncate">
+                          {session.userName || 'นักเรียน'}
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-gray-500 truncate flex items-center gap-1.5">
+                        <span>{session.os}</span>
+                        <span>•</span>
+                        <span>{session.browser}</span>
+                        <span>•</span>
+                        <span className="font-mono text-gray-400">{session.ipAddress}</span>
+                      </div>
                     </div>
                   </div>
+
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={isModalProcessing || kickingSessionId === session.id}
+                    onClick={() => requestKickSingle(session.id, `${session.userName || 'นักเรียน'} (${session.userId})`)}
+                    className="h-8 px-2 text-[11px] text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg shrink-0 cursor-pointer disabled:opacity-50"
+                    title="เตะนักเรียนออกจากระบบ"
+                  >
+                    {kickingSessionId === session.id ? (
+                      <div className="w-3.5 h-3.5 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        <LogOut className="w-3.5 h-3.5 mr-1" />
+                        เตะออก
+                      </>
+                    )}
+                  </Button>
                 </div>
 
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  disabled={isModalProcessing || kickingSessionId === session.id}
-                  onClick={() => requestKickSingle(session.id, `${session.userName || 'นักเรียน'} (${session.userId})`)}
-                  className="h-8 px-2 text-[11px] text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg shrink-0 cursor-pointer disabled:opacity-50"
-                  title="เตะนักเรียนออกจากระบบ"
-                >
-                  {kickingSessionId === session.id ? (
-                    <div className="w-3.5 h-3.5 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      <LogOut className="w-3.5 h-3.5 mr-1" />
+                {/* Inline Student Kick Confirm */}
+                {confirmingSessionId === session.id && (
+                  <div className="pt-2 border-t border-amber-200 flex items-center gap-2 flex-wrap animate-in fade-in duration-150">
+                    <input
+                      type="text"
+                      autoFocus
+                      value={inlinePinInput}
+                      onChange={(e) => setInlinePinInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleDirectKick(session.id);
+                        if (e.key === 'Escape') setConfirmingSessionId(null);
+                      }}
+                      placeholder="PIN: K1234"
+                      className="h-7 px-2 w-24 rounded border border-amber-400 text-xs font-mono font-bold outline-none"
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => handleDirectKick(session.id)}
+                      className="h-7 px-2 text-[11px] bg-red-600 hover:bg-red-700 text-white rounded font-bold"
+                    >
                       เตะออก
-                    </>
-                  )}
-                </Button>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setConfirmingSessionId(null)}
+                      className="h-7 px-1.5 text-[11px] text-gray-500"
+                    >
+                      ✕
+                    </Button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
