@@ -46,6 +46,7 @@ async function hmacSign(secret: string, data: string): Promise<string> {
 
 export interface AdminTokenPayload {
   type: 'admin';
+  sid?: string; // Session ID for device tracking and revocation
   iat: number; // issued at (ms)
   exp: number; // expiry (ms)
 }
@@ -53,9 +54,10 @@ export interface AdminTokenPayload {
 /**
  * Creates an HMAC-SHA256 signed admin token with expiry using Web Crypto API.
  */
-export async function createAdminToken(expiresInHours: number = 24): Promise<string> {
+export async function createAdminToken(expiresInHours: number = 24, sid?: string): Promise<string> {
   const payload: AdminTokenPayload = {
     type: 'admin',
+    sid,
     iat: Date.now(),
     exp: Date.now() + expiresInHours * 60 * 60 * 1000,
   };
@@ -67,23 +69,32 @@ export async function createAdminToken(expiresInHours: number = 24): Promise<str
 
 /**
  * Verifies an admin token's signature and expiry using Web Crypto API.
+ * Returns payload if valid, or null if invalid.
  */
-export async function verifyAdminToken(token: string): Promise<boolean> {
+export async function verifyAdminTokenWithPayload(token: string): Promise<AdminTokenPayload | null> {
   try {
     const [payloadB64, signature] = token.split('.');
-    if (!payloadB64 || !signature) return false;
+    if (!payloadB64 || !signature) return null;
 
     const expectedSig = await hmacSign(ADMIN_SECRET, payloadB64);
-    if (signature !== expectedSig) return false;
+    if (signature !== expectedSig) return null;
 
     const payload: AdminTokenPayload = JSON.parse(base64urlToStr(payloadB64));
-    if (payload.type !== 'admin') return false;
-    if (Date.now() > payload.exp) return false;
+    if (payload.type !== 'admin') return null;
+    if (Date.now() > payload.exp) return null;
 
-    return true;
+    return payload;
   } catch {
-    return false;
+    return null;
   }
+}
+
+/**
+ * Verifies an admin token's signature and expiry using Web Crypto API.
+ */
+export async function verifyAdminToken(token: string): Promise<boolean> {
+  const payload = await verifyAdminTokenWithPayload(token);
+  return payload !== null;
 }
 
 // ===== Session Token (Student / Guest) =====
@@ -92,6 +103,7 @@ export interface SessionPayload {
   userId: string;
   name: string;
   role: 'student' | 'guest';
+  sid?: string; // Session ID for device tracking and revocation
   iat: number;
   exp: number;
 }
@@ -103,12 +115,14 @@ export async function createSessionToken(
   userId: string,
   name: string,
   role: 'student' | 'guest',
-  expiresInHours: number = 72
+  expiresInHours: number = 72,
+  sid?: string
 ): Promise<string> {
   const payload: SessionPayload = {
     userId,
     name,
     role,
+    sid,
     iat: Date.now(),
     exp: Date.now() + expiresInHours * 60 * 60 * 1000,
   };

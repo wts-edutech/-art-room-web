@@ -1,10 +1,17 @@
 import { cookies } from 'next/headers';
-import { verifyAdminToken, verifySessionToken } from './auth-utils';
+import { verifyAdminTokenWithPayload, verifySessionToken } from './auth-utils';
+import { isSessionActive, touchSession } from './session-manager';
 
-interface SessionInfo {
+export interface SessionInfo {
   userId: string;
   name: string;
   role: 'student' | 'guest';
+  sid?: string;
+}
+
+export interface AdminSessionInfo {
+  isAdmin: boolean;
+  sid?: string;
 }
 
 /**
@@ -19,10 +26,21 @@ export async function getSession(): Promise<SessionInfo | null> {
   const payload = await verifySessionToken(token);
   if (!payload) return null;
 
+  // Check if session has been revoked
+  if (payload.sid) {
+    const active = await isSessionActive(payload.sid);
+    if (!active) {
+      return null;
+    }
+    // Touch session activity asynchronously
+    touchSession(payload.sid).catch(() => {});
+  }
+
   return {
     userId: payload.userId,
     name: payload.name,
     role: payload.role,
+    sid: payload.sid,
   };
 }
 
@@ -55,21 +73,42 @@ export async function requireStudent(): Promise<SessionInfo> {
 }
 
 /**
+ * Checks if request has a valid admin token and session is not revoked.
+ */
+export async function getAdminSession(): Promise<AdminSessionInfo> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get('admin_token')?.value;
+  if (!token) return { isAdmin: false };
+
+  const payload = await verifyAdminTokenWithPayload(token);
+  if (!payload) return { isAdmin: false };
+
+  if (payload.sid) {
+    const active = await isSessionActive(payload.sid);
+    if (!active) {
+      return { isAdmin: false };
+    }
+    touchSession(payload.sid).catch(() => {});
+  }
+
+  return { isAdmin: true, sid: payload.sid };
+}
+
+/**
  * Checks if request has a valid admin token.
  */
 export async function checkIsAdmin(): Promise<boolean> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get('admin_token')?.value;
-  if (!token) return false;
-  return await verifyAdminToken(token);
+  const session = await getAdminSession();
+  return session.isAdmin;
 }
 
-export async function requireAdmin(): Promise<void> {
-  const isAdmin = await checkIsAdmin();
-  if (!isAdmin) {
+export async function requireAdmin(): Promise<AdminSessionInfo> {
+  const adminSession = await getAdminSession();
+  if (!adminSession.isAdmin) {
     throw new Response(JSON.stringify({ error: 'Unauthorized — ไม่ใช่ผู้ดูแลระบบ' }), {
       status: 401,
       headers: { 'Content-Type': 'application/json' },
     });
   }
+  return adminSession;
 }

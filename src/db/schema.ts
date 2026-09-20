@@ -283,3 +283,20 @@ export const downloads = sqliteTable('downloads', {
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
+// --- Active Login Sessions & Device Tracking ---
+export const loginSessions = sqliteTable('login_sessions', {
+  id: text('id').primaryKey(), // Session UUID
+  userId: text('user_id').notNull(), // 'admin' or student ID e.g. "12345"
+  userName: text('user_name').notNull().default(''),
+  role: text('role').notNull().default('student'), // 'admin' | 'student' | 'guest'
+  ipAddress: text('ip_address'),
+  userAgent: text('user_agent'),
+  deviceType: text('device_type').default('desktop'), // 'desktop' | 'mobile' | 'tablet'
+  browser: text('browser'), // 'Chrome', 'Safari', 'Firefox', 'Edge', etc.
+  os: text('os'), // 'Windows 11', 'iOS', 'Android', 'macOS', etc.
+  location: text('location'), // e.g. "Bangkok, Thailand" or "Localhost"
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  lastActiveAt: text('last_active_at').default(sql`CURRENT_TIMESTAMP`),
+  isRevoked: integer('is_revoked', { mode: 'boolean' }).default(false),
+});
+

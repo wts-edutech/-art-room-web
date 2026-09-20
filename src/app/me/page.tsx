@@ -18,6 +18,13 @@ import {
   Mail,
   Phone,
   ShieldCheck,
+  Laptop,
+  Smartphone,
+  Tablet,
+  Globe,
+  Shield,
+  RefreshCw,
+  Trash2,
 } from "lucide-react";
 import { resolveUserAvatar } from "@/lib/art-avatars";
 import { performGlobalLogout } from "@/lib/client-auth";
@@ -37,9 +44,69 @@ export default function MePage() {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  // Font Settings
-  const [selectedFontId, setSelectedFontId] = useState<string>("prompt");
-  const [fontTab, setFontTab] = useState<"ทั้งหมด" | "มาตรฐาน" | "วัยรุ่นหัวกลม" | "ลายมือ">("ทั้งหมด");
+  // Device Sessions state
+  const [userSessions, setUserSessions] = useState<any[]>([]);
+  const [loadingSessions, setLoadingSessions] = useState(false);
+  const [kickingSessionId, setKickingSessionId] = useState<string | null>(null);
+
+  const fetchUserSessions = async () => {
+    setLoadingSessions(true);
+    try {
+      const res = await fetch("/api/auth/sessions");
+      if (res.ok) {
+        const data = await res.json();
+        setUserSessions(data.sessions || []);
+      }
+    } catch (err) {
+      console.error("Fetch user sessions error:", err);
+    } finally {
+      setLoadingSessions(false);
+    }
+  };
+
+  const handleRevokeUserSession = async (sessionId: string) => {
+    if (!confirm("คุณต้องการออกจากระบบอุปกรณ์นี้ใช่หรือไม่?")) return;
+    setKickingSessionId(sessionId);
+    try {
+      const res = await fetch("/api/auth/sessions", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId }),
+      });
+      if (res.ok) {
+        await fetchUserSessions();
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setKickingSessionId(null);
+    }
+  };
+
+  const handleRevokeOtherUserSessions = async () => {
+    if (!confirm("คุณต้องการออกจากระบบอุปกรณ์อื่นทั้งหมดใช่หรือไม่?")) return;
+    setLoadingSessions(true);
+    try {
+      const res = await fetch("/api/auth/sessions", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ allOthers: true }),
+      });
+      if (res.ok) {
+        await fetchUserSessions();
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingSessions(false);
+    }
+  };
+
+  useEffect(() => {
+    if (mounted && userName) {
+      fetchUserSessions();
+    }
+  }, [mounted, userName]);
 
   const FONT_STORAGE_KEY = "artroom_selected_font";
 
@@ -284,6 +351,105 @@ export default function MePage() {
             <Sparkles className="w-3 h-3 text-amber-500" />
             <span>บันทึกจำค่าไว้ในเครื่องอัตโนมัติ</span>
           </div>
+        </section>
+
+        {/* ===== LOGGED-IN DEVICES SECTION ===== */}
+        <section className="bg-white rounded-2xl sm:rounded-3xl border border-gray-200 p-4 sm:p-6 mb-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
+                <Laptop className="w-4 h-4" />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-gray-900">อุปกรณ์ที่เข้าสู่ระบบของคุณ</h2>
+                <p className="text-[11px] text-gray-400">ตรวจสอบและลบอุปกรณ์แปลกปลอม</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={fetchUserSessions}
+                disabled={loadingSessions}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
+                title="รีเฟรชอุปกรณ์"
+              >
+                <RefreshCw className={`w-4 h-4 ${loadingSessions ? 'animate-spin' : ''}`} />
+              </button>
+              {userSessions.length > 1 && (
+                <button
+                  type="button"
+                  onClick={handleRevokeOtherUserSessions}
+                  className="px-2.5 py-1 rounded-xl text-[10px] font-bold bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 transition-colors cursor-pointer"
+                >
+                  ลบอุปกรณ์อื่นทั้งหมด
+                </button>
+              )}
+            </div>
+          </div>
+
+          {loadingSessions ? (
+            <div className="py-6 flex justify-center text-gray-400 text-xs gap-2 items-center">
+              <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              กำลังโหลดข้อมูลอุปกรณ์...
+            </div>
+          ) : userSessions.length === 0 ? (
+            <div className="py-4 text-center text-gray-400 text-xs bg-gray-50 rounded-xl border border-dashed border-gray-200">
+              ไม่มีข้อมูลอุปกรณ์อื่นที่ล็อกอินอยู่
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {userSessions.map((session: any) => (
+                <div
+                  key={session.id}
+                  className={`p-3 rounded-xl border flex items-center justify-between gap-3 text-xs ${
+                    session.isCurrent
+                      ? "bg-emerald-50/60 border-emerald-200 text-emerald-950"
+                      : "bg-gray-50/80 border-gray-200 text-gray-800"
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                      session.isCurrent ? "bg-emerald-100 text-emerald-700" : "bg-white text-gray-500 border border-gray-200"
+                    }`}>
+                      {session.deviceType === "mobile" ? (
+                        <Smartphone className="w-4 h-4" />
+                      ) : session.deviceType === "tablet" ? (
+                        <Tablet className="w-4 h-4" />
+                      ) : (
+                        <Laptop className="w-4 h-4" />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-bold truncate">{session.os} • {session.browser}</span>
+                        {session.isCurrent && (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500 text-white">
+                            อุปกรณ์นี้
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[10px] text-gray-400 flex items-center gap-2 mt-0.5">
+                        <span className="font-mono">{session.ipAddress}</span>
+                        <span>{session.location || "ประเทศไทย"}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {!session.isCurrent && (
+                    <button
+                      type="button"
+                      onClick={() => handleRevokeUserSession(session.id)}
+                      disabled={kickingSessionId === session.id}
+                      className="p-1.5 rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50 border border-red-200 transition-colors shrink-0 cursor-pointer"
+                      title="ลบอุปกรณ์นี้"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* ===== LOGOUT SECTION ===== */}

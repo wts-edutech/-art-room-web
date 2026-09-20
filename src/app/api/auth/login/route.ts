@@ -6,6 +6,7 @@ import { students } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { cookies } from 'next/headers';
 import { createSessionToken } from '@/lib/auth-utils';
+import { registerLoginSession } from '@/lib/session-manager';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limiter';
 
 import { hashPassword } from '@/lib/password-validator';
@@ -86,8 +87,16 @@ export async function POST(request: Request) {
       lastLoginAt: nowIso,
     }).where(eq(students.id, student.id));
 
-    // 6. Issue Secure HMAC Session Token
-    const token = await createSessionToken(student.id, student.name, 'student', 72);
+    // 6. Register Active Device Session
+    const { sessionId, deviceInfo } = await registerLoginSession({
+      userId: student.id,
+      userName: student.name,
+      role: 'student',
+      request,
+    });
+
+    // 7. Issue Secure HMAC Session Token with Session ID
+    const token = await createSessionToken(student.id, student.name, 'student', 72, sessionId);
 
     const cookieStore = await cookies();
     cookieStore.set('session_token', token, {
@@ -106,7 +115,8 @@ export async function POST(request: Request) {
         classroom: student.classroom || '',
         gradeLevel: student.gradeLevel || '',
         role: 'student'
-      }
+      },
+      device: deviceInfo.summary
     });
 
   } catch (error: any) {
