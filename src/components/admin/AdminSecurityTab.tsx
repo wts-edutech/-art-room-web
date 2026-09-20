@@ -84,6 +84,21 @@ export default function AdminSecurityTab() {
   useEffect(() => {
     fetchCurrentPassword();
     fetchSessions();
+
+    // Auto-refresh sessions periodically & when switching back to this tab
+    const interval = setInterval(() => {
+      fetchSessions();
+    }, 10000);
+
+    const onFocus = () => {
+      fetchSessions();
+    };
+
+    window.addEventListener("focus", onFocus);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+    };
   }, []);
 
   const fetchCurrentPassword = async () => {

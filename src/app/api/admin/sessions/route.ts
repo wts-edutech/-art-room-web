@@ -2,23 +2,54 @@ export const runtime = 'edge';
 
 import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/api-auth';
-import { getAllActiveSessions, revokeSessionById, revokeAllOtherSessions } from '@/lib/session-manager';
+import { createAdminToken } from '@/lib/auth-utils';
+import { 
+  getAllActiveSessions, 
+  revokeSessionById, 
+  revokeAllOtherSessions,
+  ensureActiveSession
+} from '@/lib/session-manager';
 
 /**
  * GET /api/admin/sessions
  * Returns all active admin and student login sessions with device metadata.
+ * Automatically backfills and registers current active admin device if not in DB.
  */
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const adminSession = await requireAdmin();
-    const result = await getAllActiveSessions(adminSession.sid);
 
-    return NextResponse.json({
+    // Auto-register current device if not in DB
+    const { sid: currentSid, wasCreated } = await ensureActiveSession({
+      userId: 'admin',
+      userName: 'ผู้ดูแลระบบ (Admin)',
+      role: 'admin',
+      sid: adminSession.sid,
+      request,
+    });
+
+    const result = await getAllActiveSessions(currentSid);
+
+    const response = NextResponse.json({
       success: true,
-      currentSessionId: adminSession.sid,
+      currentSessionId: currentSid,
       adminSessions: result.adminSessions,
       studentSessions: result.studentSessions,
     });
+
+    // If new session ID was generated for legacy token, refresh cookie
+    if (wasCreated) {
+      const newToken = await createAdminToken(24, currentSid);
+      response.cookies.set('admin_token', newToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24,
+        path: '/',
+      });
+    }
+
+    return response;
   } catch (error: any) {
     if (error instanceof Response) return error;
     console.error('Admin sessions fetch error:', error);

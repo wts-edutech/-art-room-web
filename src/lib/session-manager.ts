@@ -92,6 +92,48 @@ export async function registerLoginSession(params: {
 }
 
 /**
+ * Ensures that an active user request has a session row in login_sessions.
+ * If sid is missing or not in DB, creates one and returns the valid sid.
+ */
+export async function ensureActiveSession(params: {
+  userId: string;
+  userName: string;
+  role: 'admin' | 'student' | 'guest';
+  sid?: string;
+  request: Request;
+}): Promise<{ sid: string; wasCreated: boolean }> {
+  await ensureSessionTableExists();
+  const db = getDb();
+
+  if (params.sid) {
+    const existing = await db
+      .select()
+      .from(loginSessions)
+      .where(eq(loginSessions.id, params.sid))
+      .get();
+
+    if (existing && !existing.isRevoked) {
+      // Touch activity and return
+      await db
+        .update(loginSessions)
+        .set({ lastActiveAt: new Date().toISOString() })
+        .where(eq(loginSessions.id, params.sid));
+      return { sid: params.sid, wasCreated: false };
+    }
+  }
+
+  // Create new session record for this device
+  const { sessionId } = await registerLoginSession({
+    userId: params.userId,
+    userName: params.userName,
+    role: params.role,
+    request: params.request,
+  });
+
+  return { sid: sessionId, wasCreated: true };
+}
+
+/**
  * Verify if a session ID is valid and active (not revoked)
  */
 export async function isSessionActive(sessionId: string): Promise<boolean> {

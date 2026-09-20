@@ -51,7 +51,20 @@ export default function AdminPage() {
   }, [activeTab]);
 
   const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
+    try {
+      await fetch("/api/auth", { method: "DELETE" });
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch (e) {
+      console.warn("Logout request failed:", e);
+    }
+    // Delete cookies client-side as fallback
+    document.cookie = "admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
+    document.cookie = "session_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
+    try {
+      localStorage.removeItem("artroom_role");
+      localStorage.removeItem("artroom_author_name");
+      localStorage.removeItem("artroom_user_role");
+    } catch {}
     window.location.href = "/admin/login";
   };
 

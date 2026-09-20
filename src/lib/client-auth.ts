@@ -117,10 +117,17 @@ export async function performGlobalLogout(redirectUrl: string = "/"): Promise<vo
   if (typeof window === "undefined") return;
 
   try {
-    await fetch("/api/auth/logout", { method: "POST" });
+    await Promise.allSettled([
+      fetch("/api/auth/logout", { method: "POST" }),
+      fetch("/api/auth", { method: "DELETE" }),
+    ]);
   } catch (e) {
     console.warn("Server logout request failed, proceeding with client purge:", e);
   }
+
+  // Delete cookies on browser side as immediate safeguard
+  document.cookie = "admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
+  document.cookie = "session_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
 
   clearAllAuthData();
   window.dispatchEvent(new Event("artroom_profile_updated"));

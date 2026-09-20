@@ -2,22 +2,52 @@ export const runtime = 'edge';
 
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/api-auth';
-import { getUserSessions, revokeSessionById, revokeAllOtherSessions } from '@/lib/session-manager';
+import { createSessionToken } from '@/lib/auth-utils';
+import { 
+  getUserSessions, 
+  revokeSessionById, 
+  revokeAllOtherSessions,
+  ensureActiveSession
+} from '@/lib/session-manager';
 
 /**
  * GET /api/auth/sessions
  * Returns active login sessions for the currently logged-in user.
+ * Automatically registers current device if not in DB.
  */
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await requireAuth();
-    const sessions = await getUserSessions(session.userId, session.sid);
 
-    return NextResponse.json({
+    // Auto-register current device if not in DB
+    const { sid: currentSid, wasCreated } = await ensureActiveSession({
+      userId: session.userId,
+      userName: session.name,
+      role: session.role,
+      sid: session.sid,
+      request,
+    });
+
+    const sessions = await getUserSessions(session.userId, currentSid);
+
+    const response = NextResponse.json({
       success: true,
-      currentSessionId: session.sid,
+      currentSessionId: currentSid,
       sessions,
     });
+
+    if (wasCreated) {
+      const newToken = await createSessionToken(session.userId, session.name, session.role, 72, currentSid);
+      response.cookies.set('session_token', newToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 72,
+        path: '/',
+      });
+    }
+
+    return response;
   } catch (error: any) {
     if (error instanceof Response) return error;
     console.error('User sessions fetch error:', error);
