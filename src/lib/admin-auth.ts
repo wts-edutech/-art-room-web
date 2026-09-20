@@ -52,7 +52,43 @@ export async function verifyAdminPassword(password: string): Promise<boolean> {
 }
 
 /**
+ * Get the current admin password in plaintext for display.
+ * Returns the stored plaintext or the default password.
+ */
+export async function getAdminPasswordPlain(): Promise<string> {
+  const defaultAdminPassword = process.env.ADMIN_PASSWORD || "admin1234";
+
+  try {
+    const db = getDb();
+    const row = await db
+      .select()
+      .from(siteSettings)
+      .where(eq(siteSettings.key, 'admin_password_plain'))
+      .get();
+
+    if (row && row.value) {
+      return row.value;
+    }
+  } catch {
+    try {
+      const env = getRequestContext()?.env;
+      if (env?.DB) {
+        const res: any = await env.DB.prepare(
+          "SELECT value FROM site_settings WHERE key = 'admin_password_plain'"
+        ).first();
+        if (res && res.value) {
+          return res.value;
+        }
+      }
+    } catch {}
+  }
+
+  return defaultAdminPassword;
+}
+
+/**
  * Updates admin password in D1 site_settings.
+ * Saves both the hash (for verification) and plaintext (for admin display).
  */
 export async function updateAdminPassword(newPassword: string): Promise<boolean> {
   const hashed = await hashPassword(newPassword);
@@ -61,6 +97,8 @@ export async function updateAdminPassword(newPassword: string): Promise<boolean>
   // Try via Drizzle
   try {
     const db = getDb();
+
+    // Save hash for verification
     await db
       .insert(siteSettings)
       .values({
@@ -72,6 +110,20 @@ export async function updateAdminPassword(newPassword: string): Promise<boolean>
         target: siteSettings.key,
         set: { value: hashed, updatedAt: now },
       });
+
+    // Save plaintext for admin display
+    await db
+      .insert(siteSettings)
+      .values({
+        key: 'admin_password_plain',
+        value: newPassword,
+        updatedAt: now,
+      })
+      .onConflictDoUpdate({
+        target: siteSettings.key,
+        set: { value: newPassword, updatedAt: now },
+      });
+
     return true;
   } catch (err) {
     // Fallback to raw D1 execution
@@ -89,6 +141,13 @@ export async function updateAdminPassword(newPassword: string): Promise<boolean>
         VALUES ('admin_password_hash', ?, ?)
         ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
       `).bind(hashed, now).run();
+
+      await env.DB.prepare(`
+        INSERT INTO site_settings (key, value, updated_at)
+        VALUES ('admin_password_plain', ?, ?)
+        ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
+      `).bind(newPassword, now).run();
+
       return true;
     }
     throw err;

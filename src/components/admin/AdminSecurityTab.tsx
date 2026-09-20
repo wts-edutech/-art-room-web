@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   KeyRound, 
   ShieldCheck, 
@@ -9,30 +9,84 @@ import {
   EyeOff, 
   CheckCircle2, 
   AlertTriangle, 
-  Info, 
   ShieldAlert,
   Save,
-  RotateCcw
+  RotateCcw,
+  Copy,
+  Check
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function AdminSecurityTab() {
+  // Form state
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
+  // Visibility toggles
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  // UI state
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // Validation
-  const isLengthValid = newPassword.length >= 6;
+  // Current password display
+  const [savedPassword, setSavedPassword] = useState<string | null>(null);
+  const [showSavedPassword, setShowSavedPassword] = useState(false);
+  const [loadingPassword, setLoadingPassword] = useState(true);
+  const [copied, setCopied] = useState(false);
+
+  // Fetch current password on mount
+  useEffect(() => {
+    fetchCurrentPassword();
+  }, []);
+
+  const fetchCurrentPassword = async () => {
+    setLoadingPassword(true);
+    try {
+      const res = await fetch("/api/admin/change-password");
+      if (res.ok) {
+        const data = await res.json();
+        setSavedPassword(data.password || null);
+      }
+    } catch {
+      // Silently fail — will show default hint
+    } finally {
+      setLoadingPassword(false);
+    }
+  };
+
+  const handleCopyPassword = async () => {
+    if (!savedPassword) return;
+    try {
+      await navigator.clipboard.writeText(savedPassword);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
+  };
+
+  // Password validation rules
+  const rules = [
+    {
+      label: "ความยาวอย่างน้อย 6 ตัวอักษร",
+      pass: newPassword.length >= 6,
+    },
+    {
+      label: "มีตัวอักษรพิมพ์เล็ก (a-z) อย่างน้อย 1 ตัว",
+      pass: /[a-z]/.test(newPassword),
+    },
+    {
+      label: "มีตัวอักษรพิมพ์ใหญ่ (A-Z) หรือ ตัวเลข (0-9) หรือ อักขระพิเศษ (@#$...)",
+      pass: /[A-Z0-9!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(newPassword),
+    },
+  ];
+
+  const allRulesPass = newPassword.length > 0 && rules.every((r) => r.pass);
   const isMatching = newPassword === confirmPassword && confirmPassword.length > 0;
-  const isFormValid = currentPassword.length > 0 && isLengthValid && isMatching;
+  const isFormValid = currentPassword.length > 0 && allRulesPass && isMatching;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,8 +98,8 @@ export default function AdminSecurityTab() {
       return;
     }
 
-    if (newPassword.length < 6) {
-      setErrorMessage("รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 6 ตัวอักษร");
+    if (!allRulesPass) {
+      setErrorMessage("รหัสผ่านใหม่ยังไม่ผ่านเงื่อนไขทั้งหมด ดูรายละเอียดด้านล่าง");
       return;
     }
 
@@ -59,13 +113,8 @@ export default function AdminSecurityTab() {
     try {
       const res = await fetch("/api/admin/change-password", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          currentPassword,
-          newPassword,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword }),
       });
 
       const data = await res.json();
@@ -77,6 +126,9 @@ export default function AdminSecurityTab() {
         setCurrentPassword("");
         setNewPassword("");
         setConfirmPassword("");
+        // Refresh the displayed password
+        setSavedPassword(null);
+        fetchCurrentPassword();
       }
     } catch (err) {
       console.error("Change password error:", err);
@@ -108,7 +160,51 @@ export default function AdminSecurityTab() {
         </div>
       </div>
 
-      {/* Main Security Form Card */}
+      {/* ===== CURRENT PASSWORD DISPLAY ===== */}
+      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-gray-200/80 shadow-xs">
+        <div className="flex items-center gap-2.5 mb-3">
+          <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+            <Lock className="w-4 h-4" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-gray-900">รหัสผ่านปัจจุบันของระบบ</h3>
+            <p className="text-[11px] text-gray-400">คลิกไอคอนตาเพื่อดูรหัสผ่าน หรือคัดลอก</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 bg-slate-50 rounded-xl border border-slate-200 px-4 py-3">
+          {loadingPassword ? (
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+              <div className="w-4 h-4 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
+              กำลังโหลด...
+            </div>
+          ) : (
+            <>
+              <span className="flex-1 font-mono text-base font-bold text-gray-800 tracking-wider select-all">
+                {showSavedPassword ? savedPassword || "admin1234" : "••••••••••"}
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowSavedPassword(!showSavedPassword)}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
+                title={showSavedPassword ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"}
+              >
+                {showSavedPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+              <button
+                type="button"
+                onClick={handleCopyPassword}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
+                title="คัดลอกรหัสผ่าน"
+              >
+                {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* ===== CHANGE PASSWORD FORM ===== */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200/80 shadow-xs space-y-6">
         {/* Success Alert */}
         {successMessage && (
@@ -144,7 +240,7 @@ export default function AdminSecurityTab() {
                 <span>รหัสผ่านปัจจุบัน <span className="text-red-500">*</span></span>
               </span>
               <span className="text-[11px] text-gray-400 font-normal">
-                (ค่าเริ่มต้นโรงเรียนคือ admin1234 หรือรหัสล่าสุดที่ตั้งไว้)
+                (ดูรหัสปัจจุบันได้จากกล่องด้านบน)
               </span>
             </label>
             <div className="relative">
@@ -171,14 +267,9 @@ export default function AdminSecurityTab() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
             {/* New Password */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-700 flex items-center justify-between" htmlFor="newPassword">
-                <span className="flex items-center gap-1.5">
-                  <KeyRound className="w-3.5 h-3.5 text-amber-500" />
-                  <span>รหัสผ่านใหม่ <span className="text-red-500">*</span></span>
-                </span>
-                <span className={`text-[11px] font-medium ${isLengthValid ? "text-emerald-600" : "text-gray-400"}`}>
-                  อย่างน้อย 6 ตัวอักษร
-                </span>
+              <label className="text-xs font-bold text-gray-700 flex items-center gap-1.5" htmlFor="newPassword">
+                <KeyRound className="w-3.5 h-3.5 text-amber-500" />
+                <span>รหัสผ่านใหม่ <span className="text-red-500">*</span></span>
               </label>
               <div className="relative">
                 <input
@@ -236,6 +327,27 @@ export default function AdminSecurityTab() {
             </div>
           </div>
 
+          {/* ===== PASSWORD RULES CHECKLIST ===== */}
+          {newPassword.length > 0 && (
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2 animate-in fade-in duration-200">
+              <p className="text-xs font-bold text-gray-700 mb-2">เงื่อนไขรหัสผ่าน:</p>
+              {rules.map((rule, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${
+                    rule.pass 
+                      ? "bg-emerald-500 text-white" 
+                      : "bg-gray-200 text-gray-400"
+                  }`}>
+                    {rule.pass ? <Check className="w-3 h-3 stroke-[3]" /> : <span className="text-[10px] font-bold">✕</span>}
+                  </div>
+                  <span className={`text-xs ${rule.pass ? "text-emerald-700 font-semibold" : "text-gray-500"}`}>
+                    {rule.label}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Security Notice Box */}
           <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200 text-amber-950 text-xs space-y-2">
             <div className="flex items-center gap-2 font-bold text-amber-900">
@@ -244,7 +356,7 @@ export default function AdminSecurityTab() {
             </div>
             <ul className="text-[11px] text-amber-900/90 space-y-1 list-disc list-inside leading-relaxed">
               <li>รหัสผ่านผู้ดูแลระบบมีอำนาจสูงสุดในการจัดการเว็บไซต์ ห้องเรียน คะแนนสอบ และข้อมูลนักเรียนทั้งหมด</li>
-              <li>แนะนำให้ตั้งรหัสผ่านที่มีทั้งตัวอักษรและตัวเลขความยาวอย่างน้อย 6 ตัวขึ้นไป และจดจำไว้อย่างปลอดภัย</li>
+              <li>ตั้งรหัสผ่านที่มีทั้งตัวอักษรพิมพ์เล็ก พิมพ์ใหญ่ หรือตัวเลข ความยาวรวมอย่างน้อย 6 ตัวอักษร</li>
               <li>เมื่อเปลี่ยนสำเร็จ ระบบจะบันทึกข้อมูลอย่างปลอดภัย (เข้ารหัส SHA-256) ลงในฐานข้อมูล Cloudflare D1</li>
             </ul>
           </div>

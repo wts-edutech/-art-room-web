@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Prompt, Kanit } from "next/font/google";
 import "./globals.css";
 import CookieConsent from "@/components/ui/CookieConsent";
@@ -6,7 +6,8 @@ import SessionProvider from "@/components/providers/SessionProvider";
 import LiveClock from "@/components/ui/LiveClock";
 import FloatingSocialSidebar from "@/components/ui/FloatingSocialSidebar";
 import VisitorTracker from "@/components/VisitorTracker";
-import FontSelectorDropdown from "@/components/ui/FontSelectorDropdown";
+import BottomNavbar from "@/components/layout/BottomNavbar";
+
 const prompt = Prompt({
   variable: "--font-prompt",
   subsets: ["thai", "latin"],
@@ -20,6 +21,12 @@ const kanit = Kanit({
   weight: ["400", "500", "600", "700"],
   display: "swap",
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
 
 export const metadata: Metadata = {
   title: "Art Room - โรงเรียนวชิรธรรมสาธิต",
@@ -41,14 +48,14 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="min-h-full flex flex-col overflow-x-hidden">
+      <body className="min-h-full flex flex-col overflow-x-hidden has-bottom-nav">
         <SessionProvider>
           <VisitorTracker />
           <LiveClock />
           {children}
           <CookieConsent />
           <FloatingSocialSidebar />
-          <FontSelectorDropdown />
+          <BottomNavbar />
         </SessionProvider>
       </body>
     </html>

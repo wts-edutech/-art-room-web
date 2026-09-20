@@ -69,8 +69,8 @@ export default function Navbar() {
 
   return (
     <header className="fixed top-0 left-0 right-0 w-full z-50 bg-white border-b border-gray-200 shadow-sm transition-all duration-300 pointer-events-auto">
-      {/* Integrated LiveClock Bar (Always 32px at very top, strictly unified with Navbar) */}
-      <div className="w-full bg-gradient-to-r from-orange-500 to-pink-500 text-white h-8 overflow-hidden flex items-center">
+      {/* Integrated LiveClock Bar — hidden on mobile <640px, shown sm+ */}
+      <div className="navbar-clock-bar w-full bg-gradient-to-r from-orange-500 to-pink-500 text-white h-8 overflow-hidden hidden sm:flex items-center">
         <div className="container mx-auto px-4 h-full flex items-center justify-center sm:justify-end gap-3 text-[10px] sm:text-xs font-medium">
           <NavbarLiveClock />
         </div>
@@ -79,29 +79,29 @@ export default function Navbar() {
       {/* Main Navigation Bar (64px) */}
       <div className="container mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         
-        {/* Logo Section */}
-        <div className="flex items-center gap-3 h-full flex-shrink-0">
-          <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group flex-shrink-0">
+        {/* Logo Section — compact on mobile */}
+        <div className="flex items-center gap-2 sm:gap-3 h-full min-w-0 flex-shrink-0">
+          <Link href="/" className="flex items-center gap-2 sm:gap-3 group min-w-0 flex-shrink-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img 
               src="/school-logo.png" 
               alt="School Logo" 
-              className="w-12 h-12 sm:w-14 sm:h-14 object-contain group-hover:scale-105 transition-transform flex-shrink-0"
+              className="w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 object-contain group-hover:scale-105 transition-transform flex-shrink-0"
             />
-            <div className="flex flex-col justify-center flex-shrink-0">
-              <span className="font-heading font-black text-[24px] sm:text-[28px] tracking-[0.05em] leading-none whitespace-nowrap">
+            <div className="flex flex-col justify-center min-w-0">
+              <span className="font-heading font-black text-[20px] sm:text-[24px] lg:text-[28px] tracking-[0.05em] leading-none truncate">
                 <span className="text-[#FF0000]">ART </span>
                 <span className="text-[#03071C]">ROOM</span>
               </span>
-              <span className="font-sans text-[8.5px] sm:text-[9.5px] text-gray-600 font-bold tracking-[0.02em] mt-0.5 text-center block w-full whitespace-nowrap">
+              <span className="font-sans text-[7.5px] sm:text-[8.5px] lg:text-[9.5px] text-gray-600 font-bold tracking-[0.02em] mt-0.5 text-center block w-full whitespace-nowrap hidden sm:block">
                 WACHIRATHAMMASATIT SCHOOL
               </span>
             </div>
           </Link>
         </div>
         
-        {/* Desktop Navigation (Visible on XL screens 1280px+) */}
-        <nav className="hidden xl:flex items-center gap-5 lg:gap-6 text-[15px] font-medium text-gray-700 h-full ml-4">
+        {/* Desktop Navigation (Visible on LG screens 1024px+) */}
+        <nav className="hidden lg:flex items-center gap-3 lg:gap-4 xl:gap-6 text-[14px] lg:text-[15px] font-medium text-gray-700 h-full ml-4">
           {/* 1. หน้าแรก */}
           <Link 
             href="/" 
@@ -304,10 +304,10 @@ export default function Navbar() {
         </nav>
 
         {/* Right Section: User Profile / Login & Hamburger Button */}
-        <div className="flex items-center gap-2 sm:gap-3 h-full flex-shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 h-full flex-shrink-0 min-w-0">
 
           {userName ? (
-            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0 min-w-0">
               {userRole === "teacher" || userRole === "admin" ? (
                 <Link 
                   href="/admin" 
@@ -333,7 +333,7 @@ export default function Navbar() {
                     <span className="text-[10px] font-bold text-orange-600">{resolvedAvatar.value}</span>
                   )}
                 </div>
-                <span className="max-w-[70px] sm:max-w-[120px] truncate">{userName}</span>
+                <span className="max-w-[60px] sm:max-w-[100px] lg:max-w-[120px] truncate hidden sm:inline">{userName}</span>
                 <Settings className="w-3 h-3 text-orange-400 group-hover:text-orange-600 transition-colors shrink-0" />
               </button>
               <button 
@@ -357,9 +357,9 @@ export default function Navbar() {
             </Link>
           )}
 
-          {/* Mobile & Tablet Hamburger Button (Screen width < 1280px) */}
+          {/* Tablet Hamburger Button (640px-1023px only, mobile uses bottom nav) */}
           <button 
-            className="xl:hidden p-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 active:scale-95 rounded-xl transition-all flex items-center justify-center cursor-pointer flex-shrink-0"
+            className="hidden sm:flex lg:hidden p-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 active:scale-95 rounded-xl transition-all items-center justify-center cursor-pointer flex-shrink-0"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             aria-label="เมนูนำทาง"
           >
@@ -368,17 +368,17 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile & Tablet Navigation Drawer Overlay */}
+      {/* Tablet Navigation Drawer Overlay (sm to lg) */}
       {isMobileMenuOpen && (
         <div 
-          className="xl:hidden fixed inset-0 bg-black/60 backdrop-blur-xs z-[9998]" 
+          className="lg:hidden hidden sm:block fixed inset-0 bg-black/60 backdrop-blur-xs z-[9998]" 
           onClick={() => setIsMobileMenuOpen(false)} 
         />
       )}
 
-      {/* Mobile & Tablet Navigation Drawer */}
+      {/* Tablet Navigation Drawer (hidden on mobile <640px, uses bottom nav instead) */}
       <div 
-        className={`xl:hidden fixed top-0 right-0 w-[300px] max-w-[85vw] h-screen bg-white z-[9999] transform transition-transform duration-300 ease-in-out shadow-2xl flex flex-col ${
+        className={`lg:hidden hidden sm:flex fixed top-0 right-0 w-[300px] max-w-[85vw] h-screen bg-white z-[9999] transform transition-transform duration-300 ease-in-out shadow-2xl flex-col ${
           isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >

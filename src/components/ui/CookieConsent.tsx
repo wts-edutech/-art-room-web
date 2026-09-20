@@ -122,10 +122,14 @@ export default function CookieConsent() {
 
   return (
     <>
-      {/* Slide-up Bottom Notification Bar (เด้งมาจากแถบด้านล่าง เป็นแถบแจ้งเตือน) */}
+      {/* Slide-up Bottom Notification Bar — sits above bottom nav on mobile */}
       {showBanner && (
-        <div className="fixed bottom-0 inset-x-0 z-[100] p-2.5 sm:p-4 pointer-events-none animate-in slide-in-from-bottom-full duration-500 ease-out">
-          <div className="max-w-5xl mx-auto bg-white/98 backdrop-blur-2xl border border-slate-200/90 shadow-2xl rounded-2xl sm:rounded-3xl p-4 sm:p-5 pointer-events-auto transition-all space-y-3.5">
+        <div 
+          className="fixed inset-x-0 z-[95] p-2.5 sm:p-4 pointer-events-none animate-in slide-in-from-bottom-full duration-500 ease-out"
+          style={{ bottom: "calc(3.5rem + env(safe-area-inset-bottom, 0px))" }}
+        >
+          <div className="max-w-5xl mx-auto bg-white/98 backdrop-blur-2xl border border-slate-200/90 shadow-2xl rounded-2xl sm:rounded-3xl pointer-events-auto transition-all max-h-[60dvh] overflow-y-auto">
+            <div className="p-4 sm:p-5 space-y-3.5">
             {/* Main Bar Top Row */}
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               {/* Notice Info */}
@@ -267,6 +271,7 @@ export default function CookieConsent() {
                 </div>
               </div>
             )}
+          </div>
           </div>
         </div>
       )}
