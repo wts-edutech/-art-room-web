@@ -1,4 +1,6 @@
 export const runtime = 'edge';
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/api-auth';
@@ -9,6 +11,13 @@ import {
   revokeAllOtherSessions,
   ensureActiveSession
 } from '@/lib/session-manager';
+import { verifyMasterPin } from '@/lib/admin-auth';
+
+const NO_CACHE_HEADERS = {
+  'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+  'Pragma': 'no-cache',
+  'Expires': '0',
+};
 
 /**
  * GET /api/admin/sessions
@@ -35,6 +44,8 @@ export async function GET(request: Request) {
       currentSessionId: currentSid,
       adminSessions: result.adminSessions,
       studentSessions: result.studentSessions,
+    }, {
+      headers: NO_CACHE_HEADERS
     });
 
     // If new session ID was generated for legacy token, refresh cookie
@@ -53,11 +64,9 @@ export async function GET(request: Request) {
   } catch (error: any) {
     if (error instanceof Response) return error;
     console.error('Admin sessions fetch error:', error);
-    return NextResponse.json({ error: 'Failed to fetch sessions' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch sessions' }, { status: 500, headers: NO_CACHE_HEADERS });
   }
 }
-
-import { verifyMasterPin } from '@/lib/admin-auth';
 
 /**
  * DELETE /api/admin/sessions
@@ -74,7 +83,7 @@ export async function DELETE(request: Request) {
     if (!masterPin) {
       return NextResponse.json(
         { error: 'กรุณากรอกรหัสยืนยันแอดมินหลัก (Master PIN เช่น K1234) ก่อนทำรายการ' },
-        { status: 403 }
+        { status: 403, headers: NO_CACHE_HEADERS }
       );
     }
 
@@ -82,7 +91,7 @@ export async function DELETE(request: Request) {
     if (!isPinValid) {
       return NextResponse.json(
         { error: 'รหัส Master PIN ไม่ถูกต้อง ไม่อนุญาตให้เตะอุปกรณ์' },
-        { status: 403 }
+        { status: 403, headers: NO_CACHE_HEADERS }
       );
     }
 
@@ -92,26 +101,26 @@ export async function DELETE(request: Request) {
       return NextResponse.json({
         success: true,
         message: 'ออกจากระบบอุปกรณ์แอดมินอื่นทั้งหมดเรียบร้อยแล้ว',
-      });
+      }, { headers: NO_CACHE_HEADERS });
     }
 
     const sessionId = String(body.sessionId || '').trim();
     if (!sessionId) {
-      return NextResponse.json({ error: 'ระบุรหัสเซสชันที่ต้องการเตะออก' }, { status: 400 });
+      return NextResponse.json({ error: 'ระบุรหัสเซสชันที่ต้องการเตะออก' }, { status: 400, headers: NO_CACHE_HEADERS });
     }
 
     const ok = await revokeSessionById(sessionId, undefined, true);
     if (!ok) {
-      return NextResponse.json({ error: 'ไม่พบเซสชันหรือเกิดข้อผิดพลาด' }, { status: 404 });
+      return NextResponse.json({ error: 'ไม่พบเซสชันหรือเกิดข้อผิดพลาด' }, { status: 404, headers: NO_CACHE_HEADERS });
     }
 
     return NextResponse.json({
       success: true,
       message: 'เตะอุปกรณ์ออกจากระบบเรียบร้อยแล้ว',
-    });
+    }, { headers: NO_CACHE_HEADERS });
   } catch (error: any) {
     if (error instanceof Response) return error;
     console.error('Admin revoke session error:', error);
-    return NextResponse.json({ error: 'Failed to revoke session' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to revoke session' }, { status: 500, headers: NO_CACHE_HEADERS });
   }
 }

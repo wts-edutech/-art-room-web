@@ -1,8 +1,16 @@
 export const runtime = 'edge';
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/api-auth';
 import { getMasterPinPlain, verifyMasterPin, updateMasterPin } from '@/lib/admin-auth';
+
+const NO_CACHE_HEADERS = {
+  'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+  'Pragma': 'no-cache',
+  'Expires': '0',
+};
 
 /**
  * GET /api/admin/master-pin
@@ -12,10 +20,10 @@ export async function GET() {
   try {
     await requireAdmin();
     const pin = await getMasterPinPlain();
-    return NextResponse.json({ success: true, masterPin: pin });
+    return NextResponse.json({ success: true, masterPin: pin }, { headers: NO_CACHE_HEADERS });
   } catch (error: any) {
     if (error instanceof Response) return error;
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: NO_CACHE_HEADERS });
   }
 }
 

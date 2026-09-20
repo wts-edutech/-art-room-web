@@ -100,6 +100,7 @@ export default function AdminSecurityTab() {
   } | null>(null);
   const [isModalProcessing, setIsModalProcessing] = useState(false);
   const [modalErrorMessage, setModalErrorMessage] = useState<string | null>(null);
+  const [kickingSessionId, setKickingSessionId] = useState<string | null>(null);
 
   // Fetch initial data and setup auto-refresh
   useEffect(() => {
@@ -109,10 +110,11 @@ export default function AdminSecurityTab() {
 
     const interval = setInterval(() => {
       fetchSessions();
-    }, 10000);
+    }, 8000);
 
     const onFocus = () => {
       fetchSessions();
+      fetchMasterPin();
     };
 
     window.addEventListener("focus", onFocus);
@@ -125,7 +127,10 @@ export default function AdminSecurityTab() {
   const fetchCurrentPassword = async () => {
     setLoadingPassword(true);
     try {
-      const res = await fetch("/api/admin/change-password");
+      const res = await fetch(`/api/admin/change-password?_t=${Date.now()}`, {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      });
       if (res.ok) {
         const data = await res.json();
         setSavedPassword(data.password || null);
@@ -139,7 +144,10 @@ export default function AdminSecurityTab() {
   const fetchMasterPin = async () => {
     setLoadingMasterPin(true);
     try {
-      const res = await fetch("/api/admin/master-pin");
+      const res = await fetch(`/api/admin/master-pin?_t=${Date.now()}`, {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      });
       if (res.ok) {
         const data = await res.json();
         setMasterPin(data.masterPin || "K1234");
@@ -154,7 +162,10 @@ export default function AdminSecurityTab() {
   const fetchSessions = async () => {
     setLoadingSessions(true);
     try {
-      const res = await fetch("/api/admin/sessions");
+      const res = await fetch(`/api/admin/sessions?_t=${Date.now()}`, {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      });
       if (res.ok) {
         const data = await res.json();
         setAdminSessions(data.adminSessions || []);
@@ -206,6 +217,9 @@ export default function AdminSecurityTab() {
     setIsModalProcessing(true);
     setModalErrorMessage(null);
     setSessionActionMsg(null);
+    if (pendingKickAction.sessionId) {
+      setKickingSessionId(pendingKickAction.sessionId);
+    }
 
     try {
       const payload: any = { masterPin: enteredPin };
@@ -217,14 +231,18 @@ export default function AdminSecurityTab() {
 
       const res = await fetch("/api/admin/sessions", {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        headers: { 
+          "Content-Type": "application/json",
+          "Cache-Control": "no-cache"
+        },
         body: JSON.stringify(payload),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        setModalErrorMessage(data.error || "รหัส Master PIN ไม่ถูกต้อง");
+        setModalErrorMessage(data.error || "รหัส Master PIN ไม่ถูกต้อง (ค่าเริ่มต้นคือ K1234)");
       } else {
         setIsPinModalOpen(false);
         setPendingKickAction(null);
@@ -235,9 +253,10 @@ export default function AdminSecurityTab() {
         await fetchSessions();
       }
     } catch (err) {
-      setModalErrorMessage("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
+      setModalErrorMessage("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์ กรุณาลองใหม่อีกครั้ง");
     } finally {
       setIsModalProcessing(false);
+      setKickingSessionId(null);
     }
   };
 
@@ -716,11 +735,21 @@ export default function AdminSecurityTab() {
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => requestKickSingle(session.id, `${session.os} (${session.ipAddress})`)}
-                      className="rounded-xl text-xs h-9 px-3 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 cursor-pointer"
+                      disabled={isModalProcessing || kickingSessionId === session.id}
+                      onClick={() => requestKickSingle(session.id, `${session.os || 'อุปกรณ์'} (${session.ipAddress || 'IP'})`)}
+                      className="rounded-xl text-xs h-9 px-3 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 cursor-pointer disabled:opacity-50"
                     >
-                      <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-                      เตะออกจากระบบ
+                      {kickingSessionId === session.id ? (
+                        <>
+                          <div className="w-3.5 h-3.5 mr-1.5 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+                          กำลังเตะออก...
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                          เตะออกจากระบบ
+                        </>
+                      )}
                     </Button>
                   )}
                 </div>
@@ -808,12 +837,19 @@ export default function AdminSecurityTab() {
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={() => requestKickSingle(session.id, `${session.userName} (${session.userId})`)}
-                  className="h-8 px-2 text-[11px] text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg shrink-0 cursor-pointer"
+                  disabled={isModalProcessing || kickingSessionId === session.id}
+                  onClick={() => requestKickSingle(session.id, `${session.userName || 'นักเรียน'} (${session.userId})`)}
+                  className="h-8 px-2 text-[11px] text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg shrink-0 cursor-pointer disabled:opacity-50"
                   title="เตะนักเรียนออกจากระบบ"
                 >
-                  <LogOut className="w-3.5 h-3.5 mr-1" />
-                  เตะออก
+                  {kickingSessionId === session.id ? (
+                    <div className="w-3.5 h-3.5 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <LogOut className="w-3.5 h-3.5 mr-1" />
+                      เตะออก
+                    </>
+                  )}
                 </Button>
               </div>
             ))}

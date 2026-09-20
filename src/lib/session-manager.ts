@@ -2,6 +2,7 @@ import { getDb } from '@/db';
 import { loginSessions } from '@/db/schema';
 import { eq, and, desc, sql, ne } from 'drizzle-orm';
 import { parseDeviceInfo, DeviceInfo } from './device-detector';
+import { getRequestContext } from '@cloudflare/next-on-pages';
 
 // Fallback UUID generator if crypto.randomUUID is not available
 function generateSessionId(): string {
@@ -35,7 +36,28 @@ export async function ensureSessionTableExists() {
       )
     `);
   } catch (err) {
-    // Ignore if already exists or handled by migrations
+    try {
+      const env = getRequestContext()?.env;
+      if (env?.DB) {
+        await env.DB.prepare(`
+          CREATE TABLE IF NOT EXISTS login_sessions (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            user_name TEXT NOT NULL DEFAULT '',
+            role TEXT NOT NULL DEFAULT 'student',
+            ip_address TEXT,
+            user_agent TEXT,
+            device_type TEXT DEFAULT 'desktop',
+            browser TEXT,
+            os TEXT,
+            location TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            last_active_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            is_revoked INTEGER DEFAULT 0
+          )
+        `).run();
+      }
+    } catch {}
   }
 }
 

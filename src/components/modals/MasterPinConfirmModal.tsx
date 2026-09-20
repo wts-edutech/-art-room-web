@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { ShieldAlert, KeyRound, Eye, EyeOff, X, Check, Lock } from "lucide-react";
+import { createPortal } from "react-dom";
+import { ShieldAlert, KeyRound, Eye, EyeOff, X, Check, Lock, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface MasterPinConfirmModalProps {
@@ -25,18 +26,36 @@ export default function MasterPinConfirmModal({
 }: MasterPinConfirmModalProps) {
   const [pin, setPin] = useState("");
   const [showPin, setShowPin] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
       setPin("");
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         inputRef.current?.focus();
-      }, 100);
+        inputRef.current?.select();
+      }, 80);
+      return () => clearTimeout(timer);
     }
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  // Handle ESC key to close
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isOpen && !isLoading) {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, isLoading, onClose]);
+
+  if (!isOpen || !mounted) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,10 +63,15 @@ export default function MasterPinConfirmModal({
     onConfirm(pin.trim());
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+  const modalContent = (
+    <div 
+      className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-150"
+      onClick={() => {
+        if (!isLoading) onClose();
+      }}
+    >
       <div 
-        className="w-full max-w-md bg-white rounded-3xl border border-gray-100 shadow-2xl overflow-hidden p-6 sm:p-7 space-y-5 animate-in zoom-in-95 duration-200"
+        className="w-full max-w-md bg-white rounded-3xl border border-gray-100 shadow-2xl overflow-hidden p-6 sm:p-7 space-y-5 animate-in zoom-in-95 duration-150 relative"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -57,10 +81,11 @@ export default function MasterPinConfirmModal({
               <KeyRound className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="text-base sm:text-lg font-bold text-gray-950 font-kanit">
-                {title}
+              <h3 className="text-base sm:text-lg font-bold text-gray-950 font-kanit flex items-center gap-2">
+                <span>{title}</span>
               </h3>
-              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
+              <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
+                <Shield className="w-3 h-3" />
                 Primary Admin Security
               </span>
             </div>
@@ -70,6 +95,7 @@ export default function MasterPinConfirmModal({
             onClick={onClose}
             disabled={isLoading}
             className="p-1.5 rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+            title="ปิดหน้าต่าง"
           >
             <X className="w-5 h-5" />
           </button>
@@ -83,7 +109,7 @@ export default function MasterPinConfirmModal({
         {errorMessage && (
           <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-900 text-xs flex items-center gap-2 animate-in fade-in duration-150">
             <ShieldAlert className="w-4 h-4 text-red-600 shrink-0" />
-            <span>{errorMessage}</span>
+            <span className="font-medium">{errorMessage}</span>
           </div>
         )}
 
@@ -95,9 +121,13 @@ export default function MasterPinConfirmModal({
                 <Lock className="w-3.5 h-3.5 text-gray-400" />
                 <span>รหัสยืนยันแอดมินหลัก (Master PIN) <span className="text-red-500">*</span></span>
               </span>
-              <span className="text-[10px] text-gray-400 font-normal">
+              <button
+                type="button"
+                onClick={() => setPin("K1234")}
+                className="text-[10px] text-amber-600 hover:text-amber-700 font-semibold underline cursor-pointer"
+              >
                 (ค่าเริ่มต้น: K1234)
-              </span>
+              </button>
             </label>
             <div className="relative">
               <input
@@ -105,10 +135,11 @@ export default function MasterPinConfirmModal({
                 ref={inputRef}
                 type={showPin ? "text" : "password"}
                 required
+                autoComplete="off"
                 value={pin}
                 onChange={(e) => setPin(e.target.value)}
                 placeholder="กรอกรหัส PIN เช่น K1234..."
-                className="w-full h-12 pl-4 pr-11 rounded-xl border border-gray-200 bg-gray-50/70 focus:bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 text-sm font-mono font-bold tracking-wider outline-none transition-all"
+                className="w-full h-12 pl-4 pr-11 rounded-xl border-2 border-amber-300/80 bg-amber-50/20 focus:bg-white focus:border-amber-500 focus:ring-4 focus:ring-amber-500/20 text-base font-mono font-extrabold tracking-wider outline-none transition-all text-gray-900"
               />
               <button
                 type="button"
@@ -144,7 +175,7 @@ export default function MasterPinConfirmModal({
               ) : (
                 <div className="flex items-center gap-1.5">
                   <Check className="w-4 h-4 stroke-[3]" />
-                  <span>ยืนยันคำสั่ง</span>
+                  <span>ยืนยันและเตะออก</span>
                 </div>
               )}
             </Button>
@@ -153,4 +184,6 @@ export default function MasterPinConfirmModal({
       </div>
     </div>
   );
+
+  return typeof document !== "undefined" ? createPortal(modalContent, document.body) : null;
 }

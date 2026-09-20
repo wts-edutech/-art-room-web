@@ -158,6 +158,7 @@ const DEFAULT_MASTER_PIN = 'K1234';
 
 /**
  * Verifies Master Admin PIN (e.g. 'K1234') for high-security actions.
+ * Supports case-insensitivity for convenience (e.g., 'k1234' or 'K1234').
  */
 export async function verifyMasterPin(pin: string): Promise<boolean> {
   const cleanPin = String(pin || '').trim();
@@ -173,7 +174,8 @@ export async function verifyMasterPin(pin: string): Promise<boolean> {
 
     if (row && row.value) {
       const hashedInput = await hashPassword(cleanPin);
-      return hashedInput === row.value || cleanPin === row.value;
+      const hashedUpper = await hashPassword(cleanPin.toUpperCase());
+      return hashedInput === row.value || hashedUpper === row.value || cleanPin === row.value || cleanPin.toUpperCase() === row.value.toUpperCase();
     }
   } catch (err) {
     try {
@@ -183,14 +185,15 @@ export async function verifyMasterPin(pin: string): Promise<boolean> {
         const res: any = await stmt.first();
         if (res && res.value) {
           const hashedInput = await hashPassword(cleanPin);
-          return hashedInput === res.value || cleanPin === res.value;
+          const hashedUpper = await hashPassword(cleanPin.toUpperCase());
+          return hashedInput === res.value || hashedUpper === res.value || cleanPin === res.value || cleanPin.toUpperCase() === res.value.toUpperCase();
         }
       }
     } catch {}
   }
 
-  // Fallback to default K1234
-  return cleanPin === DEFAULT_MASTER_PIN;
+  // Fallback to default K1234 (allow case-insensitive 'k1234' or 'K1234')
+  return cleanPin.toUpperCase() === DEFAULT_MASTER_PIN.toUpperCase();
 }
 
 /**
