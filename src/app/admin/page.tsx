@@ -50,22 +50,22 @@ export default function AdminPage() {
       .catch(err => console.error("Failed to fetch visitors:", err));
   }, [activeTab]);
 
-  const handleLogout = async () => {
-    try {
-      await fetch("/api/auth", { method: "DELETE" });
-      await fetch("/api/auth/logout", { method: "POST" });
-    } catch (e) {
-      console.warn("Logout request failed:", e);
-    }
-    // Delete cookies client-side as fallback
-    document.cookie = "admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
-    document.cookie = "session_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
+  const handleLogout = () => {
+    // Clear localStorage immediately
     try {
       localStorage.removeItem("artroom_role");
       localStorage.removeItem("artroom_author_name");
       localStorage.removeItem("artroom_user_role");
+      localStorage.removeItem("artroom_author_email");
+      localStorage.removeItem("artroom_avatar");
     } catch {}
-    window.location.href = "/admin/login";
+
+    // Clear client-accessible cookies
+    document.cookie = "admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
+    document.cookie = "session_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
+
+    // Direct HTTP navigation to /api/admin/logout which clears HttpOnly cookies on server and 302 redirects to /admin/login
+    window.location.href = "/api/admin/logout";
   };
 
   return (
@@ -300,8 +300,9 @@ export default function AdminPage() {
 
         <div className="p-3 border-t border-gray-100">
           <button 
+            type="button"
             onClick={handleLogout}
-            className="w-full flex items-center gap-2.5 px-3 py-2 text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition-colors text-xs font-semibold"
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition-colors text-xs font-semibold cursor-pointer active:scale-98"
           >
             <LogOut className="w-4 h-4" />
             ออกจากระบบ
@@ -318,7 +319,9 @@ export default function AdminPage() {
             <img src="/school-logo.png" alt="School Logo" className="w-6 h-6 object-cover rounded-full bg-white" />
             Admin System Art room
           </div>
-          <button onClick={handleLogout} className="p-2 text-red-600"><LogOut className="w-5 h-5" /></button>
+          <button type="button" onClick={handleLogout} className="p-2 text-red-600 hover:bg-red-50 rounded-lg cursor-pointer">
+            <LogOut className="w-5 h-5" />
+          </button>
         </div>
 
         <div className="p-4 sm:p-6 md:p-8 max-w-[1650px] w-full mx-auto space-y-6">
