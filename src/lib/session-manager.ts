@@ -134,7 +134,8 @@ export async function ensureActiveSession(params: {
 }
 
 /**
- * Verify if a session ID is valid and active (not revoked)
+ * Verify if a session ID is valid and active (not revoked).
+ * Strictly requires the session record to exist in DB and isRevoked to be false.
  */
 export async function isSessionActive(sessionId: string): Promise<boolean> {
   if (!sessionId) return false;
@@ -148,14 +149,14 @@ export async function isSessionActive(sessionId: string): Promise<boolean> {
       .get();
 
     if (!session) {
-      // If session record doesn't exist in DB (e.g. legacy token), treat as valid until refreshed
-      return true;
+      // Session does not exist in DB -> invalid / kicked
+      return false;
     }
 
-    return !session.isRevoked;
+    return session.isRevoked === false || session.isRevoked === 0;
   } catch (err) {
     console.error('Check session active error:', err);
-    return true; // Fallback gracefully if DB error
+    return false;
   }
 }
 

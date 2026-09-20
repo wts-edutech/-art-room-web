@@ -16,7 +16,7 @@ export interface AdminSessionInfo {
 
 /**
  * Checks if request has a valid session token (student or guest).
- * Returns session info or null.
+ * Returns session info or null. Strictly requires valid active session ID.
  */
 export async function getSession(): Promise<SessionInfo | null> {
   const cookieStore = await cookies();
@@ -26,15 +26,17 @@ export async function getSession(): Promise<SessionInfo | null> {
   const payload = await verifySessionToken(token);
   if (!payload) return null;
 
-  // Check if session has been revoked
-  if (payload.sid) {
-    const active = await isSessionActive(payload.sid);
-    if (!active) {
-      return null;
-    }
-    // Touch session activity asynchronously
-    touchSession(payload.sid).catch(() => {});
+  // Strictly require active, non-revoked session
+  if (!payload.sid) {
+    return null;
   }
+
+  const active = await isSessionActive(payload.sid);
+  if (!active) {
+    return null;
+  }
+
+  touchSession(payload.sid).catch(() => {});
 
   return {
     userId: payload.userId,
@@ -74,6 +76,7 @@ export async function requireStudent(): Promise<SessionInfo> {
 
 /**
  * Checks if request has a valid admin token and session is not revoked.
+ * Strictly requires valid active session ID in database.
  */
 export async function getAdminSession(): Promise<AdminSessionInfo> {
   const cookieStore = await cookies();
@@ -83,13 +86,17 @@ export async function getAdminSession(): Promise<AdminSessionInfo> {
   const payload = await verifyAdminTokenWithPayload(token);
   if (!payload) return { isAdmin: false };
 
-  if (payload.sid) {
-    const active = await isSessionActive(payload.sid);
-    if (!active) {
-      return { isAdmin: false };
-    }
-    touchSession(payload.sid).catch(() => {});
+  // Strictly require active session ID
+  if (!payload.sid) {
+    return { isAdmin: false };
   }
+
+  const active = await isSessionActive(payload.sid);
+  if (!active) {
+    return { isAdmin: false };
+  }
+
+  touchSession(payload.sid).catch(() => {});
 
   return { isAdmin: true, sid: payload.sid };
 }
