@@ -1,56 +1,40 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import NewsPageClient from "@/components/news/NewsPageClient";
-import { getDb } from '@/db';
-import { news } from '@/db/schema';
-import { desc } from 'drizzle-orm';
-import type { Metadata } from 'next';
+import { Loader2 } from "lucide-react";
 
-export const runtime = 'edge';
+export default function NewsPage() {
+  const [newsList, setNewsList] = useState<any[]>([]);
+  const [activitiesList, setActivitiesList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-export const metadata: Metadata = {
-  title: "ข่าวสารและประชาสัมพันธ์ | ART ROOM - โรงเรียนวชิรธรรมสาธิต",
-  description: "ติดตามข่าวสารนิทรรศการผลงาน กิจกรรมสร้างสรรค์ และเรื่องราวน่าภาคภูมิใจของนักเรียนกลุ่มสาระการเรียนรู้ศิลปะ โรงเรียนวชิรธรรมสาธิต",
-  openGraph: {
-    title: "ข่าวสารและประชาสัมพันธ์ | ART ROOM",
-    description: "ติดตามข่าวสารนิทรรศการผลงาน และกิจกรรมสร้างสรรค์",
-    images: [{ url: "/images/news/hero-exhibition.jpg", width: 1200, height: 630 }],
-  }
-};
-
-// Helper to get news on server side
-async function getNews() {
-  try {
-    const db = getDb();
-    return await db.select().from(news).orderBy(desc(news.date));
-  } catch (error) {
-    console.error("Failed to load news:", error);
-    return [];
-  }
-}
-
-// Helper to get activities for calendar on server side
-async function getActivities() {
-  try {
-    const db = getDb();
-    return await db.select().from(activities).orderBy(desc(activities.createdAt));
-  } catch (error) {
-    console.error("Failed to load activities:", error);
-    return [];
-  }
-}
-
-export default async function NewsPage() {
-  const [newsList, activitiesList] = await Promise.all([
-    getNews(),
-    getActivities(),
-  ]);
+  useEffect(() => {
+    Promise.all([
+      fetch("/api/news").then((r) => r.json()).catch(() => []),
+      fetch("/api/activities").then((r) => r.json()).catch(() => [])
+    ]).then(([newsData, activitiesData]) => {
+      setNewsList(Array.isArray(newsData) ? newsData : []);
+      setActivitiesList(Array.isArray(activitiesData) ? activitiesData : []);
+    }).finally(() => {
+      setLoading(false);
+    });
+  }, []);
 
   return (
     <>
       <Navbar />
       <main className="flex-1 flex flex-col pt-24 min-h-screen bg-[#FDF9F1]">
-        <NewsPageClient initialNews={newsList} initialActivities={activitiesList} />
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-24 gap-3">
+            <Loader2 className="w-8 h-8 text-red-500 animate-spin" />
+            <p className="text-sm text-gray-500 font-medium">กำลังโหลดข่าวสารและกิจกรรม...</p>
+          </div>
+        ) : (
+          <NewsPageClient initialNews={newsList} initialActivities={activitiesList} />
+        )}
       </main>
       <Footer />
     </>
