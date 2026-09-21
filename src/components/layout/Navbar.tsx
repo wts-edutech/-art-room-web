@@ -357,9 +357,9 @@ export default function Navbar() {
             </Link>
           )}
 
-          {/* Tablet Hamburger Button (640px-1023px only, mobile uses bottom nav) */}
+          {/* Mobile & Tablet Hamburger Button (<1024px) */}
           <button 
-            className="hidden sm:flex lg:hidden p-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 active:scale-95 rounded-xl transition-all items-center justify-center cursor-pointer flex-shrink-0"
+            className="flex lg:hidden p-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 active:scale-95 rounded-xl transition-all items-center justify-center cursor-pointer flex-shrink-0"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             aria-label="เมนูนำทาง"
           >
@@ -368,17 +368,17 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Tablet Navigation Drawer Overlay (sm to lg) */}
+      {/* Mobile Navigation Drawer Overlay (<1024px) */}
       {isMobileMenuOpen && (
         <div 
-          className="lg:hidden hidden sm:block fixed inset-0 bg-black/60 backdrop-blur-xs z-[9998]" 
+          className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-xs z-[9998]" 
           onClick={() => setIsMobileMenuOpen(false)} 
         />
       )}
 
-      {/* Tablet Navigation Drawer (hidden on mobile <640px, uses bottom nav instead) */}
+      {/* Mobile Navigation Drawer (<1024px) */}
       <div 
-        className={`lg:hidden hidden sm:flex fixed top-0 right-0 w-[300px] max-w-[85vw] h-screen bg-white z-[9999] transform transition-transform duration-300 ease-in-out shadow-2xl flex-col ${
+        className={`lg:hidden fixed top-0 right-0 w-[310px] max-w-[88vw] h-screen bg-white z-[9999] transform transition-transform duration-300 ease-in-out shadow-2xl flex flex-col ${
           isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
