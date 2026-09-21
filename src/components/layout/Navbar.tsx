@@ -77,35 +77,35 @@ export default function Navbar() {
       </div>
 
       {/* Main Navigation Bar (64px) */}
-      <div className="container mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div className="max-w-[1700px] w-full mx-auto px-3 sm:px-4 lg:px-5 xl:px-8 h-16 flex items-center justify-between">
         
-        {/* Logo Section — compact on mobile */}
-        <div className="flex items-center gap-2 sm:gap-3 h-full min-w-0 flex-shrink-0">
-          <Link href="/" className="flex items-center gap-2 sm:gap-3 group min-w-0 flex-shrink-0">
+        {/* Logo Section — compact on mobile & iPad */}
+        <div className="flex items-center gap-2 sm:gap-2.5 xl:gap-3 h-full min-w-0 flex-shrink-0">
+          <Link href="/" className="flex items-center gap-2 sm:gap-2.5 xl:gap-3 group min-w-0 flex-shrink-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img 
               src="/school-logo.png" 
               alt="School Logo" 
-              className="w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 object-contain group-hover:scale-105 transition-transform flex-shrink-0"
+              className="w-9 h-9 sm:w-10 sm:h-10 lg:w-10 lg:h-10 xl:w-12 xl:h-12 object-contain group-hover:scale-105 transition-transform flex-shrink-0"
             />
             <div className="flex flex-col justify-center min-w-0">
-              <span className="font-heading font-black text-[20px] sm:text-[24px] lg:text-[28px] tracking-[0.05em] leading-none truncate">
+              <span className="font-heading font-black text-[18px] sm:text-[20px] lg:text-[20px] xl:text-[26px] tracking-[0.05em] leading-none truncate">
                 <span className="text-[#FF0000]">ART </span>
                 <span className="text-[#03071C]">ROOM</span>
               </span>
-              <span className="font-sans text-[7.5px] sm:text-[8.5px] lg:text-[9.5px] text-gray-600 font-bold tracking-[0.02em] mt-0.5 text-center block w-full whitespace-nowrap hidden sm:block">
+              <span className="font-sans text-[7.5px] sm:text-[8px] xl:text-[9.5px] text-gray-600 font-bold tracking-[0.02em] mt-0.5 text-center block w-full whitespace-nowrap hidden xl:block">
                 WACHIRATHAMMASATIT SCHOOL
               </span>
             </div>
           </Link>
         </div>
         
-        {/* Desktop Navigation (Visible on LG screens 1024px+) */}
-        <nav className="hidden lg:flex items-center gap-3 lg:gap-4 xl:gap-6 text-[14px] lg:text-[15px] font-medium text-gray-700 h-full ml-4">
+        {/* Desktop & iPad Navigation (Visible on screens 1024px+) */}
+        <nav className="hidden lg:flex items-center gap-1.5 lg:gap-2 xl:gap-5 text-[12.5px] lg:text-[13px] xl:text-[14.5px] font-medium text-gray-700 h-full ml-1 lg:ml-2 xl:ml-4">
           {/* 1. หน้าแรก */}
           <Link 
             href="/" 
-            className={`h-full flex items-center px-1 border-b-[3px] transition-colors whitespace-nowrap flex-shrink-0 ${pathname === "/" ? "border-red-500 text-red-500 font-bold" : "border-transparent hover:border-red-500 hover:text-red-500"}`}
+            className={`h-full flex items-center px-1 lg:px-1.5 xl:px-2 border-b-[3px] transition-colors whitespace-nowrap flex-shrink-0 ${pathname === "/" ? "border-red-500 text-red-500 font-bold" : "border-transparent hover:border-red-500 hover:text-red-500"}`}
           >
             หน้าแรก
           </Link>
@@ -113,7 +113,7 @@ export default function Navbar() {
           {/* 2. สื่อการสอน */}
           <Link 
             href="/materials" 
-            className={`h-full flex items-center px-1 border-b-[3px] transition-colors whitespace-nowrap flex-shrink-0 ${pathname.startsWith("/materials") ? "border-red-500 text-red-500 font-bold" : "border-transparent hover:border-red-500 hover:text-red-500"}`}
+            className={`h-full flex items-center px-1 lg:px-1.5 xl:px-2 border-b-[3px] transition-colors whitespace-nowrap flex-shrink-0 ${pathname.startsWith("/materials") ? "border-red-500 text-red-500 font-bold" : "border-transparent hover:border-red-500 hover:text-red-500"}`}
           >
             สื่อการสอน
           </Link>
@@ -121,19 +121,19 @@ export default function Navbar() {
           {/* 3. ส่งงาน (NEW) */}
           <Link 
             href="/submissions" 
-            className={`h-full flex items-center gap-1.5 px-1 border-b-[3px] transition-colors whitespace-nowrap flex-shrink-0 ${pathname.startsWith("/submissions") ? "border-red-500 text-red-500 font-bold" : "border-transparent hover:border-red-500 hover:text-red-500"}`}
+            className={`h-full flex items-center gap-1 px-1 lg:px-1.5 xl:px-2 border-b-[3px] transition-colors whitespace-nowrap flex-shrink-0 ${pathname.startsWith("/submissions") ? "border-red-500 text-red-500 font-bold" : "border-transparent hover:border-red-500 hover:text-red-500"}`}
           >
             <span>ส่งงาน</span>
-            <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-orange-100 text-orange-700">NEW</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-orange-100 text-orange-700">NEW</span>
           </Link>
 
           {/* 4. ผลงานนักเรียน Dropdown Menu */}
           <div className="relative group h-full flex items-center flex-shrink-0">
             <Link 
               href="/artworks"
-              className={`whitespace-nowrap flex items-center gap-1.5 px-1 h-full border-b-[3px] transition-colors focus:outline-none ${pathname.startsWith("/artworks") || pathname.startsWith("/awards") ? "border-red-500 text-red-500 font-bold" : "border-transparent hover:border-red-500 hover:text-red-500"}`}
+              className={`whitespace-nowrap flex items-center gap-1 px-1 lg:px-1.5 xl:px-2 h-full border-b-[3px] transition-colors focus:outline-none ${pathname.startsWith("/artworks") || pathname.startsWith("/awards") ? "border-red-500 text-red-500 font-bold" : "border-transparent hover:border-red-500 hover:text-red-500"}`}
             >
-              ผลงานนักเรียน <ChevronDown className="w-4 h-4 transition-transform duration-300 group-hover:rotate-180" />
+              ผลงานนักเรียน <ChevronDown className="w-3.5 h-3.5 transition-transform duration-300 group-hover:rotate-180" />
             </Link>
             
             <div className="absolute top-full -left-4 pt-2 w-64 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
@@ -173,7 +173,7 @@ export default function Navbar() {
           {/* 5. แชร์ไอเดีย */}
           <Link 
             href="/ideas" 
-            className={`h-full flex items-center px-1 border-b-[3px] transition-colors whitespace-nowrap flex-shrink-0 ${pathname.startsWith("/ideas") ? "border-red-500 text-red-500 font-bold" : "border-transparent hover:border-red-500 hover:text-red-500"}`}
+            className={`h-full flex items-center px-1 lg:px-1.5 xl:px-2 border-b-[3px] transition-colors whitespace-nowrap flex-shrink-0 ${pathname.startsWith("/ideas") ? "border-red-500 text-red-500 font-bold" : "border-transparent hover:border-red-500 hover:text-red-500"}`}
           >
             แชร์ไอเดีย
           </Link>
@@ -182,9 +182,9 @@ export default function Navbar() {
           <div className="relative group h-full flex items-center flex-shrink-0">
             <button 
               type="button"
-              className="whitespace-nowrap flex items-center gap-1.5 px-1 h-full border-b-[3px] border-transparent hover:border-red-500 hover:text-red-500 transition-colors focus:outline-none cursor-pointer"
+              className="whitespace-nowrap flex items-center gap-1 px-1 lg:px-1.5 xl:px-2 h-full border-b-[3px] border-transparent hover:border-red-500 hover:text-red-500 transition-colors focus:outline-none cursor-pointer"
             >
-              คลังสื่อองค์กร <ChevronDown className="w-4 h-4 transition-transform duration-300 group-hover:rotate-180" />
+              คลังสื่อองค์กร <ChevronDown className="w-3.5 h-3.5 transition-transform duration-300 group-hover:rotate-180" />
             </button>
             
             <div className="absolute top-full -left-6 pt-2 w-72 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
@@ -225,14 +225,14 @@ export default function Navbar() {
           <div className="relative group h-full flex items-center flex-shrink-0">
             <button 
               type="button"
-              className={`whitespace-nowrap flex items-center gap-1.5 px-1 h-full border-b-[3px] transition-colors focus:outline-none cursor-pointer ${
+              className={`whitespace-nowrap flex items-center gap-1 px-1 lg:px-1.5 xl:px-2 h-full border-b-[3px] transition-colors focus:outline-none cursor-pointer ${
                 pathname.startsWith("/news") || pathname.startsWith("/activities") || pathname.startsWith("/teachers") || pathname === "/contact"
                   ? "border-red-500 text-red-500 font-bold" 
                   : "border-transparent hover:border-red-500 hover:text-red-500 text-gray-700"
               }`}
             >
               <span>เกี่ยวกับเรา</span>
-              <ChevronDown className="w-4 h-4 transition-transform duration-300 group-hover:rotate-180" />
+              <ChevronDown className="w-3.5 h-3.5 transition-transform duration-300 group-hover:rotate-180" />
             </button>
             
             <div className="absolute top-full -left-6 pt-2 w-64 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
@@ -304,14 +304,14 @@ export default function Navbar() {
         </nav>
 
         {/* Right Section: User Profile / Login & Hamburger Button */}
-        <div className="flex items-center gap-1.5 sm:gap-2 h-full flex-shrink-0 min-w-0">
+        <div className="flex items-center gap-1 sm:gap-2 h-full flex-shrink-0 min-w-0">
 
           {userName ? (
             <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0 min-w-0">
               {userRole === "teacher" || userRole === "admin" ? (
                 <Link 
                   href="/admin" 
-                  className="text-xs font-bold text-white bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded-full shadow-xs transition-colors whitespace-nowrap cursor-pointer"
+                  className="text-xs font-bold text-white bg-red-600 hover:bg-red-700 px-2.5 lg:px-3 py-1.5 rounded-full shadow-xs transition-colors whitespace-nowrap cursor-pointer"
                 >
                   หลังบ้าน
                 </Link>
@@ -333,7 +333,7 @@ export default function Navbar() {
                     <span className="text-[10px] font-bold text-orange-600">{resolvedAvatar.value}</span>
                   )}
                 </div>
-                <span className="max-w-[60px] sm:max-w-[100px] lg:max-w-[120px] truncate hidden sm:inline">{userName}</span>
+                <span className="max-w-[60px] sm:max-w-[80px] xl:max-w-[120px] truncate hidden sm:inline">{userName}</span>
                 <Settings className="w-3 h-3 text-orange-400 group-hover:text-orange-600 transition-colors shrink-0" />
               </button>
               <button 
@@ -346,7 +346,7 @@ export default function Navbar() {
             </div>
           ) : (
             <Link href="/login" className="flex items-center flex-shrink-0">
-              <Button variant="default" className="whitespace-nowrap rounded-xl px-3 sm:px-4 h-9 sm:h-10 shadow-sm shadow-red-500/20 bg-[#ff0f39] hover:bg-[#e00028] text-white text-xs sm:text-sm font-medium transition-all duration-200 border-0 flex items-center gap-1.5 cursor-pointer active:scale-95">
+              <Button variant="default" className="whitespace-nowrap rounded-xl px-2.5 sm:px-3.5 xl:px-4 h-8.5 sm:h-9 xl:h-10 shadow-sm shadow-red-500/20 bg-[#ff0f39] hover:bg-[#e00028] text-white text-xs sm:text-xs xl:text-sm font-medium transition-all duration-200 border-0 flex items-center gap-1.5 cursor-pointer active:scale-95 shrink-0">
                 <div className="w-4 h-4 rounded-full bg-white flex items-center justify-center flex-shrink-0">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-2.5 h-2.5 text-[#ff0f39]">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
