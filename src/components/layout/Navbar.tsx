@@ -12,6 +12,7 @@ import { performGlobalLogout, syncAuthWithServer } from "@/lib/client-auth";
 export default function Navbar() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [activeMobileSubmenu, setActiveMobileSubmenu] = useState<"artworks" | "orgMedia" | "about" | null>(null);
   const [isArtworksOpen, setIsArtworksOpen] = useState(false);
   const [isOrgMediaOpen, setIsOrgMediaOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
@@ -56,9 +57,10 @@ export default function Navbar() {
     };
   }, []);
 
-  // Close mobile drawer when route changes
+  // Close mobile drawer and submenus when route changes
   useEffect(() => {
     setIsMobileMenuOpen(false);
+    setActiveMobileSubmenu(null);
   }, [pathname]);
 
   const handleLogout = async () => {
@@ -368,6 +370,102 @@ export default function Navbar() {
         </div>
       </div>
 
+      {/* Mobile & Tablet Top Horizontal Sub-Navbar (7 tabs matching screenshot) — Visible on <1024px */}
+      <nav className="flex lg:hidden items-center overflow-x-auto scrollbar-none border-t border-gray-100 bg-white/95 backdrop-blur-md px-2 sm:px-4 h-11 text-xs font-medium text-gray-700 shadow-2xs select-none">
+        <div className="flex items-center space-x-1 sm:space-x-1.5 shrink-0 py-0.5">
+          {/* 1. หน้าแรก */}
+          <Link 
+            href="/" 
+            className={`whitespace-nowrap flex items-center px-2.5 sm:px-3 h-8 border-b-2 transition-all rounded-lg cursor-pointer ${
+              pathname === "/" 
+                ? "border-red-500 text-red-600 font-bold bg-red-50/60" 
+                : "border-transparent text-gray-700 hover:text-red-600 hover:bg-gray-50"
+            }`}
+          >
+            หน้าแรก
+          </Link>
+
+          {/* 2. สื่อการสอน */}
+          <Link 
+            href="/materials" 
+            className={`whitespace-nowrap flex items-center px-2.5 sm:px-3 h-8 border-b-2 transition-all rounded-lg cursor-pointer ${
+              pathname.startsWith("/materials") 
+                ? "border-red-500 text-red-600 font-bold bg-red-50/60" 
+                : "border-transparent text-gray-700 hover:text-red-600 hover:bg-gray-50"
+            }`}
+          >
+            สื่อการสอน
+          </Link>
+
+          {/* 3. ส่งงาน NEW */}
+          <Link 
+            href="/submissions" 
+            className={`whitespace-nowrap flex items-center gap-1 px-2.5 sm:px-3 h-8 border-b-2 transition-all rounded-lg cursor-pointer ${
+              pathname.startsWith("/submissions") 
+                ? "border-red-500 text-red-600 font-bold bg-red-50/60" 
+                : "border-transparent text-gray-700 hover:text-red-600 hover:bg-gray-50"
+            }`}
+          >
+            <span>ส่งงาน</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-orange-100 text-orange-700">NEW</span>
+          </Link>
+
+          {/* 4. ผลงานนักเรียน ⌵ */}
+          <button 
+            type="button"
+            onClick={() => setActiveMobileSubmenu(activeMobileSubmenu === "artworks" ? null : "artworks")}
+            className={`whitespace-nowrap flex items-center gap-1 px-2.5 sm:px-3 h-8 border-b-2 transition-all rounded-lg cursor-pointer ${
+              pathname.startsWith("/artworks") || pathname.startsWith("/awards") || activeMobileSubmenu === "artworks"
+                ? "border-red-500 text-red-600 font-bold bg-red-50/60" 
+                : "border-transparent text-gray-700 hover:text-red-600 hover:bg-gray-50"
+            }`}
+          >
+            <span>ผลงานนักเรียน</span>
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${activeMobileSubmenu === "artworks" ? "rotate-180 text-red-600" : "text-gray-400"}`} />
+          </button>
+
+          {/* 5. แชร์ไอเดีย */}
+          <Link 
+            href="/ideas" 
+            className={`whitespace-nowrap flex items-center px-2.5 sm:px-3 h-8 border-b-2 transition-all rounded-lg cursor-pointer ${
+              pathname.startsWith("/ideas") 
+                ? "border-red-500 text-red-600 font-bold bg-red-50/60" 
+                : "border-transparent text-gray-700 hover:text-red-600 hover:bg-gray-50"
+            }`}
+          >
+            แชร์ไอเดีย
+          </Link>
+
+          {/* 6. คลังสื่อองค์กร ⌵ */}
+          <button 
+            type="button"
+            onClick={() => setActiveMobileSubmenu(activeMobileSubmenu === "orgMedia" ? null : "orgMedia")}
+            className={`whitespace-nowrap flex items-center gap-1 px-2.5 sm:px-3 h-8 border-b-2 transition-all rounded-lg cursor-pointer ${
+              activeMobileSubmenu === "orgMedia"
+                ? "border-red-500 text-red-600 font-bold bg-red-50/60" 
+                : "border-transparent text-gray-700 hover:text-red-600 hover:bg-gray-50"
+            }`}
+          >
+            <span>คลังสื่อองค์กร</span>
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${activeMobileSubmenu === "orgMedia" ? "rotate-180 text-red-600" : "text-gray-400"}`} />
+          </button>
+
+          {/* 7. เกี่ยวกับเรา ⌵ */}
+          <button 
+            type="button"
+            onClick={() => setActiveMobileSubmenu(activeMobileSubmenu === "about" ? null : "about")}
+            className={`whitespace-nowrap flex items-center gap-1 px-2.5 sm:px-3 h-8 border-b-2 transition-all rounded-lg cursor-pointer ${
+              pathname.startsWith("/news") || pathname.startsWith("/activities") || pathname.startsWith("/teachers") || pathname === "/contact" || activeMobileSubmenu === "about"
+                ? "border-red-500 text-red-600 font-bold bg-red-50/60" 
+                : "border-transparent text-gray-700 hover:text-red-600 hover:bg-gray-50"
+            }`}
+          >
+            <span>เกี่ยวกับเรา</span>
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${activeMobileSubmenu === "about" ? "rotate-180 text-red-600" : "text-gray-400"}`} />
+          </button>
+        </div>
+      </nav>
+
       {/* Mobile Navigation Drawer Overlay (<1024px) */}
       {isMobileMenuOpen && (
         <div 
@@ -624,6 +722,243 @@ export default function Navbar() {
           )}
         </div>
       </div>
+
+      {/* Mobile Submenu Bottom Sheet Modal (<1024px) */}
+      {activeMobileSubmenu && (
+        <>
+          <div 
+            className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-xs z-[99990] animate-in fade-in duration-200"
+            onClick={() => setActiveMobileSubmenu(null)}
+          />
+          <div 
+            className="lg:hidden fixed bottom-0 inset-x-0 bg-white rounded-t-3xl shadow-2xl z-[99991] p-5 pb-8 animate-in slide-in-from-bottom duration-250 border-t border-gray-100 max-w-lg mx-auto"
+            style={{ paddingBottom: "calc(2rem + env(safe-area-inset-bottom, 0px))" }}
+          >
+            {/* Sheet Drag Handle */}
+            <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4" />
+
+            {/* Submenu 1: ผลงานนักเรียน */}
+            {activeMobileSubmenu === "artworks" && (
+              <div>
+                <div className="flex items-center justify-between pb-3 mb-3 border-b border-gray-100">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-red-50 text-red-600 flex items-center justify-center font-bold">
+                      <Palette className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-base text-gray-900 font-kanit leading-tight">ผลงานนักเรียน</h3>
+                      <p className="text-xs text-gray-500">เลือกหมวดหมู่ที่ต้องการเข้าชม</p>
+                    </div>
+                  </div>
+                  <button 
+                    type="button" 
+                    onClick={() => setActiveMobileSubmenu(null)}
+                    className="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors cursor-pointer"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  <Link
+                    href="/awards"
+                    onClick={() => setActiveMobileSubmenu(null)}
+                    className={`flex items-center gap-3.5 p-3 rounded-2xl transition-all border cursor-pointer ${
+                      pathname.startsWith("/awards") 
+                        ? "bg-amber-50/90 border-amber-300 text-amber-900 shadow-2xs" 
+                        : "bg-gray-50/80 hover:bg-amber-50/40 border-gray-100 text-gray-800"
+                    }`}
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0 shadow-2xs">
+                      <Trophy className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-sm text-gray-900 leading-tight">รางวัลที่ได้รับ</h4>
+                      <p className="text-xs text-gray-500 mt-0.5">ผลงานการประกวดและการแข่งขัน</p>
+                    </div>
+                  </Link>
+
+                  <Link
+                    href="/artworks"
+                    onClick={() => setActiveMobileSubmenu(null)}
+                    className={`flex items-center gap-3.5 p-3 rounded-2xl transition-all border cursor-pointer ${
+                      pathname.startsWith("/artworks") 
+                        ? "bg-rose-50/90 border-rose-300 text-rose-900 shadow-2xs" 
+                        : "bg-gray-50/80 hover:bg-rose-50/40 border-gray-100 text-gray-800"
+                    }`}
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0 shadow-2xs">
+                      <Palette className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-sm text-gray-900 leading-tight">ผลงานนักเรียน</h4>
+                      <p className="text-xs text-gray-500 mt-0.5">แกลเลอรีผลงานศิลปะสร้างสรรค์</p>
+                    </div>
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {/* Submenu 2: คลังสื่อองค์กร */}
+            {activeMobileSubmenu === "orgMedia" && (
+              <div>
+                <div className="flex items-center justify-between pb-3 mb-3 border-b border-gray-100">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                      <Building2 className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-base text-gray-900 font-kanit leading-tight">คลังสื่อองค์กร</h3>
+                      <p className="text-xs text-gray-500">แหล่งเรียนรู้ภายนอกและหอศิลป์</p>
+                    </div>
+                  </div>
+                  <button 
+                    type="button" 
+                    onClick={() => setActiveMobileSubmenu(null)}
+                    className="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors cursor-pointer"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  <Link
+                    href="https://media-center.moe.go.th/Home"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setActiveMobileSubmenu(null)}
+                    className="flex items-center gap-3.5 p-3 rounded-2xl bg-gray-50/80 hover:bg-blue-50/50 border border-gray-100 text-gray-800 transition-all cursor-pointer"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0 shadow-2xs">
+                      <Building2 className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-sm text-gray-900 leading-tight">ศูนย์รวมการเรียนรู้ (ศธ.)</h4>
+                      <p className="text-xs text-gray-500 mt-0.5">กระทรวงศึกษาธิการ (media-center.moe.go.th)</p>
+                    </div>
+                  </Link>
+
+                  <Link
+                    href="https://elibrary-bacc.hibrary.me/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setActiveMobileSubmenu(null)}
+                    className="flex items-center gap-3.5 p-3 rounded-2xl bg-gray-50/80 hover:bg-purple-50/50 border border-gray-100 text-gray-800 transition-all cursor-pointer"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center shrink-0 shadow-2xs">
+                      <Landmark className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-sm text-gray-900 leading-tight">ห้องสมุด หอศิลปวัฒนธรรมฯ</h4>
+                      <p className="text-xs text-gray-500 mt-0.5">e-Library BACC กรุงเทพมหานคร</p>
+                    </div>
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {/* Submenu 3: เกี่ยวกับเรา */}
+            {activeMobileSubmenu === "about" && (
+              <div>
+                <div className="flex items-center justify-between pb-3 mb-3 border-b border-gray-100">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center font-bold">
+                      <Newspaper className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-base text-gray-900 font-kanit leading-tight">เกี่ยวกับเรา</h3>
+                      <p className="text-xs text-gray-500">ข้อมูลข่าวสาร กิจกรรม และผู้สอน</p>
+                    </div>
+                  </div>
+                  <button 
+                    type="button" 
+                    onClick={() => setActiveMobileSubmenu(null)}
+                    className="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors cursor-pointer"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <Link
+                    href="/news"
+                    onClick={() => setActiveMobileSubmenu(null)}
+                    className={`flex items-center gap-3 p-3 rounded-2xl transition-all border cursor-pointer ${
+                      pathname.startsWith("/news") 
+                        ? "bg-orange-50/90 border-orange-300 text-orange-900 shadow-2xs" 
+                        : "bg-gray-50/80 hover:bg-orange-50/40 border-gray-100 text-gray-800"
+                    }`}
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0 shadow-2xs">
+                      <Newspaper className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-sm text-gray-900 leading-tight">ข่าวสารและประกาศ</h4>
+                      <p className="text-xs text-gray-500 mt-0.5 truncate">อัปเดตข่าวประชาสัมพันธ์</p>
+                    </div>
+                  </Link>
+
+                  <Link
+                    href="/activities"
+                    onClick={() => setActiveMobileSubmenu(null)}
+                    className={`flex items-center gap-3 p-3 rounded-2xl transition-all border cursor-pointer ${
+                      pathname.startsWith("/activities") 
+                        ? "bg-pink-50/90 border-pink-300 text-pink-900 shadow-2xs" 
+                        : "bg-gray-50/80 hover:bg-pink-50/40 border-gray-100 text-gray-800"
+                    }`}
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center shrink-0 shadow-2xs">
+                      <CalendarDays className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-sm text-gray-900 leading-tight">กิจกรรมต่างๆ</h4>
+                      <p className="text-xs text-gray-500 mt-0.5 truncate">ปฏิทินและภาพกิจกรรม</p>
+                    </div>
+                  </Link>
+
+                  {isTeachersEnabled && (
+                    <Link
+                      href="/teachers"
+                      onClick={() => setActiveMobileSubmenu(null)}
+                      className={`flex items-center gap-3 p-3 rounded-2xl transition-all border cursor-pointer ${
+                        pathname.startsWith("/teachers") 
+                          ? "bg-indigo-50/90 border-indigo-300 text-indigo-900 shadow-2xs" 
+                          : "bg-gray-50/80 hover:bg-indigo-50/40 border-gray-100 text-gray-800"
+                      }`}
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0 shadow-2xs">
+                        <GraduationCap className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-bold text-sm text-gray-900 leading-tight">Teacher Profile</h4>
+                        <p className="text-xs text-gray-500 mt-0.5 truncate">ประวัติและรางวัลครูผู้สอน</p>
+                      </div>
+                    </Link>
+                  )}
+
+                  <Link
+                    href="/contact"
+                    onClick={() => setActiveMobileSubmenu(null)}
+                    className={`flex items-center gap-3 p-3 rounded-2xl transition-all border cursor-pointer ${
+                      pathname === "/contact" 
+                        ? "bg-emerald-50/90 border-emerald-300 text-emerald-900 shadow-2xs" 
+                        : "bg-gray-50/80 hover:bg-emerald-50/40 border-gray-100 text-gray-800"
+                    }`}
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 shadow-2xs">
+                      <PhoneCall className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-sm text-gray-900 leading-tight">ติดต่อเรา</h4>
+                      <p className="text-xs text-gray-500 mt-0.5 truncate">กลุ่มสาระฯ ศิลปะ</p>
+                    </div>
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
+        </>
+      )}
 
       {/* Global Profile Settings Modal */}
       <ProfileSettingsModal 
