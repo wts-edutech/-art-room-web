@@ -25,8 +25,10 @@ export default function Home() {
         {/* Desktop: full hero with big typography (hidden md:flex inside HeroSection) */}
         <HeroSection />
 
-        {/* 2. Quick Menu Shortcuts — Mobile only (QuickMenuSection has md:hidden internally) */}
-        <QuickMenuSection />
+        {/* 2. Quick Menu Shortcuts — Mobile only */}
+        <div className="block md:hidden">
+          <QuickMenuSection />
+        </div>
 
         {/* 3. Why Art Room Features Grid */}
         <div className="pt-4 md:pt-0">
