@@ -38,6 +38,29 @@ export default function AdminLoginPage() {
     }
   };
 
+  const [successMsg, setSuccessMsg] = useState("");
+  const [isResetting, setIsResetting] = useState(false);
+
+  const handleResetPassword = async () => {
+    setIsResetting(true);
+    setError("");
+    setSuccessMsg("");
+    try {
+      const res = await fetch("/api/auth/reset", { method: "POST" });
+      const data = await res.json();
+      if (res.ok) {
+        setPassword("admin1234");
+        setSuccessMsg("รีเซ็ตรหัสผ่านกลับเป็น admin1234 เรียบร้อยแล้ว (กดปุ่มเข้าสู่ระบบได้ทันที)");
+      } else {
+        setError(data.error || "เกิดข้อผิดพลาดในการรีเซ็ตรหัสผ่าน");
+      }
+    } catch {
+      setError("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้");
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center relative p-4 bg-orange-50/30">
       <div 
@@ -59,6 +82,12 @@ export default function AdminLoginPage() {
           </div>
         )}
 
+        {successMsg && (
+          <div className="mb-6 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm text-center font-prompt">
+            {successMsg}
+          </div>
+        )}
+
         <form onSubmit={handleLogin} className="space-y-6 font-prompt">
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700" htmlFor="password">รหัสผ่าน</label>
@@ -75,7 +104,7 @@ export default function AdminLoginPage() {
               <button 
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-lg text-gray-400 hover:text-orange-500 hover:bg-orange-50 transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-lg text-gray-400 hover:text-orange-500 hover:bg-orange-50 transition-colors cursor-pointer"
               >
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
@@ -85,10 +114,21 @@ export default function AdminLoginPage() {
           <Button 
             type="submit" 
             disabled={isLoading}
-            className="w-full h-12 rounded-xl text-md font-bold bg-orange-500 hover:bg-orange-600 text-white border-none shadow-md shadow-orange-500/20 transition-all"
+            className="w-full h-12 rounded-xl text-md font-bold bg-orange-500 hover:bg-orange-600 text-white border-none shadow-md shadow-orange-500/20 transition-all cursor-pointer"
           >
             {isLoading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
           </Button>
+
+          <div className="pt-2 text-center">
+            <button
+              type="button"
+              onClick={handleResetPassword}
+              disabled={isResetting || isLoading}
+              className="text-xs text-gray-500 hover:text-orange-600 transition-colors underline cursor-pointer disabled:opacity-50"
+            >
+              {isResetting ? "กำลังรีเซ็ตรหัสผ่าน..." : "ลืมรหัสผ่าน? รีเซ็ตเป็นรหัสเริ่มต้น (admin1234)"}
+            </button>
+          </div>
         </form>
       </div>
     </div>
