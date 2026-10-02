@@ -334,6 +334,15 @@ export default function Navbar() {
               </span>
             </Link>
           )}
+          {/* Hamburger Button — Mobile/Tablet only (lg:hidden), triggers BottomNav sheet */}
+          <button
+            type="button"
+            aria-label="เปิดเมนู"
+            onClick={() => window.dispatchEvent(new Event("openMobileMenu"))}
+            className="lg:hidden flex items-center justify-center w-9 h-9 rounded-xl text-gray-600 hover:bg-gray-100 active:scale-95 transition-all cursor-pointer ml-0.5"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
 
         </div>
       </div>
