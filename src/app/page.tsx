@@ -20,10 +20,10 @@ export default function Home() {
           style={{ backgroundImage: "url('/bg-art.jpg')" }}
         />
         
-        {/* 1. Hero Banner — Desktop only */}
-        <div className="hidden md:block">
-          <HeroSection />
-        </div>
+        {/* 1. Hero Banner — HeroSection manages its own mobile/desktop layout internally */}
+        {/* Mobile: purple card + AI Art card (md:hidden inside HeroSection) */}
+        {/* Desktop: full hero with big typography (hidden md:flex inside HeroSection) */}
+        <HeroSection />
 
         {/* 2. Quick Menu Shortcuts — Mobile only (QuickMenuSection has md:hidden internally) */}
         <QuickMenuSection />
