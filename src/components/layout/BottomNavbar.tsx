@@ -18,12 +18,14 @@ import {
   PhoneCall,
   Building2,
   Landmark,
-  User,
   LogOut,
   Settings,
   Sparkles,
-  ChevronRight,
-  LogIn
+  ChevronDown,
+  LogIn,
+  ExternalLink,
+  ShieldCheck,
+  FolderOpen
 } from "lucide-react";
 import ProfileSettingsModal from "@/components/modals/ProfileSettingsModal";
 import { resolveUserAvatar } from "@/lib/art-avatars";
@@ -38,6 +40,21 @@ export default function BottomNavbar() {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isTeachersEnabled, setIsTeachersEnabled] = useState(true);
   const [mounted, setMounted] = useState(false);
+
+  // Accordion state inside full-screen menu
+  const [expandedSections, setExpandedSections] = useState<{ [key: string]: boolean }>({
+    materials: false,
+    artworks: true, // Default open for quick access
+    media: false,
+    about: false,
+  });
+
+  const toggleSection = (key: string) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
 
   const updateUserData = () => {
     setUserName(localStorage.getItem("artroom_author_name"));
@@ -70,7 +87,19 @@ export default function BottomNavbar() {
     };
   }, []);
 
-  // Close more menu when pathname changes
+  // Lock body scroll when full-screen menu is open
+  useEffect(() => {
+    if (isMoreMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isMoreMenuOpen]);
+
+  // Close menu when pathname changes
   useEffect(() => {
     setIsMoreMenuOpen(false);
   }, [pathname]);
@@ -80,17 +109,14 @@ export default function BottomNavbar() {
     await performGlobalLogout("/");
   };
 
-  // Hide on admin pages (admin has its own dedicated mobile bar)
+  // Hide on admin pages
   if (pathname?.startsWith("/admin")) return null;
-  if (!mounted) return null;
 
   const isHomeActive = pathname === "/";
   const isMaterialsActive = pathname.startsWith("/materials");
   const isSubmissionsActive = pathname.startsWith("/submissions") || pathname.startsWith("/submit-work");
   const isIdeasActive = pathname.startsWith("/ideas");
-  const isMoreActive = isMoreMenuOpen || (
-    !isHomeActive && !isMaterialsActive && !isSubmissionsActive && !isIdeasActive
-  );
+  const isMoreActive = isMoreMenuOpen;
 
   const resolvedAvatar = resolveUserAvatar(userAvatar, userName);
 
@@ -108,7 +134,7 @@ export default function BottomNavbar() {
             {/* 1. หน้าแรก */}
             <Link
               href="/"
-              className={`flex flex-col items-center justify-center h-full gap-0.5 transition-all active:scale-95 cursor-pointer ${
+              className={`flex flex-col items-center justify-center h-full min-h-[44px] gap-0.5 transition-all active:scale-95 cursor-pointer ${
                 isHomeActive ? "text-red-600 font-bold" : "text-gray-500 hover:text-gray-800 font-medium"
               }`}
             >
@@ -122,7 +148,7 @@ export default function BottomNavbar() {
             {/* 2. สื่อการสอน */}
             <Link
               href="/materials"
-              className={`flex flex-col items-center justify-center h-full gap-0.5 transition-all active:scale-95 cursor-pointer ${
+              className={`flex flex-col items-center justify-center h-full min-h-[44px] gap-0.5 transition-all active:scale-95 cursor-pointer ${
                 isMaterialsActive ? "text-red-600 font-bold" : "text-gray-500 hover:text-gray-800 font-medium"
               }`}
             >
@@ -133,10 +159,10 @@ export default function BottomNavbar() {
               <span className="bottom-nav-label text-[10px] leading-tight truncate">สื่อการสอน</span>
             </Link>
 
-            {/* 3. ส่งงาน (NEW) */}
+            {/* 3. ส่งงาน (SINGLE NEW BADGE) */}
             <Link
               href="/submissions"
-              className={`flex flex-col items-center justify-center h-full gap-0.5 transition-all active:scale-95 cursor-pointer ${
+              className={`flex flex-col items-center justify-center h-full min-h-[44px] gap-0.5 transition-all active:scale-95 cursor-pointer ${
                 isSubmissionsActive ? "text-red-600 font-bold" : "text-gray-500 hover:text-gray-800 font-medium"
               }`}
             >
@@ -152,7 +178,7 @@ export default function BottomNavbar() {
             {/* 4. แชร์ไอเดีย */}
             <Link
               href="/ideas"
-              className={`flex flex-col items-center justify-center h-full gap-0.5 transition-all active:scale-95 cursor-pointer ${
+              className={`flex flex-col items-center justify-center h-full min-h-[44px] gap-0.5 transition-all active:scale-95 cursor-pointer ${
                 isIdeasActive ? "text-red-600 font-bold" : "text-gray-500 hover:text-gray-800 font-medium"
               }`}
             >
@@ -163,11 +189,11 @@ export default function BottomNavbar() {
               <span className="bottom-nav-label text-[10px] leading-tight truncate">แชร์ไอเดีย</span>
             </Link>
 
-            {/* 5. เมนูทั้งหมด (More Bottom Sheet) */}
+            {/* 5. เมนูทั้งหมด (Full-Screen Menu Opener) */}
             <button
               type="button"
               onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
-              className={`flex flex-col items-center justify-center h-full gap-0.5 transition-all active:scale-95 cursor-pointer ${
+              className={`flex flex-col items-center justify-center h-full min-h-[44px] gap-0.5 transition-all active:scale-95 cursor-pointer ${
                 isMoreActive ? "text-red-600 font-bold" : "text-gray-500 hover:text-gray-800 font-medium"
               }`}
             >
@@ -184,279 +210,463 @@ export default function BottomNavbar() {
       </nav>
 
       {/* ============================================================ */}
-      {/* ===== ALL-IN-ONE MORE MENU BOTTOM SHEET ===== */}
+      {/* ===== FULL-SCREEN MOBILE MENU OVERLAY (All Desktop Links) ===== */}
       {/* ============================================================ */}
       {isMoreMenuOpen && (
-        <>
-          <div
-            className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-xs z-[99990] animate-in fade-in duration-200"
-            onClick={() => setIsMoreMenuOpen(false)}
-          />
-
-          <div
-            className="lg:hidden fixed bottom-0 inset-x-0 bg-white rounded-t-3xl shadow-2xl z-[99991] max-h-[85vh] overflow-y-auto p-5 pb-8 animate-in slide-in-from-bottom duration-250 border-t border-gray-100 max-w-lg mx-auto"
-            style={{ paddingBottom: "calc(4.5rem + env(safe-area-inset-bottom, 0px))" }}
-          >
-            {/* Sheet Handle */}
-            <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4" />
-
-            {/* Sheet Header */}
-            <div className="flex items-center justify-between pb-3 mb-4 border-b border-gray-100">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 bg-white rounded-xl flex items-center justify-center p-1 shadow-2xs border border-gray-200">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/school-logo.png" alt="Logo" className="w-full h-full object-contain" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-base text-gray-900 font-kanit leading-tight">
-                    <span className="text-red-600">ART ROOM</span> เมนูระบบทั้งหมด
-                  </h3>
-                  <p className="text-[11px] text-gray-500">โรงเรียนวชิรธรรมสาธิต</p>
-                </div>
+        <div className="lg:hidden fixed inset-0 z-[99995] bg-white flex flex-col animate-in fade-in duration-200">
+          {/* Top Bar with School Branding & Big Close Button */}
+          <div className="h-16 px-4 border-b border-gray-100 flex items-center justify-between bg-white shrink-0 shadow-2xs">
+            <Link 
+              href="/" 
+              onClick={() => setIsMoreMenuOpen(false)}
+              className="flex items-center gap-2.5 min-w-0"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/school-logo.png"
+                alt="Logo"
+                className="w-9 h-9 object-contain shrink-0"
+              />
+              <div className="flex flex-col justify-center min-w-0">
+                <span className="font-heading font-black text-lg tracking-tight leading-none">
+                  <span className="text-red-600">ART </span>
+                  <span className="text-gray-900">ROOM</span>
+                </span>
+                <span className="text-[9px] text-gray-500 font-semibold tracking-wider uppercase leading-tight mt-0.5 truncate">
+                  WACHIRATHAMMASATIT SCHOOL
+                </span>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsMoreMenuOpen(false)}
-                className="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+            </Link>
 
-            <div className="space-y-4">
-              {/* Group 1: ผลงาน & รางวัลศิลปะ */}
-              <div>
-                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2 px-1">
-                  ผลงาน & รางวัลศิลปะ
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  <Link
-                    href="/awards"
-                    onClick={() => setIsMoreMenuOpen(false)}
-                    className={`flex items-center gap-2.5 p-2.5 rounded-2xl border transition-all cursor-pointer ${
-                      pathname.startsWith("/awards")
-                        ? "bg-amber-50 border-amber-300 text-amber-900 shadow-2xs font-bold"
-                        : "bg-gray-50 hover:bg-amber-50/40 border-gray-100 text-gray-800 font-medium"
-                    }`}
-                  >
-                    <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
-                      <Trophy className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs leading-tight truncate">รางวัลที่ได้รับ</p>
-                      <p className="text-[9px] text-gray-400 leading-tight truncate mt-0.5">การประกวดแข่งขัน</p>
-                    </div>
-                  </Link>
+            {/* Big Close Button (>= 44px) */}
+            <button
+              type="button"
+              onClick={() => setIsMoreMenuOpen(false)}
+              aria-label="ปิดเมนู"
+              className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-gray-100 hover:bg-gray-200 active:scale-95 flex items-center justify-center text-gray-700 transition-colors cursor-pointer"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
 
-                  <Link
-                    href="/artworks"
-                    onClick={() => setIsMoreMenuOpen(false)}
-                    className={`flex items-center gap-2.5 p-2.5 rounded-2xl border transition-all cursor-pointer ${
-                      pathname.startsWith("/artworks")
-                        ? "bg-rose-50 border-rose-300 text-rose-900 shadow-2xs font-bold"
-                        : "bg-gray-50 hover:bg-rose-50/40 border-gray-100 text-gray-800 font-medium"
-                    }`}
-                  >
-                    <div className="w-8 h-8 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
-                      <Palette className="w-4 h-4" />
+          {/* Scrollable Content Body */}
+          <div className="flex-1 overflow-y-auto px-4 py-5 space-y-4 pb-24">
+            
+            {/* User Account / Login Header Card */}
+            <div className="p-3.5 bg-gradient-to-r from-gray-50 to-orange-50/40 rounded-2xl border border-gray-200">
+              {mounted && userName ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full overflow-hidden bg-white shadow-xs border border-orange-200 flex items-center justify-center shrink-0">
+                      {resolvedAvatar.type === "image" ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={resolvedAvatar.value} alt={userName} className="w-full h-full object-cover" />
+                      ) : resolvedAvatar.type === "preset" ? (
+                        <span className="text-2xl select-none">{resolvedAvatar.value}</span>
+                      ) : (
+                        <span className="text-sm font-bold text-orange-600">{resolvedAvatar.value}</span>
+                      )}
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-xs leading-tight truncate">ผลงานนักเรียน</p>
-                      <p className="text-[9px] text-gray-400 leading-tight truncate mt-0.5">แกลเลอรีสร้างสรรค์</p>
-                    </div>
-                  </Link>
-                </div>
-              </div>
-
-              {/* Group 2: คลังสื่อ & องค์กร */}
-              <div>
-                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2 px-1">
-                  คลังสื่อองค์กร
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  <Link
-                    href="https://media-center.moe.go.th/Home"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => setIsMoreMenuOpen(false)}
-                    className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-gray-50 hover:bg-blue-50/50 border border-gray-100 text-gray-800 font-medium transition-all cursor-pointer"
-                  >
-                    <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
-                      <Building2 className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs leading-tight truncate">ศูนย์เรียนรู้ ศธ.</p>
-                      <p className="text-[9px] text-gray-400 leading-tight truncate mt-0.5">กระทรวงศึกษาธิการ</p>
-                    </div>
-                  </Link>
-
-                  <Link
-                    href="https://elibrary-bacc.hibrary.me/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => setIsMoreMenuOpen(false)}
-                    className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-gray-50 hover:bg-purple-50/50 border border-gray-100 text-gray-800 font-medium transition-all cursor-pointer"
-                  >
-                    <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center shrink-0">
-                      <Landmark className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs leading-tight truncate">ห้องสมุด BACC</p>
-                      <p className="text-[9px] text-gray-400 leading-tight truncate mt-0.5">หอศิลปวัฒนธรรมฯ</p>
-                    </div>
-                  </Link>
-                </div>
-              </div>
-
-              {/* Group 3: ข้อมูล & เกี่ยวกับเรา */}
-              <div>
-                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2 px-1">
-                  เกี่ยวกับเรา & ข้อมูล
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  <Link
-                    href="/news"
-                    onClick={() => setIsMoreMenuOpen(false)}
-                    className={`flex items-center gap-2.5 p-2.5 rounded-2xl border transition-all cursor-pointer ${
-                      pathname.startsWith("/news")
-                        ? "bg-orange-50 border-orange-300 text-orange-900 shadow-2xs font-bold"
-                        : "bg-gray-50 hover:bg-orange-50/40 border-gray-100 text-gray-800 font-medium"
-                    }`}
-                  >
-                    <div className="w-8 h-8 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0">
-                      <Newspaper className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs leading-tight truncate">ข่าวสารและประกาศ</p>
-                      <p className="text-[9px] text-gray-400 leading-tight truncate mt-0.5">ประชาสัมพันธ์</p>
-                    </div>
-                  </Link>
-
-                  <Link
-                    href="/activities"
-                    onClick={() => setIsMoreMenuOpen(false)}
-                    className={`flex items-center gap-2.5 p-2.5 rounded-2xl border transition-all cursor-pointer ${
-                      pathname.startsWith("/activities")
-                        ? "bg-pink-50 border-pink-300 text-pink-900 shadow-2xs font-bold"
-                        : "bg-gray-50 hover:bg-pink-50/40 border-gray-100 text-gray-800 font-medium"
-                    }`}
-                  >
-                    <div className="w-8 h-8 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center shrink-0">
-                      <CalendarDays className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs leading-tight truncate">กิจกรรมต่างๆ</p>
-                      <p className="text-[9px] text-gray-400 leading-tight truncate mt-0.5">ภาพกิจกรรมศิลปะ</p>
-                    </div>
-                  </Link>
-
-                  {isTeachersEnabled && (
-                    <Link
-                      href="/teachers"
-                      onClick={() => setIsMoreMenuOpen(false)}
-                      className={`flex items-center gap-2.5 p-2.5 rounded-2xl border transition-all cursor-pointer ${
-                        pathname.startsWith("/teachers")
-                          ? "bg-indigo-50 border-indigo-300 text-indigo-900 shadow-2xs font-bold"
-                          : "bg-gray-50 hover:bg-indigo-50/40 border-gray-100 text-gray-800 font-medium"
-                      }`}
-                    >
-                      <div className="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
-                        <GraduationCap className="w-4 h-4" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-bold text-orange-600 bg-orange-100/80 px-2 py-0.5 rounded-md uppercase">
+                          {userRole === "teacher" || userRole === "admin" ? "ครูผู้สอน / แอดมิน" : "นักเรียน"}
+                        </span>
                       </div>
-                      <div className="min-w-0">
-                        <p className="text-xs leading-tight truncate">Teacher Profile</p>
-                        <p className="text-[9px] text-gray-400 leading-tight truncate mt-0.5">ประวัติครูผู้สอน</p>
-                      </div>
-                    </Link>
-                  )}
-
-                  <Link
-                    href="/contact"
-                    onClick={() => setIsMoreMenuOpen(false)}
-                    className={`flex items-center gap-2.5 p-2.5 rounded-2xl border transition-all cursor-pointer ${
-                      pathname === "/contact"
-                        ? "bg-emerald-50 border-emerald-300 text-emerald-900 shadow-2xs font-bold"
-                        : "bg-gray-50 hover:bg-emerald-50/40 border-gray-100 text-gray-800 font-medium"
-                    }`}
-                  >
-                    <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
-                      <PhoneCall className="w-4 h-4" />
+                      <p className="text-sm font-bold text-gray-900 truncate mt-0.5">{userName}</p>
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-xs leading-tight truncate">ติดต่อเรา</p>
-                      <p className="text-[9px] text-gray-400 leading-tight truncate mt-0.5">กลุ่มสาระฯ ศิลปะ</p>
-                    </div>
-                  </Link>
-                </div>
-              </div>
+                  </div>
 
-              {/* Group 4: บัญชีผู้ใช้งาน & การตั้งค่า */}
-              <div className="pt-2 border-t border-gray-100">
-                {userName ? (
-                  <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-2 pt-1 border-t border-gray-200/60">
                     <button
                       type="button"
                       onClick={() => {
                         setIsMoreMenuOpen(false);
                         setIsProfileModalOpen(true);
                       }}
-                      className="w-full flex items-center gap-3 p-3 bg-gradient-to-r from-orange-50 to-amber-50 rounded-2xl border border-orange-200 text-left transition-all cursor-pointer hover:bg-orange-100/60 shadow-2xs"
+                      className="flex items-center justify-center gap-1.5 min-h-[44px] px-3 py-2 bg-white rounded-xl border border-gray-200 text-xs font-bold text-gray-700 active:scale-95 transition-all shadow-2xs cursor-pointer"
                     >
-                      <div className="w-10 h-10 rounded-full overflow-hidden bg-white shadow-2xs border border-orange-200 flex items-center justify-center shrink-0">
-                        {resolvedAvatar.type === "image" ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={resolvedAvatar.value} alt={userName} className="w-full h-full object-cover" />
-                        ) : resolvedAvatar.type === "preset" ? (
-                          <span className="text-lg select-none">{resolvedAvatar.value}</span>
-                        ) : (
-                          <span className="text-xs font-bold text-orange-600">{resolvedAvatar.value}</span>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[10px] text-orange-600 font-bold uppercase">
-                          {userRole === "teacher" || userRole === "admin" ? "ครูผู้สอน / ผู้ดูแลระบบ" : "นักเรียน / ผู้ใช้งาน"}
-                        </p>
-                        <p className="text-sm font-bold text-gray-900 truncate">{userName}</p>
-                      </div>
-                      <span className="text-xs text-orange-700 bg-white px-2.5 py-1 rounded-full shadow-2xs border border-orange-200 flex items-center gap-1 font-semibold">
-                        <Settings className="w-3.5 h-3.5" /> ตั้งค่า
-                      </span>
+                      <Settings className="w-4 h-4 text-orange-600" />
+                      <span>ตั้งค่าโปรไฟล์</span>
                     </button>
-
-                    {(userRole === "teacher" || userRole === "admin") && (
-                      <Link
-                        href="/admin"
-                        onClick={() => setIsMoreMenuOpen(false)}
-                        className="w-full flex items-center justify-center gap-2 p-2.5 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-xl font-bold text-xs shadow-sm hover:from-red-700 hover:to-rose-700 transition-all cursor-pointer"
-                      >
-                        <Sparkles className="w-4 h-4" />
-                        <span>เข้าระบบหลังบ้าน (Admin System)</span>
-                      </Link>
-                    )}
 
                     <button
                       type="button"
                       onClick={handleLogout}
-                      className="w-full flex items-center justify-center gap-2 p-2.5 border border-red-200 text-red-600 hover:bg-red-50 rounded-xl font-bold text-xs transition-colors cursor-pointer"
+                      className="flex items-center justify-center gap-1.5 min-h-[44px] px-3 py-2 bg-white rounded-xl border border-red-200 text-xs font-bold text-red-600 active:scale-95 transition-all shadow-2xs cursor-pointer"
                     >
                       <LogOut className="w-4 h-4" />
                       <span>ออกจากระบบ</span>
                     </button>
                   </div>
-                ) : (
+
+                  {(userRole === "teacher" || userRole === "admin") && (
+                    <Link
+                      href="/admin"
+                      onClick={() => setIsMoreMenuOpen(false)}
+                      className="w-full flex items-center justify-center gap-2 min-h-[44px] px-4 py-2.5 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-xl font-bold text-xs shadow-xs active:scale-98 transition-all cursor-pointer"
+                    >
+                      <ShieldCheck className="w-4 h-4" />
+                      <span>เข้าสู่ระบบหลังบ้าน (Admin System)</span>
+                    </Link>
+                  )}
+                </div>
+              ) : (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <div className="text-left w-full sm:w-auto">
+                    <p className="text-xs font-bold text-gray-800">เข้าสู่ระบบเพื่อส่งงานและบันทึกคะแนน</p>
+                    <p className="text-[11px] text-gray-500">สำหรับนักเรียนและคุณครูโรงเรียนวชิรธรรมสาธิต</p>
+                  </div>
                   <Link
                     href="/login"
                     onClick={() => setIsMoreMenuOpen(false)}
-                    className="w-full flex items-center justify-center gap-2 p-3 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-bold text-sm shadow-md shadow-red-500/20 transition-all cursor-pointer active:scale-98"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 min-h-[44px] px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs shadow-md shadow-red-500/20 active:scale-95 transition-all cursor-pointer"
                   >
                     <LogIn className="w-4 h-4" />
                     <span>เข้าสู่ระบบ (Login)</span>
                   </Link>
+                </div>
+              )}
+            </div>
+
+            {/* Featured Red AI Art Model Button Card */}
+            <Link
+              href="https://wtscreativeaiart.netlify.app/"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setIsMoreMenuOpen(false)}
+              className="flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-[#ff0f39] via-[#e6002e] to-[#ff2a51] text-white shadow-md shadow-red-500/25 active:scale-98 transition-all cursor-pointer min-h-[52px]"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-xs flex items-center justify-center shrink-0">
+                  <Sparkles className="w-5 h-5 text-white" />
+                </div>
+                <div className="min-w-0">
+                  <p className="font-black text-xs sm:text-sm tracking-wide truncate">WTS CREATIVE AI ART MODEL</p>
+                  <p className="text-[10px] text-white/80 leading-tight">โมเดลปัญญาประดิษฐ์สร้างภาพศิลปะ</p>
+                </div>
+              </div>
+              <ExternalLink className="w-4 h-4 text-white/80 shrink-0 ml-2" />
+            </Link>
+
+            {/* Main Navigation List Matching Desktop with Touch Accordions */}
+            <div className="space-y-2">
+
+              {/* 1. หน้าแรก */}
+              <Link
+                href="/"
+                onClick={() => setIsMoreMenuOpen(false)}
+                className={`flex items-center justify-between p-3 rounded-2xl border transition-all min-h-[48px] cursor-pointer ${
+                  pathname === "/"
+                    ? "bg-red-50/80 border-red-300 text-red-600 font-bold shadow-2xs"
+                    : "bg-gray-50/80 hover:bg-gray-100 border-gray-100 text-gray-800 font-semibold"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                    <Home className="w-4 h-4" />
+                  </div>
+                  <span className="text-sm">หน้าแรก</span>
+                </div>
+              </Link>
+
+              {/* 2. สื่อการสอน (Accordion with Submenus) */}
+              <div className="border border-gray-100 rounded-2xl overflow-hidden bg-gray-50/60">
+                <button
+                  type="button"
+                  onClick={() => toggleSection("materials")}
+                  className={`w-full flex items-center justify-between p-3 text-left transition-colors min-h-[48px] cursor-pointer ${
+                    pathname.startsWith("/materials") ? "text-red-600 font-bold bg-red-50/50" : "text-gray-800 font-semibold"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                      <BookOpen className="w-4 h-4" />
+                    </div>
+                    <span className="text-sm">สื่อการสอน</span>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${expandedSections.materials ? "rotate-180 text-red-600" : ""}`} />
+                </button>
+                {expandedSections.materials && (
+                  <div className="px-3 pb-3 pt-1 space-y-1.5 bg-white/70 border-t border-gray-100">
+                    <Link
+                      href="/materials"
+                      onClick={() => setIsMoreMenuOpen(false)}
+                      className="flex items-center justify-between p-2.5 rounded-xl hover:bg-red-50 text-xs font-semibold text-gray-700 hover:text-red-600 transition-colors min-h-[44px]"
+                    >
+                      <span>คลังสื่อการสอนทั้งหมด</span>
+                      <FolderOpen className="w-4 h-4 text-gray-400" />
+                    </Link>
+                    <Link
+                      href="/materials"
+                      onClick={() => setIsMoreMenuOpen(false)}
+                      className="flex items-center justify-between p-2.5 rounded-xl hover:bg-red-50 text-xs font-semibold text-gray-700 hover:text-red-600 transition-colors min-h-[44px]"
+                    >
+                      <span>สื่อฯ ชั้นมัธยมศึกษาปีที่ 3</span>
+                      <span className="text-[10px] text-gray-400">ม.3</span>
+                    </Link>
+                    <Link
+                      href="/materials"
+                      onClick={() => setIsMoreMenuOpen(false)}
+                      className="flex items-center justify-between p-2.5 rounded-xl hover:bg-red-50 text-xs font-semibold text-gray-700 hover:text-red-600 transition-colors min-h-[44px]"
+                    >
+                      <span>สื่อฯ ชั้นมัธยมศึกษาปีที่ 4</span>
+                      <span className="text-[10px] text-gray-400">ม.4</span>
+                    </Link>
+                  </div>
                 )}
               </div>
+
+              {/* 3. ส่งงาน */}
+              <Link
+                href="/submissions"
+                onClick={() => setIsMoreMenuOpen(false)}
+                className={`flex items-center justify-between p-3 rounded-2xl border transition-all min-h-[48px] cursor-pointer ${
+                  pathname.startsWith("/submissions")
+                    ? "bg-red-50/80 border-red-300 text-red-600 font-bold shadow-2xs"
+                    : "bg-gray-50/80 hover:bg-gray-100 border-gray-100 text-gray-800 font-semibold"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0">
+                    <Upload className="w-4 h-4" />
+                  </div>
+                  <span className="text-sm">ส่งงานศิลปะ</span>
+                </div>
+              </Link>
+
+              {/* 4. ผลงานนักเรียน (Accordion with Submenus: รางวัลที่ได้รับ & ผลงานนักเรียน) */}
+              <div className="border border-gray-100 rounded-2xl overflow-hidden bg-gray-50/60">
+                <button
+                  type="button"
+                  onClick={() => toggleSection("artworks")}
+                  className={`w-full flex items-center justify-between p-3 text-left transition-colors min-h-[48px] cursor-pointer ${
+                    pathname.startsWith("/artworks") || pathname.startsWith("/awards") ? "text-red-600 font-bold bg-red-50/50" : "text-gray-800 font-semibold"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                      <Palette className="w-4 h-4" />
+                    </div>
+                    <span className="text-sm">ผลงานนักเรียน</span>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${expandedSections.artworks ? "rotate-180 text-red-600" : ""}`} />
+                </button>
+                {expandedSections.artworks && (
+                  <div className="px-3 pb-3 pt-1 space-y-1.5 bg-white/70 border-t border-gray-100">
+                    <Link
+                      href="/awards"
+                      onClick={() => setIsMoreMenuOpen(false)}
+                      className={`flex items-center gap-3 p-2.5 rounded-xl transition-colors min-h-[44px] ${
+                        pathname.startsWith("/awards") ? "bg-amber-50 text-amber-900 font-bold" : "hover:bg-amber-50/60 text-gray-700 font-semibold"
+                      }`}
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+                        <Trophy className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs leading-tight">รางวัลที่ได้รับ</p>
+                        <p className="text-[10px] text-gray-400 leading-tight">ผลงานการประกวดและการแข่งขัน</p>
+                      </div>
+                    </Link>
+
+                    <Link
+                      href="/artworks"
+                      onClick={() => setIsMoreMenuOpen(false)}
+                      className={`flex items-center gap-3 p-2.5 rounded-xl transition-colors min-h-[44px] ${
+                        pathname.startsWith("/artworks") ? "bg-rose-50 text-rose-900 font-bold" : "hover:bg-rose-50/60 text-gray-700 font-semibold"
+                      }`}
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                        <Palette className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs leading-tight">ผลงานนักเรียน</p>
+                        <p className="text-[10px] text-gray-400 leading-tight">แกลเลอรีผลงานศิลปะสร้างสรรค์</p>
+                      </div>
+                    </Link>
+                  </div>
+                )}
+              </div>
+
+              {/* 5. แชร์ไอเดีย */}
+              <Link
+                href="/ideas"
+                onClick={() => setIsMoreMenuOpen(false)}
+                className={`flex items-center justify-between p-3 rounded-2xl border transition-all min-h-[48px] cursor-pointer ${
+                  pathname.startsWith("/ideas")
+                    ? "bg-red-50/80 border-red-300 text-red-600 font-bold shadow-2xs"
+                    : "bg-gray-50/80 hover:bg-gray-100 border-gray-100 text-gray-800 font-semibold"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+                    <Lightbulb className="w-4 h-4" />
+                  </div>
+                  <span className="text-sm">แชร์ไอเดีย</span>
+                </div>
+              </Link>
+
+              {/* 6. คลังสื่อองค์กร (Accordion with External Links) */}
+              <div className="border border-gray-100 rounded-2xl overflow-hidden bg-gray-50/60">
+                <button
+                  type="button"
+                  onClick={() => toggleSection("media")}
+                  className="w-full flex items-center justify-between p-3 text-left transition-colors min-h-[48px] cursor-pointer text-gray-800 font-semibold"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+                      <Building2 className="w-4 h-4" />
+                    </div>
+                    <span className="text-sm">คลังสื่อองค์กร</span>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${expandedSections.media ? "rotate-180 text-red-600" : ""}`} />
+                </button>
+                {expandedSections.media && (
+                  <div className="px-3 pb-3 pt-1 space-y-1.5 bg-white/70 border-t border-gray-100">
+                    <Link
+                      href="https://media-center.moe.go.th/Home"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setIsMoreMenuOpen(false)}
+                      className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-blue-50/60 text-gray-700 font-semibold transition-colors min-h-[44px]"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                        <Building2 className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs leading-tight">ศูนย์รวมการเรียนรู้ (ศธ.)</p>
+                        <p className="text-[10px] text-gray-400 leading-tight">กระทรวงศึกษาธิการ</p>
+                      </div>
+                      <ExternalLink className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                    </Link>
+
+                    <Link
+                      href="https://elibrary-bacc.hibrary.me/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setIsMoreMenuOpen(false)}
+                      className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-purple-50/60 text-gray-700 font-semibold transition-colors min-h-[44px]"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center shrink-0">
+                        <Landmark className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs leading-tight">ห้องสมุด หอศิลปวัฒนธรรมฯ</p>
+                        <p className="text-[10px] text-gray-400 leading-tight">e-Library BACC กรุงเทพฯ</p>
+                      </div>
+                      <ExternalLink className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                    </Link>
+                  </div>
+                )}
+              </div>
+
+              {/* 7. เกี่ยวกับเรา (Accordion: ข่าวสาร, กิจกรรม, ครู, ติดต่อ) */}
+              <div className="border border-gray-100 rounded-2xl overflow-hidden bg-gray-50/60">
+                <button
+                  type="button"
+                  onClick={() => toggleSection("about")}
+                  className={`w-full flex items-center justify-between p-3 text-left transition-colors min-h-[48px] cursor-pointer ${
+                    pathname.startsWith("/news") || pathname.startsWith("/activities") || pathname.startsWith("/teachers") || pathname === "/contact"
+                      ? "text-red-600 font-bold bg-red-50/50"
+                      : "text-gray-800 font-semibold"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                      <PhoneCall className="w-4 h-4" />
+                    </div>
+                    <span className="text-sm">เกี่ยวกับเรา & ข้อมูล</span>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${expandedSections.about ? "rotate-180 text-red-600" : ""}`} />
+                </button>
+                {expandedSections.about && (
+                  <div className="px-3 pb-3 pt-1 space-y-1.5 bg-white/70 border-t border-gray-100">
+                    <Link
+                      href="/news"
+                      onClick={() => setIsMoreMenuOpen(false)}
+                      className={`flex items-center gap-3 p-2.5 rounded-xl transition-colors min-h-[44px] ${
+                        pathname.startsWith("/news") ? "bg-orange-50 text-orange-900 font-bold" : "hover:bg-orange-50/60 text-gray-700 font-semibold"
+                      }`}
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center shrink-0">
+                        <Newspaper className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs leading-tight">ข่าวสารและประกาศ</p>
+                        <p className="text-[10px] text-gray-400 leading-tight">อัปเดตข่าวประชาสัมพันธ์</p>
+                      </div>
+                    </Link>
+
+                    <Link
+                      href="/activities"
+                      onClick={() => setIsMoreMenuOpen(false)}
+                      className={`flex items-center gap-3 p-2.5 rounded-xl transition-colors min-h-[44px] ${
+                        pathname.startsWith("/activities") ? "bg-pink-50 text-pink-900 font-bold" : "hover:bg-pink-50/60 text-gray-700 font-semibold"
+                      }`}
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-pink-100 text-pink-600 flex items-center justify-center shrink-0">
+                        <CalendarDays className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs leading-tight">กิจกรรมต่างๆ</p>
+                        <p className="text-[10px] text-gray-400 leading-tight">ภาพกิจกรรมศิลปะ</p>
+                      </div>
+                    </Link>
+
+                    {isTeachersEnabled && (
+                      <Link
+                        href="/teachers"
+                        onClick={() => setIsMoreMenuOpen(false)}
+                        className={`flex items-center gap-3 p-2.5 rounded-xl transition-colors min-h-[44px] ${
+                          pathname.startsWith("/teachers") ? "bg-indigo-50 text-indigo-900 font-bold" : "hover:bg-indigo-50/60 text-gray-700 font-semibold"
+                        }`}
+                      >
+                        <div className="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+                          <GraduationCap className="w-3.5 h-3.5" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs leading-tight">Teacher Profile & Awards</p>
+                          <p className="text-[10px] text-gray-400 leading-tight">ประวัติและรางวัลครูผู้สอน</p>
+                        </div>
+                      </Link>
+                    )}
+
+                    <Link
+                      href="/contact"
+                      onClick={() => setIsMoreMenuOpen(false)}
+                      className={`flex items-center gap-3 p-2.5 rounded-xl transition-colors min-h-[44px] ${
+                        pathname === "/contact" ? "bg-emerald-50 text-emerald-900 font-bold" : "hover:bg-emerald-50/60 text-gray-700 font-semibold"
+                      }`}
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                        <PhoneCall className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs leading-tight">ติดต่อเรา</p>
+                        <p className="text-[10px] text-gray-400 leading-tight">กลุ่มสาระฯ ศิลปะ ว.ธ.</p>
+                      </div>
+                    </Link>
+                  </div>
+                )}
+              </div>
+
             </div>
+
+            {/* Extra Bottom Close Button */}
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setIsMoreMenuOpen(false)}
+                className="w-full min-h-[48px] bg-gray-100 hover:bg-gray-200 active:scale-98 text-gray-700 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
+              >
+                <X className="w-4 h-4" />
+                <span>ปิดหน้าต่างเมนู</span>
+              </button>
+            </div>
+
           </div>
-        </>
+        </div>
       )}
 
       {/* Global Profile Settings Modal */}

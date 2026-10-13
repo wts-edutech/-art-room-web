@@ -19,7 +19,8 @@ import {
   Sparkles,
   Crop,
   RotateCw,
-  Lock
+  Lock,
+  Camera
 } from "lucide-react";
 import ImageEditorModal from "@/components/common/ImageEditorModal";
 
@@ -42,6 +43,7 @@ export default function SubmitWorkModal({
   const [imagePreview, setImagePreview] = useState<string>(existingSubmission?.imageUrl || "");
   const [isImageRemoved, setIsImageRemoved] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const [docFile, setDocFile] = useState<File | null>(null);
   const [externalLink, setExternalLink] = useState<string>(existingSubmission?.externalLink || "");
   const [concept, setConcept] = useState<string>(existingSubmission?.concept || "");
@@ -634,11 +636,20 @@ export default function SubmitWorkModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-      {/* Hidden file input controlled via ref */}
+      {/* Hidden file input: Photo Library / Gallery */}
       <input
         ref={fileInputRef}
         type="file"
         accept="image/*"
+        onChange={handleImageChange}
+        className="hidden"
+      />
+      {/* Hidden camera input: Direct Mobile Camera Capture */}
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
         onChange={handleImageChange}
         className="hidden"
       />
@@ -807,20 +818,29 @@ export default function SubmitWorkModal({
                     </button>
                   </div>
 
-                  <div className="flex items-center gap-2 ml-auto">
+                  <div className="flex flex-wrap items-center gap-2 ml-auto">
+                    <button
+                      type="button"
+                      onClick={() => cameraInputRef.current?.click()}
+                      className="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-3 py-2 rounded-xl bg-white hover:bg-gray-100 text-gray-700 font-semibold text-xs border border-gray-200 shadow-2xs transition-all cursor-pointer"
+                      title="ถ่ายภาพใหม่ด้วยกล้องมือถือ"
+                    >
+                      <Camera className="w-3.5 h-3.5 text-red-500" />
+                      <span>ถ่ายใหม่</span>
+                    </button>
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-gray-100 text-gray-600 hover:text-gray-900 font-medium text-xs border border-gray-200 shadow-2xs transition-all cursor-pointer"
-                      title="เลือกไฟล์รูปภาพใหม่จากเครื่อง"
+                      className="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-3 py-2 rounded-xl bg-white hover:bg-gray-100 text-gray-700 font-semibold text-xs border border-gray-200 shadow-2xs transition-all cursor-pointer"
+                      title="เลือกภาพใหม่จากคลังรูปภาพ"
                     >
-                      <RefreshCw className="w-3 h-3 text-gray-400" />
-                      <span>เปลี่ยนรูป</span>
+                      <RefreshCw className="w-3.5 h-3.5 text-orange-500" />
+                      <span>เลือกใหม่</span>
                     </button>
                     <button
                       type="button"
                       onClick={handleRemoveImage}
-                      className="inline-flex items-center justify-center p-2 rounded-xl text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
+                      className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] p-2 rounded-xl text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
                       title="ลบรูปภาพนี้"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -829,19 +849,43 @@ export default function SubmitWorkModal({
                 </div>
               </div>
             ) : (
-              <div 
-                onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-gray-300 hover:border-orange-500 rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer bg-gray-50/50 hover:bg-orange-50/20 transition-all group"
-              >
-                <div className="w-10 h-10 rounded-xl bg-gray-100 group-hover:bg-orange-100 text-gray-600 group-hover:text-orange-600 flex items-center justify-center mb-2.5 transition-colors">
-                  <Upload className="w-5 h-5" />
+              <div className="space-y-3">
+                {/* Dual camera & gallery selection buttons (>=44px touch targets) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => cameraInputRef.current?.click()}
+                    className="flex items-center justify-center gap-2 min-h-[48px] px-4 py-3 bg-gradient-to-r from-red-600 via-rose-600 to-pink-600 hover:opacity-95 text-white rounded-2xl font-bold text-xs sm:text-sm shadow-sm active:scale-95 transition-all cursor-pointer"
+                  >
+                    <Camera className="w-5 h-5 shrink-0" />
+                    <span>ถ่ายรูปจากกล้องมือถือ</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center justify-center gap-2 min-h-[48px] px-4 py-3 bg-white hover:bg-orange-50 border-2 border-orange-200 text-orange-900 rounded-2xl font-bold text-xs sm:text-sm shadow-2xs active:scale-95 transition-all cursor-pointer"
+                  >
+                    <ImageIcon className="w-5 h-5 text-orange-600 shrink-0" />
+                    <span>เลือกจากคลังรูปภาพ</span>
+                  </button>
                 </div>
-                <span className="text-xs font-semibold text-gray-800">
-                  คลิกเพื่อเลือกไฟล์รูปภาพผลงาน (หรือลากและวางไฟล์ที่นี่)
-                </span>
-                <span className="text-[11px] text-gray-500 mt-1">
-                  รองรับไฟล์รูปแบบ JPG, PNG, WebP (สามารถแก้ไขไฟล์ได้ก่อนคุณครูประเมินผล)
-                </span>
+
+                {/* Dropzone area for Desktop drag-and-drop / click */}
+                <div 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="border-2 border-dashed border-gray-300 hover:border-orange-500 rounded-2xl p-5 flex flex-col items-center justify-center text-center cursor-pointer bg-gray-50/50 hover:bg-orange-50/20 transition-all group"
+                >
+                  <div className="w-9 h-9 rounded-xl bg-gray-100 group-hover:bg-orange-100 text-gray-600 group-hover:text-orange-600 flex items-center justify-center mb-2 transition-colors">
+                    <Upload className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-semibold text-gray-800">
+                    หรือคลิกเพื่อเลือกไฟล์ / ลากไฟล์มาวางที่นี่
+                  </span>
+                  <span className="text-[11px] text-gray-500 mt-0.5">
+                    รองรับไฟล์ JPG, PNG, WebP (แก้ไขได้ก่อนคุณครูประเมินผล)
+                  </span>
+                </div>
               </div>
             )}
           </div>

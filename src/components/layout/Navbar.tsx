@@ -16,6 +16,7 @@ export default function Navbar() {
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isTeachersEnabled, setIsTeachersEnabled] = useState(true);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
   const updateUserData = () => {
     const name = localStorage.getItem("artroom_author_name");
@@ -25,6 +26,21 @@ export default function Navbar() {
     setUserRole(role);
     setUserAvatar(avatar);
   };
+
+  useEffect(() => {
+    setOpenDropdown(null);
+  }, [pathname]);
+
+  useEffect(() => {
+    const handleDocumentClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest(".nav-dropdown-container")) {
+        setOpenDropdown(null);
+      }
+    };
+    document.addEventListener("click", handleDocumentClick);
+    return () => document.removeEventListener("click", handleDocumentClick);
+  }, []);
 
   useEffect(() => {
     updateUserData();
@@ -119,19 +135,28 @@ export default function Navbar() {
           </Link>
 
           {/* 4. ผลงานนักเรียน Dropdown Menu */}
-          <div className="relative group h-full flex items-center flex-shrink-0">
-            <Link 
-              href="/artworks"
-              className={`whitespace-nowrap flex items-center gap-1 px-1 lg:px-1.5 xl:px-2 h-full border-b-[3px] transition-colors focus:outline-none ${pathname.startsWith("/artworks") || pathname.startsWith("/awards") ? "border-red-500 text-red-500 font-bold" : "border-transparent hover:border-red-500 hover:text-red-500"}`}
+          <div className="relative nav-dropdown-container h-full flex items-center flex-shrink-0">
+            <button 
+              type="button"
+              onClick={() => setOpenDropdown(openDropdown === "artworks" ? null : "artworks")}
+              className={`whitespace-nowrap flex items-center gap-1 px-2 lg:px-2.5 h-full border-b-[3px] transition-colors focus:outline-none cursor-pointer ${
+                pathname.startsWith("/artworks") || pathname.startsWith("/awards") || openDropdown === "artworks"
+                  ? "border-red-500 text-red-500 font-bold" 
+                  : "border-transparent hover:border-red-500 hover:text-red-500"
+              }`}
             >
-              ผลงานนักเรียน <ChevronDown className="w-3.5 h-3.5 transition-transform duration-300 group-hover:rotate-180" />
-            </Link>
+              <span>ผลงานนักเรียน</span>
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${openDropdown === "artworks" ? "rotate-180" : ""}`} />
+            </button>
             
-            <div className="absolute top-full -left-4 pt-2 w-64 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-              <div className="bg-white rounded-2xl shadow-xl border border-gray-100 py-2 px-1.5 flex flex-col gap-0.5">
+            <div className={`absolute top-full -left-4 pt-2 w-64 transition-all duration-200 z-50 ${
+              openDropdown === "artworks" ? "opacity-100 visible pointer-events-auto" : "opacity-0 invisible pointer-events-none"
+            }`}>
+              <div className="bg-white rounded-2xl shadow-xl border border-gray-100 py-2 px-1.5 flex flex-col gap-1">
                 <Link 
                   href="/awards" 
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-50/80 transition-colors group/item ${
+                  onClick={() => setOpenDropdown(null)}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl min-h-[44px] hover:bg-red-50/80 transition-colors group/item ${
                     pathname.startsWith("/awards") ? "bg-red-50 text-red-600 font-bold" : "text-gray-700 hover:text-red-600"
                   }`}
                 >
@@ -145,7 +170,8 @@ export default function Navbar() {
                 </Link>
                 <Link 
                   href="/artworks" 
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-50/80 transition-colors group/item ${
+                  onClick={() => setOpenDropdown(null)}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl min-h-[44px] hover:bg-red-50/80 transition-colors group/item ${
                     pathname.startsWith("/artworks") ? "bg-red-50 text-red-600 font-bold" : "text-gray-700 hover:text-red-600"
                   }`}
                 >
@@ -170,21 +196,28 @@ export default function Navbar() {
           </Link>
 
           {/* 6. คลังสื่อองค์กร Dropdown Menu */}
-          <div className="relative group h-full flex items-center flex-shrink-0">
+          <div className="relative nav-dropdown-container h-full flex items-center flex-shrink-0">
             <button 
               type="button"
-              className="whitespace-nowrap flex items-center gap-1 px-1 lg:px-1.5 xl:px-2 h-full border-b-[3px] border-transparent hover:border-red-500 hover:text-red-500 transition-colors focus:outline-none cursor-pointer"
+              onClick={() => setOpenDropdown(openDropdown === "media" ? null : "media")}
+              className={`whitespace-nowrap flex items-center gap-1 px-2 lg:px-2.5 h-full border-b-[3px] transition-colors focus:outline-none cursor-pointer ${
+                openDropdown === "media" ? "border-red-500 text-red-500 font-bold" : "border-transparent hover:border-red-500 hover:text-red-500"
+              }`}
             >
-              คลังสื่อองค์กร <ChevronDown className="w-3.5 h-3.5 transition-transform duration-300 group-hover:rotate-180" />
+              <span>คลังสื่อองค์กร</span>
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${openDropdown === "media" ? "rotate-180" : ""}`} />
             </button>
             
-            <div className="absolute top-full -left-6 pt-2 w-72 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-              <div className="bg-white rounded-2xl shadow-xl border border-gray-100 py-2 px-1.5 flex flex-col gap-0.5">
+            <div className={`absolute top-full -left-6 pt-2 w-72 transition-all duration-200 z-50 ${
+              openDropdown === "media" ? "opacity-100 visible pointer-events-auto" : "opacity-0 invisible pointer-events-none"
+            }`}>
+              <div className="bg-white rounded-2xl shadow-xl border border-gray-100 py-2 px-1.5 flex flex-col gap-1">
                 <Link 
                   href="https://media-center.moe.go.th/Home" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-50/80 transition-colors group/item"
+                  onClick={() => setOpenDropdown(null)}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl min-h-[44px] hover:bg-red-50/80 transition-colors group/item"
                 >
                   <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center shrink-0 group-hover/item:scale-105 transition-transform">
                     <Building2 className="w-4 h-4" />
@@ -198,7 +231,8 @@ export default function Navbar() {
                   href="https://elibrary-bacc.hibrary.me/" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-50/80 transition-colors group/item"
+                  onClick={() => setOpenDropdown(null)}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl min-h-[44px] hover:bg-red-50/80 transition-colors group/item"
                 >
                   <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center shrink-0 group-hover/item:scale-105 transition-transform">
                     <Landmark className="w-4 h-4" />
@@ -213,24 +247,28 @@ export default function Navbar() {
           </div>
 
           {/* 7. เกี่ยวกับเรา Dropdown Menu (รวม: ข่าวสาร, กิจกรรมต่างๆ, ทำเนียบครู, ติดต่อเรา) */}
-          <div className="relative group h-full flex items-center flex-shrink-0">
+          <div className="relative nav-dropdown-container h-full flex items-center flex-shrink-0">
             <button 
               type="button"
-              className={`whitespace-nowrap flex items-center gap-1 px-1 lg:px-1.5 xl:px-2 h-full border-b-[3px] transition-colors focus:outline-none cursor-pointer ${
-                pathname.startsWith("/news") || pathname.startsWith("/activities") || pathname.startsWith("/teachers") || pathname === "/contact"
+              onClick={() => setOpenDropdown(openDropdown === "about" ? null : "about")}
+              className={`whitespace-nowrap flex items-center gap-1 px-2 lg:px-2.5 h-full border-b-[3px] transition-colors focus:outline-none cursor-pointer ${
+                pathname.startsWith("/news") || pathname.startsWith("/activities") || pathname.startsWith("/teachers") || pathname === "/contact" || openDropdown === "about"
                   ? "border-red-500 text-red-500 font-bold" 
                   : "border-transparent hover:border-red-500 hover:text-red-500 text-gray-700"
               }`}
             >
               <span>เกี่ยวกับเรา</span>
-              <ChevronDown className="w-3.5 h-3.5 transition-transform duration-300 group-hover:rotate-180" />
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${openDropdown === "about" ? "rotate-180" : ""}`} />
             </button>
             
-            <div className="absolute top-full -left-6 pt-2 w-64 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-              <div className="bg-white rounded-2xl shadow-xl border border-gray-100 py-2 px-1.5 flex flex-col gap-0.5">
+            <div className={`absolute top-full -left-6 pt-2 w-64 transition-all duration-200 z-50 ${
+              openDropdown === "about" ? "opacity-100 visible pointer-events-auto" : "opacity-0 invisible pointer-events-none"
+            }`}>
+              <div className="bg-white rounded-2xl shadow-xl border border-gray-100 py-2 px-1.5 flex flex-col gap-1">
                 <Link 
                   href="/news" 
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-50/80 transition-colors group/item ${
+                  onClick={() => setOpenDropdown(null)}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl min-h-[44px] hover:bg-red-50/80 transition-colors group/item ${
                     pathname.startsWith("/news") ? "bg-red-50 text-red-600 font-bold" : "text-gray-700 hover:text-red-600"
                   }`}
                 >
@@ -245,7 +283,8 @@ export default function Navbar() {
 
                 <Link 
                   href="/activities" 
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-50/80 transition-colors group/item ${
+                  onClick={() => setOpenDropdown(null)}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl min-h-[44px] hover:bg-red-50/80 transition-colors group/item ${
                     pathname.startsWith("/activities") ? "bg-red-50 text-red-600 font-bold" : "text-gray-700 hover:text-red-600"
                   }`}
                 >
@@ -261,7 +300,8 @@ export default function Navbar() {
                 {isTeachersEnabled && (
                   <Link 
                     href="/teachers" 
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-50/80 transition-colors group/item ${
+                    onClick={() => setOpenDropdown(null)}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl min-h-[44px] hover:bg-red-50/80 transition-colors group/item ${
                       pathname.startsWith("/teachers") ? "bg-red-50 text-red-600 font-bold" : "text-gray-700 hover:text-red-600"
                     }`}
                   >
@@ -277,7 +317,8 @@ export default function Navbar() {
 
                 <Link 
                   href="/contact" 
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-50/80 transition-colors group/item ${
+                  onClick={() => setOpenDropdown(null)}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl min-h-[44px] hover:bg-red-50/80 transition-colors group/item ${
                     pathname === "/contact" ? "bg-red-50 text-red-600 font-bold" : "text-gray-700 hover:text-red-600"
                   }`}
                 >
@@ -294,58 +335,58 @@ export default function Navbar() {
           </div>
         </nav>
 
-        {/* Right Section: User Profile / Login & Hamburger Button */}
-        <div className="flex items-center gap-1 sm:gap-2 h-full flex-shrink-0 min-w-0">
+        {/* Right Section: User Profile / Login & Hamburger Button (>=44px touch targets) */}
+        <div className="flex items-center gap-2 h-full flex-shrink-0 min-w-0">
 
           {userName ? (
-            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0 min-w-0">
+            <div className="flex items-center gap-2 flex-shrink-0 min-w-0">
               {userRole === "teacher" || userRole === "admin" ? (
                 <Link 
                   href="/admin" 
-                  className="text-xs font-bold text-white bg-red-600 hover:bg-red-700 px-2.5 lg:px-3 py-1.5 rounded-full shadow-xs transition-colors whitespace-nowrap cursor-pointer"
+                  className="text-xs font-bold text-white bg-red-600 hover:bg-red-700 min-h-[44px] px-3.5 py-2.5 rounded-full shadow-xs transition-colors whitespace-nowrap cursor-pointer flex items-center justify-center"
                 >
                   หลังบ้าน
                 </Link>
               ) : null}
-              {/* Clickable Profile Badge with Avatar */}
+              {/* Clickable Profile Badge with Avatar (>=44px target) */}
               <button 
                 type="button"
                 onClick={() => setIsProfileModalOpen(true)}
-                className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-[#ff6b00] bg-white cursor-pointer active:scale-95 overflow-hidden shadow-sm hover:scale-105 transition-transform"
+                className="flex items-center justify-center w-11 h-11 min-w-[44px] min-h-[44px] rounded-full border-2 border-red-500 bg-white cursor-pointer active:scale-95 overflow-hidden shadow-sm hover:scale-105 transition-transform"
                 title="คลิกเพื่อตั้งค่าโปรไฟล์"
               >
                 {resolvedAvatar.type === "image" ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={resolvedAvatar.value} alt={userName ?? ""} className="w-full h-full object-cover" />
                 ) : resolvedAvatar.type === "preset" ? (
-                  <span className="text-base select-none leading-none">{resolvedAvatar.value}</span>
+                  <span className="text-lg select-none leading-none">{resolvedAvatar.value}</span>
                 ) : (
-                  <span className="text-xs font-bold text-[#ff6b00]">{resolvedAvatar.value}</span>
+                  <span className="text-xs font-bold text-red-600">{resolvedAvatar.value}</span>
                 )}
               </button>
               <button 
                 onClick={handleLogout} 
                 title="ออกจากระบบ" 
-                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors flex items-center justify-center cursor-pointer"
+                className="w-11 h-11 min-w-[44px] min-h-[44px] text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors flex items-center justify-center cursor-pointer active:scale-95"
               >
-                <LogOut className="w-4 h-4" />
+                <LogOut className="w-5 h-5" />
               </button>
             </div>
           ) : (
             <Link href="/login" className="flex items-center flex-shrink-0">
-              <span className="whitespace-nowrap rounded-full px-3.5 py-1.5 border border-[#5b4be2] text-[#5b4be2] hover:bg-[#5b4be2]/5 text-xs font-semibold transition-all duration-200 cursor-pointer active:scale-95 shrink-0 font-kanit">
+              <span className="whitespace-nowrap rounded-full min-h-[44px] px-4 py-2.5 border border-[#5b4be2] text-[#5b4be2] hover:bg-[#5b4be2]/5 text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer active:scale-95 shrink-0 font-kanit flex items-center justify-center">
                 เข้าสู่ระบบ
               </span>
             </Link>
           )}
-          {/* Hamburger Button — Mobile/Tablet only (lg:hidden), triggers BottomNav sheet */}
+          {/* Hamburger Button — Mobile/Tablet only (lg:hidden), triggers Full-Screen Menu sheet */}
           <button
             type="button"
             aria-label="เปิดเมนู"
             onClick={() => window.dispatchEvent(new Event("openMobileMenu"))}
-            className="lg:hidden flex items-center justify-center w-9 h-9 rounded-xl text-gray-600 hover:bg-gray-100 active:scale-95 transition-all cursor-pointer ml-0.5"
+            className="lg:hidden flex items-center justify-center w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl text-gray-700 hover:bg-gray-100 active:scale-95 transition-all cursor-pointer"
           >
-            <Menu className="w-5 h-5" />
+            <Menu className="w-6 h-6" />
           </button>
 
         </div>

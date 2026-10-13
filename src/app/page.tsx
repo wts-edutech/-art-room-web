@@ -1,7 +1,6 @@
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import HeroSection from "@/components/sections/HeroSection";
-import QuickMenuSection from "@/components/sections/QuickMenuSection";
 import FeaturesSection from "@/components/sections/FeaturesSection";
 import NewsSection from "@/components/sections/NewsSection";
 import TestimonialsSection from "@/components/sections/TestimonialsSection";
@@ -13,25 +12,18 @@ export default function Home() {
   return (
     <>
       <Navbar />
-      <main className="flex-1 flex flex-col relative min-h-screen bg-[#FDF7F0] md:bg-transparent pb-6">
-        {/* Artistic Faded Background Layer for Desktop */}
+      <main className="flex-1 flex flex-col relative min-h-screen bg-transparent pb-6">
+        {/* Artistic Faded Watercolor Background Layer for Mobile & Desktop */}
         <div 
-          className="hidden md:block absolute inset-0 z-[-1] pointer-events-none opacity-40 bg-fixed bg-center bg-cover"
+          className="absolute inset-0 z-[-1] pointer-events-none opacity-30 md:opacity-40 bg-fixed bg-center bg-cover"
           style={{ backgroundImage: "url('/bg-art.jpg')" }}
         />
         
-        {/* 1. Hero Banner — HeroSection manages its own mobile/desktop layout internally */}
-        {/* Mobile: purple card + AI Art card (md:hidden inside HeroSection) */}
-        {/* Desktop: full hero with big typography (hidden md:flex inside HeroSection) */}
+        {/* 1. Hero Banner — Unified responsive layout matching desktop aesthetic */}
         <HeroSection />
 
-        {/* 2. Quick Menu Shortcuts — Mobile only */}
-        <div className="block md:hidden">
-          <QuickMenuSection />
-        </div>
-
-        {/* 3. Why Art Room Features Grid */}
-        <div className="pt-4 md:pt-0">
+        {/* 2. Why Art Room Features Grid */}
+        <div className="pt-2 md:pt-0">
           <FeaturesSection />
         </div>
 
