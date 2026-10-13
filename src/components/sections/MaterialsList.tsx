@@ -400,7 +400,7 @@ export default function MaterialsList({
               <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
-                placeholder="ค้นหาชื่อสื่อการสอน, ใบงาน, เทคนิค..."
+                placeholder="ค้นหาชื่อสื่อ หรือใบงาน..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full h-11 pl-10 pr-9 rounded-xl border border-gray-200 bg-white shadow-2xs focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none text-base sm:text-sm font-normal text-gray-800 placeholder:text-gray-400 transition-all"
@@ -552,22 +552,23 @@ export default function MaterialsList({
 
                       {/* Top-Left Badge: Topic (e.g. จุด & เส้น, น้ำหนัก & แสงเงา) */}
                       <div className="absolute top-2 left-2 sm:top-3.5 sm:left-3.5">
-                        <span className="bg-white/95 backdrop-blur-xs text-gray-900 font-bold text-[9px] sm:text-xs px-2 py-0.5 sm:px-3.5 sm:py-1.5 rounded-full shadow-xs truncate max-w-[85px] sm:max-w-none block">
+                        <span className="bg-white/95 backdrop-blur-xs text-gray-900 font-bold text-[9px] sm:text-xs px-2 py-0.5 sm:px-3 sm:py-1 rounded-full shadow-2xs truncate max-w-[115px] sm:max-w-none block">
                           {item.topic || (isVideo ? "จุด & เส้น" : "จุด & เส้น")}
                         </span>
                       </div>
 
-                      {/* Top-Right Badge: Format (วิดีโอสอน or ใบงาน PDF) */}
+                      {/* Top-Right Badge: Format (วิดีโอ or PDF) */}
                       <div className="absolute top-2 right-2 sm:top-3.5 sm:right-3.5">
                         {isVideo ? (
-                          <span className="bg-white/95 backdrop-blur-xs text-[#2563EB] font-bold text-[9px] sm:text-xs px-2 py-0.5 sm:px-3 sm:py-1.5 rounded-full shadow-xs flex items-center gap-1">
+                          <span className="bg-white/95 backdrop-blur-xs text-[#2563EB] font-bold text-[9px] sm:text-xs px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-full shadow-2xs flex items-center gap-1">
                             <Video className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-[#2563EB] text-[#2563EB]" />
-                            <span>วิดีโอสอน</span>
+                            <span className="inline sm:hidden">คลิป</span>
+                            <span className="hidden sm:inline">วิดีโอสอน</span>
                           </span>
                         ) : (
-                          <span className="bg-white/95 backdrop-blur-xs text-[#DC2626] font-bold text-[9px] sm:text-xs px-2 py-0.5 sm:px-3 sm:py-1.5 rounded-full shadow-xs flex items-center gap-1">
+                          <span className="bg-white/95 backdrop-blur-xs text-[#DC2626] font-bold text-[9px] sm:text-xs px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-full shadow-2xs flex items-center gap-1">
                             <span className="bg-[#DC2626] text-white text-[8px] sm:text-[9px] font-black px-1 py-0.2 rounded-[3px] uppercase leading-none">PDF</span>
-                            <span>ใบงาน PDF</span>
+                            <span className="hidden sm:inline">ใบงาน PDF</span>
                           </span>
                         )}
                       </div>
@@ -660,7 +661,7 @@ export default function MaterialsList({
                     </div>
 
                     {/* Row 2: Dual Action Buttons [ 👁 ดูตัวอย่าง ] and [ ☁ ดาวน์โหลด ] (แสดงทั้งมือถือและคอม) */}
-                    <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
+                    <div className="grid grid-cols-2 gap-1 sm:gap-2">
                       <button
                         type="button"
                         onClick={(e) => {
@@ -668,7 +669,7 @@ export default function MaterialsList({
                           e.stopPropagation();
                           handleView(item);
                         }}
-                        className="w-full py-2 px-1 sm:px-2.5 rounded-xl bg-gray-100/90 hover:bg-gray-200 active:scale-95 text-gray-700 text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer shadow-2xs"
+                        className="w-full py-1.5 sm:py-2 px-1 sm:px-2 rounded-xl bg-gray-100/90 hover:bg-gray-200 active:scale-95 text-gray-700 text-[10.5px] sm:text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer shadow-2xs"
                         title={isVideo ? "เปิดดูวิดีโอ" : "ดูตัวอย่างเอกสารใบงาน"}
                       >
                         {isVideo ? (
@@ -687,7 +688,7 @@ export default function MaterialsList({
                           handleDownload(e, item);
                         }}
                         disabled={downloadingId === item.id}
-                        className="w-full py-2 px-1 sm:px-2.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 active:scale-95 text-white text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all shadow-2xs cursor-pointer disabled:opacity-75"
+                        className="w-full py-1.5 sm:py-2 px-1 sm:px-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 active:scale-95 text-white text-[10.5px] sm:text-xs font-bold flex items-center justify-center gap-1 transition-all shadow-2xs cursor-pointer disabled:opacity-75"
                         title="ดาวน์โหลดไฟล์ลงเครื่อง"
                       >
                         {downloadingId === item.id ? (
@@ -695,7 +696,14 @@ export default function MaterialsList({
                         ) : (
                           <CloudDownload className="w-3.5 h-3.5 text-white shrink-0" />
                         )}
-                        <span className="truncate">{downloadingId === item.id ? "กำลังโหลด..." : "ดาวน์โหลด"}</span>
+                        <span className="truncate">
+                          {downloadingId === item.id ? "กำลังโหลด..." : (
+                            <>
+                              <span className="inline sm:hidden">โหลด</span>
+                              <span className="hidden sm:inline">ดาวน์โหลด</span>
+                            </>
+                          )}
+                        </span>
                       </button>
                     </div>
                   </div>
@@ -949,10 +957,10 @@ export default function MaterialsList({
         <button
           type="button"
           onClick={() => setIsMobileSidebarOpen(true)}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-red-600 via-rose-600 to-pink-600 text-white font-bold text-xs sm:text-sm shadow-xl shadow-red-600/35 border-2 border-white/90 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-gradient-to-r from-red-600 via-rose-600 to-pink-600 text-white font-bold text-[11px] shadow-xl shadow-red-600/35 border-2 border-white/95 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
           title="ค้นหาและเปิดตัวกรองสื่อการสอน"
         >
-          <Search className="w-4 h-4" />
+          <Search className="w-3.5 h-3.5" />
           <span>ค้นหาและตัวกรองสื่อ</span>
           {(searchQuery || selectedGrade !== "all" || selectedMediaType !== "all" || activeCategory !== "ทั้งหมด") && (
             <span className="w-2 h-2 rounded-full bg-amber-300 animate-pulse" />
