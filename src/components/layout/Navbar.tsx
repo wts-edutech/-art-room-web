@@ -73,9 +73,12 @@ export default function Navbar() {
         {/* Logo Section — matching mockup */}
         <div className="flex items-center gap-2 sm:gap-2.5 xl:gap-3 h-full min-w-0 flex-shrink-0">
           <Link href="/" className="flex items-center gap-2.5 sm:gap-2.5 xl:gap-3 group min-w-0 flex-shrink-0">
-            <div className="w-8 h-8 rounded-full bg-[#ff6b00] flex items-center justify-center text-white font-bold text-[10px] shrink-0">
-              ART
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img 
+              src="/school-logo.png" 
+              alt="ตราโรงเรียนวชิรธรรมสาธิต" 
+              className="w-9 h-9 sm:w-10 sm:h-10 object-contain shrink-0 group-hover:scale-105 transition-transform" 
+            />
             <div className="flex flex-col justify-center min-w-0">
               <span className="font-heading font-bold text-[16px] md:text-[20px] xl:text-[24px] tracking-tight leading-none text-gray-900">
                 ART ROOM

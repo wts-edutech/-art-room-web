@@ -51,6 +51,9 @@ export default function BottomNavbar() {
     window.addEventListener("artroom_profile_updated", updateUserData);
     window.addEventListener("storage", updateUserData);
 
+    const handleOpenMobileMenu = () => setIsMoreMenuOpen(true);
+    window.addEventListener("openMobileMenu", handleOpenMobileMenu);
+
     fetch("/api/teachers/status")
       .then((res) => res.json())
       .then((data: any) => {
@@ -63,6 +66,7 @@ export default function BottomNavbar() {
     return () => {
       window.removeEventListener("artroom_profile_updated", updateUserData);
       window.removeEventListener("storage", updateUserData);
+      window.removeEventListener("openMobileMenu", handleOpenMobileMenu);
     };
   }, []);
 
