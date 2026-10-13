@@ -379,16 +379,6 @@ export default function Navbar() {
               </span>
             </Link>
           )}
-          {/* Hamburger Button — Mobile/Tablet only (lg:hidden), triggers Full-Screen Menu sheet */}
-          <button
-            type="button"
-            aria-label="เปิดเมนู"
-            onClick={() => window.dispatchEvent(new Event("openMobileMenu"))}
-            className="lg:hidden flex items-center justify-center w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl text-gray-700 hover:bg-gray-100 active:scale-95 transition-all cursor-pointer"
-          >
-            <Menu className="w-6 h-6" />
-          </button>
-
         </div>
       </div>
 
