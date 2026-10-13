@@ -49,7 +49,13 @@ export default function ProfanityAlertModal({
       className="fixed inset-0 flex items-center justify-center p-4 bg-black/45 backdrop-blur-xs animate-in fade-in duration-150"
     >
       {/* Backdrop overlay clickable to close */}
-      <div className="absolute inset-0" onClick={onClose} />
+      <button 
+        type="button" 
+        aria-label="ปิดแจ้งเตือน" 
+        className="absolute inset-0 w-full h-full bg-transparent border-0 cursor-default" 
+        onClick={onClose} 
+        tabIndex={-1} 
+      />
 
       {/* Modal Card - Clean, Elegant & Minimalist */}
       <div 

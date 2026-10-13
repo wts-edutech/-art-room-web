@@ -211,10 +211,12 @@ export default function StudentArtworkAlbum({
                 className="bg-white rounded-3xl overflow-hidden border border-gray-200/80 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col group"
               >
                 {/* Visual Image Preview with Zoom on Tap */}
-                <div
+                <button
+                  type="button"
                   onClick={() => artworkImg && onViewFullscreen(artworkImg)}
-                  className="relative aspect-[4/3] w-full bg-slate-900/5 flex items-center justify-center overflow-hidden cursor-zoom-in group/img"
+                  className="relative aspect-[4/3] w-full bg-slate-900/5 flex items-center justify-center overflow-hidden cursor-zoom-in group/img text-left border-0 p-0"
                   title="แตะเพื่อดูรูปภาพขนาดเต็ม"
+                  aria-label="แตะเพื่อดูรูปภาพขนาดเต็ม"
                 >
                   {artworkImg && !isFailed && (
                     <div
@@ -264,7 +266,7 @@ export default function StudentArtworkAlbum({
                     <Maximize2 className="w-4 h-4" />
                     <span>แตะเพื่อดูภาพขยาย</span>
                   </div>
-                </div>
+                </button>
 
                 {/* Card Info Body */}
                 <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-3">

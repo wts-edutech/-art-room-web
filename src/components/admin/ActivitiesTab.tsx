@@ -280,7 +280,7 @@ export default function ActivitiesTab() {
                     id="activityImageInput"
                     type="file" 
                     multiple
-                    accept="image/jpeg, image/jpg, image/png"
+                    accept="image/*,image/jpeg,image/jpg,image/png,image/webp"
                     onChange={(e) => {
                       if (e.target.files) {
                         setActivityImageFiles(Array.from(e.target.files));

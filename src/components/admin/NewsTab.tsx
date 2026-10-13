@@ -270,7 +270,7 @@ export default function NewsTab() {
                     <input 
                       id="newsImageInput"
                       type="file" 
-                      accept="image/jpeg, image/jpg, image/png, image/webp"
+                      accept="image/*,image/jpeg,image/jpg,image/png,image/webp"
                       onChange={(e) => {
                         if (e.target.files && e.target.files[0]) {
                           setNewsImageFile(e.target.files[0]);

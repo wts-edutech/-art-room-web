@@ -125,10 +125,10 @@ export default function BottomNavbar() {
       {/* ===== 5-BUTTON BOTTOM NAVIGATION BAR (Fixed Mobile) ===== */}
       {/* ============================================================ */}
       <nav
-        className="bottom-nav fixed bottom-0 inset-x-0 z-[90] lg:hidden select-none"
+        className="bottom-nav fixed bottom-0 inset-x-0 z-[90] lg:hidden select-none bg-white/95 backdrop-blur-xl border-t border-gray-200/90"
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       >
-        <div className="mx-auto sm:max-w-[480px] bg-white/95 backdrop-blur-xl border-t border-gray-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] sm:border sm:border-gray-200/80 sm:rounded-t-xl sm:shadow-[0_-4px_24px_rgba(0,0,0,0.12)]">
+        <div className="mx-auto sm:max-w-[480px]">
           <div className="grid grid-cols-5 h-14 items-center">
             {/* 1. หน้าแรก */}
             <Link
@@ -212,7 +212,10 @@ export default function BottomNavbar() {
       {/* ===== FULL-SCREEN MOBILE MENU OVERLAY (All Desktop Links) ===== */}
       {/* ============================================================ */}
       {isMoreMenuOpen && (
-        <div className="lg:hidden fixed inset-0 z-[99995] bg-white flex flex-col animate-in fade-in duration-200">
+        <div 
+          className="lg:hidden fixed inset-0 h-[100dvh] z-[99995] bg-white flex flex-col animate-in fade-in duration-200"
+          style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+        >
           {/* Top Bar with School Branding & Big Close Button */}
           <div className="h-16 px-4 border-b border-gray-100 flex items-center justify-between bg-white shrink-0 shadow-2xs">
             <Link 

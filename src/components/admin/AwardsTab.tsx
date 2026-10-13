@@ -327,7 +327,7 @@ export default function AwardsTab() {
                 <input 
                   id="awardImageInput"
                   type="file" 
-                  accept="image/jpeg, image/jpg, image/png, image/webp"
+                  accept="image/*,image/jpeg,image/jpg,image/png,image/webp"
                   onChange={(e) => {
                     if (e.target.files && e.target.files[0]) {
                       setAwardImageFile(e.target.files[0]);
@@ -397,7 +397,7 @@ export default function AwardsTab() {
                 <input 
                   id="awardCertInput"
                   type="file" 
-                  accept="image/jpeg, image/jpg, image/png, image/webp"
+                  accept="image/*,image/jpeg,image/jpg,image/png,image/webp"
                   onChange={(e) => {
                     if (e.target.files && e.target.files[0]) {
                       setAwardCertificateFile(e.target.files[0]);

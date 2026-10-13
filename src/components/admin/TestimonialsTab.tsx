@@ -170,7 +170,7 @@ export default function TestimonialsTab() {
                 <input 
                   id="testimonialImageInput"
                   type="file" 
-                  accept="image/jpeg, image/jpg, image/png"
+                  accept="image/*,image/jpeg,image/jpg,image/png,image/webp"
                   onChange={(e) => {
                     if (e.target.files && e.target.files[0]) {
                       setTestimonialImageFile(e.target.files[0]);
@@ -212,7 +212,7 @@ export default function TestimonialsTab() {
                 <input 
                   id="testimonialUnivImageInput"
                   type="file" 
-                  accept="image/jpeg, image/jpg, image/png"
+                  accept="image/*,image/jpeg,image/jpg,image/png,image/webp"
                   onChange={(e) => {
                     if (e.target.files && e.target.files[0]) {
                       setTestimonialUnivImageFile(e.target.files[0]);

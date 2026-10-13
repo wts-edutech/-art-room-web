@@ -157,12 +157,12 @@ export default function ExamLockModal({
   useEffect(() => {
     if (phase !== "exam") return;
 
-    // Detect mobile or touch device (iPhone, iPad, Android tablets/phones)
+    // Detect mobile or touch device via screen/touch media features (Rule 5: No userAgent sniffing)
     const isTouchOrMobile = typeof window !== "undefined" && (
       'ontouchstart' in window ||
-      navigator.maxTouchPoints > 0 ||
+      (navigator.maxTouchPoints && navigator.maxTouchPoints > 0) ||
       window.matchMedia('(pointer: coarse)').matches ||
-      /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+      window.matchMedia('(hover: none)').matches
     );
 
     // 1. Fullscreen change detection (enforced strictly on desktop browsers with full support)

@@ -363,7 +363,7 @@ export default function ArtworksTab() {
                 <input 
                   id="artworkImageInput"
                   type="file" 
-                  accept="image/jpeg, image/jpg, image/png, image/webp"
+                  accept="image/*,image/jpeg,image/jpg,image/png,image/webp"
                   onChange={(e) => {
                     if (e.target.files && e.target.files[0]) {
                       setImageFile(e.target.files[0]);

@@ -124,7 +124,7 @@
     -webkit-tap-highlight-color: transparent;
   }
   
-  button, a, input, select, textarea, [role="button"], [tabindex] {
+  button, a, input, select, textarea, [role="button"], [tabindex], label {
     touch-action: manipulation;
     cursor: pointer;
   }

@@ -106,10 +106,12 @@ export default function HomeWelcomePopup({ forceOpen }: HomeWelcomePopupProps) {
       aria-modal="true"
     >
       {/* Click outside to close */}
-      <div 
-        className="fixed inset-0" 
+      <button 
+        type="button"
+        className="fixed inset-0 w-full h-full bg-transparent border-0 cursor-default" 
         onClick={handleClose} 
         aria-label="ปิดหน้าต่าง" 
+        tabIndex={-1}
       />
 
       {/* Main insKru-Style Cute Popup Card */}

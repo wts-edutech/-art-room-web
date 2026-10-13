@@ -43,6 +43,17 @@ export async function GET(request: Request) {
       });
     }
 
+    // Protect full student directory query (Rule 6: Privacy protection for students)
+    const isAdmin = await checkIsAdmin();
+    const cookieStore = await cookies();
+    const sessionToken = cookieStore.get('session_token')?.value;
+    const session = sessionToken ? await verifySessionToken(sessionToken) : null;
+    const isTeacher = session && (session.role === 'teacher' || session.role === 'admin');
+
+    if (!isAdmin && !isTeacher) {
+      return NextResponse.json({ error: 'Unauthorized — เข้าถึงได้เฉพาะผู้ดูแลระบบและครูผู้สอนเท่านั้น' }, { status: 401 });
+    }
+
     const [all, allSubmissions, allQuizAttempts] = await Promise.all([
       db.select().from(students).orderBy(students.id),
       db.select({ studentId: submissions.studentId, submittedAt: submissions.submittedAt }).from(submissions),

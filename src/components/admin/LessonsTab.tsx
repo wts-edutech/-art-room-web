@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Trash2, Plus, Video, Pencil } from "lucide-react";
+import { Trash2, Plus, Video, Pencil, Loader2 } from "lucide-react";
 
 
 export default function LessonsTab() {
@@ -17,6 +17,7 @@ export default function LessonsTab() {
   const [lessonPdfUrl, setLessonPdfUrl] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -54,6 +55,15 @@ export default function LessonsTab() {
       return;
     }
 
+    if (lessonImageFile && lessonImageFile.size > 10 * 1024 * 1024) {
+      alert("ขนาดไฟล์รูปภาพเกิน 10MB กรุณาเลือกรูปภาพที่มีขนาดไม่เกิน 10MB");
+      return;
+    }
+    if (lessonPdfFile && lessonPdfFile.size > 15 * 1024 * 1024) {
+      alert("ขนาดไฟล์ PDF เกิน 15MB กรุณาเลือกไฟล์ PDF ที่มีขนาดไม่เกิน 15MB");
+      return;
+    }
+
     const formData = new FormData();
     if (editingId) formData.append("id", editingId);
     formData.append("title", title);
@@ -80,6 +90,7 @@ export default function LessonsTab() {
       }
     }
 
+    setIsSaving(true);
     try {
       const method = editingId ? "PUT" : "POST";
       const res = await fetch("/api/lessons", {
@@ -89,13 +100,16 @@ export default function LessonsTab() {
       if (res.ok) {
         resetLessonForm();
         fetchData();
+        alert(editingId ? "บันทึกการแก้ไขสื่อการสอนเรียบร้อยแล้ว!" : "เพิ่มสื่อการสอนใหม่สำเร็จ!");
       } else {
         const err = await res.json();
         alert(err.error || "เกิดข้อผิดพลาดในการบันทึกข้อมูล");
       }
     } catch (error) {
       console.error("Failed to save lesson", error);
-      alert("ไม่สามารถบันทึกบทเรียนได้");
+      alert("ไม่สามารถบันทึกบทเรียนได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -197,7 +211,7 @@ export default function LessonsTab() {
                           <input 
                             id="lessonImageInput"
                             type="file" 
-                            accept="image/jpeg, image/jpg, image/png"
+                            accept="image/*,image/jpeg,image/jpg,image/png,image/webp"
                             onChange={(e) => {
                               if (e.target.files && e.target.files[0]) {
                                 setLessonImageFile(e.target.files[0]);
@@ -209,7 +223,8 @@ export default function LessonsTab() {
                           />
                           <div className="flex flex-col items-center justify-center relative z-0">
                             <span className="text-2xl drop-shadow-sm mb-2">🖼️</span>
-                            <p className="text-orange-900 font-medium text-sm mb-1 group-hover:text-orange-600 transition-colors">คลิกหรือลากไฟล์ภาพมาที่นี่</p>
+                            <p className="text-orange-900 font-medium text-sm mb-1 group-hover:text-orange-600 transition-colors">คลิกหรือแตะเพื่อเลือกรูปภาพ</p>
+                            <span className="text-xs text-gray-400 mt-1">รองรับ JPG, PNG, WEBP (สูงสุด 10MB)</span>
                           </div>
                         </div>
                         {lessonImageFile ? (
@@ -228,11 +243,18 @@ export default function LessonsTab() {
                     )}
 
                     <div className="flex gap-2 pt-2">
-                      <Button type="submit" className="flex-1 rounded-xl bg-orange-500 hover:bg-orange-600 text-white">
-                        {editingId ? "บันทึก" : "เพิ่ม"}
+                      <Button type="submit" disabled={isSaving} className="flex-1 rounded-xl bg-orange-500 hover:bg-orange-600 text-white min-h-[44px]">
+                        {isSaving ? (
+                          <span className="flex items-center justify-center gap-2">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>กำลังบันทึก...</span>
+                          </span>
+                        ) : (
+                          editingId ? "บันทึก" : "เพิ่ม"
+                        )}
                       </Button>
                       {editingId && (
-                        <Button type="button" variant="outline" onClick={resetLessonForm} className="rounded-xl px-4 border-gray-200">ยกเลิก</Button>
+                        <Button type="button" variant="outline" onClick={resetLessonForm} className="rounded-xl px-4 border-gray-200 min-h-[44px]">ยกเลิก</Button>
                       )}
                     </div>
                   </form>

@@ -483,7 +483,7 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
               type="file"
               ref={fileInputRef}
               onChange={handleImageFileChange}
-              accept="image/png,image/jpeg,image/webp,image/jpg"
+              accept="image/*,image/png,image/jpeg,image/webp,image/jpg"
               className="hidden"
             />
 

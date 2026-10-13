@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Trash2, Plus, Video, Pencil, Eye, EyeOff } from "lucide-react";
+import { Trash2, Plus, Video, Pencil, Eye, EyeOff, Loader2 } from "lucide-react";
 
 export default function M3LessonsTab() {
   const [m3Lessons, setM3Lessons] = useState<any[]>([]);
@@ -16,6 +16,7 @@ export default function M3LessonsTab() {
   const [m3LessonPdfUrl, setM3LessonPdfUrl] = useState("");
   const [editingM3Id, setEditingM3Id] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Front-end Visibility Status State
   const [isM3Enabled, setIsM3Enabled] = useState(false);
@@ -100,6 +101,15 @@ export default function M3LessonsTab() {
       return;
     }
 
+    if (m3LessonImageFile && m3LessonImageFile.size > 10 * 1024 * 1024) {
+      alert("ขนาดไฟล์รูปภาพเกิน 10MB กรุณาเลือกรูปภาพที่มีขนาดไม่เกิน 10MB");
+      return;
+    }
+    if (m3LessonPdfFile && m3LessonPdfFile.size > 15 * 1024 * 1024) {
+      alert("ขนาดไฟล์ PDF เกิน 15MB กรุณาเลือกไฟล์ PDF ที่มีขนาดไม่เกิน 15MB");
+      return;
+    }
+
     const formData = new FormData();
     if (editingM3Id) formData.append("id", editingM3Id);
     formData.append("title", m3Title);
@@ -122,6 +132,7 @@ export default function M3LessonsTab() {
       }
     }
 
+    setIsSaving(true);
     try {
       const res = await fetch("/api/m3-lessons", {
         method: "POST",
@@ -130,13 +141,16 @@ export default function M3LessonsTab() {
       if (res.ok) {
         resetM3LessonForm();
         fetchData();
+        alert(editingM3Id ? "บันทึกการแก้ไขบทเรียน ม.3 เรียบร้อยแล้ว!" : "เพิ่มบทเรียน ม.3 ใหม่สำเร็จ!");
       } else {
         const err = await res.json();
         alert(err.error || "เกิดข้อผิดพลาดในการบันทึกข้อมูล");
       }
     } catch (error) {
       console.error("Failed to save lesson", error);
-      alert("ไม่สามารถบันทึกบทเรียนได้");
+      alert("ไม่สามารถบันทึกบทเรียนได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -302,7 +316,7 @@ export default function M3LessonsTab() {
                     <input 
                       id="m3LessonImageInput"
                       type="file" 
-                      accept="image/jpeg, image/jpg, image/png"
+                      accept="image/*,image/jpeg,image/jpg,image/png,image/webp"
                       onChange={(e) => {
                         if (e.target.files && e.target.files[0]) {
                           setM3LessonImageFile(e.target.files[0]);
@@ -314,7 +328,8 @@ export default function M3LessonsTab() {
                     />
                     <div className="flex flex-col items-center justify-center relative z-0">
                       <span className="text-2xl drop-shadow-sm mb-2">🖼️</span>
-                      <p className="text-orange-900 font-medium text-sm mb-1 group-hover:text-orange-600 transition-colors">คลิกหรือลากไฟล์ภาพมาที่นี่</p>
+                      <p className="text-orange-900 font-medium text-sm mb-1 group-hover:text-orange-600 transition-colors">คลิกหรือแตะเพื่อเลือกรูปภาพ</p>
+                      <span className="text-xs text-gray-400 mt-1">รองรับ JPG, PNG, WEBP (สูงสุด 10MB)</span>
                     </div>
                   </div>
                   {m3LessonImageFile ? (
@@ -333,11 +348,18 @@ export default function M3LessonsTab() {
               )}
 
               <div className="flex gap-2 pt-2">
-                <Button type="submit" className="flex-1 rounded-xl bg-orange-500 hover:bg-orange-600 text-white">
-                  {editingM3Id ? "บันทึกการแก้ไข" : "เพิ่มบทเรียน ม.3"}
+                <Button type="submit" disabled={isSaving} className="flex-1 rounded-xl bg-orange-500 hover:bg-orange-600 text-white min-h-[44px]">
+                  {isSaving ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>กำลังบันทึก...</span>
+                    </span>
+                  ) : (
+                    editingM3Id ? "บันทึกการแก้ไข" : "เพิ่มบทเรียน ม.3"
+                  )}
                 </Button>
                 {editingM3Id && (
-                  <Button type="button" variant="outline" onClick={resetM3LessonForm} className="rounded-xl px-4 border-gray-200">ยกเลิก</Button>
+                  <Button type="button" variant="outline" onClick={resetM3LessonForm} className="rounded-xl px-4 border-gray-200 min-h-[44px]">ยกเลิก</Button>
                 )}
               </div>
             </form>
