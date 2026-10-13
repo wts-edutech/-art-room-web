@@ -342,7 +342,7 @@ export default function MaterialsList({
                 placeholder="ชื่อสื่อ, หัวข้อ, เทคนิค..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-12 pl-4 pr-9 rounded-xl border border-gray-200 focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none text-sm sm:text-[15px] font-light transition-all text-gray-800 placeholder:text-gray-400"
+                className="w-full h-12 pl-4 pr-9 rounded-xl border border-gray-200 focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none text-base sm:text-[15px] font-light transition-all text-gray-800 placeholder:text-gray-400"
               />
               {searchQuery && (
                 <button 
@@ -403,7 +403,7 @@ export default function MaterialsList({
                 placeholder="ค้นหาชื่อสื่อการสอน, ใบงาน, เทคนิค..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-11 pl-10 pr-9 rounded-xl border border-gray-200 bg-white shadow-2xs focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none text-xs sm:text-sm font-normal text-gray-800 placeholder:text-gray-400 transition-all"
+                className="w-full h-11 pl-10 pr-9 rounded-xl border border-gray-200 bg-white shadow-2xs focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none text-base sm:text-sm font-normal text-gray-800 placeholder:text-gray-400 transition-all"
               />
               {searchQuery && (
                 <button
@@ -659,59 +659,41 @@ export default function MaterialsList({
                       </Link>
                     </div>
 
-                    {/* Row 2 - Mobile: Single Full-Width Primary Action Button */}
-                    <div className="block sm:hidden">
-                      {isVideo ? (
-                        <button
-                          type="button"
-                          onClick={() => handleView(item)}
-                          className="w-full py-2 px-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
-                          title="เปิดดูวิดีโอ"
-                        >
-                          <Video className="w-3.5 h-3.5 fill-white text-white shrink-0" />
-                          <span>เปิดดูวิดีโอ</span>
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={(e) => handleDownload(e, item)}
-                          disabled={downloadingId === item.id}
-                          className="w-full py-2 px-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 active:scale-95 text-white text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer disabled:opacity-75"
-                          title="ดาวน์โหลด PDF"
-                        >
-                          {downloadingId === item.id ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin text-white shrink-0" />
-                          ) : (
-                            <CloudDownload className="w-3.5 h-3.5 text-white shrink-0" />
-                          )}
-                          <span className="truncate">{downloadingId === item.id ? "กำลังโหลด..." : "ดาวน์โหลด PDF"}</span>
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Row 2 - Desktop: Dual Actions [ 👁 ดูตัวอย่าง ] and [ ☁ ดาวน์โหลด ] */}
-                    <div className="hidden sm:grid sm:grid-cols-2 gap-2">
+                    {/* Row 2: Dual Action Buttons [ 👁 ดูตัวอย่าง ] and [ ☁ ดาวน์โหลด ] (แสดงทั้งมือถือและคอม) */}
+                    <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
                       <button
                         type="button"
-                        onClick={() => handleView(item)}
-                        className="w-full py-2 px-2.5 rounded-xl bg-gray-100/90 hover:bg-gray-200 text-gray-700 text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-2xs"
-                        title="ดูตัวอย่างเอกสารหรือบทเรียน"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleView(item);
+                        }}
+                        className="w-full py-2 px-1 sm:px-2.5 rounded-xl bg-gray-100/90 hover:bg-gray-200 active:scale-95 text-gray-700 text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer shadow-2xs"
+                        title={isVideo ? "เปิดดูวิดีโอ" : "ดูตัวอย่างเอกสารใบงาน"}
                       >
-                        <Eye className="w-3.5 h-3.5 text-gray-600 shrink-0" />
-                        <span>ดูตัวอย่าง</span>
+                        {isVideo ? (
+                          <Video className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                        ) : (
+                          <Eye className="w-3.5 h-3.5 text-gray-600 shrink-0" />
+                        )}
+                        <span className="truncate">{isVideo ? "ดูคลิป" : "ดูตัวอย่าง"}</span>
                       </button>
 
                       <button
                         type="button"
-                        onClick={(e) => handleDownload(e, item)}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleDownload(e, item);
+                        }}
                         disabled={downloadingId === item.id}
-                        className="w-full py-2 px-2.5 rounded-xl bg-[#FFF0F3] hover:bg-[#FFE4E8] text-[#E11D48] text-xs font-bold flex items-center justify-center gap-1.5 transition-all border border-pink-100/80 active:scale-95 cursor-pointer shadow-2xs disabled:opacity-75"
+                        className="w-full py-2 px-1 sm:px-2.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 active:scale-95 text-white text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all shadow-2xs cursor-pointer disabled:opacity-75"
                         title="ดาวน์โหลดไฟล์ลงเครื่อง"
                       >
                         {downloadingId === item.id ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin text-[#E11D48] shrink-0" />
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-white shrink-0" />
                         ) : (
-                          <CloudDownload className="w-3.5 h-3.5 text-[#E11D48] shrink-0" />
+                          <CloudDownload className="w-3.5 h-3.5 text-white shrink-0" />
                         )}
                         <span className="truncate">{downloadingId === item.id ? "กำลังโหลด..." : "ดาวน์โหลด"}</span>
                       </button>
