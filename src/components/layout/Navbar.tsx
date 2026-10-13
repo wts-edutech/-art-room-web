@@ -80,11 +80,12 @@ export default function Navbar() {
               className="w-9 h-9 sm:w-10 sm:h-10 object-contain shrink-0 group-hover:scale-105 transition-transform" 
             />
             <div className="flex flex-col justify-center min-w-0">
-              <span className="font-heading font-bold text-[16px] md:text-[20px] xl:text-[24px] tracking-tight leading-none text-gray-900">
-                ART ROOM
+              <span className="font-heading font-black text-[17px] md:text-[20px] xl:text-[23px] tracking-tight leading-none">
+                <span className="text-red-600">ART </span>
+                <span className="text-gray-900">ROOM</span>
               </span>
-              <span className="hidden md:block text-[10px] text-gray-500 font-normal leading-tight mt-0.5 whitespace-nowrap">
-                โรงเรียนวชิรธรรมสาธิต
+              <span className="block text-[8.5px] sm:text-[9.5px] md:text-[10px] text-slate-500 font-semibold tracking-wider uppercase leading-tight mt-0.5 whitespace-nowrap">
+                WACHIRATHAMMASATIT SCHOOL
               </span>
             </div>
           </Link>
