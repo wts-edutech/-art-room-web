@@ -393,7 +393,83 @@ export default function MaterialsList({
       {/* Right Main Feed Area */}
       <div className="w-full min-w-0 space-y-6">
 
-        {/* 3. Unified Feed Grid */}
+        {/* Mobile Top Quick Search & Filter Bar (มองเห็นการค้นหาทันทีบนมือถือ) */}
+        <div className="lg:hidden mb-4 space-y-2">
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="ค้นหาชื่อสื่อการสอน, ใบงาน, เทคนิค..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full h-11 pl-10 pr-9 rounded-xl border border-gray-200 bg-white shadow-2xs focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none text-xs sm:text-sm font-normal text-gray-800 placeholder:text-gray-400 transition-all"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 cursor-pointer"
+                  title="ล้างข้อความค้นหา"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsMobileSidebarOpen(true)}
+              className={`h-11 px-3.5 rounded-xl border flex items-center justify-center gap-1.5 text-xs font-bold transition-all shrink-0 cursor-pointer ${
+                selectedGrade !== "all" || selectedMediaType !== "all" || activeCategory !== "ทั้งหมด"
+                  ? "bg-red-50 border-red-300 text-red-600 shadow-2xs"
+                  : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50 shadow-2xs"
+              }`}
+              title="เปิดตัวกรองเพิ่มเติม"
+            >
+              <Filter className="w-4 h-4" />
+              <span>ตัวกรอง</span>
+            </button>
+          </div>
+
+          {/* Active Filter Chips */}
+          {(searchQuery || selectedGrade !== "all" || selectedMediaType !== "all" || activeCategory !== "ทั้งหมด") && (
+            <div className="flex flex-wrap items-center gap-1.5 text-[11px] pt-0.5">
+              <span className="text-gray-400">ตัวกรอง:</span>
+              {searchQuery && (
+                <span className="px-2 py-0.5 rounded-md bg-red-50 text-red-600 font-semibold border border-red-100 flex items-center gap-1">
+                  <span>&ldquo;{searchQuery}&rdquo;</span>
+                  <X className="w-3 h-3 cursor-pointer" onClick={() => setSearchQuery("")} />
+                </span>
+              )}
+              {selectedGrade !== "all" && (
+                <span className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-600 font-semibold border border-blue-100 flex items-center gap-1">
+                  <span>{selectedGrade === "m3" ? "ม.3" : selectedGrade === "m4" ? "ม.4" : selectedGrade}</span>
+                  <X className="w-3 h-3 cursor-pointer" onClick={() => setSelectedGrade("all")} />
+                </span>
+              )}
+              {activeCategory !== "ทั้งหมด" && (
+                <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-600 font-semibold border border-emerald-100 flex items-center gap-1">
+                  <span>{activeCategory}</span>
+                  <X className="w-3 h-3 cursor-pointer" onClick={() => setActiveCategory("ทั้งหมด")} />
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery("");
+                  setSelectedGrade("all");
+                  setSelectedMediaType("all");
+                  setActiveCategory("ทั้งหมด");
+                }}
+                className="text-red-600 font-bold hover:underline ml-1 cursor-pointer"
+              >
+                ล้างทั้งหมด
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* 3. Unified Feed Grid (กริด 2 คอลัมน์บนมือถือตามต้องการ) */}
         {filteredItems.length === 0 ? (
           <div className="text-center py-20 px-4 bg-white rounded-3xl border border-dashed border-gray-200">
             {activeCategory === "saved" ? (
@@ -437,7 +513,7 @@ export default function MaterialsList({
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-5 md:gap-6">
             {filteredItems.map((item: any) => {
               const isVideo = item.mediaType === "video" || item.category === "สื่อวิดีทัศน์";
               const isRedTitle = item.title.includes("เทคนิค") || item.title.includes("Value Scale");
@@ -445,11 +521,12 @@ export default function MaterialsList({
               return (
                 <div 
                   key={item.id} 
-                  className="group flex flex-col justify-between bg-white rounded-3xl overflow-hidden border border-gray-100/80 shadow-xs hover:shadow-xl transition-all duration-300 hover:-translate-y-1.5"
+                  onClick={() => handleView(item)}
+                  className="group flex flex-col justify-between bg-white rounded-2xl sm:rounded-3xl overflow-hidden border border-gray-100/90 shadow-2xs hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer"
                 >
                   <div>
                     {/* Top Cover Thumbnail / ART ROOM Video Cover */}
-                    <div className="relative w-full aspect-[16/10] bg-gray-100 overflow-hidden rounded-t-3xl">
+                    <div className="relative w-full aspect-[16/10] bg-gray-100 overflow-hidden rounded-t-2xl sm:rounded-t-3xl">
                       {isVideo && (!item.imageUrl || item.id === "dl-v-1" || item.rawId === "v-1" || item.title.includes("เส้นสร้างสรรค์")) ? (
                         /* Coral-Crimson Red Cover with centered bold white ART ROOM */
                         <div className="w-full h-full bg-gradient-to-r from-[#FF2B5E] via-[#FF3B69] to-[#FF4B72] flex items-center justify-center relative select-none">
@@ -474,22 +551,22 @@ export default function MaterialsList({
                       )}
 
                       {/* Top-Left Badge: Topic (e.g. จุด & เส้น, น้ำหนัก & แสงเงา) */}
-                      <div className="absolute top-3.5 left-3.5">
-                        <span className="bg-white/95 backdrop-blur-xs text-gray-900 font-bold text-xs px-3.5 py-1.5 rounded-full shadow-xs">
+                      <div className="absolute top-2 left-2 sm:top-3.5 sm:left-3.5">
+                        <span className="bg-white/95 backdrop-blur-xs text-gray-900 font-bold text-[9px] sm:text-xs px-2 py-0.5 sm:px-3.5 sm:py-1.5 rounded-full shadow-xs truncate max-w-[85px] sm:max-w-none block">
                           {item.topic || (isVideo ? "จุด & เส้น" : "จุด & เส้น")}
                         </span>
                       </div>
 
                       {/* Top-Right Badge: Format (วิดีโอสอน or ใบงาน PDF) */}
-                      <div className="absolute top-3.5 right-3.5">
+                      <div className="absolute top-2 right-2 sm:top-3.5 sm:right-3.5">
                         {isVideo ? (
-                          <span className="bg-white/95 backdrop-blur-xs text-[#2563EB] font-bold text-xs px-3 py-1.5 rounded-full shadow-xs flex items-center gap-1.5">
-                            <Video className="w-3.5 h-3.5 fill-[#2563EB] text-[#2563EB]" />
+                          <span className="bg-white/95 backdrop-blur-xs text-[#2563EB] font-bold text-[9px] sm:text-xs px-2 py-0.5 sm:px-3 sm:py-1.5 rounded-full shadow-xs flex items-center gap-1">
+                            <Video className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-[#2563EB] text-[#2563EB]" />
                             <span>วิดีโอสอน</span>
                           </span>
                         ) : (
-                          <span className="bg-white/95 backdrop-blur-xs text-[#DC2626] font-bold text-xs px-3 py-1.5 rounded-full shadow-xs flex items-center gap-1.5">
-                            <span className="bg-[#DC2626] text-white text-[9px] font-black px-1 py-0.5 rounded-[3px] uppercase leading-none">PDF</span>
+                          <span className="bg-white/95 backdrop-blur-xs text-[#DC2626] font-bold text-[9px] sm:text-xs px-2 py-0.5 sm:px-3 sm:py-1.5 rounded-full shadow-xs flex items-center gap-1">
+                            <span className="bg-[#DC2626] text-white text-[8px] sm:text-[9px] font-black px-1 py-0.2 rounded-[3px] uppercase leading-none">PDF</span>
                             <span>ใบงาน PDF</span>
                           </span>
                         )}
@@ -521,7 +598,7 @@ export default function MaterialsList({
                           });
                           setTimeout(() => setToast(null), 2500);
                         }}
-                        className={`absolute bottom-3 right-3 z-10 w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-md ${
+                        className={`absolute bottom-2 right-2 sm:bottom-3 sm:right-3 z-10 w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-md ${
                           bookmarkedIds.has(item.id) || (item.rawId && bookmarkedIds.has(item.rawId))
                             ? "bg-rose-500 text-white hover:bg-rose-600 scale-105 ring-2 ring-white"
                             : "bg-white/90 hover:bg-white text-gray-600 hover:text-rose-500 backdrop-blur-xs"
@@ -533,7 +610,7 @@ export default function MaterialsList({
                         }
                       >
                         <Heart
-                          className={`w-4 h-4 transition-transform ${
+                          className={`w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform ${
                             bookmarkedIds.has(item.id) || (item.rawId && bookmarkedIds.has(item.rawId))
                               ? "fill-white text-white scale-110"
                               : "hover:scale-110"
@@ -543,10 +620,10 @@ export default function MaterialsList({
                     </div>
 
                     {/* Card Content Area */}
-                    <div className="p-5 sm:p-6 pb-3">
+                    <div className="p-3 sm:p-5 pb-2 sm:pb-3">
                       {/* Title */}
                       <h3 
-                        className={`text-[15px] sm:text-base font-bold mb-2 line-clamp-2 min-h-[2.8rem] leading-snug transition-colors ${
+                        className={`text-xs sm:text-[15px] md:text-base font-bold mb-1 sm:mb-2 line-clamp-2 min-h-[2.2rem] sm:min-h-[2.8rem] leading-snug transition-colors ${
                           isRedTitle 
                             ? "text-[#DC2626]" 
                             : "text-gray-900 group-hover:text-red-600"
@@ -556,34 +633,64 @@ export default function MaterialsList({
                         {item.title}
                       </h3>
 
-                      {/* Description */}
-                      <p className="text-gray-500 text-xs sm:text-[13px] line-clamp-2 leading-relaxed font-light min-h-[2.4rem]">
+                      {/* Description (ซ่อนบนมือถือเพื่อให้การ์ดพอดีจอ แสดงบนจอใหญ่) */}
+                      <p className="text-gray-500 text-[11px] sm:text-[13px] line-clamp-2 leading-relaxed font-light min-h-[2.4rem] hidden sm:block">
                         {item.description || "สื่อการสอนศิลปะโดยกลุ่มสาระการเรียนรู้ศิลปะ โรงเรียนวชิรธรรมสาธิต"}
                       </p>
                     </div>
                   </div>
 
                   {/* Bottom Action Bar */}
-                  <div className="px-4 sm:px-5 pb-4 pt-3 border-t border-gray-100/80 space-y-2.5">
+                  <div className="px-2.5 sm:px-5 pb-3 sm:pb-4 pt-2 sm:pt-3 border-t border-gray-100/80 space-y-2 sm:space-y-2.5">
                     {/* Row 1: Downloads Count & Quick QA link */}
-                    <div className="flex items-center justify-between gap-2 text-xs">
-                      <div className="flex items-center gap-1.5 text-gray-500 font-medium" title="จำนวนดาวน์โหลด">
-                        <Download className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                    <div className="flex items-center justify-between gap-1 text-[10px] sm:text-xs">
+                      <div className="flex items-center gap-1 text-gray-500 font-medium" title="จำนวนดาวน์โหลด">
+                        <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-400 shrink-0" />
                         <span>{downloadCounts[item.id] ?? item.downloadsCount ?? 342} ครั้ง</span>
                       </div>
 
                       <Link
                         href={item.rawId ? `${basePath}/detail?id=${item.rawId}#comments` : "#materials-community-discussion"}
-                        className="inline-flex items-center gap-1 text-xs text-orange-600 hover:text-orange-700 font-semibold transition-colors hover:underline"
+                        className="inline-flex items-center gap-1 text-[10px] sm:text-xs text-orange-600 hover:text-orange-700 font-semibold transition-colors hover:underline"
                         title="ถาม-ตอบเกี่ยวกับบทเรียนนี้"
                       >
-                        <MessageSquare className="w-3.5 h-3.5 text-orange-500 shrink-0" />
+                        <MessageSquare className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-orange-500 shrink-0" />
                         <span>ถาม-ตอบ</span>
                       </Link>
                     </div>
 
-                    {/* Row 2: Actions [ 👁 ดูตัวอย่าง ] and [ ☁ ดาวน์โหลด ] */}
-                    <div className="grid grid-cols-2 gap-2">
+                    {/* Row 2 - Mobile: Single Full-Width Primary Action Button */}
+                    <div className="block sm:hidden">
+                      {isVideo ? (
+                        <button
+                          type="button"
+                          onClick={() => handleView(item)}
+                          className="w-full py-2 px-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                          title="เปิดดูวิดีโอ"
+                        >
+                          <Video className="w-3.5 h-3.5 fill-white text-white shrink-0" />
+                          <span>เปิดดูวิดีโอ</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={(e) => handleDownload(e, item)}
+                          disabled={downloadingId === item.id}
+                          className="w-full py-2 px-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 active:scale-95 text-white text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer disabled:opacity-75"
+                          title="ดาวน์โหลด PDF"
+                        >
+                          {downloadingId === item.id ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-white shrink-0" />
+                          ) : (
+                            <CloudDownload className="w-3.5 h-3.5 text-white shrink-0" />
+                          )}
+                          <span className="truncate">{downloadingId === item.id ? "กำลังโหลด..." : "ดาวน์โหลด PDF"}</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Row 2 - Desktop: Dual Actions [ 👁 ดูตัวอย่าง ] and [ ☁ ดาวน์โหลด ] */}
+                    <div className="hidden sm:grid sm:grid-cols-2 gap-2">
                       <button
                         type="button"
                         onClick={() => handleView(item)}
@@ -854,6 +961,22 @@ export default function MaterialsList({
           </div>
         </div>
       )}
+
+      {/* Floating Search & Filter Pill Button on Mobile (เหนือแถบล่าง กดง่ายด้วยนิ้วโป้ง) */}
+      <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-40 lg:hidden pointer-events-auto">
+        <button
+          type="button"
+          onClick={() => setIsMobileSidebarOpen(true)}
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-red-600 via-rose-600 to-pink-600 text-white font-bold text-xs sm:text-sm shadow-xl shadow-red-600/35 border-2 border-white/90 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+          title="ค้นหาและเปิดตัวกรองสื่อการสอน"
+        >
+          <Search className="w-4 h-4" />
+          <span>ค้นหาและตัวกรองสื่อ</span>
+          {(searchQuery || selectedGrade !== "all" || selectedMediaType !== "all" || activeCategory !== "ทั้งหมด") && (
+            <span className="w-2 h-2 rounded-full bg-amber-300 animate-pulse" />
+          )}
+        </button>
+      </div>
     </div>
   );
 }
