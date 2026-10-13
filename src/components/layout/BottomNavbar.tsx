@@ -129,7 +129,7 @@ export default function BottomNavbar() {
         className="bottom-nav fixed bottom-0 inset-x-0 z-[90] lg:hidden select-none"
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       >
-        <div className="mx-auto sm:max-w-[480px] bg-white/95 backdrop-blur-xl border-t border-gray-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] sm:border sm:border-gray-200/80 sm:rounded-t-2xl sm:shadow-[0_-4px_24px_rgba(0,0,0,0.12)]">
+        <div className="mx-auto sm:max-w-[480px] bg-white/95 backdrop-blur-xl border-t border-gray-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] sm:border sm:border-gray-200/80 sm:rounded-t-xl sm:shadow-[0_-4px_24px_rgba(0,0,0,0.12)]">
           <div className="grid grid-cols-5 h-14 items-center">
             {/* 1. หน้าแรก */}
             <Link
@@ -243,21 +243,21 @@ export default function BottomNavbar() {
               type="button"
               onClick={() => setIsMoreMenuOpen(false)}
               aria-label="ปิดเมนู"
-              className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-gray-100 hover:bg-gray-200 active:scale-95 flex items-center justify-center text-gray-700 transition-colors cursor-pointer"
+              className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-95 flex items-center justify-center text-gray-700 transition-colors cursor-pointer"
             >
               <X className="w-6 h-6" />
             </button>
           </div>
 
           {/* Scrollable Content Body */}
-          <div className="flex-1 overflow-y-auto px-4 py-5 space-y-4 pb-24">
+          <div className="flex-1 overflow-y-auto px-4 py-5 space-y-3 pb-24">
             
-            {/* User Account / Login Header Card */}
-            <div className="p-3.5 bg-gradient-to-r from-gray-50 to-orange-50/40 rounded-2xl border border-gray-200">
+            {/* User Account / Login Header Card (สี่เหลี่ยม มนๆ) */}
+            <div className="p-3.5 bg-gradient-to-r from-gray-50 to-orange-50/40 rounded-xl border border-gray-200">
               {mounted && userName ? (
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full overflow-hidden bg-white shadow-xs border border-orange-200 flex items-center justify-center shrink-0">
+                    <div className="w-12 h-12 rounded-xl overflow-hidden bg-white shadow-xs border border-orange-200 flex items-center justify-center shrink-0">
                       {resolvedAvatar.type === "image" ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={resolvedAvatar.value} alt={userName} className="w-full h-full object-cover" />
@@ -284,7 +284,7 @@ export default function BottomNavbar() {
                         setIsMoreMenuOpen(false);
                         setIsProfileModalOpen(true);
                       }}
-                      className="flex items-center justify-center gap-1.5 min-h-[44px] px-3 py-2 bg-white rounded-xl border border-gray-200 text-xs font-bold text-gray-700 active:scale-95 transition-all shadow-2xs cursor-pointer"
+                      className="flex items-center justify-center gap-1.5 min-h-[44px] px-3 py-2 bg-white rounded-lg border border-gray-200 text-xs font-bold text-gray-700 active:scale-95 transition-all shadow-2xs cursor-pointer"
                     >
                       <Settings className="w-4 h-4 text-orange-600" />
                       <span>ตั้งค่าโปรไฟล์</span>
@@ -293,7 +293,7 @@ export default function BottomNavbar() {
                     <button
                       type="button"
                       onClick={handleLogout}
-                      className="flex items-center justify-center gap-1.5 min-h-[44px] px-3 py-2 bg-white rounded-xl border border-red-200 text-xs font-bold text-red-600 active:scale-95 transition-all shadow-2xs cursor-pointer"
+                      className="flex items-center justify-center gap-1.5 min-h-[44px] px-3 py-2 bg-white rounded-lg border border-red-200 text-xs font-bold text-red-600 active:scale-95 transition-all shadow-2xs cursor-pointer"
                     >
                       <LogOut className="w-4 h-4" />
                       <span>ออกจากระบบ</span>
@@ -304,7 +304,7 @@ export default function BottomNavbar() {
                     <Link
                       href="/admin"
                       onClick={() => setIsMoreMenuOpen(false)}
-                      className="w-full flex items-center justify-center gap-2 min-h-[44px] px-4 py-2.5 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-xl font-bold text-xs shadow-xs active:scale-98 transition-all cursor-pointer"
+                      className="w-full flex items-center justify-center gap-2 min-h-[44px] px-4 py-2.5 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-lg font-bold text-xs shadow-xs active:scale-98 transition-all cursor-pointer"
                     >
                       <ShieldCheck className="w-4 h-4" />
                       <span>เข้าสู่ระบบหลังบ้าน (Admin System)</span>
@@ -320,7 +320,7 @@ export default function BottomNavbar() {
                   <Link
                     href="/login"
                     onClick={() => setIsMoreMenuOpen(false)}
-                    className="w-full sm:w-auto flex items-center justify-center gap-2 min-h-[44px] px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs shadow-md shadow-red-500/20 active:scale-95 transition-all cursor-pointer"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 min-h-[44px] px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold text-xs shadow-md shadow-red-500/20 active:scale-95 transition-all cursor-pointer"
                   >
                     <LogIn className="w-4 h-4" />
                     <span>เข้าสู่ระบบ (Login)</span>
@@ -329,16 +329,16 @@ export default function BottomNavbar() {
               )}
             </div>
 
-            {/* Featured Red AI Art Model Button Card */}
+            {/* Featured Red AI Art Model Button Card (สี่เหลี่ยม มนๆ) */}
             <Link
               href="https://wtscreativeaiart.netlify.app/"
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => setIsMoreMenuOpen(false)}
-              className="flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-[#ff0f39] via-[#e6002e] to-[#ff2a51] text-white shadow-md shadow-red-500/25 active:scale-98 transition-all cursor-pointer min-h-[52px]"
+              className="flex items-center justify-between p-3.5 rounded-xl bg-gradient-to-r from-[#ff0f39] via-[#e6002e] to-[#ff2a51] text-white shadow-sm active:scale-98 transition-all cursor-pointer min-h-[52px]"
             >
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-xs flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-lg bg-white/20 backdrop-blur-xs flex items-center justify-center shrink-0">
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
                 <div className="min-w-0">
@@ -349,29 +349,29 @@ export default function BottomNavbar() {
               <ExternalLink className="w-4 h-4 text-white/80 shrink-0 ml-2" />
             </Link>
 
-            {/* Main Navigation List Matching Desktop with Touch Accordions */}
+            {/* Main Navigation List Matching Desktop with Touch Accordions (สี่เหลี่ยม มนๆ) */}
             <div className="space-y-2">
 
               {/* 1. หน้าแรก */}
               <Link
                 href="/"
                 onClick={() => setIsMoreMenuOpen(false)}
-                className={`flex items-center justify-between p-3 rounded-2xl border transition-all min-h-[48px] cursor-pointer ${
+                className={`flex items-center justify-between p-3 rounded-xl border transition-all min-h-[48px] cursor-pointer ${
                   pathname === "/"
                     ? "bg-red-50/80 border-red-300 text-red-600 font-bold shadow-2xs"
                     : "bg-gray-50/80 hover:bg-gray-100 border-gray-100 text-gray-800 font-semibold"
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center shrink-0">
                     <Home className="w-4 h-4" />
                   </div>
                   <span className="text-sm">หน้าแรก</span>
                 </div>
               </Link>
 
-              {/* 2. สื่อการสอน (Accordion with Submenus) */}
-              <div className="border border-gray-100 rounded-2xl overflow-hidden bg-gray-50/60">
+              {/* 2. สื่อการสอน (Accordion with Submenus - สี่เหลี่ยม มนๆ) */}
+              <div className="border border-gray-100 rounded-xl overflow-hidden bg-gray-50/60">
                 <button
                   type="button"
                   onClick={() => toggleSection("materials")}
@@ -380,7 +380,7 @@ export default function BottomNavbar() {
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
                       <BookOpen className="w-4 h-4" />
                     </div>
                     <span className="text-sm">สื่อการสอน</span>
@@ -392,7 +392,7 @@ export default function BottomNavbar() {
                     <Link
                       href="/materials"
                       onClick={() => setIsMoreMenuOpen(false)}
-                      className="flex items-center justify-between p-2.5 rounded-xl hover:bg-red-50 text-xs font-semibold text-gray-700 hover:text-red-600 transition-colors min-h-[44px]"
+                      className="flex items-center justify-between p-2.5 rounded-lg hover:bg-red-50 text-xs font-semibold text-gray-700 hover:text-red-600 transition-colors min-h-[44px]"
                     >
                       <span>คลังสื่อการสอนทั้งหมด</span>
                       <FolderOpen className="w-4 h-4 text-gray-400" />
@@ -400,7 +400,7 @@ export default function BottomNavbar() {
                     <Link
                       href="/materials"
                       onClick={() => setIsMoreMenuOpen(false)}
-                      className="flex items-center justify-between p-2.5 rounded-xl hover:bg-red-50 text-xs font-semibold text-gray-700 hover:text-red-600 transition-colors min-h-[44px]"
+                      className="flex items-center justify-between p-2.5 rounded-lg hover:bg-red-50 text-xs font-semibold text-gray-700 hover:text-red-600 transition-colors min-h-[44px]"
                     >
                       <span>สื่อฯ ชั้นมัธยมศึกษาปีที่ 3</span>
                       <span className="text-[10px] text-gray-400">ม.3</span>
@@ -408,7 +408,7 @@ export default function BottomNavbar() {
                     <Link
                       href="/materials"
                       onClick={() => setIsMoreMenuOpen(false)}
-                      className="flex items-center justify-between p-2.5 rounded-xl hover:bg-red-50 text-xs font-semibold text-gray-700 hover:text-red-600 transition-colors min-h-[44px]"
+                      className="flex items-center justify-between p-2.5 rounded-lg hover:bg-red-50 text-xs font-semibold text-gray-700 hover:text-red-600 transition-colors min-h-[44px]"
                     >
                       <span>สื่อฯ ชั้นมัธยมศึกษาปีที่ 4</span>
                       <span className="text-[10px] text-gray-400">ม.4</span>
@@ -417,26 +417,26 @@ export default function BottomNavbar() {
                 )}
               </div>
 
-              {/* 3. ส่งงาน */}
+              {/* 3. ส่งงาน (สี่เหลี่ยม มนๆ) */}
               <Link
                 href="/submissions"
                 onClick={() => setIsMoreMenuOpen(false)}
-                className={`flex items-center justify-between p-3 rounded-2xl border transition-all min-h-[48px] cursor-pointer ${
+                className={`flex items-center justify-between p-3 rounded-xl border transition-all min-h-[48px] cursor-pointer ${
                   pathname.startsWith("/submissions")
                     ? "bg-red-50/80 border-red-300 text-red-600 font-bold shadow-2xs"
                     : "bg-gray-50/80 hover:bg-gray-100 border-gray-100 text-gray-800 font-semibold"
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center shrink-0">
                     <Upload className="w-4 h-4" />
                   </div>
                   <span className="text-sm">ส่งงานศิลปะ</span>
                 </div>
               </Link>
 
-              {/* 4. ผลงานนักเรียน (Accordion with Submenus: รางวัลที่ได้รับ & ผลงานนักเรียน) */}
-              <div className="border border-gray-100 rounded-2xl overflow-hidden bg-gray-50/60">
+              {/* 4. ผลงานนักเรียน (Accordion with Submenus - สี่เหลี่ยม มนๆ) */}
+              <div className="border border-gray-100 rounded-xl overflow-hidden bg-gray-50/60">
                 <button
                   type="button"
                   onClick={() => toggleSection("artworks")}
@@ -445,7 +445,7 @@ export default function BottomNavbar() {
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
                       <Palette className="w-4 h-4" />
                     </div>
                     <span className="text-sm">ผลงานนักเรียน</span>
@@ -457,11 +457,11 @@ export default function BottomNavbar() {
                     <Link
                       href="/awards"
                       onClick={() => setIsMoreMenuOpen(false)}
-                      className={`flex items-center gap-3 p-2.5 rounded-xl transition-colors min-h-[44px] ${
+                      className={`flex items-center gap-3 p-2.5 rounded-lg transition-colors min-h-[44px] ${
                         pathname.startsWith("/awards") ? "bg-amber-50 text-amber-900 font-bold" : "hover:bg-amber-50/60 text-gray-700 font-semibold"
                       }`}
                     >
-                      <div className="w-7 h-7 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+                      <div className="w-7 h-7 rounded-md bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
                         <Trophy className="w-3.5 h-3.5" />
                       </div>
                       <div className="min-w-0">
@@ -473,11 +473,11 @@ export default function BottomNavbar() {
                     <Link
                       href="/artworks"
                       onClick={() => setIsMoreMenuOpen(false)}
-                      className={`flex items-center gap-3 p-2.5 rounded-xl transition-colors min-h-[44px] ${
+                      className={`flex items-center gap-3 p-2.5 rounded-lg transition-colors min-h-[44px] ${
                         pathname.startsWith("/artworks") ? "bg-rose-50 text-rose-900 font-bold" : "hover:bg-rose-50/60 text-gray-700 font-semibold"
                       }`}
                     >
-                      <div className="w-7 h-7 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                      <div className="w-7 h-7 rounded-md bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
                         <Palette className="w-3.5 h-3.5" />
                       </div>
                       <div className="min-w-0">
@@ -489,33 +489,33 @@ export default function BottomNavbar() {
                 )}
               </div>
 
-              {/* 5. แชร์ไอเดีย */}
+              {/* 5. แชร์ไอเดีย (สี่เหลี่ยม มนๆ) */}
               <Link
                 href="/ideas"
                 onClick={() => setIsMoreMenuOpen(false)}
-                className={`flex items-center justify-between p-3 rounded-2xl border transition-all min-h-[48px] cursor-pointer ${
+                className={`flex items-center justify-between p-3 rounded-xl border transition-all min-h-[48px] cursor-pointer ${
                   pathname.startsWith("/ideas")
                     ? "bg-red-50/80 border-red-300 text-red-600 font-bold shadow-2xs"
                     : "bg-gray-50/80 hover:bg-gray-100 border-gray-100 text-gray-800 font-semibold"
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
                     <Lightbulb className="w-4 h-4" />
                   </div>
                   <span className="text-sm">แชร์ไอเดีย</span>
                 </div>
               </Link>
 
-              {/* 6. คลังสื่อองค์กร (Accordion with External Links) */}
-              <div className="border border-gray-100 rounded-2xl overflow-hidden bg-gray-50/60">
+              {/* 6. คลังสื่อองค์กร (Accordion with External Links - สี่เหลี่ยม มนๆ) */}
+              <div className="border border-gray-100 rounded-xl overflow-hidden bg-gray-50/60">
                 <button
                   type="button"
                   onClick={() => toggleSection("media")}
                   className="w-full flex items-center justify-between p-3 text-left transition-colors min-h-[48px] cursor-pointer text-gray-800 font-semibold"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
                       <Building2 className="w-4 h-4" />
                     </div>
                     <span className="text-sm">คลังสื่อองค์กร</span>
@@ -529,9 +529,9 @@ export default function BottomNavbar() {
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={() => setIsMoreMenuOpen(false)}
-                      className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-blue-50/60 text-gray-700 font-semibold transition-colors min-h-[44px]"
+                      className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-blue-50/60 text-gray-700 font-semibold transition-colors min-h-[44px]"
                     >
-                      <div className="w-7 h-7 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                      <div className="w-7 h-7 rounded-md bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
                         <Building2 className="w-3.5 h-3.5" />
                       </div>
                       <div className="min-w-0 flex-1">
@@ -546,9 +546,9 @@ export default function BottomNavbar() {
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={() => setIsMoreMenuOpen(false)}
-                      className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-purple-50/60 text-gray-700 font-semibold transition-colors min-h-[44px]"
+                      className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-purple-50/60 text-gray-700 font-semibold transition-colors min-h-[44px]"
                     >
-                      <div className="w-7 h-7 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center shrink-0">
+                      <div className="w-7 h-7 rounded-md bg-purple-100 text-purple-600 flex items-center justify-center shrink-0">
                         <Landmark className="w-3.5 h-3.5" />
                       </div>
                       <div className="min-w-0 flex-1">
@@ -561,8 +561,8 @@ export default function BottomNavbar() {
                 )}
               </div>
 
-              {/* 7. เกี่ยวกับเรา (Accordion: ข่าวสาร, กิจกรรม, ครู, ติดต่อ) */}
-              <div className="border border-gray-100 rounded-2xl overflow-hidden bg-gray-50/60">
+              {/* 7. เกี่ยวกับเรา (Accordion: ข่าวสาร, กิจกรรม, ครู, ติดต่อ - สี่เหลี่ยม มนๆ) */}
+              <div className="border border-gray-100 rounded-xl overflow-hidden bg-gray-50/60">
                 <button
                   type="button"
                   onClick={() => toggleSection("about")}
@@ -573,7 +573,7 @@ export default function BottomNavbar() {
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
                       <PhoneCall className="w-4 h-4" />
                     </div>
                     <span className="text-sm">เกี่ยวกับเรา & ข้อมูล</span>
@@ -585,11 +585,11 @@ export default function BottomNavbar() {
                     <Link
                       href="/news"
                       onClick={() => setIsMoreMenuOpen(false)}
-                      className={`flex items-center gap-3 p-2.5 rounded-xl transition-colors min-h-[44px] ${
+                      className={`flex items-center gap-3 p-2.5 rounded-lg transition-colors min-h-[44px] ${
                         pathname.startsWith("/news") ? "bg-orange-50 text-orange-900 font-bold" : "hover:bg-orange-50/60 text-gray-700 font-semibold"
                       }`}
                     >
-                      <div className="w-7 h-7 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center shrink-0">
+                      <div className="w-7 h-7 rounded-md bg-orange-100 text-orange-600 flex items-center justify-center shrink-0">
                         <Newspaper className="w-3.5 h-3.5" />
                       </div>
                       <div className="min-w-0">
@@ -601,11 +601,11 @@ export default function BottomNavbar() {
                     <Link
                       href="/activities"
                       onClick={() => setIsMoreMenuOpen(false)}
-                      className={`flex items-center gap-3 p-2.5 rounded-xl transition-colors min-h-[44px] ${
+                      className={`flex items-center gap-3 p-2.5 rounded-lg transition-colors min-h-[44px] ${
                         pathname.startsWith("/activities") ? "bg-pink-50 text-pink-900 font-bold" : "hover:bg-pink-50/60 text-gray-700 font-semibold"
                       }`}
                     >
-                      <div className="w-7 h-7 rounded-lg bg-pink-100 text-pink-600 flex items-center justify-center shrink-0">
+                      <div className="w-7 h-7 rounded-md bg-pink-100 text-pink-600 flex items-center justify-center shrink-0">
                         <CalendarDays className="w-3.5 h-3.5" />
                       </div>
                       <div className="min-w-0">
@@ -618,11 +618,11 @@ export default function BottomNavbar() {
                       <Link
                         href="/teachers"
                         onClick={() => setIsMoreMenuOpen(false)}
-                        className={`flex items-center gap-3 p-2.5 rounded-xl transition-colors min-h-[44px] ${
+                        className={`flex items-center gap-3 p-2.5 rounded-lg transition-colors min-h-[44px] ${
                           pathname.startsWith("/teachers") ? "bg-indigo-50 text-indigo-900 font-bold" : "hover:bg-indigo-50/60 text-gray-700 font-semibold"
                         }`}
                       >
-                        <div className="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+                        <div className="w-7 h-7 rounded-md bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
                           <GraduationCap className="w-3.5 h-3.5" />
                         </div>
                         <div className="min-w-0">
@@ -635,11 +635,11 @@ export default function BottomNavbar() {
                     <Link
                       href="/contact"
                       onClick={() => setIsMoreMenuOpen(false)}
-                      className={`flex items-center gap-3 p-2.5 rounded-xl transition-colors min-h-[44px] ${
+                      className={`flex items-center gap-3 p-2.5 rounded-lg transition-colors min-h-[44px] ${
                         pathname === "/contact" ? "bg-emerald-50 text-emerald-900 font-bold" : "hover:bg-emerald-50/60 text-gray-700 font-semibold"
                       }`}
                     >
-                      <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                      <div className="w-7 h-7 rounded-md bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
                         <PhoneCall className="w-3.5 h-3.5" />
                       </div>
                       <div className="min-w-0">
@@ -653,12 +653,12 @@ export default function BottomNavbar() {
 
             </div>
 
-            {/* Extra Bottom Close Button */}
+            {/* Extra Bottom Close Button (สี่เหลี่ยม มนๆ) */}
             <div className="pt-2">
               <button
                 type="button"
                 onClick={() => setIsMoreMenuOpen(false)}
-                className="w-full min-h-[48px] bg-gray-100 hover:bg-gray-200 active:scale-98 text-gray-700 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
+                className="w-full min-h-[48px] bg-gray-100 hover:bg-gray-200 active:scale-98 text-gray-700 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
               >
                 <X className="w-4 h-4" />
                 <span>ปิดหน้าต่างเมนู</span>
