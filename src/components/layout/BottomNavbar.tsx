@@ -43,7 +43,6 @@ export default function BottomNavbar() {
 
   // Accordion state inside full-screen menu
   const [expandedSections, setExpandedSections] = useState<{ [key: string]: boolean }>({
-    materials: false,
     artworks: true, // Default open for quick access
     media: false,
     about: false,
@@ -349,93 +348,10 @@ export default function BottomNavbar() {
               <ExternalLink className="w-4 h-4 text-white/80 shrink-0 ml-2" />
             </Link>
 
-            {/* Main Navigation List Matching Desktop with Touch Accordions (สี่เหลี่ยม มนๆ) */}
+            {/* Main Navigation List (เฉพาะเมนูเพิ่มเติมที่ไม่ซ้ำกับแถบล่าง) */}
             <div className="space-y-2">
 
-              {/* 1. หน้าแรก */}
-              <Link
-                href="/"
-                onClick={() => setIsMoreMenuOpen(false)}
-                className={`flex items-center justify-between p-3 rounded-xl border transition-all min-h-[48px] cursor-pointer ${
-                  pathname === "/"
-                    ? "bg-red-50/80 border-red-300 text-red-600 font-bold shadow-2xs"
-                    : "bg-gray-50/80 hover:bg-gray-100 border-gray-100 text-gray-800 font-semibold"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center shrink-0">
-                    <Home className="w-4 h-4" />
-                  </div>
-                  <span className="text-sm">หน้าแรก</span>
-                </div>
-              </Link>
-
-              {/* 2. สื่อการสอน (Accordion with Submenus - สี่เหลี่ยม มนๆ) */}
-              <div className="border border-gray-100 rounded-xl overflow-hidden bg-gray-50/60">
-                <button
-                  type="button"
-                  onClick={() => toggleSection("materials")}
-                  className={`w-full flex items-center justify-between p-3 text-left transition-colors min-h-[48px] cursor-pointer ${
-                    pathname.startsWith("/materials") ? "text-red-600 font-bold bg-red-50/50" : "text-gray-800 font-semibold"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
-                      <BookOpen className="w-4 h-4" />
-                    </div>
-                    <span className="text-sm">สื่อการสอน</span>
-                  </div>
-                  <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${expandedSections.materials ? "rotate-180 text-red-600" : ""}`} />
-                </button>
-                {expandedSections.materials && (
-                  <div className="px-3 pb-3 pt-1 space-y-1.5 bg-white/70 border-t border-gray-100">
-                    <Link
-                      href="/materials"
-                      onClick={() => setIsMoreMenuOpen(false)}
-                      className="flex items-center justify-between p-2.5 rounded-lg hover:bg-red-50 text-xs font-semibold text-gray-700 hover:text-red-600 transition-colors min-h-[44px]"
-                    >
-                      <span>คลังสื่อการสอนทั้งหมด</span>
-                      <FolderOpen className="w-4 h-4 text-gray-400" />
-                    </Link>
-                    <Link
-                      href="/materials"
-                      onClick={() => setIsMoreMenuOpen(false)}
-                      className="flex items-center justify-between p-2.5 rounded-lg hover:bg-red-50 text-xs font-semibold text-gray-700 hover:text-red-600 transition-colors min-h-[44px]"
-                    >
-                      <span>สื่อฯ ชั้นมัธยมศึกษาปีที่ 3</span>
-                      <span className="text-[10px] text-gray-400">ม.3</span>
-                    </Link>
-                    <Link
-                      href="/materials"
-                      onClick={() => setIsMoreMenuOpen(false)}
-                      className="flex items-center justify-between p-2.5 rounded-lg hover:bg-red-50 text-xs font-semibold text-gray-700 hover:text-red-600 transition-colors min-h-[44px]"
-                    >
-                      <span>สื่อฯ ชั้นมัธยมศึกษาปีที่ 4</span>
-                      <span className="text-[10px] text-gray-400">ม.4</span>
-                    </Link>
-                  </div>
-                )}
-              </div>
-
-              {/* 3. ส่งงาน (สี่เหลี่ยม มนๆ) */}
-              <Link
-                href="/submissions"
-                onClick={() => setIsMoreMenuOpen(false)}
-                className={`flex items-center justify-between p-3 rounded-xl border transition-all min-h-[48px] cursor-pointer ${
-                  pathname.startsWith("/submissions")
-                    ? "bg-red-50/80 border-red-300 text-red-600 font-bold shadow-2xs"
-                    : "bg-gray-50/80 hover:bg-gray-100 border-gray-100 text-gray-800 font-semibold"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center shrink-0">
-                    <Upload className="w-4 h-4" />
-                  </div>
-                  <span className="text-sm">ส่งงานศิลปะ</span>
-                </div>
-              </Link>
-
-              {/* 4. ผลงานนักเรียน (Accordion with Submenus - สี่เหลี่ยม มนๆ) */}
+              {/* 1. ผลงานนักเรียน (Accordion with Submenus - สี่เหลี่ยม มนๆ) */}
               <div className="border border-gray-100 rounded-xl overflow-hidden bg-gray-50/60">
                 <button
                   type="button"
@@ -488,24 +404,6 @@ export default function BottomNavbar() {
                   </div>
                 )}
               </div>
-
-              {/* 5. แชร์ไอเดีย (สี่เหลี่ยม มนๆ) */}
-              <Link
-                href="/ideas"
-                onClick={() => setIsMoreMenuOpen(false)}
-                className={`flex items-center justify-between p-3 rounded-xl border transition-all min-h-[48px] cursor-pointer ${
-                  pathname.startsWith("/ideas")
-                    ? "bg-red-50/80 border-red-300 text-red-600 font-bold shadow-2xs"
-                    : "bg-gray-50/80 hover:bg-gray-100 border-gray-100 text-gray-800 font-semibold"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
-                    <Lightbulb className="w-4 h-4" />
-                  </div>
-                  <span className="text-sm">แชร์ไอเดีย</span>
-                </div>
-              </Link>
 
               {/* 6. คลังสื่อองค์กร (Accordion with External Links - สี่เหลี่ยม มนๆ) */}
               <div className="border border-gray-100 rounded-xl overflow-hidden bg-gray-50/60">
