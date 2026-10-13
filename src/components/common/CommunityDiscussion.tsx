@@ -394,25 +394,25 @@ export default function CommunityDiscussion({
 
   return (
     <div id={id} className="scroll-mt-24 w-full">
-      <div className="bg-white rounded-[2rem] sm:rounded-[2.5rem] border border-gray-100/90 shadow-sm p-6 sm:p-10 relative overflow-hidden">
+      <div className="bg-white rounded-[1.5rem] sm:rounded-[2.5rem] border border-gray-100/90 shadow-sm p-3.5 sm:p-8 md:p-10 relative overflow-hidden">
         {/* Subtle decorative background aura */}
         <div className="absolute top-0 right-0 w-80 h-80 bg-orange-100/30 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
         <div className="absolute bottom-0 left-0 w-80 h-80 bg-amber-100/20 rounded-full blur-3xl pointer-events-none -ml-20 -mb-20" />
 
         {/* Section Header */}
-        <div className="relative z-10 mb-8 pb-6 border-b border-gray-100">
+        <div className="relative z-10 mb-6 sm:mb-8 pb-5 sm:pb-6 border-b border-gray-100">
           {/* Top Pill Badge */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-orange-50 border border-orange-100 text-orange-700 text-xs font-bold mb-3 shadow-2xs">
+          <div className="inline-flex items-center gap-2 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-orange-50 border border-orange-100 text-orange-700 text-xs font-bold mb-2.5 sm:mb-3 shadow-2xs">
             <MessageCircleHeart className="w-3.5 h-3.5 text-orange-500 shrink-0" />
             <span className="whitespace-nowrap">คอมเมนต์ & สนทนาแลกเปลี่ยน</span>
           </div>
 
           {/* Title Row with Counter Badge */}
-          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 mb-2">
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-gray-900 tracking-tight leading-snug break-words">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
+            <h2 className="text-lg sm:text-2xl md:text-3xl font-black text-gray-900 tracking-tight leading-snug break-words">
               {title}
             </h2>
-            <span className="whitespace-nowrap text-xs sm:text-sm font-bold px-3 py-1 rounded-full bg-gray-100 text-gray-700 shadow-2xs shrink-0">
+            <span className="whitespace-nowrap text-xs sm:text-sm font-bold px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-gray-100 text-gray-700 shadow-2xs shrink-0">
               {comments.length} บทสนทนา
             </span>
           </div>
@@ -423,10 +423,10 @@ export default function CommunityDiscussion({
           </p>
 
           {/* Category Filter Pills & Discussion Search Bar */}
-          <div className="mt-5 pt-4 border-t border-gray-100/80 flex flex-col gap-3.5">
+          <div className="mt-4 sm:mt-5 pt-3.5 sm:pt-4 border-t border-gray-100/80 flex flex-col gap-3 sm:gap-3.5">
             {/* Category Filter Pills (Wrapping cleanly, balanced with screen width) */}
             {tags && tags.length > 0 && (
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                 <span className="text-xs font-medium text-gray-400 shrink-0 mr-1 hidden sm:inline">
                   หมวดหมู่:
                 </span>
@@ -438,7 +438,7 @@ export default function CommunityDiscussion({
                       key={tag}
                       type="button"
                       onClick={() => setSelectedTag(tag)}
-                      className={`group inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer select-none ${
+                      className={`group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer select-none ${
                         isSelected
                           ? `${theme.badgeBg} shadow-xs scale-102 font-bold ring-2 ring-orange-400/20`
                           : "bg-gray-100/90 text-gray-700 hover:bg-gray-200/80 hover:text-gray-900"
@@ -453,7 +453,7 @@ export default function CommunityDiscussion({
             )}
 
             {/* Quick Discussion Search & Status Counter Bar */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-0.5">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3 pt-0.5">
               <div className="relative flex-1 sm:max-w-md">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
                   <Search className="w-4 h-4" />
@@ -462,8 +462,8 @@ export default function CommunityDiscussion({
                   type="text"
                   value={discussionSearch}
                   onChange={(e) => setDiscussionSearch(e.target.value)}
-                  placeholder="ค้นหาในกระดานถาม-ตอบ (พิมพ์คำถาม หรือชื่อผู้ถาม)..."
-                  className="w-full pl-10 pr-9 py-2 text-xs sm:text-sm bg-gray-50/90 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-500 focus:bg-white transition-all shadow-2xs placeholder-gray-400"
+                  placeholder="ค้นหาในกระดานถาม-ตอบ..."
+                  className="w-full pl-10 pr-9 py-2 text-base sm:text-sm bg-gray-50/90 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-500 focus:bg-white transition-all shadow-2xs placeholder-gray-400"
                 />
                 {discussionSearch && (
                   <button
@@ -506,33 +506,33 @@ export default function CommunityDiscussion({
         </div>
 
         {/* Post Comment Input Box */}
-        <div className="relative z-10 mb-10 bg-[#FAFAFA] rounded-2xl p-4 sm:p-6 border border-gray-100">
+        <div className="relative z-10 mb-8 sm:mb-10 bg-[#FAFAFA] rounded-2xl p-3 sm:p-5 md:p-6 border border-gray-100 overflow-hidden">
           <form onSubmit={handlePost}>
             {/* User Identity Info Bar */}
-            <div className="flex items-center justify-between gap-3 mb-4">
-              <div className="flex items-center gap-3 min-w-0">
+            <div className="flex items-center justify-between gap-2.5 mb-3.5">
+              <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
                 {/* Avatar Display */}
-                <div className="w-10 h-10 rounded-full overflow-hidden bg-white shadow-xs border border-orange-200 flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden bg-white shadow-xs border border-orange-200 flex items-center justify-center shrink-0">
                   {currentResolvedAvatar.type === "image" ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={currentResolvedAvatar.value} alt={userName || "User"} className="w-full h-full object-cover" />
                   ) : currentResolvedAvatar.type === "preset" ? (
-                    <span className="text-lg select-none">{currentResolvedAvatar.value}</span>
+                    <span className="text-base sm:text-lg select-none">{currentResolvedAvatar.value}</span>
                   ) : (
-                    <span className="text-sm font-black text-orange-600">{currentResolvedAvatar.value}</span>
+                    <span className="text-xs sm:text-sm font-black text-orange-600">{currentResolvedAvatar.value}</span>
                   )}
                 </div>
 
                 {/* Identity Name & Role Badge */}
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-bold text-sm text-gray-900 truncate">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                    <span className="font-bold text-xs sm:text-sm text-gray-900 truncate max-w-[130px] sm:max-w-none">
                       {isLoggedIn ? userName : (guestName.trim() || "ผู้ร่วมสนทนา")}
                     </span>
 
                     {/* Role Badge */}
                     {isLoggedIn ? (
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md whitespace-nowrap shrink-0 ${
+                      <span className={`text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-md whitespace-nowrap shrink-0 ${
                         userRole === "admin" || userRole === "teacher"
                           ? "bg-red-100 text-red-700"
                           : userRole === "guest"
@@ -542,13 +542,13 @@ export default function CommunityDiscussion({
                         {userRole === "admin" ? "ผู้ดูแลระบบ" : userRole === "teacher" ? "คุณครู" : userRole === "guest" ? "ผู้ปกครอง/ทั่วไป" : "นักเรียน WTS"}
                       </span>
                     ) : (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-gray-200 text-gray-600 whitespace-nowrap shrink-0">
+                      <span className="text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-md bg-gray-200 text-gray-600 whitespace-nowrap shrink-0">
                         ผู้เยี่ยมชม
                       </span>
                     )}
                   </div>
-                  <p className="text-[11px] text-gray-400 font-light truncate">
-                    {isLoggedIn ? "กำลังร่วมแสดงความคิดเห็นในนามผู้ใช้ระบบ" : "เข้าสู่ระบบเพื่อซิงค์โปรไฟล์ หรือพิมพ์ชื่อเพื่อร่วมพูดคุยได้ทันที"}
+                  <p className="text-[10px] sm:text-[11px] text-gray-400 font-light truncate">
+                    {isLoggedIn ? "กำลังร่วมแสดงความคิดเห็นในนามผู้ใช้ระบบ" : "เข้าสู่ระบบเพื่อซิงค์โปรไฟล์ หรือพิมพ์ชื่อเพื่อร่วมพูดคุย"}
                   </p>
                 </div>
               </div>
@@ -557,7 +557,7 @@ export default function CommunityDiscussion({
               {!isLoggedIn && (
                 <Link
                   href="/login"
-                  className="shrink-0 px-3 py-1.5 rounded-xl bg-white border border-gray-200 hover:border-orange-300 text-gray-700 hover:text-orange-600 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-2xs"
+                  className="shrink-0 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white border border-gray-200 hover:border-orange-300 text-gray-700 hover:text-orange-600 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-2xs"
                 >
                   <LogIn className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">เข้าสู่ระบบ</span>
@@ -578,8 +578,8 @@ export default function CommunityDiscussion({
                       textareaRef.current?.focus();
                     }
                   }}
-                  placeholder="ใส่ชื่อหรือนามแฝงของคุณ (เช่น ด.ช. ศิลป์ดี หรือ ผู้ปกครองน้องอิง)..."
-                  className="w-full h-10 px-4 rounded-xl border border-gray-200 bg-white text-xs sm:text-sm font-medium focus:border-orange-400 focus:ring-2 focus:ring-orange-400/10 outline-none transition-all shadow-2xs"
+                  placeholder="ใส่ชื่อหรือนามแฝงของคุณ (เช่น ด.ช. ศิลป์ดี)..."
+                  className="w-full h-10 px-3.5 sm:px-4 rounded-xl border border-gray-200 bg-white text-base sm:text-sm font-medium focus:border-orange-400 focus:ring-2 focus:ring-orange-400/10 outline-none transition-all shadow-2xs placeholder-gray-400"
                 />
               </div>
             )}
@@ -605,27 +605,29 @@ export default function CommunityDiscussion({
                 }}
                 rows={3}
                 placeholder="พิมพ์ข้อความเพื่อสอบถามคุณครู แลกเปลี่ยนเทคนิค หรือร่วมสนทนากับเพื่อนๆ... (กด Enter เพื่อส่งข้อความ)"
-                className={`w-full p-4 rounded-2xl border border-gray-200 bg-white text-sm text-gray-800 placeholder-gray-400 outline-none transition-all resize-none shadow-2xs ${theme.borderFocus}`}
+                className={`w-full p-3 sm:p-4 rounded-2xl border border-gray-200 bg-white text-base sm:text-sm text-gray-800 placeholder-gray-400 outline-none transition-all resize-none shadow-2xs ${theme.borderFocus}`}
               />
             </div>
 
             {/* Quick Prompts Chips */}
             {quickPrompts && quickPrompts.length > 0 && (
-              <div className="mt-2.5 flex flex-wrap items-center gap-1.5 pt-1">
-                <span className="text-[11px] text-gray-400 shrink-0 mr-1 flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-amber-500" />
+              <div className="mt-3 pt-1">
+                <span className="text-[11px] sm:text-xs text-gray-500 font-medium mb-1.5 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                   ข้อความด่วน:
                 </span>
-                {quickPrompts.map((prompt, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => handleQuickPromptClick(prompt)}
-                    className="shrink-0 px-2.5 py-1 rounded-lg bg-white hover:bg-orange-50 border border-gray-200/80 hover:border-orange-200 text-[11px] font-normal text-gray-600 hover:text-orange-700 transition-all shadow-2xs active:scale-95 cursor-pointer"
-                  >
-                    {prompt}
-                  </button>
-                ))}
+                <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-1.5 w-full">
+                  {quickPrompts.map((prompt, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handleQuickPromptClick(prompt)}
+                      className="w-full sm:w-auto text-left sm:text-center px-3 py-2 sm:py-1 rounded-xl bg-white hover:bg-orange-50 active:bg-orange-100 border border-gray-200/90 hover:border-orange-300 text-xs sm:text-[11px] font-normal text-gray-700 hover:text-orange-700 transition-all shadow-2xs cursor-pointer break-words active:scale-[0.99] leading-snug"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -646,7 +648,7 @@ export default function CommunityDiscussion({
             )}
 
             {/* Actions Bar */}
-            <div className="mt-3 flex items-center justify-between pt-2">
+            <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-gray-200/50">
               <span className="text-[11px] text-gray-400">
                 ความยาว: {newComment.length} / 1,000 ตัวอักษร
                 <span className="hidden sm:inline ml-2 text-gray-400 font-light">
@@ -657,7 +659,7 @@ export default function CommunityDiscussion({
               <button
                 type="submit"
                 disabled={!newComment.trim() || isPosting}
-                className={`px-6 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 transition-all shadow-sm active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${theme.buttonBg}`}
+                className={`px-5 sm:px-6 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-sm active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${theme.buttonBg}`}
               >
                 {isPosting ? (
                   <>
@@ -706,19 +708,19 @@ export default function CommunityDiscussion({
               return (
                 <div
                   key={comment.id}
-                  className={`group flex gap-3.5 p-4 sm:p-5 rounded-2xl transition-all duration-200 ${
+                  className={`group flex gap-2.5 sm:gap-3.5 p-3 sm:p-5 rounded-2xl transition-all duration-200 ${
                     isTeacher 
                       ? "bg-emerald-50/40 border border-emerald-200/90 shadow-2xs" 
                       : "bg-[#FDFDFD] hover:bg-[#F9FAFB] border border-gray-100/90"
                   }`}
                 >
                   {/* Avatar */}
-                  <div className="w-10 h-10 rounded-full overflow-hidden bg-white shadow-xs border border-gray-200/80 flex items-center justify-center shrink-0 mt-0.5">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden bg-white shadow-xs border border-gray-200/80 flex items-center justify-center shrink-0 mt-0.5">
                     {commentResolvedAvatar.type === "image" ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={commentResolvedAvatar.value} alt={comment.author} className="w-full h-full object-cover" />
                     ) : commentResolvedAvatar.type === "preset" ? (
-                      <span className="text-lg select-none">{commentResolvedAvatar.value}</span>
+                      <span className="text-base sm:text-lg select-none">{commentResolvedAvatar.value}</span>
                     ) : (
                       <span className="text-xs font-bold text-gray-700">{commentResolvedAvatar.value}</span>
                     )}
