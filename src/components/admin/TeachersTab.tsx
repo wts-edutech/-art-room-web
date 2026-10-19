@@ -92,7 +92,7 @@ export default function TeachersTab() {
   const [avatarZoom, setAvatarZoom] = useState(1.0);
   const [avatarPosition, setAvatarPosition] = useState<"top" | "center">("top");
   const [isTrimming, setIsTrimming] = useState(false);
-  const [previewShape, setPreviewShape] = useState<"card" | "circle">("card");
+  const [previewShape, setPreviewShape] = useState<"card" | "original" | "circle">("card");
 
   // Dynamic Lists
   const [educationList, setEducationList] = useState<EducationItem[]>([]);
@@ -310,7 +310,7 @@ export default function TeachersTab() {
 
     try {
       const optimizedUrls = await Promise.all(
-        fileArr.map(file => optimizeImageToDataUrl(file, { maxWidth: 1400, maxHeight: 1400, quality: 0.84, autoTrimBorders: true }))
+        fileArr.map(file => optimizeImageToDataUrl(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.85, autoTrimBorders: false }))
       );
 
       setAwardsList(prev => prev.map(award => {
@@ -665,16 +665,25 @@ export default function TeachersTab() {
                     type="button"
                     onClick={() => setPreviewShape("card")}
                     className={`px-2 py-0.5 rounded-md transition-colors cursor-pointer ${
-                      previewShape === "card" ? "bg-white text-orange-600 shadow-2xs" : "text-gray-500 hover:text-gray-700"
+                      previewShape === "card" ? "bg-white text-orange-600 shadow-2xs font-bold" : "text-gray-500 hover:text-gray-700"
                     }`}
                   >
                     การ์ด 3:4
                   </button>
                   <button
                     type="button"
+                    onClick={() => setPreviewShape("original")}
+                    className={`px-2 py-0.5 rounded-md transition-colors cursor-pointer ${
+                      previewShape === "original" ? "bg-white text-orange-600 shadow-2xs font-bold" : "text-gray-500 hover:text-gray-700"
+                    }`}
+                  >
+                    ขนาดจริง
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => setPreviewShape("circle")}
                     className={`px-2 py-0.5 rounded-md transition-colors cursor-pointer ${
-                      previewShape === "circle" ? "bg-white text-orange-600 shadow-2xs" : "text-gray-500 hover:text-gray-700"
+                      previewShape === "circle" ? "bg-white text-orange-600 shadow-2xs font-bold" : "text-gray-500 hover:text-gray-700"
                     }`}
                   >
                     วงกลม
@@ -682,35 +691,50 @@ export default function TeachersTab() {
                 </div>
               </div>
 
-              {/* Live Preview: 3:4 Card vs Circle */}
-              <div className={`relative mx-auto mb-3.5 overflow-hidden bg-gray-100 shadow-sm group transition-all duration-200 ${
+              {/* Live Preview: 3:4 Card vs Original vs Circle */}
+              <div className={`relative mx-auto mb-3.5 overflow-hidden shadow-sm group transition-all duration-200 flex items-center justify-center ${
                 previewShape === "card"
-                  ? "w-56 sm:w-60 aspect-[3/4] rounded-2xl border border-gray-200"
-                  : "w-48 h-48 rounded-full border-4 border-orange-100"
+                  ? "w-56 sm:w-60 aspect-[3/4] rounded-2xl border border-gray-200 bg-gray-950"
+                  : previewShape === "original"
+                  ? "w-56 sm:w-64 min-h-[260px] max-h-[340px] rounded-2xl border border-gray-200 bg-gray-950 p-2"
+                  : "w-48 h-48 rounded-full border-4 border-orange-100 bg-gray-100"
               }`}>
                 {imageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img 
-                    src={imageUrl} 
-                    alt={name} 
-                    style={{ transform: `scale(${avatarZoom})` }}
-                    className={`w-full h-full object-cover transition-transform duration-200 ${
-                      avatarPosition === 'top' ? 'object-top' : 'object-center'
-                    }`} 
-                  />
+                  <>
+                    {/* Ambient blur fill for card and original view */}
+                    {previewShape !== "circle" && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={imageUrl}
+                        alt=""
+                        className="absolute inset-0 w-full h-full object-cover blur-md opacity-30 scale-110 pointer-events-none"
+                      />
+                    )}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img 
+                      src={imageUrl} 
+                      alt={name} 
+                      style={{ transform: `scale(${avatarZoom})` }}
+                      className={`transition-transform duration-200 relative z-10 ${
+                        previewShape === "circle"
+                          ? `w-full h-full object-cover ${avatarPosition === 'top' ? 'object-top' : 'object-center'}`
+                          : "max-h-full max-w-full object-contain mx-auto rounded-xl shadow-xs"
+                      }`} 
+                    />
+                  </>
                 ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 p-4">
+                  <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 p-4 bg-gray-100">
                     <ImageIcon className="w-10 h-10 mb-2 text-gray-300" />
                     <span className="text-xs font-medium">ยังไม่มีรูปภาพ</span>
                     <span className="text-[10px] text-gray-400 mt-1">
-                      {previewShape === "card" ? "สัดส่วน 3:4 (มาตรฐานกล้องมือถือ)" : "มุมมองวงกลม"}
+                      {previewShape === "card" ? "สัดส่วน 3:4" : previewShape === "original" ? "สัดส่วนจริง (ไม่ตัดขอบ)" : "มุมมองวงกลม"}
                     </span>
                   </div>
                 )}
 
-                {/* Position Pill Overlay (Only on Card) */}
-                {previewShape === "card" && (
-                  <div className="absolute top-2.5 left-2.5 z-10 pointer-events-none">
+                {/* Position Pill Overlay (Only on Card & Original) */}
+                {previewShape !== "circle" && (
+                  <div className="absolute top-2.5 left-2.5 z-20 pointer-events-none">
                     <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-red-600 text-white shadow-xs">
                       {position || "ครูชำนาญการ"}
                     </span>
@@ -1348,14 +1372,19 @@ export default function TeachersTab() {
                                   return (
                                     <div
                                       key={imgIdx}
-                                      className={`relative w-44 h-28 shrink-0 rounded-2xl overflow-hidden border-2 transition-all group bg-gray-900 shadow-2xs ${
+                                      className={`relative w-48 h-32 shrink-0 rounded-2xl overflow-hidden border-2 transition-all group bg-gray-950 shadow-2xs flex items-center justify-center ${
                                         isCover
                                           ? "border-amber-500 ring-2 ring-amber-300/80 shadow-md"
                                           : "border-gray-200 hover:border-gray-400"
                                       }`}
                                     >
+                                      {/* Ambient blurred backdrop for seamless filling */}
                                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                                      <img src={imgUrl} alt={`award-img-${imgIdx}`} className="w-full h-full object-cover" />
+                                      <img src={imgUrl} alt="" className="absolute inset-0 w-full h-full object-cover blur-sm opacity-25 scale-110 pointer-events-none" />
+                                      
+                                      {/* Uncropped True-Size Real Photo */}
+                                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                                      <img src={imgUrl} alt={`award-img-${imgIdx}`} className="relative z-10 max-h-full max-w-full object-contain p-1" />
 
                                       {/* Top Badge: Cover Indicator or Index */}
                                       <div className="absolute top-2 left-2 z-10">

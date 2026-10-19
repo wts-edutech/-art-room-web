@@ -109,23 +109,31 @@ function AwardPhotoCarousel({
 
   const subtitle = award.issuer ? `หน่วยงานที่มอบ: ${award.issuer} (ปี พ.ศ. ${award.year})` : (award.year ? `ปี พ.ศ. ${award.year}` : undefined);
 
-  // Single Image Mode
+  // Single Image Mode (Full uncropped real-size view)
   if (images.length === 1) {
     return (
       <div 
         onClick={() => onOpenLightbox(images, 0, award.title, subtitle)}
-        className="relative aspect-video rounded-xl overflow-hidden mb-3.5 bg-gray-900 cursor-pointer group/img border border-gray-100 shadow-xs"
+        className="relative w-full min-h-[220px] max-h-[380px] sm:min-h-[260px] sm:max-h-[420px] rounded-xl overflow-hidden mb-3.5 bg-gray-950 flex items-center justify-center cursor-pointer group/img border border-gray-100 shadow-xs select-none"
         title="คลิกเพื่อดูรูปภาพขนาดเต็ม"
       >
+        {/* Ambient blurred backdrop so any proportions look seamless */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={images[0]}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover blur-md opacity-30 scale-110 pointer-events-none"
+        />
+        {/* Full real-size uncropped photo */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={images[0]}
           alt={award.title}
-          className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-300"
+          className="relative z-10 max-h-[360px] sm:max-h-[400px] w-auto max-w-full object-contain mx-auto rounded-lg shadow-sm transition-transform duration-300 group-hover/img:scale-[1.02]"
         />
-        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 flex items-center justify-center gap-1.5 text-white text-xs font-bold transition-opacity">
-          <Maximize2 className="w-3.5 h-3.5" />
-          <span>ดูรูปขยาย</span>
+        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover/img:opacity-100 flex items-center justify-center gap-1.5 text-white text-xs font-bold transition-opacity z-20">
+          <Maximize2 className="w-4 h-4" />
+          <span>แตะดูรูปขนาดเต็ม</span>
         </div>
       </div>
     );
@@ -144,25 +152,32 @@ function AwardPhotoCarousel({
 
   return (
     <div className="relative mb-3.5 rounded-xl overflow-hidden bg-gray-950 border border-gray-100 shadow-xs group/carousel select-none">
-      {/* Active Photo Frame with Smooth Transition */}
+      {/* Active Photo Frame with True Uncropped Proportions */}
       <div 
         onClick={() => onOpenLightbox(images, currentIndex, award.title, subtitle)}
-        className="relative aspect-video w-full overflow-hidden cursor-pointer"
+        className="relative w-full min-h-[220px] max-h-[380px] sm:min-h-[260px] sm:max-h-[420px] flex items-center justify-center overflow-hidden cursor-pointer"
         title="คลิกเพื่อดูรูปภาพขนาดเต็ม"
       >
+        {/* Ambient blurred backdrop */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          key={`bg-${currentIndex}`}
+          src={images[currentIndex]}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover blur-md opacity-30 scale-110 pointer-events-none animate-in fade-in duration-300"
+        />
+
+        {/* Foreground Full Real-Size Uncropped Photo */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           key={currentIndex}
           src={images[currentIndex]}
           alt={`${award.title} - ภาพที่ ${currentIndex + 1}`}
-          className="w-full h-full object-cover animate-in fade-in duration-300 group-hover/carousel:scale-102 transition-transform"
+          className="relative z-10 max-h-[360px] sm:max-h-[400px] w-auto max-w-full object-contain mx-auto rounded-lg shadow-sm animate-in fade-in duration-300 group-hover/carousel:scale-[1.02] transition-transform"
         />
 
-        {/* Gradient Overlay for controls visibility */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/25 pointer-events-none" />
-
         {/* Top Badges: Cover Tag & Image Counter */}
-        <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 z-10 pointer-events-none">
+        <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 z-20 pointer-events-none">
           {currentIndex === 0 && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500 text-white text-[10px] font-bold shadow-xs">
               <Star className="w-3 h-3 fill-white" />
@@ -175,7 +190,7 @@ function AwardPhotoCarousel({
         </div>
 
         {/* Expand Hint */}
-        <div className="absolute bottom-2.5 right-2.5 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-xs text-white text-[10px] font-medium flex items-center gap-1 pointer-events-none">
+        <div className="absolute bottom-2.5 right-2.5 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-xs text-white text-[10px] font-medium flex items-center gap-1 pointer-events-none z-20">
           <Maximize2 className="w-3 h-3" />
           <span>แตะดูรูปใหญ่</span>
         </div>
@@ -185,7 +200,7 @@ function AwardPhotoCarousel({
       <button
         type="button"
         onClick={handlePrev}
-        className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-md border border-white/20 z-10"
+        className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-md border border-white/20 z-20"
         aria-label="ภาพก่อนหน้า"
       >
         <ChevronLeft className="w-4 h-4" />
@@ -193,7 +208,7 @@ function AwardPhotoCarousel({
       <button
         type="button"
         onClick={handleNext}
-        className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-md border border-white/20 z-10"
+        className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-md border border-white/20 z-20"
         aria-label="ภาพถัดไป"
       >
         <ChevronRight className="w-4 h-4" />
@@ -209,14 +224,14 @@ function AwardPhotoCarousel({
               e.stopPropagation();
               setCurrentIndex(idx);
             }}
-            className={`relative w-12 h-8 sm:w-14 sm:h-9 shrink-0 rounded-lg overflow-hidden border-2 transition-all cursor-pointer snap-center ${
+            className={`relative w-12 h-8 sm:w-14 sm:h-9 shrink-0 rounded-lg overflow-hidden border-2 transition-all cursor-pointer snap-center bg-gray-950 flex items-center justify-center ${
               currentIndex === idx
                 ? "border-amber-400 ring-2 ring-amber-400/40 scale-105 shadow-sm"
                 : "border-transparent opacity-60 hover:opacity-100"
             }`}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={img} alt={`thumb-${idx}`} className="w-full h-full object-cover" />
+            <img src={img} alt={`thumb-${idx}`} className="w-full h-full object-contain" />
             {idx === 0 && (
               <span className="absolute bottom-0 inset-x-0 bg-amber-500/90 text-white text-[8px] font-bold text-center leading-tight">
                 ปก
@@ -483,24 +498,34 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
                 {/* Left: Portrait Showcase */}
                 <div className="w-full sm:w-72 shrink-0 flex flex-col items-center text-center">
                   
-                  {/* Clean Portrait Box: Standard 3:4 Mobile Camera Ratio */}
-                  <div className="relative w-64 sm:w-72 aspect-[3/4] rounded-2xl overflow-hidden border border-gray-200 bg-gray-100 shadow-xs">
+                  {/* Clean Portrait Box: Standard 3:4 Frame with Ambient Blur (Uncropped Real Size) */}
+                  <div className="relative w-64 sm:w-72 aspect-[3/4] rounded-2xl overflow-hidden border border-gray-200 bg-gray-950 shadow-xs flex items-center justify-center">
                     {teacher.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={teacher.imageUrl}
-                        alt={teacher.name}
-                        className="w-full h-full object-cover object-top"
-                      />
+                      <>
+                        {/* Ambient blurred backdrop for seamless fill */}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={teacher.imageUrl}
+                          alt=""
+                          className="absolute inset-0 w-full h-full object-cover blur-md opacity-30 scale-110 pointer-events-none"
+                        />
+                        {/* Uncropped True-Size Portrait Image */}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={teacher.imageUrl}
+                          alt={teacher.name}
+                          className="relative z-10 max-h-full max-w-full object-contain mx-auto rounded-xl shadow-xs"
+                        />
+                      </>
                     ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
+                      <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gray-100">
                         <Palette className="w-12 h-12 mb-2 text-gray-300" />
                         <span className="text-xs font-medium">ภาพถ่ายครูผู้สอน</span>
                       </div>
                     )}
 
                     {/* Position Pill */}
-                    <div className="absolute top-3 left-3 z-10">
+                    <div className="absolute top-3 left-3 z-20">
                       <span className="px-3 py-1 rounded-full text-xs font-bold bg-red-600 text-white shadow-xs">
                         {teacher.position || "ครูชำนาญการพิเศษ"}
                       </span>
