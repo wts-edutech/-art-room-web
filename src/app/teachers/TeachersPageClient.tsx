@@ -314,16 +314,16 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
               <div className="flex flex-col lg:flex-row gap-8 lg:gap-10 items-center lg:items-start">
                 
                 {/* Left: Portrait Showcase */}
-                <div className="w-full sm:w-64 shrink-0 flex flex-col items-center text-center">
+                <div className="w-full sm:w-72 shrink-0 flex flex-col items-center text-center">
                   
-                  {/* Clean Portrait Box */}
-                  <div className="relative w-56 h-72 sm:w-64 sm:h-80 rounded-2xl overflow-hidden border border-gray-200 bg-gray-100">
+                  {/* Clean Portrait Box: Standard 3:4 Mobile Camera Ratio */}
+                  <div className="relative w-64 sm:w-72 aspect-[3/4] rounded-2xl overflow-hidden border border-gray-200 bg-gray-100 shadow-xs">
                     {teacher.imageUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={teacher.imageUrl}
                         alt={teacher.name}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover object-top"
                       />
                     ) : (
                       <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
@@ -333,8 +333,8 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
                     )}
 
                     {/* Position Pill */}
-                    <div className="absolute top-3 left-3">
-                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-red-600 text-white">
+                    <div className="absolute top-3 left-3 z-10">
+                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-red-600 text-white shadow-xs">
                         {teacher.position || "ครูชำนาญการพิเศษ"}
                       </span>
                     </div>
@@ -345,7 +345,7 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
                     <button
                       type="button"
                       onClick={handleCopyEmail}
-                      className={`mt-3.5 w-full max-w-[256px] py-2 px-3 rounded-xl border text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
+                      className={`mt-3.5 w-64 sm:w-72 py-2.5 px-3 rounded-xl border text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
                         copiedEmail
                           ? "bg-emerald-50 text-emerald-700 border-emerald-300"
                           : "bg-gray-50 hover:bg-red-50 text-gray-700 hover:text-red-600 border-gray-200"
@@ -369,7 +369,7 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
 
                   {/* Room Location */}
                   {teacher.roomLocation && (
-                    <div className="mt-2 text-xs text-gray-500 flex items-center gap-1">
+                    <div className="mt-2 text-xs text-gray-500 flex items-center justify-center gap-1 max-w-[280px]">
                       <MapPin className="w-3.5 h-3.5 text-red-500 shrink-0" />
                       <span>{teacher.roomLocation}</span>
                     </div>

@@ -335,6 +335,19 @@ export default function SubmissionsPage() {
   const isSubmissionGraded = (s: any) =>
     Boolean(s && (s.status === "graded" || (s.score !== null && s.score !== undefined && s.status !== "resubmit")));
 
+  // Helper: คำนวณวันเหลือก่อนกำหนดส่ง
+  const getDaysLeft = (dueDate: string): { days: number; hours: number; isExpired: boolean; isUrgent: boolean } => {
+    const now = new Date();
+    const due = new Date(dueDate);
+    const diffMs = due.getTime() - now.getTime();
+    const isExpired = diffMs < 0;
+    const absDiffMs = Math.abs(diffMs);
+    const days = Math.floor(absDiffMs / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((absDiffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const isUrgent = !isExpired && diffMs < 1000 * 60 * 60 * 48; // น้อยกว่า 2 วัน
+    return { days, hours, isExpired, isUrgent };
+  };
+
   // Stats
   const totalCount = assignments.length;
   const gradedCount = assignments.filter((a) => isSubmissionGraded(subMap.get(a.id))).length;
@@ -349,6 +362,8 @@ export default function SubmissionsPage() {
   }).length;
 
   const actionNeededCount = assignments.filter((a) => !subMap.has(a.id) || subMap.get(a.id)?.status === "resubmit").length;
+  const submittedCount = assignments.filter((a) => subMap.has(a.id) && subMap.get(a.id)?.status !== "resubmit").length;
+  const progressPercent = totalCount > 0 ? Math.round((submittedCount / totalCount) * 100) : 0;
 
   // Filtered Assignments for To-Do Tab
   const toDoAssignments = assignments.filter((a) => {
@@ -615,6 +630,78 @@ export default function SubmissionsPage() {
                   </button>
                 </div>
               </div>
+
+              {/* ──────────────────────────────────────────── */}
+              {/* PROGRESS SUMMARY BAR */}
+              {totalCount > 0 && (
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white shadow-sm shrink-0">
+                        <Layers className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-gray-900">ความคืบหน้าการส่งงานทั้งหมด</p>
+                        <p className="text-[11px] text-gray-400 font-light">ภาคเรียนปัจจุบัน</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 text-right">
+                      <div className="text-right">
+                        <span className="text-2xl font-black font-kanit text-gray-900">{submittedCount}</span>
+                        <span className="text-sm text-gray-400 font-light"> / {totalCount} ชิ้น</span>
+                      </div>
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center font-black text-sm shrink-0 ${
+                        progressPercent === 100 
+                          ? "bg-emerald-100 text-emerald-700" 
+                          : progressPercent >= 50 
+                          ? "bg-orange-100 text-orange-700" 
+                          : "bg-rose-100 text-rose-700"
+                      }`}>
+                        {progressPercent}%
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Progress Bar Track */}
+                  <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-700 ${
+                        progressPercent === 100
+                          ? "bg-gradient-to-r from-emerald-400 to-teal-500"
+                          : progressPercent >= 50
+                          ? "bg-gradient-to-r from-orange-400 to-amber-400"
+                          : "bg-gradient-to-r from-rose-400 to-orange-400"
+                      }`}
+                      style={{ width: `${progressPercent}%` }}
+                    />
+                  </div>
+
+                  {/* Mini stats row */}
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2.5 text-[11px]">
+                    <span className="flex items-center gap-1 text-emerald-700 font-semibold">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                      ตรวจแล้ว {gradedCount} ชิ้น
+                    </span>
+                    <span className="flex items-center gap-1 text-amber-700 font-semibold">
+                      <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                      รอตรวจ {pendingCount} ชิ้น
+                    </span>
+                    {resubmitCount > 0 && (
+                      <span className="flex items-center gap-1 text-rose-700 font-semibold">
+                        <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+                        แก้ไขใหม่ {resubmitCount} ชิ้น
+                      </span>
+                    )}
+                    {missingCount > 0 && (
+                      <span className="flex items-center gap-1 text-slate-500 font-semibold">
+                        <span className="w-2 h-2 rounded-full bg-slate-300"></span>
+                        ยังไม่ส่ง {missingCount} ชิ้น
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+              {/* ──────────────────────────────────────────── */}
 
               {/* Classroom Switcher Form */}
               {isChangingRoom && (
@@ -966,126 +1053,177 @@ export default function SubmissionsPage() {
                 ) : (
                   toDoAssignments.map((assignment) => {
                     const sub = subMap.get(assignment.id);
-                    const isDueExpired = assignment.dueDate ? new Date() > new Date(assignment.dueDate) : false;
                     const isNeedsResubmit = sub?.status === "resubmit";
                     const isSubmitted = Boolean(sub);
                     const isGraded = Boolean(sub && (sub.status === "graded" || (sub.score !== null && sub.score !== undefined)) && sub.status !== "resubmit");
+                    const dueDateInfo = assignment.dueDate ? getDaysLeft(assignment.dueDate) : null;
 
                     return (
                       <div
                         key={assignment.id}
-                        className={`rounded-2xl p-5 sm:p-6 border transition-all ${
+                        className={`rounded-2xl border transition-all overflow-hidden ${
                           isNeedsResubmit
-                            ? "bg-rose-50/40 border-rose-200 shadow-sm"
+                            ? "bg-rose-50/40 border-rose-300 shadow-md"
                             : !isSubmitted
-                            ? "bg-white border-orange-200/80 shadow-sm hover:shadow-md hover:border-orange-300"
+                            ? "bg-white border-orange-200 shadow-md hover:shadow-lg hover:border-orange-400"
                             : isGraded
-                            ? "bg-white/90 border-emerald-100/80 shadow-xs"
-                            : "bg-white/80 border-gray-100 shadow-xs"
+                            ? "bg-white border-emerald-100 shadow-sm"
+                            : "bg-white border-gray-100 shadow-sm"
                         }`}
                       >
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                          {/* Left: Assignment Details */}
-                          <div className="space-y-2 flex-1">
-                            <div className="flex flex-wrap items-center gap-2">
-                              {assignment.subject && (
-                                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-50 text-orange-700 border border-orange-200">
-                                  {assignment.subject.code ? `${assignment.subject.code} ${assignment.subject.name}` : (assignment.subject.name || assignment.subjectId)}
-                                </span>
-                              )}
+                        {/* ── Top colored stripe based on status ── */}
+                        <div className={`h-1.5 w-full ${
+                          isNeedsResubmit
+                            ? "bg-gradient-to-r from-rose-500 to-red-400"
+                            : !isSubmitted
+                            ? "bg-gradient-to-r from-orange-500 to-amber-400"
+                            : isGraded
+                            ? "bg-gradient-to-r from-emerald-500 to-teal-400"
+                            : "bg-gradient-to-r from-amber-400 to-yellow-300"
+                        }`} />
 
-                              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-700">
-                                คะแนนเต็ม {assignment.maxScore} คะแนน
+                        <div className="p-5 sm:p-6">
+                          {/* ── Top row: badges + due date countdown ── */}
+                          <div className="flex flex-wrap items-center gap-2 mb-3">
+                            {assignment.subject && (
+                              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-50 text-orange-700 border border-orange-200">
+                                {assignment.subject.code ? `${assignment.subject.code} ${assignment.subject.name}` : (assignment.subject.name || assignment.subjectId)}
                               </span>
-
-                              {assignment.dueDate && (
-                                <span
-                                  className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium ${
-                                    isDueExpired
-                                      ? "bg-red-50 text-red-600 border border-red-200"
-                                      : "bg-blue-50 text-blue-600 border border-blue-200"
-                                  }`}
-                                >
-                                  <Clock className="w-3 h-3" />
-                                  <span>กำหนดส่ง: {new Date(assignment.dueDate).toLocaleString("th-TH")}</span>
-                                </span>
-                              )}
-                            </div>
-
-                            <h3 className="text-base sm:text-lg font-bold font-kanit text-gray-900">
-                              {assignment.title}
-                            </h3>
-
-                            {assignment.description && (
-                              <p className="text-xs sm:text-sm text-gray-600 leading-relaxed font-light">
-                                {assignment.description}
-                              </p>
                             )}
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">
+                              {assignment.maxScore} คะแนน
+                            </span>
 
-                            {/* Teacher Resubmit Instruction if any */}
+                            {/* Status badge */}
                             {isNeedsResubmit && (
-                              <div className="p-3 rounded-xl bg-rose-100/70 border border-rose-200 text-xs text-rose-900 space-y-1">
-                                <div className="flex items-center gap-1.5 font-bold text-rose-800">
-                                  <AlertCircle className="w-4 h-4 text-rose-600" />
-                                  <span>ครูแจ้งให้ส่งแก้ไขชิ้นงานนี้:</span>
-                                </div>
-                                <p className="font-light italic pl-5">&quot;{sub?.feedback || "กรุณาปรับปรุงชิ้นงานแล้วส่งภาพใหม่"}&quot;</p>
-                              </div>
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-700 border border-rose-200">
+                                <AlertCircle className="w-3 h-3" /> ส่งแก้ไขใหม่
+                              </span>
+                            )}
+                            {!isNeedsResubmit && isGraded && (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">
+                                <CheckCircle2 className="w-3 h-3" /> ตรวจแล้ว
+                              </span>
+                            )}
+                            {!isNeedsResubmit && isSubmitted && !isGraded && (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200">
+                                <Clock className="w-3 h-3" /> รอตรวจ
+                              </span>
                             )}
                           </div>
 
-                          {/* Right: Appropriately Sized Action Button */}
-                          <div className="shrink-0 w-full sm:w-auto flex items-center justify-end">
-                            {isNeedsResubmit ? (
-                              <button
-                                type="button"
-                                onClick={() => setModalAssignment(assignment)}
-                                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold text-xs sm:text-sm shadow-sm hover:shadow active:scale-95 transition-all cursor-pointer"
-                                style={{ backgroundColor: "#dc2626", color: "#ffffff" }}
-                              >
-                                <Upload className="w-4 h-4" />
-                                <span>ถ่ายรูปส่งแก้ไข</span>
-                              </button>
-                            ) : !isSubmitted ? (
-                              <button
-                                type="button"
-                                onClick={() => setModalAssignment(assignment)}
-                                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold text-xs sm:text-sm shadow-sm hover:shadow active:scale-95 transition-all cursor-pointer"
-                                style={{ backgroundColor: "#dc2626", color: "#ffffff" }}
-                              >
-                                <Upload className="w-4 h-4" />
-                                <span>ถ่ายรูปส่งงาน</span>
-                              </button>
-                            ) : isGraded ? (
-                              <div className="flex items-center gap-2 justify-end">
-                                <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200">
-                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                                  <span>ตรวจแล้ว ({sub.score !== null && sub.score !== undefined ? `${sub.score}/${assignment.maxScore}` : "ให้คะแนนแล้ว"})</span>
+                          {/* ── Title ── */}
+                          <h3 className="text-base sm:text-xl font-bold font-kanit text-gray-900 mb-2">
+                            {assignment.title}
+                          </h3>
+
+                          {assignment.description && (
+                            <p className="text-xs sm:text-sm text-gray-500 leading-relaxed font-light mb-3">
+                              {assignment.description}
+                            </p>
+                          )}
+
+                          {/* ── Due Date Countdown (prominent) ── */}
+                          {dueDateInfo && (
+                            <div className={`flex items-center gap-2 rounded-xl px-3 py-2 mb-4 ${
+                              dueDateInfo.isExpired
+                                ? "bg-red-50 border border-red-200"
+                                : dueDateInfo.isUrgent
+                                ? "bg-amber-50 border border-amber-300 animate-pulse"
+                                : "bg-blue-50 border border-blue-100"
+                            }`}>
+                              <Clock className={`w-4 h-4 shrink-0 ${
+                                dueDateInfo.isExpired ? "text-red-500" : dueDateInfo.isUrgent ? "text-amber-600" : "text-blue-500"
+                              }`} />
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <span className={`text-xs font-semibold ${
+                                  dueDateInfo.isExpired ? "text-red-700" : dueDateInfo.isUrgent ? "text-amber-800" : "text-blue-700"
+                                }`}>
+                                  {dueDateInfo.isExpired
+                                    ? `เลยกำหนดส่งมาแล้ว ${dueDateInfo.days > 0 ? `${dueDateInfo.days} วัน ` : ""}${dueDateInfo.hours} ชั่วโมง`
+                                    : dueDateInfo.days === 0
+                                    ? `⚡ เหลืออีก ${dueDateInfo.hours} ชั่วโมง!`
+                                    : `เหลือ ${dueDateInfo.days} วัน ${dueDateInfo.hours} ชั่วโมง`}
                                 </span>
+                                <span className={`text-[11px] font-light ${
+                                  dueDateInfo.isExpired ? "text-red-500" : "text-gray-400"
+                                }`}>
+                                  กำหนดส่ง: {new Date(assignment.dueDate).toLocaleString("th-TH", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Teacher Resubmit Instruction */}
+                          {isNeedsResubmit && (
+                            <div className="p-3 rounded-xl bg-rose-100/70 border border-rose-200 text-xs text-rose-900 space-y-1 mb-4">
+                              <div className="flex items-center gap-1.5 font-bold text-rose-800">
+                                <AlertCircle className="w-4 h-4 text-rose-600" />
+                                <span>ครูแจ้งให้ส่งแก้ไขชิ้นงานนี้:</span>
+                              </div>
+                              <p className="font-light italic pl-5">&quot;{sub?.feedback || "กรุณาปรับปรุงชิ้นงานแล้วส่งภาพใหม่"}&quot;</p>
+                            </div>
+                          )}
+
+                          {/* ── BIG CTA SECTION ── */}
+                          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                            {/* Big CTA Button (ถ่ายภาพส่งงาน) */}
+                            {(isNeedsResubmit || !isSubmitted) && (
+                              <button
+                                type="button"
+                                onClick={() => setModalAssignment(assignment)}
+                                className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-2xl font-bold text-sm shadow-md active:scale-95 transition-all cursor-pointer ${
+                                  isNeedsResubmit
+                                    ? "bg-gradient-to-r from-rose-600 to-red-500 hover:from-rose-700 hover:to-red-600 text-white shadow-rose-500/30"
+                                    : "bg-gradient-to-r from-red-600 to-orange-500 hover:from-red-700 hover:to-orange-600 text-white shadow-orange-500/30"
+                                }`}
+                              >
+                                <Camera className="w-5 h-5" />
+                                <span>{isNeedsResubmit ? "📸 ถ่ายรูปส่งแก้ไข" : "📸 ถ่ายภาพส่งงาน"}</span>
+                              </button>
+                            )}
+
+                            {/* Graded: show score + view button */}
+                            {!isNeedsResubmit && isGraded && (
+                              <>
+                                <div className="flex-1 flex items-center gap-2 px-4 py-3 rounded-2xl bg-emerald-50 border border-emerald-200">
+                                  <Award className="w-5 h-5 text-emerald-600 shrink-0" />
+                                  <div>
+                                    <p className="text-xs text-emerald-700 font-semibold">คะแนนที่ได้รับ</p>
+                                    <p className="text-lg font-black font-kanit text-emerald-700 leading-none">
+                                      {sub.score !== null && sub.score !== undefined ? sub.score : "–"}
+                                      <span className="text-xs font-normal text-emerald-500"> / {assignment.maxScore}</span>
+                                    </p>
+                                  </div>
+                                </div>
                                 <button
                                   type="button"
-                                  onClick={() => {
-                                    setPreviewSubmission({ assignment, submission: sub });
-                                  }}
-                                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-200 transition-colors cursor-pointer"
-                                  title="ดูภาพผลงาน"
+                                  onClick={() => setPreviewSubmission({ assignment, submission: sub })}
+                                  className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl text-sm font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-200 transition-colors cursor-pointer"
                                 >
-                                  <Eye className="w-3.5 h-3.5" />
+                                  <Eye className="w-4 h-4" />
                                   <span>ดูภาพผลงาน</span>
                                 </button>
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-2 justify-end">
-                                <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200">
-                                  <Clock className="w-3.5 h-3.5 text-amber-600" />
-                                  <span>รอครูตรวจ</span>
-                                </span>
+                              </>
+                            )}
+
+                            {/* Pending (submitted, not graded) */}
+                            {!isNeedsResubmit && isSubmitted && !isGraded && (
+                              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full">
+                                <div className="flex-1 flex items-center gap-2 px-4 py-3 rounded-2xl bg-amber-50 border border-amber-200">
+                                  <Clock className="w-4 h-4 text-amber-600 shrink-0" />
+                                  <div>
+                                    <p className="text-xs text-amber-800 font-semibold">รอครูตรวจ</p>
+                                    <p className="text-[11px] text-amber-600 font-light">ส่งเมื่อ: {new Date(sub.submittedAt).toLocaleString("th-TH", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</p>
+                                  </div>
+                                </div>
                                 <button
                                   type="button"
                                   onClick={() => setModalAssignment(assignment)}
-                                  className="px-3 py-2 rounded-xl text-xs font-bold text-orange-600 bg-orange-50 hover:bg-orange-100 border border-orange-200 cursor-pointer active:scale-95 transition-all"
+                                  className="inline-flex items-center justify-center gap-1.5 px-4 py-3 rounded-2xl text-xs font-bold text-orange-600 bg-orange-50 hover:bg-orange-100 border border-orange-200 cursor-pointer active:scale-95 transition-all"
                                 >
-                                  แก้ไข / ส่งใหม่
+                                  <Edit3 className="w-3.5 h-3.5" />
+                                  <span>แก้ไข / ส่งใหม่</span>
                                 </button>
                               </div>
                             )}
@@ -1246,13 +1384,13 @@ export default function SubmissionsPage() {
                   <span>ดาวน์โหลดภาพต้นฉบับ</span>
                 </a>
 
-                <Button
+                <button
                   type="button"
                   onClick={() => setPreviewSubmission(null)}
-                  className="px-6 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold cursor-pointer"
+                  className="px-6 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold cursor-pointer active:scale-95 transition-all"
                 >
                   ปิดหน้าต่าง
-                </Button>
+                </button>
               </div>
             </div>
           </div>
