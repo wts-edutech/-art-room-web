@@ -17,7 +17,16 @@ import {
   FileUp, 
   Loader2, 
   Sparkles,
-  X
+  X,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
+  Scan,
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  Eye,
+  RefreshCw
 } from "lucide-react";
 
 import { optimizeImageToFile } from "@/lib/image-optimizer";
@@ -46,6 +55,58 @@ const COMPETITION_LEVELS = [
   "ระดับนานาชาติ",
   "อื่นๆ",
 ];
+
+// Helper to extract all images from activity (photos, poster, certificate)
+function getAllActivityImages(activity: any): string[] {
+  if (!activity) return [];
+  const list: string[] = [];
+  if (activity.imageUrl && typeof activity.imageUrl === 'string' && activity.imageUrl.trim()) {
+    list.push(activity.imageUrl.trim());
+  }
+  if (activity.images) {
+    let parsed: any = [];
+    try {
+      parsed = typeof activity.images === 'string' ? JSON.parse(activity.images) : activity.images;
+    } catch {}
+    if (Array.isArray(parsed)) {
+      parsed.forEach((img: any) => {
+        if (typeof img === 'string' && img.trim() && !list.includes(img.trim())) {
+          list.push(img.trim());
+        }
+      });
+    }
+  }
+  const cert = activity.certificateUrl || activity.certificate_url;
+  if (cert && typeof cert === 'string' && cert.trim() && !list.includes(cert.trim()) && !cert.endsWith('.pdf')) {
+    list.push(cert.trim());
+  }
+  return list;
+}
+
+// Helper to extract Thai names and award info from text
+function extractThaiNamesAndInfo(text: string): { names: string[]; grade?: string; awardLevel?: string } {
+  if (!text) return { names: [] };
+
+  const nameRegex = /(?:เด็กชาย|เด็กหญิง|นาย|นางสาว|ด\.ช\.|ด\.ญ\.)\s*[ก-๙]+(?:\s+[ก-๙]+)?/g;
+  const rawNames = text.match(nameRegex) || [];
+  const cleanNames = Array.from(new Set(rawNames.map((n) => n.trim().replace(/\s+/g, " "))));
+
+  const gradeMatch = text.match(/ม\.\s*([1-6](?:\/\d+)?)/);
+  const grade = gradeMatch ? `ม.${gradeMatch[1].replace(/\s+/g, '')}` : undefined;
+
+  let awardLevel: string | undefined;
+  if (/ชนะเลิศอันดับ\s*1|เหรียญทอง(?!\s*แดง)/.test(text)) awardLevel = "รางวัลชนะเลิศอันดับ 1 (เหรียญทอง)";
+  else if (/รองชนะเลิศอันดับ\s*(?:ที่\s*)?1/.test(text)) awardLevel = "รางวัลรองชนะเลิศอันดับที่ 1";
+  else if (/รองชนะเลิศอันดับ\s*(?:ที่\s*)?2/.test(text)) awardLevel = "รางวัลรองชนะเลิศอันดับที่ 2";
+  else if (/ชนะเลิศ/.test(text)) awardLevel = "รางวัลชนะเลิศ";
+  else if (/ยอดเยี่ยม/.test(text)) awardLevel = "รางวัลยอดเยี่ยม";
+  else if (/เหรียญเงิน/.test(text)) awardLevel = "รางวัลระดับเหรียญเงิน";
+  else if (/เหรียญทองแดง/.test(text)) awardLevel = "รางวัลระดับเหรียญทองแดง";
+  else if (/ชมเชย/.test(text)) awardLevel = "รางวัลชมเชย";
+  else if (/เข้าร่วม/.test(text)) awardLevel = "รางวัลเข้าร่วม";
+
+  return { names: cleanNames, grade, awardLevel };
+}
 
 // Helper to convert Thai date string into standard DD/MM/YYYY and 4-digit BE Year
 function parseThaiDateToStandard(thaiDateStr: string): { formattedDate: string; year: string } {
@@ -143,6 +204,14 @@ export default function ActivitiesTab() {
   const [isSendingAward, setIsSendingAward] = useState(false);
   const [sentAwardIds, setSentAwardIds] = useState<Record<string, boolean>>({});
   const [toastMessage, setToastMessage] = useState<{ id: string; title: string; text: string } | null>(null);
+
+  // Poster / Photo inspection & Smart Name Extraction states
+  const [activePosterIndex, setActivePosterIndex] = useState(0);
+  const [isZoomViewerOpen, setIsZoomViewerOpen] = useState(false);
+  const [zoomScale, setZoomScale] = useState(1);
+  const [isOcrScanning, setIsOcrScanning] = useState(false);
+  const [ocrStatus, setOcrStatus] = useState("");
+  const [detectedNameChips, setDetectedNameChips] = useState<string[]>([]);
 
   // Send to Awards Customization Modal State
   const [awardModalData, setAwardModalData] = useState<{
@@ -390,25 +459,108 @@ export default function ActivitiesTab() {
     }
   };
 
+  // OCR Poster / Certificate Scanner
+  const handleOcrScan = async (imageUrl: string) => {
+    if (!imageUrl) return;
+    setIsOcrScanning(true);
+    setOcrStatus("กำลังเชื่อมต่อระบบอ่านตัวอักษร...");
+    try {
+      if (!(window as any).Tesseract) {
+        setOcrStatus("กำลังโหลดโมเดล OCR (ภาษาไทย & อังกฤษ)...");
+        await new Promise<void>((resolve, reject) => {
+          const script = document.createElement("script");
+          script.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+          script.onload = () => resolve();
+          script.onerror = () => reject(new Error("ไม่สามารถดาวน์โหลดระบบ OCR ได้"));
+          document.head.appendChild(script);
+        });
+      }
+
+      const Tesseract = (window as any).Tesseract;
+      setOcrStatus("กำลังสแกนอ่านข้อความในโปสเตอร์/เกียรติบัตร...");
+
+      const worker = await Tesseract.createWorker("tha+eng");
+      const ret = await worker.recognize(imageUrl);
+      await worker.terminate();
+
+      const text = ret?.data?.text || "";
+      const { names, grade, awardLevel } = extractThaiNamesAndInfo(text);
+
+      const lines = text
+        .split("\n")
+        .map((l: string) => l.trim())
+        .filter((l: string) => l.length >= 3 && l.length <= 40);
+
+      const candidateNames = [...names];
+      for (const line of lines) {
+        if (
+          /^[ก-๙\s]{4,30}$/.test(line) &&
+          !line.includes("รางวัล") &&
+          !line.includes("โรงเรียน") &&
+          !line.includes("การแข่งขัน") &&
+          !line.includes("วันที่") &&
+          !candidateNames.includes(line)
+        ) {
+          candidateNames.push(line);
+        }
+      }
+
+      const allFound = Array.from(new Set(candidateNames));
+      if (allFound.length > 0) {
+        setDetectedNameChips((prev) => Array.from(new Set([...prev, ...allFound])));
+        if (awardModalData) {
+          setAwardModalData((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  student: allFound[0],
+                  grade: grade || prev.grade,
+                  awardLevel: awardLevel || prev.awardLevel,
+                }
+              : null
+          );
+        }
+        setOcrStatus(`✨ สแกนสำเร็จ! พบ ${allFound.length} ข้อความ (คลิกที่แท็กชื่อเพื่อเลือกได้ทันที)`);
+      } else {
+        setOcrStatus("สแกนเสร็จสิ้น ไม่พบชื่อในรูปแบบมาตรฐาน สามารถกดปุ่มแว่นขยายเพื่อดูภาพใหญ่และพิมพ์ชื่อได้ค่ะ");
+      }
+    } catch (err) {
+      console.error("OCR error:", err);
+      setOcrStatus("ไม่สามารถสแกนอัตโนมัติได้ สามารถกดปุ่มแว่นขยายเพื่อซูมดูภาพใหญ่ได้ค่ะ");
+    } finally {
+      setIsOcrScanning(false);
+    }
+  };
+
   // Open Send to Awards Customization Modal
   const handleOpenSendToAwardsModal = (activity: any) => {
     const { formattedDate, year } = parseThaiDateToStandard(activity.date || "");
+    const allImgs = getAllActivityImages(activity);
+
+    // Smart auto-extraction from description and title
+    const fullText = `${activity.title || ""} ${activity.description || ""}`;
+    const { names, grade, awardLevel } = extractThaiNamesAndInfo(fullText);
+
+    let defaultStudent = names.length > 0 ? names[0] : "";
+    if (!defaultStudent) {
+      defaultStudent = "นักเรียนตัวแทนโรงเรียนวชิรธรรมสาธิต";
+    }
+
+    setDetectedNameChips(names);
+    setActivePosterIndex(0);
+    setIsZoomViewerOpen(false);
+    setZoomScale(1);
+    setOcrStatus("");
 
     // Choose primary cover image
-    let cover = activity.imageUrl || "";
-    if (!cover && activity.images) {
-      try {
-        const parsed = typeof activity.images === "string" ? JSON.parse(activity.images) : activity.images;
-        if (Array.isArray(parsed) && parsed.length > 0) cover = parsed[0];
-      } catch {}
-    }
+    let cover = activity.imageUrl || (allImgs.length > 0 ? allImgs[0] : "");
 
     setAwardModalData({
       activity,
       title: activity.title || "กิจกรรมศิลปะ",
-      student: "นักเรียนตัวแทนโรงเรียนวชิรธรรมสาธิต",
-      grade: "ม.3/1",
-      awardLevel: "รางวัลชนะเลิศ",
+      student: defaultStudent,
+      grade: grade || "ม.3/1",
+      awardLevel: awardLevel || "รางวัลชนะเลิศ",
       competitionLevel: "ระดับชาติ/ประเทศ",
       year: year || "2568",
       date: formattedDate || activity.date || "",
@@ -1146,202 +1298,531 @@ export default function ActivitiesTab() {
         </div>
       </div>
 
-      {/* Send to Awards Confirmation & Verification Modal */}
-      {awardModalData && (
-        <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200"
-          onClick={() => setAwardModalData(null)}
-        >
-          <div 
-            className="bg-white rounded-3xl max-w-xl w-full max-h-[92vh] overflow-hidden flex flex-col shadow-2xl border border-gray-100 animate-in zoom-in-95 duration-200"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-4 sm:p-5 border-b border-gray-100 bg-gradient-to-r from-amber-50 to-orange-50">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold shadow-xs">
-                  <Award className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-sm sm:text-base font-bold font-kanit text-gray-900 leading-tight">
-                    ส่งข้อมูลไปยัง "หน้ารางวัลที่ได้รับ" (/awards)
-                  </h3>
-                  <p className="text-[11px] text-gray-500">
-                    ตรวจเช็คและระบุชื่อนักเรียน/ระดับรางวัล เพื่อให้ข้อมูลแสดงตรงกันอย่างสมบูรณ์
-                  </p>
-                </div>
-              </div>
-              <button 
-                type="button" 
-                onClick={() => setAwardModalData(null)}
-                className="w-8 h-8 rounded-full bg-white hover:bg-gray-100 text-gray-500 flex items-center justify-center transition-colors cursor-pointer border border-gray-200"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+      {/* Send to Awards Confirmation, Poster Inspection & Verification Modal */}
+      {awardModalData && (() => {
+        const allModalImages = getAllActivityImages(awardModalData.activity);
+        const activePosterUrl = allModalImages[activePosterIndex] || awardModalData.imageUrl || "";
+        const isCurrentCover = awardModalData.imageUrl === activePosterUrl;
 
-            {/* Modal Body / Form */}
-            <form onSubmit={handleConfirmSendToAwards} className="p-4 sm:p-5 overflow-y-auto space-y-3.5 text-xs">
-              
-              {/* Linked Activity Preview */}
-              <div className="p-3 rounded-2xl bg-gray-50 border border-gray-200 flex items-center gap-3">
-                {awardModalData.imageUrl ? (
-                  <div className="w-14 h-14 rounded-xl bg-gray-950 overflow-hidden shrink-0 border border-gray-300 flex items-center justify-center">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={awardModalData.imageUrl} alt="" className="max-h-full max-w-full object-contain" />
+        return (
+          <div 
+            className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
+            onClick={() => setAwardModalData(null)}
+          >
+            <div 
+              className="bg-white rounded-3xl max-w-5xl w-full max-h-[94vh] overflow-hidden flex flex-col shadow-2xl border border-gray-100 animate-in zoom-in-95 duration-200"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-4 sm:p-5 border-b border-gray-100 bg-gradient-to-r from-amber-50 via-orange-50 to-amber-100/40">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white flex items-center justify-center font-bold shadow-xs shrink-0">
+                    <Award className="w-5 h-5" />
                   </div>
-                ) : (
-                  <div className="w-14 h-14 rounded-xl bg-gray-200 text-gray-400 flex items-center justify-center shrink-0">
-                    <ImageIcon className="w-6 h-6" />
-                  </div>
-                )}
-                <div className="min-w-0 flex-1">
-                  <span className="text-[10px] font-bold text-orange-600 bg-orange-100/70 px-2 py-0.5 rounded-md inline-block mb-0.5">
-                    ดึงข้อมูลจากกิจกรรม
-                  </span>
-                  <p className="font-bold font-kanit text-gray-900 truncate">{awardModalData.title}</p>
-                  <div className="flex items-center gap-2 text-[11px] text-gray-500 mt-0.5">
-                    <span>📅 {awardModalData.date}</span>
-                    {awardModalData.certificateUrl && (
-                      <span className="text-amber-600 font-bold flex items-center gap-0.5">
-                        <Award className="w-3 h-3" /> แนบเกียรติบัตรแล้ว
+                  <div>
+                    <h3 className="text-sm sm:text-base font-bold font-kanit text-gray-900 leading-tight flex items-center gap-2">
+                      <span>ส่งข้อมูลไปยัง "หน้ารางวัลที่ได้รับ" (/awards)</span>
+                      <span className="text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-sans font-bold">
+                        เชื่อมโยงอัตโนมัติ
                       </span>
+                    </h3>
+                    <p className="text-[11px] text-gray-500 mt-0.5">
+                      ดูข้อมูลจากโปสเตอร์/เกียรติบัตร และตรวจเช็คชื่อนักเรียน/ระดับรางวัล เพื่อให้ข้อมูลแสดงตรงกันอย่างสมบูรณ์
+                    </p>
+                  </div>
+                </div>
+                <button 
+                  type="button" 
+                  onClick={() => setAwardModalData(null)}
+                  className="w-8 h-8 rounded-full bg-white hover:bg-gray-100 text-gray-500 flex items-center justify-center transition-colors cursor-pointer border border-gray-200 shrink-0"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Modal Body: Split View (Poster Inspector + Verification Form) */}
+              <div className="flex-1 overflow-y-auto grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-gray-100">
+                
+                {/* LEFT COLUMN: Poster & Certificate Inspector */}
+                <div className="lg:col-span-5 p-4 sm:p-5 bg-gradient-to-b from-gray-50 to-orange-50/20 flex flex-col justify-between gap-3">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="font-bold text-gray-900 text-xs flex items-center gap-1.5">
+                        <ImageIcon className="w-4 h-4 text-orange-500" />
+                        <span>โปสเตอร์ / ภาพกิจกรรม ({allModalImages.length} รูป)</span>
+                      </label>
+                      <span className="text-[10px] font-semibold text-gray-600 bg-white px-2 py-0.5 rounded-full border border-gray-200">
+                        รูปที่ {activePosterIndex + 1} จาก {Math.max(1, allModalImages.length)}
+                      </span>
+                    </div>
+
+                    {/* Active Poster Preview Card */}
+                    <div className="relative h-64 sm:h-72 bg-gray-950 rounded-2xl overflow-hidden border border-gray-300 shadow-sm flex items-center justify-center group">
+                      {activePosterUrl ? (
+                        <>
+                          {/* Ambient background blur */}
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img 
+                            src={activePosterUrl} 
+                            alt="" 
+                            className="absolute inset-0 w-full h-full object-cover blur-sm opacity-25 scale-110 pointer-events-none" 
+                          />
+                          {/* Main Poster / Photo */}
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img 
+                            src={activePosterUrl} 
+                            alt="Active Poster" 
+                            className="relative z-10 max-h-full max-w-full object-contain p-1.5 cursor-pointer transition-transform group-hover:scale-102"
+                            onClick={() => setIsZoomViewerOpen(true)}
+                            title="คลิกเพื่อขยายดูภาพใหญ่แบบซูมละเอียด"
+                          />
+
+                          {/* Top Badges */}
+                          <div className="absolute top-2 inset-x-2 flex items-center justify-between pointer-events-auto z-20">
+                            {isCurrentCover ? (
+                              <div className="bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 shadow-sm">
+                                <Star className="w-3 h-3 fill-white" />
+                                <span>รูปหลักของรางวัล</span>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setAwardModalData({ ...awardModalData, imageUrl: activePosterUrl })}
+                                className="bg-black/75 hover:bg-amber-500 text-white text-[10px] font-bold px-2 py-1 rounded-md transition-all shadow-xs cursor-pointer flex items-center gap-1"
+                              >
+                                <Star className="w-3 h-3" />
+                                <span>ตั้งเป็นรูปรางวัล</span>
+                              </button>
+                            )}
+
+                            {/* Zoom Button */}
+                            <button
+                              type="button"
+                              onClick={() => setIsZoomViewerOpen(true)}
+                              className="bg-black/75 hover:bg-black/90 text-white text-[10px] font-bold px-2 py-1 rounded-md transition-all shadow-xs cursor-pointer flex items-center gap-1"
+                              title="คลิกเพื่อขยายดูภาพใหญ่แบบซูมลึก"
+                            >
+                              <Maximize2 className="w-3 h-3 text-amber-400" />
+                              <span>ขยายภาพใหญ่</span>
+                            </button>
+                          </div>
+
+                          {/* Image Switcher Arrows */}
+                          {allModalImages.length > 1 && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => setActivePosterIndex((prev) => (prev > 0 ? prev - 1 : allModalImages.length - 1))}
+                                className="absolute left-1.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition-all z-20 cursor-pointer"
+                                title="รูปก่อนหน้า"
+                              >
+                                <ChevronLeft className="w-4 h-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setActivePosterIndex((prev) => (prev < allModalImages.length - 1 ? prev + 1 : 0))}
+                                className="absolute right-1.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition-all z-20 cursor-pointer"
+                                title="รูปถัดไป"
+                              >
+                                <ChevronRight className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
+                        </>
+                      ) : (
+                        <div className="text-center text-gray-500 p-4">
+                          <ImageIcon className="w-8 h-8 mx-auto mb-1 opacity-50" />
+                          <p className="text-xs">ไม่มีรูปภาพในกิจกรรมนี้</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* OCR Scanner Button */}
+                    {activePosterUrl && (
+                      <div>
+                        <button
+                          type="button"
+                          onClick={() => handleOcrScan(activePosterUrl)}
+                          disabled={isOcrScanning}
+                          className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer disabled:opacity-75 active:scale-98"
+                        >
+                          {isOcrScanning ? (
+                            <>
+                              <Loader2 className="w-4 h-4 animate-spin text-white" />
+                              <span>กำลังสแกนอ่านตัวอักษรในโปสเตอร์...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Scan className="w-4 h-4 text-white" />
+                              <span>🔍 สแกนอ่านชื่อจากโปสเตอร์ (AI / OCR)</span>
+                            </>
+                          )}
+                        </button>
+                        {ocrStatus && (
+                          <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-2 mt-1.5 font-medium leading-relaxed">
+                            {ocrStatus}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Thumbnail Strip */}
+                    {allModalImages.length > 1 && (
+                      <div>
+                        <p className="text-[10px] text-gray-500 font-medium mb-1">
+                          เลือกรูปภาพ/เกียรติบัตรที่ต้องการตรวจสอบ:
+                        </p>
+                        <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
+                          {allModalImages.map((imgUrl, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => setActivePosterIndex(idx)}
+                              className={`relative w-12 h-12 rounded-lg bg-gray-900 shrink-0 overflow-hidden border-2 transition-all cursor-pointer ${
+                                activePosterIndex === idx
+                                  ? "border-orange-500 ring-2 ring-orange-400 shadow-xs scale-105"
+                                  : "border-gray-200 opacity-70 hover:opacity-100"
+                              }`}
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={imgUrl} alt="" className="w-full h-full object-cover" />
+                              {awardModalData.imageUrl === imgUrl && (
+                                <div className="absolute top-0.5 left-0.5 w-2 h-2 rounded-full bg-amber-400" />
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     )}
                   </div>
-                </div>
-              </div>
 
-              {/* 1. Student Name */}
-              <div>
-                <label className="font-bold text-gray-800 block mb-1">
-                  ชื่อนักเรียน / ผู้ได้รับรางวัล <span className="text-red-500">*</span>
-                </label>
-                <input 
-                  type="text" 
-                  required
-                  value={awardModalData.student}
-                  onChange={(e) => setAwardModalData({ ...awardModalData, student: e.target.value })}
-                  placeholder="เช่น เด็กหญิงโชคดี มีแมว หรือ คณะนักเรียนตัวแทน"
-                  className="w-full h-9 px-3 rounded-xl border border-gray-300 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none text-xs bg-white font-medium"
-                />
-              </div>
-
-              {/* 2. Grade Level & Award Level */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="font-bold text-gray-800 block mb-1">ระดับชั้นเรียน</label>
-                  <select 
-                    value={awardModalData.grade}
-                    onChange={(e) => setAwardModalData({ ...awardModalData, grade: e.target.value })}
-                    className="w-full h-9 px-2.5 rounded-xl border border-gray-300 focus:border-amber-500 outline-none text-xs bg-white cursor-pointer font-medium"
-                  >
-                    <option value="">-- เลือกระดับชั้นเรียน --</option>
-                    {GRADE_GROUPS.map((group) => (
-                      <optgroup key={group.level} label={group.label}>
-                        <option value={group.level}>ทั้งระดับชั้น ({group.level})</option>
-                        {group.rooms.map((room) => (
-                          <option key={room} value={room}>{room}</option>
-                        ))}
-                      </optgroup>
-                    ))}
-                  </select>
+                  <div className="p-2.5 rounded-xl bg-orange-100/60 border border-orange-200 text-[11px] text-orange-950 flex items-start gap-2">
+                    <Sparkles className="w-3.5 h-3.5 text-orange-600 shrink-0 mt-0.5" />
+                    <span>
+                      <strong>วิธีดูชื่อ:</strong> แตะที่รูปหรือกดปุ่ม <strong>"ขยายภาพใหญ่"</strong> เพื่อซูมอ่านตัวหนังสือบนโปสเตอร์ จากนั้นกดปุ่มสแกนหรือพิมพ์ชื่อนักเรียนในแบบฟอร์มด้านขวาได้ทันทีค่ะ
+                    </span>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="font-bold text-gray-800 block mb-1">ระดับรางวัลที่ได้รับ</label>
-                  <select 
-                    value={awardModalData.awardLevel}
-                    onChange={(e) => setAwardModalData({ ...awardModalData, awardLevel: e.target.value })}
-                    className="w-full h-9 px-2.5 rounded-xl border border-gray-300 focus:border-amber-500 outline-none text-xs bg-white cursor-pointer font-medium"
-                  >
-                    {AWARD_LEVELS.map((lvl) => (
-                      <option key={lvl} value={lvl}>{lvl}</option>
-                    ))}
-                  </select>
-                </div>
+                {/* RIGHT COLUMN: Verification Form */}
+                <form onSubmit={handleConfirmSendToAwards} className="lg:col-span-7 p-4 sm:p-5 space-y-3.5 text-xs flex flex-col justify-between">
+                  <div className="space-y-3">
+                    {/* Linked Activity Info */}
+                    <div className="p-2.5 rounded-2xl bg-amber-50/60 border border-amber-200/80 flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <span className="text-[10px] font-bold text-orange-700 bg-orange-100 px-2 py-0.5 rounded-md inline-block mb-0.5">
+                          ดึงข้อมูลจากกิจกรรม
+                        </span>
+                        <p className="font-bold font-kanit text-gray-900 truncate">{awardModalData.title}</p>
+                        <p className="text-[11px] text-gray-500 mt-0.5">📅 วันที่: {awardModalData.date}</p>
+                      </div>
+                      {awardModalData.certificateUrl && (
+                        <span className="text-amber-700 font-bold text-[10px] bg-white border border-amber-200 px-2 py-1 rounded-lg shrink-0 flex items-center gap-1 shadow-2xs">
+                          <Award className="w-3.5 h-3.5 text-amber-500" />
+                          <span>แนบเกียรติบัตรแล้ว</span>
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Detected Name Suggestion Chips */}
+                    {detectedNameChips.length > 0 && (
+                      <div className="p-2.5 rounded-xl bg-amber-50/80 border border-amber-200">
+                        <div className="flex items-center gap-1 text-[11px] font-bold text-amber-900 mb-1.5">
+                          <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                          <span>ชื่อที่ตรวจพบ (คลิกเพื่อใส่ชื่อทันที):</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {detectedNameChips.map((chip, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => setAwardModalData({ ...awardModalData, student: chip })}
+                              className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer flex items-center gap-1 shadow-2xs ${
+                                awardModalData.student === chip
+                                  ? "bg-amber-500 text-white border-amber-600 ring-2 ring-amber-400"
+                                  : "bg-white text-gray-800 border-amber-300 hover:bg-amber-100"
+                              }`}
+                            >
+                              {awardModalData.student === chip && <Check className="w-3 h-3" />}
+                              <span>{chip}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 1. Student Name */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="font-bold text-gray-800">
+                          ชื่อนักเรียน / ผู้ได้รับรางวัล <span className="text-red-500">*</span>
+                        </label>
+                        <span className="text-[10px] text-gray-400">ระบุชื่อจริงหรือชื่อกลุ่มตัวแทน</span>
+                      </div>
+                      <input 
+                        type="text" 
+                        required
+                        value={awardModalData.student}
+                        onChange={(e) => setAwardModalData({ ...awardModalData, student: e.target.value })}
+                        placeholder="เช่น เด็กหญิงโชคดี มีแมว หรือ คณะนักเรียนตัวแทน"
+                        className="w-full h-9.5 px-3 rounded-xl border border-gray-300 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none text-xs bg-white font-medium shadow-2xs"
+                      />
+                    </div>
+
+                    {/* 2. Grade Level & Award Level */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="font-bold text-gray-800 block mb-1">ระดับชั้นเรียน</label>
+                        <select 
+                          value={awardModalData.grade}
+                          onChange={(e) => setAwardModalData({ ...awardModalData, grade: e.target.value })}
+                          className="w-full h-9 px-2.5 rounded-xl border border-gray-300 focus:border-amber-500 outline-none text-xs bg-white cursor-pointer font-medium"
+                        >
+                          <option value="">-- เลือกระดับชั้นเรียน --</option>
+                          {GRADE_GROUPS.map((group) => (
+                            <optgroup key={group.level} label={group.label}>
+                              <option value={group.level}>ทั้งระดับชั้น ({group.level})</option>
+                              {group.rooms.map((room) => (
+                                <option key={room} value={room}>{room}</option>
+                              ))}
+                            </optgroup>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="font-bold text-gray-800 block mb-1">ระดับรางวัลที่ได้รับ</label>
+                        <select 
+                          value={awardModalData.awardLevel}
+                          onChange={(e) => setAwardModalData({ ...awardModalData, awardLevel: e.target.value })}
+                          className="w-full h-9 px-2.5 rounded-xl border border-gray-300 focus:border-amber-500 outline-none text-xs bg-white cursor-pointer font-medium"
+                        >
+                          {AWARD_LEVELS.map((lvl) => (
+                            <option key={lvl} value={lvl}>{lvl}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* 3. Competition Level & Year */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="font-bold text-gray-800 block mb-1">ระดับการแข่งขัน</label>
+                        <select 
+                          value={awardModalData.competitionLevel}
+                          onChange={(e) => setAwardModalData({ ...awardModalData, competitionLevel: e.target.value })}
+                          className="w-full h-9 px-2.5 rounded-xl border border-gray-300 focus:border-amber-500 outline-none text-xs bg-white cursor-pointer font-medium"
+                        >
+                          {COMPETITION_LEVELS.map((c) => (
+                            <option key={c} value={c}>{c}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="font-bold text-gray-800 block mb-1">ปี พ.ศ. (เช่น 2568)</label>
+                        <input 
+                          type="text" 
+                          value={awardModalData.year}
+                          onChange={(e) => setAwardModalData({ ...awardModalData, year: e.target.value })}
+                          className="w-full h-9 px-3 rounded-xl border border-gray-300 focus:border-amber-500 outline-none text-xs bg-white font-mono"
+                        />
+                      </div>
+                    </div>
+
+                    {/* 4. Title & Organization */}
+                    <div>
+                      <label className="font-bold text-gray-800 block mb-1">ชื่อกิจกรรม / ผลงานรางวัล *</label>
+                      <input 
+                        type="text" 
+                        required
+                        value={awardModalData.title}
+                        onChange={(e) => setAwardModalData({ ...awardModalData, title: e.target.value })}
+                        className="w-full h-9 px-3 rounded-xl border border-gray-300 focus:border-amber-500 outline-none text-xs bg-white font-medium"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="font-bold text-gray-800 block mb-1">หน่วยงานที่จัด / สถานที่</label>
+                      <input 
+                        type="text" 
+                        value={awardModalData.organization}
+                        onChange={(e) => setAwardModalData({ ...awardModalData, organization: e.target.value })}
+                        placeholder="เช่น มหาวิทยาลัยเทคโนโลยีราชมงคลกรุงเทพ"
+                        className="w-full h-9 px-3 rounded-xl border border-gray-300 focus:border-amber-500 outline-none text-xs bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Modal Actions */}
+                  <div className="flex items-center gap-2 pt-3 border-t border-gray-100 mt-2">
+                    <Button
+                      type="submit"
+                      disabled={isSendingAward}
+                      className="flex-1 h-10 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-xs cursor-pointer"
+                    >
+                      {isSendingAward ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin mr-1.5" />
+                          <span>กำลังบันทึกเข้าหน้ารางวัล...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Award className="w-4 h-4 mr-1.5" />
+                          <span>ยืนยันบันทึกส่งไปหน้ารางวัลทันที</span>
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setAwardModalData(null)}
+                      className="h-10 rounded-xl px-4 border-gray-300 text-xs font-semibold cursor-pointer"
+                    >
+                      ยกเลิก
+                    </Button>
+                  </div>
+                </form>
               </div>
+            </div>
 
-              {/* 3. Competition Level & Year */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="font-bold text-gray-800 block mb-1">ระดับการแข่งขัน</label>
-                  <select 
-                    value={awardModalData.competitionLevel}
-                    onChange={(e) => setAwardModalData({ ...awardModalData, competitionLevel: e.target.value })}
-                    className="w-full h-9 px-2.5 rounded-xl border border-gray-300 focus:border-amber-500 outline-none text-xs bg-white cursor-pointer font-medium"
-                  >
-                    {COMPETITION_LEVELS.map((c) => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="font-bold text-gray-800 block mb-1">ปี พ.ศ. (เช่น 2568)</label>
-                  <input 
-                    type="text" 
-                    value={awardModalData.year}
-                    onChange={(e) => setAwardModalData({ ...awardModalData, year: e.target.value })}
-                    className="w-full h-9 px-3 rounded-xl border border-gray-300 focus:border-amber-500 outline-none text-xs bg-white font-mono"
-                  />
-                </div>
-              </div>
-
-              {/* 4. Title & Organization */}
-              <div>
-                <label className="font-bold text-gray-800 block mb-1">ชื่อกิจกรรม / ผลงานรางวัล *</label>
-                <input 
-                  type="text" 
-                  required
-                  value={awardModalData.title}
-                  onChange={(e) => setAwardModalData({ ...awardModalData, title: e.target.value })}
-                  className="w-full h-9 px-3 rounded-xl border border-gray-300 focus:border-amber-500 outline-none text-xs bg-white font-medium"
-                />
-              </div>
-
-              <div>
-                <label className="font-bold text-gray-800 block mb-1">หน่วยงานที่จัด / สถานที่</label>
-                <input 
-                  type="text" 
-                  value={awardModalData.organization}
-                  onChange={(e) => setAwardModalData({ ...awardModalData, organization: e.target.value })}
-                  placeholder="เช่น มหาวิทยาลัยเทคโนโลยีราชมงคลกรุงเทพ"
-                  className="w-full h-9 px-3 rounded-xl border border-gray-300 focus:border-amber-500 outline-none text-xs bg-white"
-                />
-              </div>
-
-              {/* Modal Actions */}
-              <div className="flex items-center gap-2 pt-3 border-t border-gray-100">
-                <Button
-                  type="submit"
-                  disabled={isSendingAward}
-                  className="flex-1 h-10 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-xs cursor-pointer"
+            {/* FULLSCREEN LIGHTBOX ZOOM MODAL */}
+            {isZoomViewerOpen && (
+              <div 
+                className="fixed inset-0 z-[100] bg-black/95 flex flex-col animate-in fade-in duration-200"
+                onClick={() => setIsZoomViewerOpen(false)}
+              >
+                {/* Lightbox Toolbar */}
+                <div 
+                  className="p-3 sm:p-4 bg-black/80 backdrop-blur-md flex items-center justify-between gap-3 text-white border-b border-white/10 shrink-0"
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  {isSendingAward ? (
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-xs sm:text-sm font-bold truncate">
+                      🔍 ขยายดูโปสเตอร์ / เกียรติบัตร (รูปที่ {activePosterIndex + 1}/{Math.max(1, allModalImages.length)})
+                    </span>
+                    <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-mono">
+                      {Math.round(zoomScale * 100)}%
+                    </span>
+                  </div>
+
+                  {/* Zoom Controls */}
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setZoomScale((z) => Math.max(0.5, z - 0.25))}
+                      className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+                      title="ซูมออก"
+                    >
+                      <ZoomOut className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setZoomScale(1)}
+                      className="px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-xs text-white transition-colors cursor-pointer"
+                      title="ขนาดปกติ 100%"
+                    >
+                      100%
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setZoomScale(1.5)}
+                      className="px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-xs text-white transition-colors cursor-pointer"
+                      title="ซูม 150%"
+                    >
+                      150%
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setZoomScale(2)}
+                      className="px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-xs text-white transition-colors cursor-pointer"
+                      title="ซูม 200%"
+                    >
+                      200%
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setZoomScale((z) => Math.min(4, z + 0.25))}
+                      className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+                      title="ซูมเข้า"
+                    >
+                      <ZoomIn className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsZoomViewerOpen(false)}
+                      className="ml-2 p-1.5 rounded-lg bg-red-600/80 hover:bg-red-600 text-white transition-colors cursor-pointer"
+                      title="ปิดหน้าต่างซูม"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Lightbox Canvas Area */}
+                <div 
+                  className="flex-1 overflow-auto p-4 flex items-center justify-center relative cursor-grab active:cursor-grabbing"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={activePosterUrl}
+                    alt="Zoom Poster"
+                    style={{ transform: `scale(${zoomScale})`, transformOrigin: "center center" }}
+                    className="max-h-[85vh] max-w-[90vw] object-contain transition-transform duration-150 select-none shadow-2xl"
+                  />
+
+                  {/* Left & Right Switchers */}
+                  {allModalImages.length > 1 && (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin mr-1.5" />
-                      <span>กำลังบันทึกเข้าหน้ารางวัล...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Award className="w-4 h-4 mr-1.5" />
-                      <span>ยืนยันบันทึกส่งไปหน้ารางวัลทันที</span>
+                      <button
+                        type="button"
+                        onClick={() => setActivePosterIndex((prev) => (prev > 0 ? prev - 1 : allModalImages.length - 1))}
+                        className="fixed left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/70 hover:bg-white text-white hover:text-black flex items-center justify-center transition-all z-20 cursor-pointer shadow-lg"
+                      >
+                        <ChevronLeft className="w-6 h-6" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActivePosterIndex((prev) => (prev < allModalImages.length - 1 ? prev + 1 : 0))}
+                        className="fixed right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/70 hover:bg-white text-white hover:text-black flex items-center justify-center transition-all z-20 cursor-pointer shadow-lg"
+                      >
+                        <ChevronRight className="w-6 h-6" />
+                      </button>
                     </>
                   )}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setAwardModalData(null)}
-                  className="h-10 rounded-xl px-4 border-gray-300 text-xs font-semibold cursor-pointer"
+                </div>
+
+                {/* Lightbox Bottom Actions */}
+                <div 
+                  className="p-3 bg-black/80 backdrop-blur-md flex items-center justify-between gap-3 text-xs border-t border-white/10 shrink-0"
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  ยกเลิก
-                </Button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAwardModalData({ ...awardModalData, imageUrl: activePosterUrl });
+                      alert("ตั้งรูปภาพนี้เป็นรูปหลักของรางวัลเรียบร้อยแล้ว");
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    <Star className="w-3.5 h-3.5" />
+                    <span>ใช้รูปนี้เป็นภาพหลักของรางวัล</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsZoomViewerOpen(false)}
+                    className="px-4 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white font-bold cursor-pointer"
+                  >
+                    ✓ ปิดและกลับไปกรอกแบบฟอร์ม
+                  </button>
+                </div>
               </div>
-            </form>
+            )}
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
