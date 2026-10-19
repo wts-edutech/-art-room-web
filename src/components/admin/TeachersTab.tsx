@@ -1257,99 +1257,155 @@ export default function TeachersTab() {
                     </div>
 
                     {/* Award Photos Gallery & Cover Selector */}
+                    {/* Award Photos Gallery & Cover Selector */}
                     <div className="pt-3 border-t border-gray-200/80">
-                      <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
-                        <div className="flex items-center gap-2">
-                          <label className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
-                            <ImageIcon className="w-3.5 h-3.5 text-orange-500" />
-                            <span>รูปถ่ายตอนรับรางวัลและภาพเกียรติบัตร (เพิ่มได้หลายรูป / เลือกรูปหน้าปกได้)</span>
-                          </label>
-                          <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-bold border border-amber-200">
-                            {((award.images && award.images.length > 0) ? award.images.length : (award.imageUrl ? 1 : 0))} รูป
-                          </span>
-                        </div>
-                        <span className="text-[11px] text-gray-400">
-                          ⭐ แตะปุ่ม "ตั้งเป็นหน้าปก" เพื่อเลือกรูปหลัก
-                        </span>
-                      </div>
+                      {(() => {
+                        const photos = (award.images && award.images.length > 0) 
+                          ? award.images 
+                          : (award.imageUrl ? [award.imageUrl] : []);
+                        const hasPhotos = photos.length > 0;
 
-                      {/* Horizontal Flowing Gallery */}
-                      <div className="flex items-center gap-3 overflow-x-auto pb-2 pt-1 scrollbar-thin">
-                        {/* Add More Photos Button Box */}
-                        <label className="w-32 h-24 shrink-0 rounded-xl border-2 border-dashed border-orange-300 hover:border-orange-500 bg-orange-50/50 hover:bg-orange-50 flex flex-col items-center justify-center gap-1 cursor-pointer transition-all text-orange-600 active:scale-98">
-                          <Plus className="w-5 h-5" />
-                          <span className="text-[11px] font-bold">+ เพิ่มรูปภาพ</span>
-                          <span className="text-[9px] text-orange-400 text-center leading-tight">เลือกได้หลายรูปพร้อมกัน</span>
-                          <input
-                            type="file"
-                            multiple
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => {
-                              if (e.target.files && e.target.files.length > 0) {
-                                handleAwardImagesUpload(award.id, e.target.files);
-                                e.target.value = '';
-                              }
-                            }}
-                          />
-                        </label>
-
-                        {/* List of Photos */}
-                        {((award.images && award.images.length > 0) ? award.images : (award.imageUrl ? [award.imageUrl] : [])).map((imgUrl, imgIdx) => {
-                          const isCover = (award.coverImage || award.imageUrl) === imgUrl || (!award.coverImage && imgIdx === 0);
-                          return (
-                            <div
-                              key={imgIdx}
-                              className={`relative w-40 h-24 shrink-0 rounded-xl overflow-hidden border-2 transition-all group bg-gray-100 shadow-2xs ${
-                                isCover
-                                  ? "border-amber-500 ring-2 ring-amber-300/60 shadow-xs"
-                                  : "border-gray-200 hover:border-gray-300"
-                              }`}
-                            >
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img src={imgUrl} alt={`award-img-${imgIdx}`} className="w-full h-full object-cover" />
-
-                              {/* Cover Badge */}
-                              {isCover ? (
-                                <div className="absolute top-1.5 left-1.5 z-10 pointer-events-none">
-                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500 text-white text-[10px] font-bold shadow-xs">
-                                    <Star className="w-3 h-3 fill-white" />
-                                    <span>หน้าปก</span>
-                                  </span>
-                                </div>
-                              ) : (
-                                <div className="absolute top-1.5 left-1.5 z-10 opacity-75 group-hover:opacity-100">
-                                  <span className="px-1.5 py-0.5 rounded bg-black/60 text-white text-[9px] font-mono">
-                                    รูปที่ {imgIdx + 1}
-                                  </span>
-                                </div>
-                              )}
-
-                              {/* Hover Overlay Controls */}
-                              <div className="absolute inset-0 bg-black/65 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5 p-1 z-20">
-                                {!isCover && (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleSetAwardCover(award.id, imgUrl)}
-                                    className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-bold rounded-md shadow-xs transition-colors cursor-pointer flex items-center gap-1"
-                                  >
-                                    <Star className="w-3 h-3 fill-white" />
-                                    <span>ตั้งเป็นหน้าปก</span>
-                                  </button>
-                                )}
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteAwardImage(award.id, imgIdx)}
-                                  className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-bold rounded-md shadow-xs transition-colors cursor-pointer flex items-center gap-1"
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                  <span>ลบรูปนี้</span>
-                                </button>
+                        return (
+                          <div>
+                            <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+                              <div className="flex items-center gap-2">
+                                <label className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                                  <ImageIcon className="w-3.5 h-3.5 text-orange-500" />
+                                  <span>รูปถ่ายตอนรับรางวัลและภาพเกียรติบัตร (ลงได้หลายรูป / เลือกรูปหน้าปกได้)</span>
+                                </label>
+                                <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold border ${
+                                  hasPhotos 
+                                    ? "bg-amber-100 text-amber-800 border-amber-300" 
+                                    : "bg-gray-100 text-gray-500 border-gray-200"
+                                }`}>
+                                  {photos.length} รูป
+                                </span>
                               </div>
+                              <span className="text-[11px] text-gray-500">
+                                💡 กดเลือกรูปทีเดียวหลายๆ รูปได้เลย • แตะ ⭐ เพื่อเปลี่ยนรูปหน้าปก
+                              </span>
                             </div>
-                          );
-                        })}
-                      </div>
+
+                            {!hasPhotos ? (
+                              /* Empty State: Large Clear Multi-Upload Dropzone */
+                              <label className="w-full py-8 px-4 rounded-2xl border-2 border-dashed border-orange-300 hover:border-orange-500 bg-orange-50/50 hover:bg-orange-50/80 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all text-orange-600 active:scale-[0.99] text-center shadow-xs">
+                                <div className="w-12 h-12 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center shadow-xs">
+                                  <Plus className="w-6 h-6 stroke-[2.5]" />
+                                </div>
+                                <div>
+                                  <span className="text-sm font-bold text-orange-800 block">
+                                    + คลิกเลือกรูปภาพ (เลือกพร้อมกันได้หลายๆ รูป)
+                                  </span>
+                                  <span className="text-xs text-orange-600/80 mt-0.5 block">
+                                    รองรับภาพถ่ายตอนรับรางวัล เกียรติบัตร หรือภาพบรรยากาศงาน ไม่จำกัดจำนวนรูป
+                                  </span>
+                                </div>
+                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white text-orange-700 text-[11px] font-bold border border-orange-200 shadow-2xs">
+                                  📁 แตะเพื่อเปิดแกลเลอรี / โฟลเดอร์รูปภาพ
+                                </span>
+                                <input
+                                  type="file"
+                                  multiple
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={(e) => {
+                                    if (e.target.files && e.target.files.length > 0) {
+                                      handleAwardImagesUpload(award.id, e.target.files);
+                                      e.target.value = '';
+                                    }
+                                  }}
+                                />
+                              </label>
+                            ) : (
+                              /* Populated State: Horizontal Flowing Filmstrip Gallery */
+                              <div className="flex items-center gap-3 overflow-x-auto pb-2 pt-1 scrollbar-thin">
+                                {/* Add More Photos Button Box */}
+                                <label className="w-36 h-28 shrink-0 rounded-2xl border-2 border-dashed border-orange-300 hover:border-orange-500 bg-orange-50/60 hover:bg-orange-50 flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-all text-orange-600 active:scale-98 shadow-2xs">
+                                  <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
+                                    <Plus className="w-5 h-5 stroke-[2.5]" />
+                                  </div>
+                                  <span className="text-xs font-bold">+ เพิ่มรูปอีก</span>
+                                  <span className="text-[10px] text-orange-500/80 text-center leading-tight">
+                                    เลือกหลายรูปได้
+                                  </span>
+                                  <input
+                                    type="file"
+                                    multiple
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                      if (e.target.files && e.target.files.length > 0) {
+                                        handleAwardImagesUpload(award.id, e.target.files);
+                                        e.target.value = '';
+                                      }
+                                    }}
+                                  />
+                                </label>
+
+                                {/* List of Photos */}
+                                {photos.map((imgUrl, imgIdx) => {
+                                  const isCover = (award.coverImage || award.imageUrl) === imgUrl || (!award.coverImage && imgIdx === 0);
+                                  return (
+                                    <div
+                                      key={imgIdx}
+                                      className={`relative w-44 h-28 shrink-0 rounded-2xl overflow-hidden border-2 transition-all group bg-gray-900 shadow-2xs ${
+                                        isCover
+                                          ? "border-amber-500 ring-2 ring-amber-300/80 shadow-md"
+                                          : "border-gray-200 hover:border-gray-400"
+                                      }`}
+                                    >
+                                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                                      <img src={imgUrl} alt={`award-img-${imgIdx}`} className="w-full h-full object-cover" />
+
+                                      {/* Top Badge: Cover Indicator or Index */}
+                                      <div className="absolute top-2 left-2 z-10">
+                                        {isCover ? (
+                                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500 text-white text-[10px] font-black shadow-md tracking-wide">
+                                            <Star className="w-3 h-3 fill-white" />
+                                            <span>รูปหน้าปก</span>
+                                          </span>
+                                        ) : (
+                                          <span className="px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-sm text-white text-[10px] font-medium">
+                                            รูปที่ {imgIdx + 1}
+                                          </span>
+                                        )}
+                                      </div>
+
+                                      {/* Controls Overlay: Always accessible on mobile touch, hover effect on desktop */}
+                                      <div className="absolute inset-0 bg-black/55 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex flex-col justify-end p-2 z-20">
+                                        <div className="flex items-center justify-between gap-1.5 w-full">
+                                          {!isCover ? (
+                                            <button
+                                              type="button"
+                                              onClick={() => handleSetAwardCover(award.id, imgUrl)}
+                                              className="flex-1 py-1 px-2 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-bold rounded-lg shadow-sm transition-colors cursor-pointer flex items-center justify-center gap-1 active:scale-95"
+                                            >
+                                              <Star className="w-3 h-3 fill-white" />
+                                              <span>ตั้งเป็นหน้าปก</span>
+                                            </button>
+                                          ) : (
+                                            <span className="flex-1 text-center text-[10px] font-bold text-amber-300">
+                                              ★ แสดงรูปนี้เป็นรูปแรก
+                                            </span>
+                                          )}
+                                          <button
+                                            type="button"
+                                            onClick={() => handleDeleteAwardImage(award.id, imgIdx)}
+                                            className="p-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg shadow-sm transition-colors cursor-pointer flex items-center justify-center active:scale-95 shrink-0"
+                                            title="ลบรูปนี้"
+                                          >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                          </button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
