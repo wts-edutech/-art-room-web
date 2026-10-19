@@ -94,6 +94,34 @@ export const DEFAULT_KRU_KAE = {
       date: "5 พฤศจิกายน 2566",
       imageUrl: "https://images.unsplash.com/photo-1599423300746-b62533397364?auto=format&fit=crop&q=80&w=800"
     }
+  ],
+  innovations: [
+    {
+      id: "inno-1",
+      title: "นวัตกรรมการจัดการเรียนรู้แบบผสมผสาน Art Room Creative Model ผ่านสื่อดิจิทัลเสมือนจริง",
+      category: "นวัตกรรมการจัดการเรียนรู้",
+      year: "2567",
+      description: "การพัฒนารูปแบบการสอนศิลปะร่วมสมัยที่บูรณาการเทคโนโลยี Digital Art และ Virtual Exhibition เพื่อยกระดับความคิดสร้างสรรค์และทักษะแห่งศตวรรษที่ 21 ของนักเรียนระดับชั้นมัธยมศึกษา",
+      coverImageUrl: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=800",
+      websiteUrl: "https://art-room-web.pages.dev/materials/m3",
+      pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+      pdfFileName: "รายงานรูปเล่มนวัตกรรม_ArtRoom_Model_2567.pdf",
+      pdfFileSize: "4.2 MB",
+      isPublished: true
+    },
+    {
+      id: "inno-2",
+      title: "ชุดสื่อการสอนออนไลน์และเอกสารประกอบการเรียนรู้ทัศนศิลป์ ม.3 (Perspective & Visual Arts)",
+      category: "สื่อนวัตกรรมดิจิทัล",
+      year: "2566",
+      description: "สื่อนวัตกรรมการสอนทัศนศิลป์เรื่องการวาดภาพทัศนียภาพ 1 จุด และ 2 จุด พร้อมชุดวิดีโอสาธิตและใบงานฝึกปฏิบัติการสร้างสรรค์ผลงาน",
+      coverImageUrl: "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&q=80&w=800",
+      websiteUrl: "https://inskru.com",
+      pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+      pdfFileName: "ชุดเอกสารการเรียนรู้ทัศนศิลป์_ม3.pdf",
+      pdfFileSize: "2.8 MB",
+      isPublished: true
+    }
   ]
 };
 
@@ -128,6 +156,7 @@ async function ensureTable(d1: any) {
         experience TEXT,
         awards TEXT,
         activity_images TEXT,
+        innovations TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
       )
     `).run();
@@ -137,6 +166,7 @@ async function ensureTable(d1: any) {
     try { await d1.prepare(`ALTER TABLE teachers ADD COLUMN experience TEXT`).run(); } catch {}
     try { await d1.prepare(`ALTER TABLE teachers ADD COLUMN awards TEXT`).run(); } catch {}
     try { await d1.prepare(`ALTER TABLE teachers ADD COLUMN activity_images TEXT`).run(); } catch {}
+    try { await d1.prepare(`ALTER TABLE teachers ADD COLUMN innovations TEXT`).run(); } catch {}
   } catch (err) {
     console.warn("ensureTable teachers note:", err);
   }
@@ -179,6 +209,7 @@ export async function GET() {
         experience,
         awards,
         activity_images as activityImages,
+        innovations,
         created_at as createdAt
       FROM teachers 
       ORDER BY order_index ASC, created_at ASC
@@ -194,6 +225,7 @@ export async function GET() {
       experience: safeJsonParse(item.experience, DEFAULT_KRU_KAE.experience),
       awards: safeJsonParse(item.awards, DEFAULT_KRU_KAE.awards),
       activityImages: safeJsonParse(item.activityImages, DEFAULT_KRU_KAE.activityImages),
+      innovations: safeJsonParse(item.innovations, DEFAULT_KRU_KAE.innovations),
     }));
 
     return NextResponse.json(parsed);
@@ -239,8 +271,8 @@ export async function POST(request: Request) {
       await d1.prepare(`DELETE FROM teachers`).run();
       const t = DEFAULT_KRU_KAE;
       await d1.prepare(`
-        INSERT OR REPLACE INTO teachers (id, name, role, position, grades, specialties, bio, image_url, email, room_location, order_index, education, experience, awards, activity_images, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT OR REPLACE INTO teachers (id, name, role, position, grades, specialties, bio, image_url, email, room_location, order_index, education, experience, awards, activity_images, innovations, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         t.id,
         t.name,
@@ -257,6 +289,7 @@ export async function POST(request: Request) {
         JSON.stringify(t.experience),
         JSON.stringify(t.awards),
         JSON.stringify(t.activityImages),
+        JSON.stringify(t.innovations),
         new Date().toISOString()
       ).run();
 
@@ -282,14 +315,15 @@ export async function POST(request: Request) {
     const experience = typeof data.experience === 'string' ? data.experience : JSON.stringify(data.experience || []);
     const awards = typeof data.awards === 'string' ? data.awards : JSON.stringify(data.awards || []);
     const activityImages = typeof data.activityImages === 'string' ? data.activityImages : JSON.stringify(data.activityImages || []);
+    const innovations = typeof data.innovations === 'string' ? data.innovations : JSON.stringify(data.innovations || []);
     const createdAt = new Date().toISOString();
 
     await d1.prepare(`
-      INSERT OR REPLACE INTO teachers (id, name, role, position, grades, specialties, bio, image_url, email, room_location, order_index, education, experience, awards, activity_images, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT OR REPLACE INTO teachers (id, name, role, position, grades, specialties, bio, image_url, email, room_location, order_index, education, experience, awards, activity_images, innovations, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       id, name, role, position, grades, specialties, bio, imageUrl, email, roomLocation, orderIndex,
-      education, experience, awards, activityImages, createdAt
+      education, experience, awards, activityImages, innovations, createdAt
     ).run();
 
     return NextResponse.json({
@@ -308,6 +342,7 @@ export async function POST(request: Request) {
       experience: safeJsonParse(experience),
       awards: safeJsonParse(awards),
       activityImages: safeJsonParse(activityImages),
+      innovations: safeJsonParse(innovations),
       createdAt
     }, { status: 201 });
 

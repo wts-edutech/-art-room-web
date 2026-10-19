@@ -26,7 +26,12 @@ import {
   UserCheck,
   ChevronRight,
   ChevronLeft,
-  Star
+  Star,
+  Globe,
+  FileText,
+  Download,
+  ExternalLink,
+  Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -64,6 +69,20 @@ interface ActivityImageItem {
   imageUrl: string;
 }
 
+export interface InnovationItem {
+  id: string;
+  title: string;
+  category: string;
+  year?: string;
+  description: string;
+  coverImageUrl?: string;
+  websiteUrl?: string;
+  pdfUrl?: string;
+  pdfFileName?: string;
+  pdfFileSize?: string;
+  isPublished?: boolean;
+}
+
 interface TeacherProfile {
   id: string;
   name: string;
@@ -79,6 +98,7 @@ interface TeacherProfile {
   experience?: ExperienceItem[];
   awards?: AwardItem[];
   activityImages?: ActivityImageItem[];
+  innovations?: InnovationItem[];
 }
 
 interface TeachersPageClientProps {
@@ -367,6 +387,10 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
   const experience = teacher.experience || [];
   const awards = teacher.awards || [];
   const activityImages = teacher.activityImages || [];
+  const rawInnovations = teacher.innovations || [];
+  const displayedInnovations = isAdmin
+    ? rawInnovations
+    : rawInnovations.filter((i) => i.isPublished !== false);
   const specialtiesList = teacher.specialties 
     ? teacher.specialties.split(/[,،]+/).map(s => s.trim()).filter(Boolean) 
     : [];
@@ -471,6 +495,19 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
               >
                 <Trophy className="w-3.5 h-3.5" />
                 <span>รางวัล &amp; เกียรติยศ ({awards.length})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => scrollToSection("innovations")}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors cursor-pointer border flex items-center gap-1.5 ${
+                  activeSection === "innovations"
+                    ? "bg-red-600 text-white border-red-600 font-bold"
+                    : "bg-white text-gray-700 hover:bg-red-50 hover:text-red-600 border-gray-200"
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>สื่อนวัตกรรม ({displayedInnovations.length})</span>
               </button>
 
               <button
@@ -870,7 +907,155 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
             )}
           </section>
 
-          {/* SECTION 4: ภาพครูกับกิจกรรมและผลงาน (Activities & Gallery) */}
+          {/* SECTION 4: ผลงานนวัตกรรมการจัดการเรียนรู้และสื่อการสอน (Educational Innovations & Teaching Media) */}
+          <section id="innovations" className="scroll-mt-24 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-red-50 text-red-600 flex items-center justify-center border border-red-100 shrink-0">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg sm:text-xl font-bold font-kanit text-gray-900 leading-tight">
+                    นวัตกรรมทางการศึกษาและสื่อการสอน (Educational Innovations)
+                  </h3>
+                  <p className="text-xs text-gray-500 font-light">
+                    ผลงานนวัตกรรมการจัดการเรียนรู้ สื่อดิจิทัล แหล่งเรียนรู้ออนไลน์ และรูปเล่มรายงานฉบับเต็ม
+                  </p>
+                </div>
+              </div>
+              <span className="text-xs font-medium text-gray-400">
+                {displayedInnovations.length} รายการ
+              </span>
+            </div>
+
+            {displayedInnovations.length === 0 ? (
+              <div className="py-8 text-center text-gray-400 text-sm bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                ยังไม่มีข้อมูลนวัตกรรมทางการศึกษาที่เผยแพร่
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {displayedInnovations.map((item, idx) => {
+                  const isDraft = item.isPublished === false;
+                  return (
+                    <div
+                      key={item.id || idx}
+                      className={`bg-white rounded-2xl border p-5 sm:p-6 flex flex-col justify-between transition-all hover:shadow-md relative ${
+                        isDraft ? "border-amber-300 bg-amber-50/20" : "border-gray-200 hover:border-red-300"
+                      }`}
+                    >
+                      <div>
+                        {/* Top Category Badge & Draft Label */}
+                        <div className="flex items-center justify-between gap-2 mb-3.5 flex-wrap">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-50 text-red-700 border border-red-100">
+                              {item.category || "นวัตกรรมการศึกษา"}
+                            </span>
+                            {item.year && (
+                              <span className="text-xs font-mono font-bold text-gray-600 bg-gray-100 px-2 py-0.5 rounded-md">
+                                พ.ศ. {item.year}
+                              </span>
+                            )}
+                          </div>
+                          {isDraft && (
+                            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                              ⚪ ฉบับร่าง (เฉพาะผู้ดูแลระบบ)
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Booklet Cover Image (Uncropped true-size display with ambient blur) */}
+                        {item.coverImageUrl && (
+                          <div
+                            onClick={() =>
+                              handleOpenLightbox(
+                                [item.coverImageUrl!],
+                                0,
+                                item.title,
+                                item.category ? `หมวดหมู่: ${item.category}` : undefined
+                              )
+                            }
+                            className="relative w-full min-h-[220px] max-h-[380px] sm:min-h-[260px] sm:max-h-[420px] rounded-xl overflow-hidden mb-4 bg-gray-950 flex items-center justify-center cursor-pointer group/img border border-gray-100 shadow-xs select-none"
+                            title="คลิกเพื่อดูรูปเล่มหน้าปกขนาดเต็ม"
+                          >
+                            {/* Ambient blurred backdrop so any proportions look seamless */}
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={item.coverImageUrl}
+                              alt=""
+                              className="absolute inset-0 w-full h-full object-cover blur-md opacity-30 scale-110 pointer-events-none"
+                            />
+                            {/* Uncropped true-size booklet cover */}
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={item.coverImageUrl}
+                              alt={item.title}
+                              className="relative z-10 max-h-[360px] sm:max-h-[400px] w-auto max-w-full object-contain mx-auto rounded-lg shadow-sm transition-transform duration-300 group-hover/img:scale-[1.02]"
+                            />
+                            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover/img:opacity-100 flex items-center justify-center gap-1.5 text-white text-xs font-bold transition-opacity z-20">
+                              <Maximize2 className="w-4 h-4" />
+                              <span>แตะดูรูปเล่มขนาดเต็ม</span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Title */}
+                        <h4 className="text-base sm:text-lg font-bold font-kanit text-gray-900 mb-2 leading-snug">
+                          {item.title}
+                        </h4>
+
+                        {/* Description */}
+                        {item.description && (
+                          <p className="text-xs sm:text-sm text-gray-600 font-light leading-relaxed whitespace-pre-line mb-4">
+                            {item.description}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Action Links (Website & PDF Download) */}
+                      {(item.websiteUrl || item.pdfUrl) && (
+                        <div className="pt-4 border-t border-gray-100 mt-2 flex flex-col sm:flex-row gap-2.5">
+                          {item.websiteUrl && (
+                            <a
+                              href={item.websiteUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-1 inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-all shadow-xs group"
+                            >
+                              <Globe className="w-3.5 h-3.5 group-hover:rotate-12 transition-transform" />
+                              <span>เข้าชมเว็บไซต์นวัตกรรม</span>
+                              <ExternalLink className="w-3 h-3 opacity-70 ml-0.5" />
+                            </a>
+                          )}
+
+                          {item.pdfUrl && (
+                            <a
+                              href={item.pdfUrl}
+                              download={item.pdfFileName || `${item.title}.pdf`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-1 inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-gray-900 hover:bg-black text-white text-xs font-bold transition-all shadow-xs group"
+                            >
+                              <Download className="w-3.5 h-3.5 group-hover:translate-y-0.5 transition-transform text-red-400" />
+                              <div className="flex flex-col text-left leading-tight truncate">
+                                <span>ดาวน์โหลดรูปเล่ม PDF</span>
+                                {item.pdfFileSize && (
+                                  <span className="text-[10px] font-mono text-gray-300 font-normal">
+                                    {item.pdfFileSize}
+                                  </span>
+                                )}
+                              </div>
+                            </a>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
+          {/* SECTION 5: ภาพครูกับกิจกรรมและผลงาน (Activities & Gallery) */}
           <section id="gallery" className="scroll-mt-24 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-gray-200">
               <div className="flex items-center gap-3">

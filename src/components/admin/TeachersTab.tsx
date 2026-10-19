@@ -29,7 +29,11 @@ import {
   ZoomIn,
   Star,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Globe,
+  FileText,
+  Download,
+  FileUp
 } from "lucide-react";
 import { optimizeImageToDataUrl, trimBlackBordersFromDataUrl } from "@/lib/image-optimizer";
 
@@ -67,6 +71,20 @@ interface ActivityImageItem {
   imageUrl: string; // รูปภาพกิจกรรม
 }
 
+export interface InnovationItem {
+  id: string;
+  title: string; // ชื่อผลงานนวัตกรรม
+  category: string; // เช่น "นวัตกรรมการจัดการเรียนรู้", "สื่อนวัตกรรมดิจิทัล", "งานวิจัยในชั้นเรียน"
+  year?: string; // ปีการศึกษา/พ.ศ.
+  description: string; // รายละเอียด / บทคัดย่อ
+  coverImageUrl?: string; // รูปเล่ม / ภาพหน้าปกนวัตกรรม
+  websiteUrl?: string; // ลิงก์เว็บไซต์ เช่น Google Sites, Canva, YouTube, insKru
+  pdfUrl?: string; // ลิงก์ดาวน์โหลดไฟล์ PDF หรือ base64 data URL
+  pdfFileName?: string; // ชื่อไฟล์ PDF เช่น "รายงานนวัตกรรม_ArtRoom_2567.pdf"
+  pdfFileSize?: string; // ขนาดไฟล์ เช่น "3.2 MB"
+  isPublished: boolean; // สถานะการเผยแพร่ (true = เผยแพร่สู่สาธารณะ / false = ฉบับร่าง ซ่อนไว้)
+}
+
 export default function TeachersTab() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -99,9 +117,10 @@ export default function TeachersTab() {
   const [experienceList, setExperienceList] = useState<ExperienceItem[]>([]);
   const [awardsList, setAwardsList] = useState<AwardItem[]>([]);
   const [activityImagesList, setActivityImagesList] = useState<ActivityImageItem[]>([]);
+  const [innovationsList, setInnovationsList] = useState<InnovationItem[]>([]);
 
   // Active sub-tab in manager
-  const [activeSection, setActiveSection] = useState<"general" | "education" | "experience" | "awards" | "activities">("general");
+  const [activeSection, setActiveSection] = useState<"general" | "education" | "experience" | "awards" | "activities" | "innovations">("general");
 
   // Fetch Data
   const fetchData = async () => {
@@ -159,6 +178,10 @@ export default function TeachersTab() {
         // Activity Images
         if (Array.isArray(kae.activityImages)) {
           setActivityImagesList(kae.activityImages);
+        }
+        // Innovations
+        if (Array.isArray(kae.innovations)) {
+          setInnovationsList(kae.innovations);
         }
       }
     } catch (error) {
@@ -398,6 +421,82 @@ export default function TeachersTab() {
     setActivityImagesList(prev => prev.filter(item => item.id !== id));
   };
 
+  // --- Innovations Handlers ---
+  const handleAddInnovation = () => {
+    const newItem: InnovationItem = {
+      id: `inno-${Date.now()}`,
+      title: "",
+      category: "นวัตกรรมการจัดการเรียนรู้",
+      year: "2567",
+      description: "",
+      coverImageUrl: "",
+      websiteUrl: "",
+      pdfUrl: "",
+      pdfFileName: "",
+      pdfFileSize: "",
+      isPublished: true
+    };
+    setInnovationsList(prev => [newItem, ...prev]);
+  };
+
+  const handleUpdateInnovation = (id: string, field: keyof InnovationItem, val: any) => {
+    setInnovationsList(prev => prev.map(item => item.id === id ? { ...item, [field]: val } : item));
+  };
+
+  const handleDeleteInnovation = (id: string) => {
+    if (!confirm("คุณแน่ใจว่าต้องการลบผลงานนวัตกรรมนี้หรือไม่?")) return;
+    setInnovationsList(prev => prev.filter(item => item.id !== id));
+  };
+
+  const handleTogglePublishInnovation = (id: string) => {
+    setInnovationsList(prev => prev.map(item => item.id === id ? { ...item, isPublished: !item.isPublished } : item));
+  };
+
+  const handleInnovationCoverUpload = async (id: string, file: File) => {
+    if (file.size > 25 * 1024 * 1024) {
+      alert("ขนาดไฟล์รูปภาพเกินกำหนด (สูงสุด 25MB) กรุณาเลือกไฟล์รูปภาพที่มีขนาดไม่เกิน 25MB ครับ");
+      return;
+    }
+    try {
+      const dataUrl = await optimizeImageToDataUrl(file, { maxWidth: 1400, maxHeight: 1400, quality: 0.85, autoTrimBorders: false });
+      handleUpdateInnovation(id, "coverImageUrl", dataUrl);
+    } catch (err) {
+      console.error("Failed to upload innovation cover:", err);
+      alert("ไม่สามารถประมวลผลรูปภาพได้ กรุณาลองใหม่อีกครั้ง");
+    }
+  };
+
+  const handleInnovationPdfUpload = async (id: string, file: File) => {
+    if (!file.name.toLowerCase().endsWith(".pdf") && file.type !== "application/pdf") {
+      alert("กรุณาเลือกไฟล์เอกสารที่เป็นไฟล์ PDF เท่านั้นครับ");
+      return;
+    }
+    if (file.size > 15 * 1024 * 1024) {
+      alert("ขนาดไฟล์ PDF เกิน 15MB แนะนำให้อัปโหลดลง Google Drive / Cloud แล้ววางลิงก์ในช่อง 'ลิงก์ดาวน์โหลด PDF' ด้านล่างแทนได้ครับ");
+      return;
+    }
+    try {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+        setInnovationsList(prev => prev.map(item => {
+          if (item.id !== id) return item;
+          return {
+            ...item,
+            pdfUrl: result,
+            pdfFileName: file.name,
+            pdfFileSize: `${sizeMb} MB`
+          };
+        }));
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error("Failed to read PDF file:", err);
+      alert("ไม่สามารถอ่านไฟล์ PDF ได้ กรุณาลองใหม่อีกครั้ง");
+    }
+  };
+
   // --- Save All Changes ---
   const handleSaveProfile = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -425,7 +524,8 @@ export default function TeachersTab() {
       education: educationList,
       experience: experienceList,
       awards: awardsList,
-      activityImages: activityImagesList
+      activityImages: activityImagesList,
+      innovations: innovationsList
     };
 
     try {
@@ -621,6 +721,7 @@ export default function TeachersTab() {
           { id: "experience", label: "ประวัติการทำงาน", icon: Briefcase, badge: experienceList.length },
           { id: "awards", label: "รางวัลที่ได้รับ & รูปรับรางวัล", icon: Trophy, badge: awardsList.length },
           { id: "activities", label: "ภาพครูกับกิจกรรม", icon: ImageIcon, badge: activityImagesList.length },
+          { id: "innovations", label: "สื่อนวัตกรรม & รูปเล่ม PDF", icon: Sparkles, badge: innovationsList.length },
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeSection === tab.id;
@@ -1553,6 +1654,318 @@ export default function TeachersTab() {
                     <Trash2 className="w-3.5 h-3.5" />
                     <span>ลบรูปกิจกรรมนี้</span>
                   </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* SECTION 6: สื่อนวัตกรรม & รูปเล่ม PDF */}
+      {activeSection === "innovations" && (
+        <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-2xs border border-gray-200 space-y-5 animate-in fade-in">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
+            <div>
+              <h3 className="text-base font-bold font-kanit text-gray-900 flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-orange-500" />
+                <span>ผลงานนวัตกรรมการจัดการเรียนรู้ &amp; รูปเล่ม PDF (Educational Innovations)</span>
+              </h3>
+              <p className="text-xs text-gray-500 font-light mt-0.5">
+                บันทึกและเผยแพร่นวัตกรรมการสอน สื่อดิจิทัล ลิงก์เว็บไซต์ และไฟล์รูปเล่ม PDF ให้ผู้สนใจดาวน์โหลดศึกษา
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleAddInnovation}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-orange-500 hover:bg-orange-600 text-white transition-colors cursor-pointer self-start sm:self-auto shadow-2xs"
+            >
+              <Plus className="w-4 h-4" />
+              <span>+ เพิ่มผลงานนวัตกรรม</span>
+            </button>
+          </div>
+
+          {innovationsList.length === 0 ? (
+            <div className="text-center py-12 px-4 bg-gray-50/70 rounded-2xl border border-dashed border-gray-200 text-gray-400">
+              <Sparkles className="w-10 h-10 mx-auto mb-2 opacity-50 text-orange-400" />
+              <p className="text-sm font-medium text-gray-600">ยังไม่มีข้อมูลผลงานนวัตกรรม</p>
+              <p className="text-xs text-gray-400 mt-1">กดปุ่ม "+ เพิ่มผลงานนวัตกรรม" เพื่อเริ่มเพิ่มสื่อนวัตกรรม ลิงก์เว็บไซต์ และรูปเล่ม PDF</p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {innovationsList.map((inno, idx) => (
+                <div key={inno.id} className="p-5 rounded-2xl bg-gray-50/80 border border-gray-200 shadow-xs space-y-4">
+                  {/* Card Header: Publish Toggle & Delete */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-gray-200/80">
+                    <div className="flex items-center gap-2.5">
+                      <span className="w-6 h-6 rounded-lg bg-orange-500 text-white text-xs font-bold flex items-center justify-center">
+                        {idx + 1}
+                      </span>
+                      <span className="text-xs font-bold text-gray-800">
+                        {inno.title ? inno.title : `ผลงานนวัตกรรมรายการที่ ${idx + 1}`}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {/* Publish / Draft Switch Button */}
+                      <button
+                        type="button"
+                        onClick={() => handleTogglePublishInnovation(inno.id)}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                          inno.isPublished
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100 shadow-2xs"
+                            : "bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200"
+                        }`}
+                        title="คลิกเพื่อสลับสถานะเผยแพร่"
+                      >
+                        {inno.isPublished ? (
+                          <>
+                            <Eye className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>🟢 เผยแพร่อยู่ (แสดงหน้าเว็บ)</span>
+                          </>
+                        ) : (
+                          <>
+                            <EyeOff className="w-3.5 h-3.5 text-gray-500" />
+                            <span>⚪ ฉบับร่าง (ซ่อนอยู่)</span>
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteInnovation(inno.id)}
+                        className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                        title="ลบผลงานนวัตกรรมนี้"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Form Grid */}
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                    {/* Left: Metadata & Links (7 cols) */}
+                    <div className="lg:col-span-7 space-y-3.5">
+                      {/* Title */}
+                      <div>
+                        <label className="text-xs font-bold text-gray-700 block mb-1">
+                          ชื่อผลงานนวัตกรรม / สื่อการสอน <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={inno.title}
+                          onChange={(e) => handleUpdateInnovation(inno.id, "title", e.target.value)}
+                          placeholder="เช่น นวัตกรรมการจัดการเรียนรู้แบบผสมผสาน Art Room Creative Model"
+                          className="w-full px-3 py-2 text-xs rounded-xl border border-gray-200 focus:border-orange-500 outline-none bg-white font-medium"
+                        />
+                      </div>
+
+                      {/* Category & Year */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-xs font-semibold text-gray-700 block mb-1">
+                            หมวดหมู่นวัตกรรม
+                          </label>
+                          <input
+                            type="text"
+                            value={inno.category}
+                            onChange={(e) => handleUpdateInnovation(inno.id, "category", e.target.value)}
+                            placeholder="เช่น นวัตกรรมการจัดการเรียนรู้, สื่อดิจิทัล, วิจัยในชั้นเรียน"
+                            className="w-full px-3 py-2 text-xs rounded-xl border border-gray-200 focus:border-orange-500 outline-none bg-white"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-xs font-semibold text-gray-700 block mb-1">
+                            ปีการศึกษา / ปี พ.ศ.
+                          </label>
+                          <input
+                            type="text"
+                            value={inno.year || ""}
+                            onChange={(e) => handleUpdateInnovation(inno.id, "year", e.target.value)}
+                            placeholder="เช่น 2567"
+                            className="w-full px-3 py-2 text-xs rounded-xl border border-gray-200 focus:border-orange-500 outline-none bg-white font-mono"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Description */}
+                      <div>
+                        <label className="text-xs font-semibold text-gray-700 block mb-1">
+                          รายละเอียด / บทคัดย่อ / จุดเด่นของนวัตกรรม
+                        </label>
+                        <textarea
+                          rows={3}
+                          value={inno.description}
+                          onChange={(e) => handleUpdateInnovation(inno.id, "description", e.target.value)}
+                          placeholder="อธิบายสรุปความเป็นมา วัตถุประสงค์ ขั้นตอนการนำไปใช้ หรือผลสัมฤทธิ์ที่เกิดขึ้นกับผู้เรียน..."
+                          className="w-full p-2.5 text-xs rounded-xl border border-gray-200 focus:border-orange-500 outline-none bg-white resize-none"
+                        />
+                      </div>
+
+                      {/* Website URL */}
+                      <div>
+                        <label className="text-xs font-semibold text-gray-700 flex items-center justify-between mb-1">
+                          <span className="flex items-center gap-1">
+                            <Globe className="w-3.5 h-3.5 text-indigo-500" />
+                            <span>ลิงก์เว็บไซต์นวัตกรรม (Website Link)</span>
+                          </span>
+                          {inno.websiteUrl && (
+                            <a
+                              href={inno.websiteUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-[11px] text-indigo-600 hover:underline flex items-center gap-1 font-semibold"
+                            >
+                              <span>ทดสอบเปิดลิงก์</span>
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          )}
+                        </label>
+                        <input
+                          type="url"
+                          value={inno.websiteUrl || ""}
+                          onChange={(e) => handleUpdateInnovation(inno.id, "websiteUrl", e.target.value)}
+                          placeholder="เช่น https://sites.google.com/..., canva, youtube, inskru"
+                          className="w-full px-3 py-2 text-xs rounded-xl border border-gray-200 focus:border-indigo-500 outline-none bg-white font-mono"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Right: Booklet Cover & PDF File (5 cols) */}
+                    <div className="lg:col-span-5 space-y-4">
+                      {/* Booklet Cover Image (Uncropped Real Size) */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-xs font-bold text-gray-700 flex items-center gap-1">
+                            <ImageIcon className="w-3.5 h-3.5 text-orange-500" />
+                            <span>รูปเล่ม / ภาพหน้าปกนวัตกรรม</span>
+                          </label>
+                          {inno.coverImageUrl && (
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateInnovation(inno.id, "coverImageUrl", "")}
+                              className="text-[11px] text-rose-600 hover:underline font-semibold"
+                            >
+                              ลบรูปหน้าปก
+                            </button>
+                          )}
+                        </div>
+
+                        {inno.coverImageUrl ? (
+                          <div className="relative h-44 w-full rounded-2xl overflow-hidden bg-gray-950 border border-gray-200 flex items-center justify-center group shadow-2xs">
+                            <img src={inno.coverImageUrl} alt="" className="absolute inset-0 w-full h-full object-cover blur-sm opacity-25 scale-110 pointer-events-none" />
+                            <img src={inno.coverImageUrl} alt={inno.title} className="relative z-10 max-h-full max-w-full object-contain p-1" />
+                            <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold cursor-pointer z-20">
+                              <span>แตะเพื่อเปลี่ยนรูป</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const f = e.target.files?.[0];
+                                  if (f) handleInnovationCoverUpload(inno.id, f);
+                                }}
+                              />
+                            </label>
+                          </div>
+                        ) : (
+                          <label className="h-44 w-full rounded-2xl border-2 border-dashed border-orange-200 hover:border-orange-400 bg-orange-50/40 hover:bg-orange-50/70 flex flex-col items-center justify-center text-orange-600 cursor-pointer transition-colors text-center p-3">
+                            <Upload className="w-6 h-6 mb-1 opacity-70" />
+                            <span className="text-xs font-bold">+ อัปโหลดภาพหน้าปกรูปเล่ม</span>
+                            <span className="text-[10px] text-orange-400 mt-0.5">รองรับไฟล์ JPG, PNG, WebP</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const f = e.target.files?.[0];
+                                if (f) handleInnovationCoverUpload(inno.id, f);
+                              }}
+                            />
+                          </label>
+                        )}
+                      </div>
+
+                      {/* PDF Booklet Download */}
+                      <div className="p-3.5 rounded-2xl bg-white border border-gray-200 space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                            <FileText className="w-4 h-4 text-rose-500" />
+                            <span>ไฟล์เอกสารรูปเล่ม PDF</span>
+                          </label>
+                          {inno.pdfUrl && (
+                            <a
+                              href={inno.pdfUrl}
+                              download={inno.pdfFileName || "เอกสารนวัตกรรม.pdf"}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-[11px] text-rose-600 hover:underline flex items-center gap-1 font-bold"
+                            >
+                              <Download className="w-3 h-3" />
+                              <span>ทดสอบดาวน์โหลด</span>
+                            </a>
+                          )}
+                        </div>
+
+                        {/* Upload PDF Button */}
+                        <label className="w-full py-2 px-3 rounded-xl border border-dashed border-rose-300 hover:border-rose-400 bg-rose-50/40 hover:bg-rose-50 text-rose-700 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-colors active:scale-98">
+                          <FileUp className="w-3.5 h-3.5" />
+                          <span>{inno.pdfFileName ? "📎 เปลี่ยนไฟล์ PDF ใหม่" : "📎 เลือกไฟล์ PDF จากเครื่อง (สูงสุด 15MB)"}</span>
+                          <input
+                            type="file"
+                            accept=".pdf,application/pdf"
+                            className="hidden"
+                            onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              if (f) handleInnovationPdfUpload(inno.id, f);
+                            }}
+                          />
+                        </label>
+
+                        {/* Attached PDF Preview Card */}
+                        {inno.pdfFileName && (
+                          <div className="flex items-center justify-between p-2 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-900">
+                            <div className="flex items-center gap-2 min-w-0 pr-2">
+                              <FileText className="w-4 h-4 text-rose-600 shrink-0" />
+                              <div className="truncate">
+                                <span className="font-bold truncate block">{inno.pdfFileName}</span>
+                                {inno.pdfFileSize && <span className="text-[10px] text-rose-500">{inno.pdfFileSize}</span>}
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                handleUpdateInnovation(inno.id, "pdfUrl", "");
+                                handleUpdateInnovation(inno.id, "pdfFileName", "");
+                                handleUpdateInnovation(inno.id, "pdfFileSize", "");
+                              }}
+                              className="text-rose-500 hover:text-rose-700 p-1 shrink-0"
+                              title="ลบไฟล์ PDF นี้"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Or Direct URL Input (for Google Drive or external link) */}
+                        <div>
+                          <label className="text-[11px] font-semibold text-gray-500 block mb-0.5">
+                            หรือ วางลิงก์ดาวน์โหลด PDF (Google Drive / ลิงก์ตรง):
+                          </label>
+                          <input
+                            type="url"
+                            value={inno.pdfUrl && !inno.pdfUrl.startsWith("data:") ? inno.pdfUrl : ""}
+                            onChange={(e) => {
+                              handleUpdateInnovation(inno.id, "pdfUrl", e.target.value);
+                              if (!inno.pdfFileName) handleUpdateInnovation(inno.id, "pdfFileName", "เอกสารรูปเล่มนวัตกรรม.pdf");
+                            }}
+                            placeholder="https://drive.google.com/file/d/... หรือ URL ไฟล์ PDF"
+                            className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-gray-200 focus:border-rose-400 outline-none bg-white font-mono"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
