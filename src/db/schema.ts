@@ -103,6 +103,7 @@ export const activities = sqliteTable('activities', {
   color: text('color'),
   imageUrl: text('image_url'), // Main/cover image
   images: text('images', { mode: 'json' }), // Array of gallery image URLs
+  certificateUrl: text('certificate_url'), // Certificate image or PDF URL
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
 

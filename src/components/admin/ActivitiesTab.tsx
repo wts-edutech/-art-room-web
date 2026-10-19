@@ -2,7 +2,23 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Trash2, Plus, Pencil, Calendar, Camera, ImageIcon } from "lucide-react";
+import { 
+  Trash2, 
+  Plus, 
+  Pencil, 
+  Calendar, 
+  Camera, 
+  ImageIcon, 
+  Star, 
+  Award, 
+  FileText, 
+  Check, 
+  ExternalLink, 
+  FileUp, 
+  Loader2, 
+  Sparkles,
+  X
+} from "lucide-react";
 
 import { optimizeImageToFile } from "@/lib/image-optimizer";
 
@@ -19,8 +35,19 @@ export default function ActivitiesTab() {
   const [activityImageFiles, setActivityImageFiles] = useState<File[]>([]);
   const [activityExistingImages, setActivityExistingImages] = useState<string[]>([]);
   const [coverImageId, setCoverImageId] = useState<string>("");
+  
+  // Certificate states (รองรับทั้งไฟล์และลิงก์)
+  const [activityCertificateUrl, setActivityCertificateUrl] = useState("");
+  const [activityCertificateFile, setActivityCertificateFile] = useState<File | null>(null);
+
   const [editingActivityId, setEditingActivityId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Awards sync tracking
+  const [sendingAwardId, setSendingAwardId] = useState<string | null>(null);
+  const [sentAwardIds, setSentAwardIds] = useState<Record<string, boolean>>({});
+  const [toastMessage, setToastMessage] = useState<{ id: string; title: string; text: string } | null>(null);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -44,6 +71,7 @@ export default function ActivitiesTab() {
     e.preventDefault();
     if (!activityTitle || !activityDate) return;
     
+    setIsSubmitting(true);
     const formData = new FormData();
     if (editingActivityId) formData.append("id", editingActivityId);
     formData.append("title", activityTitle);
@@ -54,6 +82,7 @@ export default function ActivitiesTab() {
     formData.append("category", activityCategory || "ทั่วไป");
     formData.append("color", activityColor || "red");
     
+    // Process new images
     for (let i = 0; i < activityImageFiles.length; i++) {
       const file = activityImageFiles[i];
       const compressed = await optimizeImageToFile(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.82 });
@@ -62,12 +91,27 @@ export default function ActivitiesTab() {
         formData.append("image", compressed);
       }
     }
+
+    // Process existing images
     activityExistingImages.forEach((url, i) => {
       formData.append("existingImages", url);
       if (coverImageId === `existing-${i}` || (!coverImageId && i === 0)) {
         formData.append("imageUrl", url);
       }
     });
+
+    // Process certificate (file or url)
+    if (activityCertificateFile) {
+      const isImg = activityCertificateFile.type.startsWith("image/");
+      if (isImg) {
+        const compressedCert = await optimizeImageToFile(activityCertificateFile, { maxWidth: 1600, maxHeight: 1600, quality: 0.82 });
+        formData.append("certificate", compressedCert);
+      } else {
+        formData.append("certificate", activityCertificateFile);
+      }
+    } else if (activityCertificateUrl) {
+      formData.append("certificateUrl", activityCertificateUrl);
+    }
 
     try {
       const method = editingActivityId ? "PUT" : "POST";
@@ -85,6 +129,8 @@ export default function ActivitiesTab() {
     } catch (error) {
       console.error("Failed to save activity", error);
       alert("ไม่สามารถบันทึกกิจกรรมได้");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -100,9 +146,13 @@ export default function ActivitiesTab() {
     setActivityImageFiles([]);
     setActivityExistingImages([]);
     setCoverImageId("");
+    setActivityCertificateUrl("");
+    setActivityCertificateFile(null);
     setEditingActivityId(null);
     const fileInput = document.getElementById("activityImageInput") as HTMLInputElement;
     if (fileInput) fileInput.value = "";
+    const certInput = document.getElementById("activityCertFileInput") as HTMLInputElement;
+    if (certInput) certInput.value = "";
   };
 
   const handleEditActivity = (activity: any) => {
@@ -114,12 +164,18 @@ export default function ActivitiesTab() {
     setActivityCategory(activity.category || "ทั่วไป");
     setActivityColor(activity.color || "red");
     setActivityImageUrl(activity.imageUrl || "");
+    setActivityCertificateUrl(activity.certificateUrl || "");
+    setActivityCertificateFile(null);
     setActivityImageFiles([]);
+    
     let existing: string[] = [];
     try {
-      existing = activity.images ? JSON.parse(activity.images) : [];
-    } catch(e) {
+      existing = activity.images ? (typeof activity.images === "string" ? JSON.parse(activity.images) : activity.images) : [];
+    } catch {
       if (activity.imageUrl) existing = [activity.imageUrl];
+    }
+    if (activity.imageUrl && !existing.includes(activity.imageUrl)) {
+      existing.unshift(activity.imageUrl);
     }
     setActivityExistingImages(existing);
     
@@ -135,6 +191,7 @@ export default function ActivitiesTab() {
     }
     
     setEditingActivityId(activity.id);
+    window.scrollTo({ top: 150, behavior: "smooth" });
   };
 
   const handleDeleteActivity = async (id: string) => {
@@ -147,8 +204,97 @@ export default function ActivitiesTab() {
     }
   };
 
+  // 1-Click Send Activity to Awards Page
+  const handleSendToAwards = async (activity: any) => {
+    setSendingAwardId(activity.id);
+    try {
+      // Extract Thai Year from date (e.g. "2568") or default to current Thai Year
+      const match = (activity.date || "").match(/25\d{2}/);
+      const year = match ? match[0] : (new Date().getFullYear() + 543).toString();
+
+      const formData = new FormData();
+      formData.append("title", activity.title || "กิจกรรมศิลปะ");
+      formData.append("student", "นักเรียนตัวแทนโรงเรียนวชิรธรรมสาธิต");
+      formData.append("grade", "มัธยมศึกษา");
+      formData.append("description", activity.description || "");
+      formData.append("year", year);
+      formData.append("date", activity.date || "");
+      formData.append("awardLevel", "เข้าร่วมการแข่งขัน / ได้รับรางวัล");
+      formData.append("competitionLevel", "ระดับชาติ/ประเทศ");
+      formData.append("organization", activity.location || "กลุ่มสาระการเรียนรู้ศิลปะ โรงเรียนวชิรธรรมสาธิต");
+      formData.append("isHighlight", "true");
+
+      if (activity.imageUrl) {
+        formData.append("imageUrl", activity.imageUrl);
+      }
+      if (activity.certificateUrl) {
+        formData.append("certificateUrl", activity.certificateUrl);
+      }
+
+      const res = await fetch("/api/awards", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (res.ok) {
+        setSentAwardIds((prev) => ({ ...prev, [activity.id]: true }));
+        setToastMessage({
+          id: activity.id,
+          title: activity.title,
+          text: "🏆 คัดลอกและส่งไปเป็นผลงานใน 'หน้ารางวัลที่ได้รับ' สำเร็จแล้ว!"
+        });
+        setTimeout(() => setToastMessage(null), 8000);
+      } else {
+        const err = (await res.json()) as any;
+        alert(err.error || "เกิดข้อผิดพลาดในการส่งข้อมูลไปหน้ารางวัล");
+      }
+    } catch (error) {
+      console.error("Failed to send to awards:", error);
+      alert("ไม่สามารถส่งข้อมูลไปหน้ารางวัลได้ กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      setSendingAwardId(null);
+    }
+  };
+
+  const totalImagesCount = activityExistingImages.length + activityImageFiles.length;
+
   return (
     <div className="space-y-6">
+      {/* Toast Notification Banner */}
+      {toastMessage && (
+        <div className="bg-emerald-500 text-white p-4 rounded-2xl shadow-lg flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-bold">
+              <Check className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <p className="text-xs sm:text-sm font-bold">{toastMessage.text}</p>
+              <p className="text-[11px] text-emerald-100 font-light truncate max-w-md">
+                กิจกรรม: {toastMessage.title} (ข้อมูลรูปภาพและเกียรติบัตรถูกส่งไปยังระบบรางวัลแล้ว)
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <a
+              href="/awards"
+              target="_blank"
+              rel="noreferrer"
+              className="px-3 py-1.5 rounded-lg bg-white text-emerald-800 text-xs font-bold hover:bg-emerald-50 transition-colors inline-flex items-center gap-1 shrink-0"
+            >
+              <span>เปิดดูหน้ารางวัล</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
+            <button
+              type="button"
+              onClick={() => setToastMessage(null)}
+              className="p-1 rounded-full hover:bg-white/20 text-white cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Information Banner */}
       <div className="bg-gradient-to-r from-orange-50 via-amber-50 to-orange-100/50 rounded-2xl p-4 sm:p-5 border border-orange-200/80 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -157,15 +303,16 @@ export default function ActivitiesTab() {
           </div>
           <div>
             <h2 className="text-sm sm:text-base font-bold font-kanit text-gray-900">
-              จัดการอัลบั้มภาพกิจกรรม & นิทรรศการ (Photo Gallery Showcase)
+              จัดการอัลบั้มภาพกิจกรรม &amp; นิทรรศการ (Photo Gallery Showcase)
             </h2>
             <p className="text-xs text-gray-500 mt-0.5">
-              อัปโหลดภาพกิจกรรม การประกวด นิทรรศการ และภาพบรรยากาศการเรียนรู้ที่จะแสดงในหน้า /activities
+              อัปโหลดภาพกิจกรรมได้หลายรูป เลือกรูปหน้าปก/โปรไฟล์ แนบเกียรติบัตร และกดส่งไปเป็นผลงานในหน้ารางวัลได้ทันที
             </p>
           </div>
         </div>
         <div className="text-xs text-orange-700 bg-white/90 border border-orange-200/90 rounded-xl px-3 py-1.5 font-medium shrink-0 flex items-center gap-1.5 shadow-2xs">
-          <span>📅 ส่วนปฏิทินกิจกรรมย้ายไปอยู่ที่แท็บ <strong>จัดการข่าวสาร & ปฏิทิน</strong> แล้ว</span>
+          <Award className="w-3.5 h-3.5 text-amber-500" />
+          <span>เชื่อมต่อกับระบบ <strong>หน้ารางวัลที่ได้รับ (/awards)</strong> อัตโนมัติ</span>
         </div>
       </div>
 
@@ -173,12 +320,24 @@ export default function ActivitiesTab() {
         {/* Activity Form Section */}
         <div className="lg:col-span-1">
           <div className="bg-white rounded-2xl p-5 shadow-2xs border border-gray-200 sticky top-4">
-            <div className="flex items-center gap-2 mb-4 border-b border-gray-100 pb-3">
-              {editingActivityId ? <Pencil className="text-orange-500 w-4 h-4" /> : <Plus className="text-orange-500 w-4 h-4" />}
-              <h2 className="text-sm sm:text-base font-bold font-kanit text-gray-900">
-                {editingActivityId ? "แก้ไขกิจกรรม" : "เพิ่มกิจกรรมใหม่"}
-              </h2>
+            <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-3">
+              <div className="flex items-center gap-2">
+                {editingActivityId ? <Pencil className="text-orange-500 w-4 h-4" /> : <Plus className="text-orange-500 w-4 h-4" />}
+                <h2 className="text-sm sm:text-base font-bold font-kanit text-gray-900">
+                  {editingActivityId ? "แก้ไขกิจกรรม" : "เพิ่มกิจกรรมใหม่"}
+                </h2>
+              </div>
+              {editingActivityId && (
+                <button
+                  type="button"
+                  onClick={resetActivityForm}
+                  className="text-xs text-gray-400 hover:text-gray-600 font-medium"
+                >
+                  ล้างฟอร์ม
+                </button>
+              )}
             </div>
+
             <form onSubmit={handleAddActivity} className="space-y-3.5">
               <div>
                 <label className="text-xs font-semibold text-slate-700 block mb-1">หัวข้อกิจกรรม</label>
@@ -187,20 +346,22 @@ export default function ActivitiesTab() {
                   required 
                   value={activityTitle} 
                   onChange={(e) => setActivityTitle(e.target.value)} 
-                  placeholder="เช่น นิทรรศการศิลปะร่วมสมัย..."
+                  placeholder="เช่น การแข่งขันออกแบบลายผ้า..."
                   className="w-full h-9 px-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none text-xs" 
                 />
               </div>
+
               <div>
                 <label className="text-xs font-semibold text-slate-700 block mb-1">รายละเอียดกิจกรรม</label>
                 <textarea 
                   required 
                   value={activityDesc} 
                   onChange={(e) => setActivityDesc(e.target.value)} 
-                  placeholder="รายละเอียดกิจกรรม กำหนดการ..."
+                  placeholder="รายละเอียดกิจกรรม กำหนดการ เช่น ในหัวข้อ โชคดีทีแมว..."
                   className="w-full h-20 p-2.5 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none resize-none text-xs" 
                 />
               </div>
+
               <div>
                 <label className="text-xs font-semibold text-slate-700 block mb-1">วันที่ (เช่น 12 ตุลาคม 2566)</label>
                 <input 
@@ -208,20 +369,22 @@ export default function ActivitiesTab() {
                   required 
                   value={activityDate} 
                   onChange={(e) => setActivityDate(e.target.value)} 
-                  placeholder="ระบุวันที่จัดกิจกรรม"
+                  placeholder="เช่น วันเสาร์ ที่ 30 สิงหาคม 2568"
                   className="w-full h-9 px-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none text-xs" 
                 />
               </div>
+
               <div>
                 <label className="text-xs font-semibold text-slate-700 block mb-1">สถานที่ (ไม่บังคับ)</label>
                 <input 
                   type="text" 
                   value={activityLocation} 
                   onChange={(e) => setActivityLocation(e.target.value)} 
-                  placeholder="เช่น โรงเรียนวชิรธรรมสาธิต" 
+                  placeholder="เช่น ณ มหาวิทยาลัยเทคโนโลยีราชมงคลกรุงเทพ" 
                   className="w-full h-9 px-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none text-xs" 
                 />
               </div>
+
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
                   <label className="text-xs font-semibold text-slate-700 block mb-1">เวลา (เช่น 09:00 - 12:00 น.)</label>
@@ -230,7 +393,7 @@ export default function ActivitiesTab() {
                     value={activityTime} 
                     onChange={(e) => setActivityTime(e.target.value)} 
                     placeholder="เช่น 09:00 หรือ ตลอดวัน" 
-                    className="w-full h-9 px-3 rounded-xl border border-gray-200 focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none text-xs" 
+                    className="w-full h-9 px-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none text-xs" 
                   />
                 </div>
                 <div>
@@ -239,14 +402,15 @@ export default function ActivitiesTab() {
                     type="text" 
                     value={activityCategory} 
                     onChange={(e) => setActivityCategory(e.target.value)} 
-                    placeholder="เช่น สอบ, เวิร์กช็อป, ส่งงาน" 
-                    className="w-full h-9 px-3 rounded-xl border border-gray-200 focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none text-xs" 
+                    placeholder="เช่น ทั่วไป, ประกวด, เวิร์กช็อป" 
+                    className="w-full h-9 px-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none text-xs" 
                   />
                 </div>
               </div>
+
               <div>
                 <label className="text-xs font-semibold text-slate-700 block mb-1">สีแถบกิจกรรมในปฏิทิน</label>
-                <div className="flex gap-2 items-center flex-wrap">
+                <div className="flex gap-1.5 items-center flex-wrap">
                   {[
                     { id: "red", label: "แดง (สำคัญ/สอบ)", bg: "bg-red-500", border: "border-red-500" },
                     { id: "orange", label: "ส้ม (เวิร์กช็อป)", bg: "bg-orange-500", border: "border-orange-500" },
@@ -258,9 +422,9 @@ export default function ActivitiesTab() {
                       key={c.id}
                       type="button"
                       onClick={() => setActivityColor(c.id)}
-                      className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-[11px] font-medium border transition-all cursor-pointer ${
+                      className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium border transition-all cursor-pointer ${
                         activityColor === c.id 
-                          ? `${c.border} bg-gray-100 font-bold ring-2 ring-offset-1 ring-red-400` 
+                          ? `${c.border} bg-gray-100 font-bold ring-2 ring-offset-1 ring-orange-400` 
                           : "border-gray-200 hover:bg-gray-50 text-gray-700"
                       }`}
                     >
@@ -270,98 +434,294 @@ export default function ActivitiesTab() {
                   ))}
                 </div>
               </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1.5">
-                  รูปภาพกิจกรรม <span className="text-[11px] font-normal text-slate-400">(ไม่บังคับ สามารถลงเฉพาะข้อความได้)</span>
-                </label>
-                
-                <div className="relative border border-dashed border-orange-300 bg-orange-50/40 hover:bg-orange-50/70 transition-colors rounded-xl p-4 text-center cursor-pointer overflow-hidden group">
+
+              {/* SECTION: รูปภาพกิจกรรม (เพิ่มได้หลายรูป & เลือกรูปโปรไฟล์/หน้าปก) */}
+              <div className="pt-2 border-t border-gray-100">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                    <ImageIcon className="w-4 h-4 text-orange-500" />
+                    <span>รูปภาพกิจกรรม (เพิ่มได้หลายรูป)</span>
+                  </label>
+                  {totalImagesCount > 0 && (
+                    <span className="text-[11px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-200">
+                      รวม {totalImagesCount} รูป
+                    </span>
+                  )}
+                </div>
+
+                {/* Dropzone with cumulative image addition */}
+                <div className="relative border-2 border-dashed border-orange-300 bg-orange-50/40 hover:bg-orange-50/70 transition-colors rounded-2xl p-4 text-center cursor-pointer overflow-hidden group">
                   <input 
                     id="activityImageInput"
                     type="file" 
                     multiple
                     accept="image/*,image/jpeg,image/jpg,image/png,image/webp"
                     onChange={(e) => {
-                      if (e.target.files) {
-                        setActivityImageFiles(Array.from(e.target.files));
-                      } else {
-                        setActivityImageFiles([]);
+                      if (e.target.files && e.target.files.length > 0) {
+                        const newFiles = Array.from(e.target.files);
+                        setActivityImageFiles((prev) => [...prev, ...newFiles]);
+                        // If no cover chosen yet, auto select the first one
+                        if (!coverImageId && activityExistingImages.length === 0) {
+                          setCoverImageId("new-0");
+                        }
                       }
                     }}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                   />
                   <div className="flex flex-col items-center justify-center relative z-0">
-                    <div className="w-8 h-8 bg-orange-500/10 text-orange-600 rounded-xl flex items-center justify-center mb-1.5">
-                      <Plus className="w-4 h-4" />
+                    <div className="w-9 h-9 bg-orange-500/10 text-orange-600 rounded-xl flex items-center justify-center mb-1.5 group-hover:scale-105 transition-transform">
+                      <Plus className="w-5 h-5" />
                     </div>
-                    <p className="text-slate-800 font-semibold text-xs group-hover:text-orange-600 transition-colors">คลิกหรือลากไฟล์ภาพมาที่นี่</p>
-                    <p className="text-slate-400 text-[11px] mt-0.5">JPG, PNG (เลือกได้หลายรูป)</p>
+                    <p className="text-slate-800 font-bold text-xs group-hover:text-orange-600 transition-colors">
+                      คลิกหรือลากไฟล์ภาพมาที่นี่ (เพิ่มได้เรื่อยๆ)
+                    </p>
+                    <p className="text-slate-400 text-[10px] mt-0.5">
+                      JPG, PNG, WebP (เลือกหลายรูปได้พร้อมกัน)
+                    </p>
                   </div>
                 </div>
-                
-                {/* Image Preview */}
-                {(activityImageFiles.length > 0 || activityExistingImages.length > 0) && (
-                  <div className="mt-3 grid grid-cols-3 gap-1.5">
-                    {activityExistingImages.map((url, i) => (
-                      <div key={`existing-${i}`} className={`relative aspect-video bg-gray-100 rounded-lg overflow-hidden border ${coverImageId === `existing-${i}` ? 'border-orange-500 ring-2 ring-orange-500/30' : 'border-gray-200'}`}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={url} alt={`preview existing ${i}`} className="w-full h-full object-cover" onError={(e) => (e.currentTarget.src = "https://placehold.co/600x400/eeeeee/999999?text=Image+Not+Found")} />
-                        <div className="absolute top-1 left-1 bg-black/60 text-white text-[9px] px-1 py-0.2 rounded">รูปเดิม</div>
-                        
-                        {coverImageId !== `existing-${i}` && (
-                          <button type="button" onClick={() => setCoverImageId(`existing-${i}`)} className="absolute bottom-0.5 left-0.5 right-0.5 bg-black/70 hover:bg-orange-500 text-white text-[9px] py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                            ตั้งเป็นปก
-                          </button>
-                        )}
-                        {coverImageId === `existing-${i}` && (
-                          <div className="absolute bottom-0 left-0 right-0 bg-orange-500 text-white text-[9px] text-center py-0.5 font-medium">
-                            รูปหน้าปก
-                          </div>
-                        )}
 
-                        <button type="button" onClick={() => {
-                          setActivityExistingImages(prev => prev.filter((_, idx) => idx !== i));
-                          if (coverImageId === `existing-${i}`) setCoverImageId("");
-                        }} className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-80 hover:opacity-100 transition-opacity">
-                          <Trash2 className="w-2.5 h-2.5" />
-                        </button>
-                      </div>
-                    ))}
-                    {activityImageFiles.map((file, i) => (
-                      <div key={`new-${i}`} className={`relative aspect-video bg-gray-100 rounded-lg overflow-hidden border ${coverImageId === `new-${i}` || (!coverImageId && activityExistingImages.length === 0 && i === 0) ? 'border-orange-500 ring-2 ring-orange-500/30' : 'border-emerald-200'}`}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={URL.createObjectURL(file)} alt={`preview new ${i}`} className="w-full h-full object-cover" />
-                        <div className="absolute top-1 left-1 bg-emerald-600 text-white text-[9px] px-1 py-0.2 rounded">ใหม่</div>
-                        
-                        {coverImageId !== `new-${i}` && !(!coverImageId && activityExistingImages.length === 0 && i === 0) && (
-                          <button type="button" onClick={() => setCoverImageId(`new-${i}`)} className="absolute bottom-0.5 left-0.5 right-0.5 bg-black/70 hover:bg-orange-500 text-white text-[9px] py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                            ตั้งเป็นปก
-                          </button>
-                        )}
-                        {(coverImageId === `new-${i}` || (!coverImageId && activityExistingImages.length === 0 && i === 0)) && (
-                          <div className="absolute bottom-0 left-0 right-0 bg-orange-500 text-white text-[9px] text-center py-0.5 font-medium">
-                            รูปหน้าปก
-                          </div>
-                        )}
+                {/* Image Previews with Profile/Cover Indicator */}
+                {totalImagesCount > 0 && (
+                  <div className="mt-3 space-y-2">
+                    <p className="text-[11px] text-gray-500 flex items-center gap-1 font-medium">
+                      <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+                      <span>แตะที่ปุ่ม <strong className="text-orange-600">"ตั้งเป็นรูปโปรไฟล์/หน้าปก"</strong> เพื่อเลือกรูปหลัก</span>
+                    </p>
 
-                        <button type="button" onClick={() => {
-                          setActivityImageFiles(prev => prev.filter((_, idx) => idx !== i));
-                          if (coverImageId === `new-${i}`) setCoverImageId("");
-                        }} className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-80 hover:opacity-100 transition-opacity">
-                          <Trash2 className="w-2.5 h-2.5" />
-                        </button>
-                      </div>
-                    ))}
+                    <div className="grid grid-cols-3 gap-2">
+                      {/* Existing Images */}
+                      {activityExistingImages.map((url, i) => {
+                        const isCover = coverImageId === `existing-${i}` || (!coverImageId && i === 0);
+                        return (
+                          <div 
+                            key={`existing-${i}`} 
+                            className={`relative aspect-square bg-gray-950 rounded-xl overflow-hidden border-2 transition-all flex items-center justify-center group ${
+                              isCover ? "border-orange-500 ring-2 ring-orange-500/40 shadow-sm" : "border-gray-200 opacity-90 hover:opacity-100"
+                            }`}
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img 
+                              src={url} 
+                              alt={`existing ${i}`} 
+                              className="max-h-full max-w-full object-contain" 
+                              onError={(e) => (e.currentTarget.src = "https://placehold.co/400x400/eeeeee/999999?text=Error")} 
+                            />
+                            
+                            {/* Cover Badge */}
+                            {isCover ? (
+                              <div className="absolute top-1 left-1 bg-orange-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-0.5 shadow-sm z-20">
+                                <Star className="w-2.5 h-2.5 fill-white" />
+                                <span>รูปโปรไฟล์</span>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setCoverImageId(`existing-${i}`)}
+                                className="absolute bottom-1 inset-x-1 bg-black/80 hover:bg-orange-500 text-white text-[9px] py-1 rounded-md font-bold transition-all z-20 shadow-xs"
+                              >
+                                ตั้งเป็นโปรไฟล์
+                              </button>
+                            )}
+
+                            {/* Delete Button */}
+                            <button 
+                              type="button" 
+                              onClick={() => {
+                                setActivityExistingImages((prev) => prev.filter((_, idx) => idx !== i));
+                                if (coverImageId === `existing-${i}`) setCoverImageId("");
+                              }} 
+                              className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white p-1 rounded-full shadow-sm z-20"
+                              title="ลบรูปนี้"
+                            >
+                              <Trash2 className="w-2.5 h-2.5" />
+                            </button>
+                          </div>
+                        );
+                      })}
+
+                      {/* New Uploaded Images */}
+                      {activityImageFiles.map((file, i) => {
+                        const isCover = coverImageId === `new-${i}` || (!coverImageId && activityExistingImages.length === 0 && i === 0);
+                        return (
+                          <div 
+                            key={`new-${i}`} 
+                            className={`relative aspect-square bg-gray-950 rounded-xl overflow-hidden border-2 transition-all flex items-center justify-center group ${
+                              isCover ? "border-orange-500 ring-2 ring-orange-500/40 shadow-sm" : "border-emerald-300 opacity-90 hover:opacity-100"
+                            }`}
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img 
+                              src={URL.createObjectURL(file)} 
+                              alt={`new ${i}`} 
+                              className="max-h-full max-w-full object-contain" 
+                            />
+                            
+                            {/* Cover Badge */}
+                            {isCover ? (
+                              <div className="absolute top-1 left-1 bg-orange-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-0.5 shadow-sm z-20">
+                                <Star className="w-2.5 h-2.5 fill-white" />
+                                <span>รูปโปรไฟล์</span>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setCoverImageId(`new-${i}`)}
+                                className="absolute bottom-1 inset-x-1 bg-black/80 hover:bg-orange-500 text-white text-[9px] py-1 rounded-md font-bold transition-all z-20 shadow-xs"
+                              >
+                                ตั้งเป็นโปรไฟล์
+                              </button>
+                            )}
+
+                            {/* Delete Button */}
+                            <button 
+                              type="button" 
+                              onClick={() => {
+                                setActivityImageFiles((prev) => prev.filter((_, idx) => idx !== i));
+                                if (coverImageId === `new-${i}`) setCoverImageId("");
+                              }} 
+                              className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white p-1 rounded-full shadow-sm z-20"
+                              title="ลบรูปนี้"
+                            >
+                              <Trash2 className="w-2.5 h-2.5" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </div>
-              
+
+              {/* SECTION: แนบเกียรติบัตร (Certificate) */}
+              <div className="pt-2 border-t border-gray-100">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                    <Award className="w-4 h-4 text-amber-500" />
+                    <span>เกียรติบัตรกิจกรรม (Certificate)</span>
+                    <span className="text-[11px] font-normal text-slate-400">(ไม่บังคับ)</span>
+                  </label>
+                  {activityCertificateUrl && (
+                    <a
+                      href={activityCertificateUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-[11px] text-amber-600 hover:underline flex items-center gap-1 font-semibold"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                      <span>ดูเกียรติบัตร</span>
+                    </a>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  {/* File Upload Button */}
+                  <label className="w-full py-2 px-3 rounded-xl border border-dashed border-amber-300 hover:border-amber-400 bg-amber-50/40 hover:bg-amber-50 text-amber-700 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-colors active:scale-98">
+                    <FileUp className="w-3.5 h-3.5 text-amber-600" />
+                    <span>
+                      {activityCertificateFile || activityCertificateUrl 
+                        ? "📎 เปลี่ยนไฟล์เกียรติบัตรใหม่" 
+                        : "📎 อัปโหลดไฟล์เกียรติบัตร (รูปภาพ หรือ PDF)"}
+                    </span>
+                    <input
+                      id="activityCertFileInput"
+                      type="file"
+                      accept="image/*,.pdf,application/pdf"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setActivityCertificateFile(file);
+                          setActivityCertificateUrl(URL.createObjectURL(file));
+                        }
+                      }}
+                    />
+                  </label>
+
+                  {/* Attached Certificate Card */}
+                  {(activityCertificateFile || activityCertificateUrl) && (
+                    <div className="flex items-center justify-between p-2 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900">
+                      <div className="flex items-center gap-2 min-w-0 pr-2">
+                        {activityCertificateFile?.type === "application/pdf" || activityCertificateUrl.endsWith(".pdf") ? (
+                          <FileText className="w-5 h-5 text-amber-600 shrink-0" />
+                        ) : (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={activityCertificateUrl}
+                            alt="Certificate"
+                            className="w-8 h-8 rounded object-cover border border-amber-200 shrink-0 bg-white"
+                            onError={(e) => (e.currentTarget.style.display = "none")}
+                          />
+                        )}
+                        <div className="truncate">
+                          <span className="font-bold truncate block">
+                            {activityCertificateFile ? activityCertificateFile.name : "เกียรติบัตรที่แนบไว้"}
+                          </span>
+                          <span className="text-[10px] text-amber-600">
+                            {activityCertificateFile ? `${(activityCertificateFile.size / 1024 / 1024).toFixed(2)} MB` : "พร้อมเชื่อมโยง"}
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActivityCertificateFile(null);
+                          setActivityCertificateUrl("");
+                          const input = document.getElementById("activityCertFileInput") as HTMLInputElement;
+                          if (input) input.value = "";
+                        }}
+                        className="text-amber-700 hover:text-red-600 p-1 shrink-0 cursor-pointer"
+                        title="ลบเกียรติบัตรนี้"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* URL Input */}
+                  <div>
+                    <label className="text-[11px] font-semibold text-gray-500 block mb-0.5">
+                      หรือ วางลิงก์เกียรติบัตร (Google Drive / ลิงก์ตรง):
+                    </label>
+                    <input
+                      type="url"
+                      value={activityCertificateUrl && !activityCertificateUrl.startsWith("blob:") && !activityCertificateUrl.startsWith("data:") ? activityCertificateUrl : ""}
+                      onChange={(e) => {
+                        setActivityCertificateUrl(e.target.value);
+                        setActivityCertificateFile(null);
+                      }}
+                      placeholder="https://drive.google.com/file/d/... หรือ URL เกียรติบัตร"
+                      className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-gray-200 focus:border-amber-400 outline-none bg-white font-mono"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Submit Buttons */}
               <div className="flex gap-2 pt-3 border-t border-gray-100">
-                <Button type="submit" className="flex-1 h-9 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold">
-                  {editingActivityId ? "บันทึกการแก้ไข" : "เพิ่มกิจกรรม"}
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="flex-1 h-9 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold cursor-pointer shadow-2xs"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                      <span>กำลังบันทึก...</span>
+                    </>
+                  ) : editingActivityId ? (
+                    "บันทึกการแก้ไข"
+                  ) : (
+                    "เพิ่มกิจกรรม"
+                  )}
                 </Button>
                 {editingActivityId && (
-                  <Button type="button" variant="outline" onClick={resetActivityForm} className="h-9 rounded-xl px-3 border-gray-200 text-xs font-medium">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={resetActivityForm} 
+                    className="h-9 rounded-xl px-3 border-gray-200 text-xs font-medium cursor-pointer"
+                  >
                     ยกเลิก
                   </Button>
                 )}
@@ -382,6 +742,7 @@ export default function ActivitiesTab() {
                 {activitiesList.length} รายการ
               </span>
             </div>
+
             {isLoading ? (
               <div className="text-center py-12 text-gray-400 text-xs font-medium">กำลังโหลดข้อมูล...</div>
             ) : activitiesList.length === 0 ? (
@@ -398,76 +759,143 @@ export default function ActivitiesTab() {
                     purple: "bg-purple-100 text-purple-800 border-purple-200",
                   }[colorKey] || "bg-red-100 text-red-800 border-red-200";
 
-                  return (
-                    <div key={activity.id} className="flex flex-col bg-white rounded-xl overflow-hidden border border-gray-200 shadow-2xs hover:shadow-xs transition-all group">
-                      {activity.imageUrl ? (
-                        <div className="w-full h-36 bg-gray-100 relative overflow-hidden">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img 
-                            src={activity.imageUrl} 
-                            alt={activity.title} 
-                            className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300" 
-                            onError={(e) => (e.currentTarget.src = "https://placehold.co/600x400/eeeeee/999999?text=Image+Not+Found")} 
-                          />
-                          <div className="absolute top-2 left-2 bg-white/95 backdrop-blur-xs text-gray-900 text-[10px] font-bold px-2 py-0.5 rounded-md shadow-2xs">
-                            {activity.date}
-                          </div>
-                          {activity.category && (
-                            <div className={`absolute top-2 right-2 text-[10px] font-bold px-2 py-0.5 rounded-md border ${colorBadge}`}>
-                              {activity.category}
-                            </div>
-                          )}
-                          {activity.location && (
-                            <div className="absolute bottom-2 left-2 right-2 bg-black/60 backdrop-blur-xs text-white text-[10px] px-2 py-0.5 rounded-md truncate">
-                              📍 {activity.location}
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="w-full h-24 bg-gradient-to-r from-gray-50 to-gray-100 p-3 flex flex-col justify-between border-b border-gray-100 relative">
-                          <div className="flex justify-between items-start gap-2">
-                            <span className="bg-white/95 text-gray-900 text-[10px] font-bold px-2 py-0.5 rounded-md border border-gray-200">
-                              📅 {activity.date}
-                            </span>
-                            {activity.category && (
-                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${colorBadge}`}>
-                                {activity.category}
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2 text-[11px] text-gray-600 font-medium">
-                            {activity.time && <span>⏰ {activity.time}</span>}
-                            {activity.location && <span className="truncate">📍 {activity.location}</span>}
-                          </div>
-                        </div>
-                      )}
+                  // Extract images count
+                  let imgCount = 0;
+                  try {
+                    const parsed = activity.images ? (typeof activity.images === "string" ? JSON.parse(activity.images) : activity.images) : [];
+                    imgCount = Array.isArray(parsed) ? parsed.length : (activity.imageUrl ? 1 : 0);
+                  } catch {
+                    imgCount = activity.imageUrl ? 1 : 0;
+                  }
 
-                      <div className="p-3.5 flex-1 flex flex-col justify-between">
-                        <div>
-                          <div className="flex items-center gap-1.5 mb-1">
-                            {activity.time && !activity.imageUrl && (
-                              <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
-                                {activity.time}
-                              </span>
+                  const isSent = sentAwardIds[activity.id];
+
+                  return (
+                    <div key={activity.id} className="flex flex-col bg-white rounded-xl overflow-hidden border border-gray-200 shadow-2xs hover:shadow-xs transition-all group justify-between">
+                      <div>
+                        {activity.imageUrl ? (
+                          <div className="w-full h-36 bg-gray-950 relative overflow-hidden flex items-center justify-center">
+                            {/* Ambient blur */}
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img 
+                              src={activity.imageUrl} 
+                              alt="" 
+                              className="absolute inset-0 w-full h-full object-cover blur-sm opacity-30 scale-110 pointer-events-none" 
+                            />
+                            {/* Main uncropped cover photo */}
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img 
+                              src={activity.imageUrl} 
+                              alt={activity.title} 
+                              className="relative z-10 max-h-full max-w-full object-contain p-1 group-hover:scale-102 transition-transform duration-300" 
+                              onError={(e) => (e.currentTarget.src = "https://placehold.co/600x400/eeeeee/999999?text=Image+Not+Found")} 
+                            />
+                            <div className="absolute top-2 left-2 bg-white/95 backdrop-blur-xs text-gray-900 text-[10px] font-bold px-2 py-0.5 rounded-md shadow-2xs z-20">
+                              {activity.date}
+                            </div>
+                            
+                            <div className="absolute top-2 right-2 flex items-center gap-1 z-20">
+                              {imgCount > 1 && (
+                                <span className="bg-black/70 backdrop-blur-xs text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md">
+                                  📷 {imgCount}
+                                </span>
+                              )}
+                              {activity.category && (
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${colorBadge}`}>
+                                  {activity.category}
+                                </span>
+                              )}
+                            </div>
+
+                            {activity.location && (
+                              <div className="absolute bottom-2 left-2 right-2 bg-black/60 backdrop-blur-xs text-white text-[10px] px-2 py-0.5 rounded-md truncate z-20">
+                                📍 {activity.location}
+                              </div>
                             )}
+                          </div>
+                        ) : (
+                          <div className="w-full h-24 bg-gradient-to-r from-gray-50 to-gray-100 p-3 flex flex-col justify-between border-b border-gray-100 relative">
+                            <div className="flex justify-between items-start gap-2">
+                              <span className="bg-white/95 text-gray-900 text-[10px] font-bold px-2 py-0.5 rounded-md border border-gray-200">
+                                📅 {activity.date}
+                              </span>
+                              {activity.category && (
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${colorBadge}`}>
+                                  {activity.category}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 text-[11px] text-gray-600 font-medium">
+                              {activity.time && <span>⏰ {activity.time}</span>}
+                              {activity.location && <span className="truncate">📍 {activity.location}</span>}
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="p-3.5">
+                          <div className="flex items-center gap-1.5 mb-1">
                             <h3 className="font-bold font-kanit text-gray-900 truncate text-xs sm:text-sm" title={activity.title}>
                               {activity.title}
                             </h3>
                           </div>
                           {activity.description && (
-                            <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                            <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed mb-2">
                               {activity.description}
                             </p>
                           )}
+
+                          {/* Certificate Badge if attached */}
+                          {activity.certificateUrl && (
+                            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold mb-1">
+                              <Award className="w-3 h-3 text-amber-500" />
+                              <span>แนบเกียรติบัตรแล้ว</span>
+                            </div>
+                          )}
                         </div>
-                        <div className="flex gap-2 mt-3 pt-2.5 border-t border-gray-100">
+                      </div>
+
+                      {/* Card Actions */}
+                      <div className="p-3.5 pt-0 space-y-2">
+                        {/* 1-Click Send to Awards Button */}
+                        <button 
+                          type="button"
+                          onClick={() => handleSendToAwards(activity)} 
+                          disabled={sendingAwardId === activity.id}
+                          className={`w-full py-1.5 px-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
+                            isSent
+                              ? "bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100"
+                              : "bg-amber-500 hover:bg-amber-600 text-white active:scale-98"
+                          }`}
+                          title="คัดลอกรูปภาพ เกียรติบัตร และข้อมูลนี้ไปสร้างเป็นรางวัลในหน้ารางวัลที่ได้รับ (/awards) ทันที"
+                        >
+                          {sendingAwardId === activity.id ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              <span>กำลังส่งข้อมูลไปหน้ารางวัล...</span>
+                            </>
+                          ) : isSent ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-emerald-600" />
+                              <span>✓ ส่งไปหน้ารางวัลแล้ว (กดส่งซ้ำได้)</span>
+                            </>
+                          ) : (
+                            <>
+                              <Award className="w-3.5 h-3.5" />
+                              <span>🏆 ส่งไปเป็นผลงานรางวัล</span>
+                            </>
+                          )}
+                        </button>
+
+                        <div className="flex gap-2 border-t border-gray-100 pt-2">
                           <button 
+                            type="button"
                             onClick={() => handleEditActivity(activity)} 
                             className="flex-1 h-7.5 rounded-lg flex items-center justify-center text-xs font-semibold text-orange-600 bg-orange-50 hover:bg-orange-100 transition-colors cursor-pointer"
                           >
                             <Pencil className="w-3 h-3 mr-1" /> แก้ไข
                           </button>
                           <button 
+                            type="button"
                             onClick={() => handleDeleteActivity(activity.id)} 
                             className="h-7.5 px-2.5 rounded-lg flex items-center justify-center text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 transition-colors cursor-pointer"
                             title="ลบกิจกรรม"

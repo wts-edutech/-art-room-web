@@ -15,6 +15,8 @@ async function ensureColumns() {
       try { await d1.prepare(`ALTER TABLE activities ADD COLUMN location TEXT`).run(); } catch {}
       try { await d1.prepare(`ALTER TABLE activities ADD COLUMN category TEXT`).run(); } catch {}
       try { await d1.prepare(`ALTER TABLE activities ADD COLUMN color TEXT`).run(); } catch {}
+      try { await d1.prepare(`ALTER TABLE activities ADD COLUMN certificateUrl TEXT`).run(); } catch {}
+      try { await d1.prepare(`ALTER TABLE activities ADD COLUMN certificate_url TEXT`).run(); } catch {}
     }
   } catch {}
 }
@@ -53,6 +55,7 @@ export async function POST(request: Request) {
         category: body.category || '',
         color: body.color || 'red',
         imageUrl: body.imageUrl || null,
+        certificateUrl: body.certificateUrl || null,
         images: body.images ? (typeof body.images === 'string' ? body.images : JSON.stringify(body.images)) : null,
         createdAt: new Date().toISOString()
       };
@@ -79,12 +82,16 @@ export async function POST(request: Request) {
         
         if (key === 'images') {
           images.push(dataUrl);
+        } else if (key === 'certificate') {
+          newEntry.certificateUrl = dataUrl;
         } else {
           newEntry[key === 'image' || key === 'coverImage' ? (key === 'coverImage' ? 'coverImageUrl' : 'imageUrl') : key] = dataUrl;
         }
       } else if (typeof value === 'string' && key !== 'image' && key !== 'coverImage') {
         if (key === 'images') {
           images.push(value);
+        } else if (key === 'certificate' || key === 'certificateUrl') {
+          newEntry.certificateUrl = value;
         } else {
           newEntry[key] = value;
         }
@@ -130,6 +137,7 @@ export async function PUT(request: Request) {
         color: body.color ?? 'red',
       };
       if (body.imageUrl !== undefined) updateEntry.imageUrl = body.imageUrl;
+      if (body.certificateUrl !== undefined) updateEntry.certificateUrl = body.certificateUrl;
       if (body.images !== undefined) {
         updateEntry.images = typeof body.images === 'string' ? body.images : JSON.stringify(body.images);
       }
@@ -166,12 +174,16 @@ export async function PUT(request: Request) {
         
         if (key === 'images') {
           images.push(dataUrl);
+        } else if (key === 'certificate') {
+          updateEntry.certificateUrl = dataUrl;
         } else {
           updateEntry[key === 'image' || key === 'coverImage' ? (key === 'coverImage' ? 'coverImageUrl' : 'imageUrl') : key] = dataUrl;
         }
-      } else if (typeof value === 'string' && key !== 'image' && key !== 'coverImage' && value) {
+      } else if (typeof value === 'string' && key !== 'image' && key !== 'coverImage') {
         if (key === 'images') {
           images.push(value);
+        } else if (key === 'certificate' || key === 'certificateUrl') {
+          updateEntry.certificateUrl = value;
         } else {
           updateEntry[key] = value;
         }

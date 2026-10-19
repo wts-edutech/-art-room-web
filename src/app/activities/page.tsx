@@ -17,7 +17,8 @@ import {
   Clock, 
   Tag, 
   ArrowRight,
-  Maximize2
+  Maximize2,
+  Award
 } from "lucide-react";
 
 // Helper to extract all images from activity
@@ -298,6 +299,12 @@ export default function ActivitiesPage() {
                             {act.description}
                           </p>
                         )}
+                        {act.certificateUrl && (
+                          <div className="mt-2.5 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 text-[11px] font-bold border border-amber-200">
+                            <Award className="w-3.5 h-3.5 text-amber-500" />
+                            <span>มีเกียรติบัตรรับรอง</span>
+                          </div>
+                        )}
                       </div>
 
                       <div className="pt-4 border-t border-gray-100 flex items-center justify-between text-xs">
@@ -424,6 +431,34 @@ export default function ActivitiesPage() {
                     <p className="text-gray-700 text-sm font-light leading-relaxed whitespace-pre-line">
                       {activeModalActivity.description}
                     </p>
+                  </div>
+                )}
+
+                {/* Certificate Download/View Button */}
+                {activeModalActivity.certificateUrl && (
+                  <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold shrink-0">
+                        <Award className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs sm:text-sm font-bold text-amber-950">
+                          เกียรติบัตรกิจกรรม (Certificate)
+                        </h4>
+                        <p className="text-[11px] text-amber-700">
+                          มีเอกสารเกียรติบัตรรับรองสำหรับกิจกรรมนี้
+                        </p>
+                      </div>
+                    </div>
+                    <a
+                      href={activeModalActivity.certificateUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full sm:w-auto px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-xs shrink-0 cursor-pointer"
+                    >
+                      <span>เปิดดูเกียรติบัตร</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
                   </div>
                 )}
 
