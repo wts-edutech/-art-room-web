@@ -24,7 +24,9 @@ import {
   School,
   Copy,
   UserCheck,
-  ChevronRight
+  ChevronRight,
+  ChevronLeft,
+  Star
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -51,6 +53,8 @@ interface AwardItem {
   year: string;
   issuer: string;
   imageUrl?: string;
+  images?: string[];
+  coverImage?: string;
 }
 
 interface ActivityImageItem {
@@ -81,14 +85,167 @@ interface TeachersPageClientProps {
   initialTeacher: TeacherProfile;
 }
 
+// Multi-Image Flowing Carousel Component ("ทำแบบไหลๆๆ")
+function AwardPhotoCarousel({
+  award,
+  onOpenLightbox
+}: {
+  award: AwardItem;
+  onOpenLightbox: (images: string[], index: number, title: string, subtitle?: string) => void;
+}) {
+  const rawImages = (award.images && award.images.length > 0)
+    ? award.images
+    : (award.imageUrl ? [award.imageUrl] : []);
+
+  // Ensure chosen coverImage is first
+  const cover = award.coverImage || award.imageUrl || rawImages[0];
+  const images = cover && rawImages.includes(cover)
+    ? [cover, ...rawImages.filter(img => img !== cover)]
+    : rawImages;
+
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  if (images.length === 0) return null;
+
+  const subtitle = award.issuer ? `หน่วยงานที่มอบ: ${award.issuer} (ปี พ.ศ. ${award.year})` : (award.year ? `ปี พ.ศ. ${award.year}` : undefined);
+
+  // Single Image Mode
+  if (images.length === 1) {
+    return (
+      <div 
+        onClick={() => onOpenLightbox(images, 0, award.title, subtitle)}
+        className="relative aspect-video rounded-xl overflow-hidden mb-3.5 bg-gray-900 cursor-pointer group/img border border-gray-100 shadow-xs"
+        title="คลิกเพื่อดูรูปภาพขนาดเต็ม"
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={images[0]}
+          alt={award.title}
+          className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-300"
+        />
+        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 flex items-center justify-center gap-1.5 text-white text-xs font-bold transition-opacity">
+          <Maximize2 className="w-3.5 h-3.5" />
+          <span>ดูรูปขยาย</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Multi-Image Flowing Carousel Mode ("ทำแบบไหลๆๆ")
+  const handlePrev = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
+  };
+
+  const handleNext = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentIndex((prev) => (prev + 1) % images.length);
+  };
+
+  return (
+    <div className="relative mb-3.5 rounded-xl overflow-hidden bg-gray-950 border border-gray-100 shadow-xs group/carousel select-none">
+      {/* Active Photo Frame with Smooth Transition */}
+      <div 
+        onClick={() => onOpenLightbox(images, currentIndex, award.title, subtitle)}
+        className="relative aspect-video w-full overflow-hidden cursor-pointer"
+        title="คลิกเพื่อดูรูปภาพขนาดเต็ม"
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          key={currentIndex}
+          src={images[currentIndex]}
+          alt={`${award.title} - ภาพที่ ${currentIndex + 1}`}
+          className="w-full h-full object-cover animate-in fade-in duration-300 group-hover/carousel:scale-102 transition-transform"
+        />
+
+        {/* Gradient Overlay for controls visibility */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/25 pointer-events-none" />
+
+        {/* Top Badges: Cover Tag & Image Counter */}
+        <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 z-10 pointer-events-none">
+          {currentIndex === 0 && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500 text-white text-[10px] font-bold shadow-xs">
+              <Star className="w-3 h-3 fill-white" />
+              <span>รูปหน้าปก</span>
+            </span>
+          )}
+          <span className="px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-xs text-white text-[10px] font-mono font-bold border border-white/10">
+            {currentIndex + 1} / {images.length}
+          </span>
+        </div>
+
+        {/* Expand Hint */}
+        <div className="absolute bottom-2.5 right-2.5 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-xs text-white text-[10px] font-medium flex items-center gap-1 pointer-events-none">
+          <Maximize2 className="w-3 h-3" />
+          <span>แตะดูรูปใหญ่</span>
+        </div>
+      </div>
+
+      {/* Prev / Next Flow Arrows */}
+      <button
+        type="button"
+        onClick={handlePrev}
+        className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-md border border-white/20 z-10"
+        aria-label="ภาพก่อนหน้า"
+      >
+        <ChevronLeft className="w-4 h-4" />
+      </button>
+      <button
+        type="button"
+        onClick={handleNext}
+        className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-md border border-white/20 z-10"
+        aria-label="ภาพถัดไป"
+      >
+        <ChevronRight className="w-4 h-4" />
+      </button>
+
+      {/* Flowing Filmstrip Thumbnails ("ทำแบบไหลๆๆ") */}
+      <div className="flex items-center gap-1.5 p-2 bg-gray-900/90 overflow-x-auto scrollbar-none scroll-smooth snap-x snap-mandatory">
+        {images.map((img, idx) => (
+          <button
+            key={idx}
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setCurrentIndex(idx);
+            }}
+            className={`relative w-12 h-8 sm:w-14 sm:h-9 shrink-0 rounded-lg overflow-hidden border-2 transition-all cursor-pointer snap-center ${
+              currentIndex === idx
+                ? "border-amber-400 ring-2 ring-amber-400/40 scale-105 shadow-sm"
+                : "border-transparent opacity-60 hover:opacity-100"
+            }`}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={img} alt={`thumb-${idx}`} className="w-full h-full object-cover" />
+            {idx === 0 && (
+              <span className="absolute bottom-0 inset-x-0 bg-amber-500/90 text-white text-[8px] font-bold text-center leading-tight">
+                ปก
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function TeachersPageClient({ initialTeacher }: TeachersPageClientProps) {
   const [teacher, setTeacher] = useState<TeacherProfile>(initialTeacher);
   const [isTeachersEnabled, setIsTeachersEnabled] = useState<boolean>(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [activeSection, setActiveSection] = useState<string>("overview");
 
-  // Lightbox Modal for award & activity photos
-  const [lightboxImage, setLightboxImage] = useState<{ url: string; title: string; subtitle?: string } | null>(null);
+  // Multi-Image Lightbox Modal
+  const [lightboxData, setLightboxData] = useState<{
+    images: string[];
+    currentIndex: number;
+    title: string;
+    subtitle?: string;
+  } | null>(null);
+
+  const handleOpenLightbox = (images: string[], index: number, title: string, subtitle?: string) => {
+    setLightboxData({ images, currentIndex: index, title, subtitle });
+  };
   const [copiedEmail, setCopiedEmail] = useState(false);
 
   useEffect(() => {
@@ -121,18 +278,28 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
       .catch((err) => console.error("Failed to load teacher dynamically:", err));
   }, []);
 
-  // Keyboard navigation for Lightbox (Esc to close)
+  // Keyboard navigation for Lightbox (Esc to close, ArrowLeft/Right to slide)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        setLightboxImage(null);
+        setLightboxData(null);
+      } else if (e.key === "ArrowLeft" && lightboxData && lightboxData.images.length > 1) {
+        setLightboxData(prev => prev ? {
+          ...prev,
+          currentIndex: (prev.currentIndex - 1 + prev.images.length) % prev.images.length
+        } : null);
+      } else if (e.key === "ArrowRight" && lightboxData && lightboxData.images.length > 1) {
+        setLightboxData(prev => prev ? {
+          ...prev,
+          currentIndex: (prev.currentIndex + 1) % prev.images.length
+        } : null);
       }
     };
-    if (lightboxImage) {
+    if (lightboxData) {
       window.addEventListener("keydown", handleKeyDown);
     }
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [lightboxImage]);
+  }, [lightboxData]);
 
   const handleCopyEmail = () => {
     if (teacher.email) {
@@ -646,25 +813,8 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
                     className="p-5 rounded-2xl bg-white border border-gray-200 hover:border-red-400 transition-colors flex flex-col justify-between"
                   >
                     <div>
-                      {/* Photo if available */}
-                      {award.imageUrl && (
-                        <div 
-                          onClick={() => setLightboxImage({ url: award.imageUrl!, title: award.title, subtitle: award.issuer ? `หน่วยงานที่มอบ: ${award.issuer} (ปี พ.ศ. ${award.year})` : undefined })}
-                          className="relative aspect-video rounded-xl overflow-hidden mb-3.5 bg-gray-900 cursor-pointer group/img border border-gray-100"
-                          title="คลิกเพื่อดูรูปภาพขนาดเต็ม"
-                        >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={award.imageUrl}
-                            alt={award.title}
-                            className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-300"
-                          />
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 flex items-center justify-center gap-1.5 text-white text-xs font-bold transition-opacity">
-                            <Maximize2 className="w-3.5 h-3.5" />
-                            <span>ดูรูปขยาย</span>
-                          </div>
-                        </div>
-                      )}
+                      {/* Photo Flowing Carousel ("ทำแบบไหลๆๆ") */}
+                      <AwardPhotoCarousel award={award} onOpenLightbox={handleOpenLightbox} />
 
                       <div className="flex items-center justify-between gap-2 mb-2">
                         <span className="w-6 h-6 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0">
@@ -725,7 +875,7 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
                 {activityImages.map((act, idx) => (
                   <div
                     key={act.id || idx}
-                    onClick={() => setLightboxImage({ url: act.imageUrl, title: act.title, subtitle: act.date })}
+                    onClick={() => handleOpenLightbox([act.imageUrl], 0, act.title, act.date ? `วันที่: ${act.date}` : undefined)}
                     className="group rounded-2xl overflow-hidden bg-gray-900 relative aspect-4/3 border border-gray-200 hover:border-red-500 transition-colors cursor-pointer flex flex-col justify-end"
                   >
                     {/* Background Image */}
@@ -759,11 +909,11 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
 
         </div>
 
-        {/* LIGHTBOX MODAL */}
-        {lightboxImage && (
+        {/* LIGHTBOX MODAL WITH MULTI-IMAGE GLIDE SUPPORT */}
+        {lightboxData && (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-            onClick={() => setLightboxImage(null)}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm"
+            onClick={() => setLightboxData(null)}
           >
             <div
               className="relative max-w-4xl w-full bg-gray-950 rounded-2xl overflow-hidden flex flex-col border border-gray-800"
@@ -772,14 +922,21 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
               {/* Modal Header */}
               <div className="flex items-center justify-between p-4 bg-gray-900 text-white border-b border-gray-800">
                 <div className="min-w-0 pr-4">
-                  <h4 className="text-sm font-bold font-kanit truncate text-white">{lightboxImage.title}</h4>
-                  {lightboxImage.subtitle && (
-                    <p className="text-xs text-gray-400 font-light truncate mt-0.5">{lightboxImage.subtitle}</p>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-sm font-bold font-kanit truncate text-white">{lightboxData.title}</h4>
+                    {lightboxData.images.length > 1 && (
+                      <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-mono font-bold border border-amber-500/30">
+                        {lightboxData.currentIndex + 1} / {lightboxData.images.length}
+                      </span>
+                    )}
+                  </div>
+                  {lightboxData.subtitle && (
+                    <p className="text-xs text-gray-400 font-light truncate mt-0.5">{lightboxData.subtitle}</p>
                   )}
                 </div>
                 <button
                   type="button"
-                  onClick={() => setLightboxImage(null)}
+                  onClick={() => setLightboxData(null)}
                   className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors cursor-pointer shrink-0"
                   aria-label="ปิดหน้าต่าง"
                 >
@@ -787,14 +944,51 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
                 </button>
               </div>
 
-              {/* Modal Image */}
-              <div className="p-3 flex items-center justify-center max-h-[75vh] overflow-hidden bg-black">
+              {/* Modal Image with Navigation Arrows */}
+              <div className="relative p-3 flex items-center justify-center min-h-[50vh] max-h-[75vh] overflow-hidden bg-black select-none">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={lightboxImage.url}
-                  alt={lightboxImage.title}
-                  className="max-h-[70vh] max-w-full object-contain rounded-lg"
+                  key={lightboxData.currentIndex}
+                  src={lightboxData.images[lightboxData.currentIndex]}
+                  alt={`${lightboxData.title} - ${lightboxData.currentIndex + 1}`}
+                  className="max-h-[70vh] max-w-full object-contain rounded-lg animate-in fade-in duration-200"
                 />
+
+                {/* Left Arrow */}
+                {lightboxData.images.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setLightboxData(prev => prev ? {
+                        ...prev,
+                        currentIndex: (prev.currentIndex - 1 + prev.images.length) % prev.images.length
+                      } : null);
+                    }}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95 border border-white/20 z-10"
+                    aria-label="รูปก่อนหน้า"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                )}
+
+                {/* Right Arrow */}
+                {lightboxData.images.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setLightboxData(prev => prev ? {
+                        ...prev,
+                        currentIndex: (prev.currentIndex + 1) % prev.images.length
+                      } : null);
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95 border border-white/20 z-10"
+                    aria-label="รูปถัดไป"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                )}
               </div>
             </div>
           </div>

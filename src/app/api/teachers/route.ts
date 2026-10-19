@@ -56,14 +56,23 @@ export const DEFAULT_KRU_KAE = {
       title: "รางวัลครูผู้สอนดีเด่น กลุ่มสาระการเรียนรู้ศิลปะ ระดับเหรียญทอง",
       year: "2566",
       issuer: "สำนักงานเขตพื้นที่การศึกษามัธยมศึกษากรุงเทพมหานคร เขต 2",
-      imageUrl: "https://images.unsplash.com/photo-1578269174936-2709b6aeb913?auto=format&fit=crop&q=80&w=800"
+      imageUrl: "https://images.unsplash.com/photo-1578269174936-2709b6aeb913?auto=format&fit=crop&q=80&w=800",
+      images: [
+        "https://images.unsplash.com/photo-1578269174936-2709b6aeb913?auto=format&fit=crop&q=80&w=800",
+        "https://images.unsplash.com/photo-1567427017947-545c5f8d16ad?auto=format&fit=crop&q=80&w=800"
+      ],
+      coverImage: "https://images.unsplash.com/photo-1578269174936-2709b6aeb913?auto=format&fit=crop&q=80&w=800"
     },
     {
       id: "award-2",
       title: "ครูผู้ฝึกสอนนักเรียนได้รับรางวัลชนะเลิศ การประกวดวาดภาพระดับชาติ",
       year: "2565",
       issuer: "กระทรวงวัฒนธรรม ร่วมกับ หอศิลปวัฒนธรรมแห่งกรุงเทพมหานคร",
-      imageUrl: "https://images.unsplash.com/photo-1567427017947-545c5f8d16ad?auto=format&fit=crop&q=80&w=800"
+      imageUrl: "https://images.unsplash.com/photo-1567427017947-545c5f8d16ad?auto=format&fit=crop&q=80&w=800",
+      images: [
+        "https://images.unsplash.com/photo-1567427017947-545c5f8d16ad?auto=format&fit=crop&q=80&w=800"
+      ],
+      coverImage: "https://images.unsplash.com/photo-1567427017947-545c5f8d16ad?auto=format&fit=crop&q=80&w=800"
     }
   ],
   activityImages: [

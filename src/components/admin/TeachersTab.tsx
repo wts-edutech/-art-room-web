@@ -26,7 +26,10 @@ import {
   Layers,
   Scissors,
   Smartphone,
-  ZoomIn
+  ZoomIn,
+  Star,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { optimizeImageToDataUrl, trimBlackBordersFromDataUrl } from "@/lib/image-optimizer";
 
@@ -52,7 +55,9 @@ interface AwardItem {
   title: string; // เช่น "รางวัลครูผู้สอนดีเด่น กลุ่มสาระการเรียนรู้ศิลปะ ระดับเหรียญทอง"
   year: string; // เช่น "2566"
   issuer: string; // เช่น "สพม.กทม. เขต 2"
-  imageUrl?: string; // รูปถ่ายตอนรับรางวัล หรือใบประกาศ
+  imageUrl?: string; // รูปถ่ายตอนรับรางวัล หรือใบประกาศ (backward compatible)
+  images?: string[]; // รูปถ่ายทั้งหมดของรางวัลนี้
+  coverImage?: string; // รูปหน้าปกที่เลือก
 }
 
 interface ActivityImageItem {
@@ -137,7 +142,19 @@ export default function TeachersTab() {
         }
         // Awards
         if (Array.isArray(kae.awards)) {
-          setAwardsList(kae.awards);
+          const normalizedAwards = kae.awards.map((a: any) => {
+            const rawImages = Array.isArray(a.images) && a.images.length > 0 
+              ? a.images 
+              : (a.imageUrl ? [a.imageUrl] : []);
+            const cover = a.coverImage || a.imageUrl || rawImages[0] || "";
+            return {
+              ...a,
+              images: rawImages,
+              coverImage: cover,
+              imageUrl: cover
+            };
+          });
+          setAwardsList(normalizedAwards);
         }
         // Activity Images
         if (Array.isArray(kae.activityImages)) {
@@ -262,33 +279,87 @@ export default function TeachersTab() {
     setExperienceList(prev => prev.filter(item => item.id !== id));
   };
 
-  // --- Awards Handlers ---
+  // --- Awards Handlers (Multi-Image & Cover Selection) ---
   const handleAddAward = () => {
     const newItem: AwardItem = {
       id: `award-${Date.now()}`,
       title: "",
       year: `${new Date().getFullYear() + 543}`,
       issuer: "",
-      imageUrl: ""
+      imageUrl: "",
+      images: [],
+      coverImage: ""
     };
     setAwardsList(prev => [...prev, newItem]);
   };
 
-  const handleUpdateAward = (id: string, field: keyof AwardItem, val: string) => {
+  const handleUpdateAward = (id: string, field: keyof AwardItem, val: any) => {
     setAwardsList(prev => prev.map(item => item.id === id ? { ...item, [field]: val } : item));
   };
 
-  const handleAwardImageUpload = async (id: string, file: File) => {
-    if (file.size > 10 * 1024 * 1024) {
-      alert("ขนาดไฟล์รูปภาพเกินกำหนด (สูงสุด 10MB) กรุณาเลือกไฟล์รูปภาพที่มีขนาดไม่เกิน 10MB ครับ");
-      return;
+  const handleAwardImagesUpload = async (id: string, files: FileList | File[]) => {
+    const fileArr = Array.from(files);
+    if (fileArr.length === 0) return;
+
+    for (const f of fileArr) {
+      if (f.size > 35 * 1024 * 1024) {
+        alert(`ไฟล์ ${f.name} ขนาดเกิน 35MB กรุณาเลือกไฟล์ขนาดไม่เกิน 35MB ครับ`);
+        return;
+      }
     }
+
     try {
-      const dataUrl = await optimizeImageToDataUrl(file, { maxWidth: 1200, maxHeight: 1200, quality: 0.82 });
-      handleUpdateAward(id, "imageUrl", dataUrl);
+      const optimizedUrls = await Promise.all(
+        fileArr.map(file => optimizeImageToDataUrl(file, { maxWidth: 1400, maxHeight: 1400, quality: 0.84, autoTrimBorders: true }))
+      );
+
+      setAwardsList(prev => prev.map(award => {
+        if (award.id !== id) return award;
+        const currentList = (award.images && award.images.length > 0)
+          ? award.images
+          : (award.imageUrl ? [award.imageUrl] : []);
+        const merged = [...currentList, ...optimizedUrls];
+        const cover = award.coverImage || merged[0];
+        return {
+          ...award,
+          images: merged,
+          coverImage: cover,
+          imageUrl: cover
+        };
+      }));
     } catch (err) {
-      console.error("Failed to optimize award image:", err);
+      console.error("Failed to upload award images:", err);
+      alert("ไม่สามารถอัปโหลดรูปภาพได้ กรุณาลองใหม่อีกครั้ง");
     }
+  };
+
+  const handleSetAwardCover = (awardId: string, imgUrl: string) => {
+    setAwardsList(prev => prev.map(award => {
+      if (award.id !== awardId) return award;
+      return {
+        ...award,
+        coverImage: imgUrl,
+        imageUrl: imgUrl
+      };
+    }));
+  };
+
+  const handleDeleteAwardImage = (awardId: string, imgIndex: number) => {
+    setAwardsList(prev => prev.map(award => {
+      if (award.id !== awardId) return award;
+      const currentList = (award.images && award.images.length > 0)
+        ? award.images
+        : (award.imageUrl ? [award.imageUrl] : []);
+      const updatedList = currentList.filter((_, idx) => idx !== imgIndex);
+      const isCover = (award.coverImage || award.imageUrl) === currentList[imgIndex];
+      const newCover = isCover ? (updatedList[0] || "") : (award.coverImage || updatedList[0] || "");
+      return {
+        ...award,
+        images: updatedList,
+        coverImage: newCover,
+        imageUrl: newCover
+      };
+    }));
   };
 
   const handleDeleteAward = (id: string) => {
@@ -1144,9 +1215,9 @@ export default function TeachersTab() {
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-start">
-                    {/* Text Inputs */}
-                    <div className="lg:col-span-3 space-y-3">
+                  <div className="space-y-4">
+                    {/* Text Inputs Row */}
+                    <div className="space-y-3">
                       <div>
                         <label className="text-[11px] font-semibold text-gray-600 block mb-1">
                           ชื่อรางวัล / ผลงานดีเด่น <span className="text-rose-500">*</span>
@@ -1185,51 +1256,99 @@ export default function TeachersTab() {
                       </div>
                     </div>
 
-                    {/* Award Image Box */}
-                    <div className="lg:col-span-1">
-                      <label className="text-[11px] font-semibold text-gray-600 block mb-1">รูปถ่ายตอนรับรางวัล</label>
-                      <div className="relative aspect-video rounded-xl overflow-hidden border-2 border-dashed border-gray-300 hover:border-orange-400 bg-white flex flex-col items-center justify-center group transition-colors">
-                        {award.imageUrl ? (
-                          <>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={award.imageUrl} alt={award.title} className="w-full h-full object-cover" />
-                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-opacity">
-                              <label className="px-2.5 py-1 bg-white text-gray-800 text-[11px] font-bold rounded-md cursor-pointer hover:bg-gray-100">
-                                <span>เปลี่ยน</span>
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  className="hidden"
-                                  onChange={(e) => {
-                                    const f = e.target.files?.[0];
-                                    if (f) handleAwardImageUpload(award.id, f);
-                                  }}
-                                />
-                              </label>
-                              <button
-                                type="button"
-                                onClick={() => handleUpdateAward(award.id, "imageUrl", "")}
-                                className="px-2 py-1 bg-rose-600 text-white text-[11px] font-bold rounded-md hover:bg-rose-700"
-                              >
-                                ลบรูป
-                              </button>
-                            </div>
-                          </>
-                        ) : (
-                          <label className="flex flex-col items-center justify-center p-2 text-center cursor-pointer w-full h-full text-gray-400 hover:text-orange-500">
-                            <Upload className="w-5 h-5 mb-1" />
-                            <span className="text-[11px] font-bold">อัปโหลดรูปรับรางวัล</span>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={(e) => {
-                                const f = e.target.files?.[0];
-                                if (f) handleAwardImageUpload(award.id, f);
-                              }}
-                            />
+                    {/* Award Photos Gallery & Cover Selector */}
+                    <div className="pt-3 border-t border-gray-200/80">
+                      <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+                        <div className="flex items-center gap-2">
+                          <label className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                            <ImageIcon className="w-3.5 h-3.5 text-orange-500" />
+                            <span>รูปถ่ายตอนรับรางวัลและภาพเกียรติบัตร (เพิ่มได้หลายรูป / เลือกรูปหน้าปกได้)</span>
                           </label>
-                        )}
+                          <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-bold border border-amber-200">
+                            {((award.images && award.images.length > 0) ? award.images.length : (award.imageUrl ? 1 : 0))} รูป
+                          </span>
+                        </div>
+                        <span className="text-[11px] text-gray-400">
+                          ⭐ แตะปุ่ม "ตั้งเป็นหน้าปก" เพื่อเลือกรูปหลัก
+                        </span>
+                      </div>
+
+                      {/* Horizontal Flowing Gallery */}
+                      <div className="flex items-center gap-3 overflow-x-auto pb-2 pt-1 scrollbar-thin">
+                        {/* Add More Photos Button Box */}
+                        <label className="w-32 h-24 shrink-0 rounded-xl border-2 border-dashed border-orange-300 hover:border-orange-500 bg-orange-50/50 hover:bg-orange-50 flex flex-col items-center justify-center gap-1 cursor-pointer transition-all text-orange-600 active:scale-98">
+                          <Plus className="w-5 h-5" />
+                          <span className="text-[11px] font-bold">+ เพิ่มรูปภาพ</span>
+                          <span className="text-[9px] text-orange-400 text-center leading-tight">เลือกได้หลายรูปพร้อมกัน</span>
+                          <input
+                            type="file"
+                            multiple
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              if (e.target.files && e.target.files.length > 0) {
+                                handleAwardImagesUpload(award.id, e.target.files);
+                                e.target.value = '';
+                              }
+                            }}
+                          />
+                        </label>
+
+                        {/* List of Photos */}
+                        {((award.images && award.images.length > 0) ? award.images : (award.imageUrl ? [award.imageUrl] : [])).map((imgUrl, imgIdx) => {
+                          const isCover = (award.coverImage || award.imageUrl) === imgUrl || (!award.coverImage && imgIdx === 0);
+                          return (
+                            <div
+                              key={imgIdx}
+                              className={`relative w-40 h-24 shrink-0 rounded-xl overflow-hidden border-2 transition-all group bg-gray-100 shadow-2xs ${
+                                isCover
+                                  ? "border-amber-500 ring-2 ring-amber-300/60 shadow-xs"
+                                  : "border-gray-200 hover:border-gray-300"
+                              }`}
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={imgUrl} alt={`award-img-${imgIdx}`} className="w-full h-full object-cover" />
+
+                              {/* Cover Badge */}
+                              {isCover ? (
+                                <div className="absolute top-1.5 left-1.5 z-10 pointer-events-none">
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500 text-white text-[10px] font-bold shadow-xs">
+                                    <Star className="w-3 h-3 fill-white" />
+                                    <span>หน้าปก</span>
+                                  </span>
+                                </div>
+                              ) : (
+                                <div className="absolute top-1.5 left-1.5 z-10 opacity-75 group-hover:opacity-100">
+                                  <span className="px-1.5 py-0.5 rounded bg-black/60 text-white text-[9px] font-mono">
+                                    รูปที่ {imgIdx + 1}
+                                  </span>
+                                </div>
+                              )}
+
+                              {/* Hover Overlay Controls */}
+                              <div className="absolute inset-0 bg-black/65 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5 p-1 z-20">
+                                {!isCover && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSetAwardCover(award.id, imgUrl)}
+                                    className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-bold rounded-md shadow-xs transition-colors cursor-pointer flex items-center gap-1"
+                                  >
+                                    <Star className="w-3 h-3 fill-white" />
+                                    <span>ตั้งเป็นหน้าปก</span>
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteAwardImage(award.id, imgIdx)}
+                                  className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-bold rounded-md shadow-xs transition-colors cursor-pointer flex items-center gap-1"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                  <span>ลบรูปนี้</span>
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
