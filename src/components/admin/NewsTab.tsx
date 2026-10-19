@@ -31,8 +31,21 @@ export default function NewsTab() {
   const [newsDate, setNewsDate] = useState("");
   const [newsImageUrl, setNewsImageUrl] = useState("");
   const [newsImageFile, setNewsImageFile] = useState<File | null>(null);
+  const [newsImagePreview, setNewsImagePreview] = useState<string>("");
   const [editingNewsId, setEditingNewsId] = useState<string | null>(null);
   const [isNewsLoading, setIsNewsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!newsImageFile) {
+      setNewsImagePreview("");
+      return;
+    }
+    const url = URL.createObjectURL(newsImageFile);
+    setNewsImagePreview(url);
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [newsImageFile]);
 
   // Activities / Calendar states
   const [activitiesList, setActivitiesList] = useState<Activity[]>([]);
@@ -287,10 +300,10 @@ export default function NewsTab() {
                     </div>
                   </div>
                   
-                  {newsImageFile ? (
+                  {newsImagePreview ? (
                     <div className="mt-3 relative w-full aspect-video flex items-center justify-center bg-slate-100 rounded-xl overflow-hidden border border-slate-200 p-2 shadow-inner">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={URL.createObjectURL(newsImageFile)} alt="preview" className="max-h-full w-auto max-w-full object-contain rounded-lg" />
+                      <img src={newsImagePreview} alt="preview" className="max-h-full w-auto max-w-full object-contain rounded-lg" />
                     </div>
                   ) : editingNewsId && newsImageUrl ? (
                     <div className="mt-3 relative w-full aspect-video flex items-center justify-center bg-slate-100 rounded-xl overflow-hidden border border-slate-200 p-2 shadow-inner">

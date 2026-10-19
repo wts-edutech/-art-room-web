@@ -52,6 +52,34 @@ export default function AwardsTab() {
   const [cardSize, setCardSize] = useState<"compact" | "normal">("compact");
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Memoized Preview URLs with automatic revoking to prevent memory leaks and typing lag
+  const [awardImagePreview, setAwardImagePreview] = useState<string>("");
+  const [awardCertPreview, setAwardCertPreview] = useState<string>("");
+
+  useEffect(() => {
+    if (!awardImageFile) {
+      setAwardImagePreview("");
+      return;
+    }
+    const url = URL.createObjectURL(awardImageFile);
+    setAwardImagePreview(url);
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [awardImageFile]);
+
+  useEffect(() => {
+    if (!awardCertificateFile) {
+      setAwardCertPreview("");
+      return;
+    }
+    const url = URL.createObjectURL(awardCertificateFile);
+    setAwardCertPreview(url);
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [awardCertificateFile]);
+
   const fetchData = async () => {
     setIsLoading(true);
     try {
@@ -89,9 +117,9 @@ export default function AwardsTab() {
       formData.append("organization", organization);
       formData.append("isHighlight", isHighlight.toString());
       
-      // Auto-compress image before upload to prevent D1 size limit errors
+      // Auto-compress image before upload to prevent D1 size limit errors (fast, no heavy border loop)
       if (awardImageFile) {
-        const compressedImage = await optimizeImageToFile(awardImageFile, { maxWidth: 1200, maxHeight: 1200, quality: 0.75 });
+        const compressedImage = await optimizeImageToFile(awardImageFile, { maxWidth: 1024, maxHeight: 1024, quality: 0.75, autoTrimBorders: false });
         formData.append("image", compressedImage);
       } else if (awardImageUrl) {
         formData.append("imageUrl", awardImageUrl);
@@ -99,7 +127,7 @@ export default function AwardsTab() {
 
       // Auto-compress certificate before upload
       if (awardCertificateFile) {
-        const compressedCert = await optimizeImageToFile(awardCertificateFile, { maxWidth: 1200, maxHeight: 1200, quality: 0.75 });
+        const compressedCert = await optimizeImageToFile(awardCertificateFile, { maxWidth: 1200, maxHeight: 1200, quality: 0.75, autoTrimBorders: false });
         formData.append("certificate", compressedCert);
       } else if (awardCertificateUrl) {
         formData.append("certificateUrl", awardCertificateUrl);
@@ -344,11 +372,11 @@ export default function AwardsTab() {
               </div>
               
               {/* Image Preview with Clear/Change buttons */}
-              {awardImageFile || (editingAwardId && awardImageUrl) ? (
+              {awardImagePreview || (editingAwardId && awardImageUrl) ? (
                 <div className="mt-2 relative w-full h-36 flex items-center justify-center bg-gray-900/5 rounded-xl overflow-hidden border border-gray-200 p-2 group shadow-inner">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img 
-                    src={awardImageFile ? URL.createObjectURL(awardImageFile) : awardImageUrl} 
+                    src={awardImagePreview || awardImageUrl} 
                     alt="preview" 
                     className="h-full w-auto max-w-full object-contain rounded-lg" 
                     onError={(e) => (e.currentTarget.src = "https://placehold.co/600x400/eeeeee/999999?text=Image+Not+Found")}
@@ -356,7 +384,7 @@ export default function AwardsTab() {
                   
                   {/* Status Overlay */}
                   <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-sm text-white text-[10px] px-2 py-0.5 rounded-md font-semibold">
-                    {awardImageFile ? "รูปใหม่ที่เลือก" : "รูปเดิม"}
+                    {awardImagePreview ? "รูปใหม่ที่เลือก" : "รูปเดิม"}
                   </div>
 
                   {/* Action Overlay */}
@@ -374,6 +402,7 @@ export default function AwardsTab() {
                       onClick={() => {
                         setAwardImageFile(null);
                         setAwardImageUrl("");
+                        setAwardImagePreview("");
                         const fileInput = document.getElementById("awardImageInput") as HTMLInputElement;
                         if (fileInput) fileInput.value = "";
                       }}
@@ -418,11 +447,11 @@ export default function AwardsTab() {
               </div>
               
               {/* Certificate Preview with Clear/Change buttons */}
-              {awardCertificateFile || (editingAwardId && awardCertificateUrl) ? (
+              {awardCertPreview || (editingAwardId && awardCertificateUrl) ? (
                 <div className="mt-2 relative w-full h-36 flex items-center justify-center bg-red-950/5 rounded-xl overflow-hidden border border-red-200 p-2 group shadow-inner">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img 
-                    src={awardCertificateFile ? URL.createObjectURL(awardCertificateFile) : awardCertificateUrl} 
+                    src={awardCertPreview || awardCertificateUrl} 
                     alt="certificate preview" 
                     className="h-full w-auto max-w-full object-contain rounded-lg" 
                     onError={(e) => (e.currentTarget.src = "https://placehold.co/600x400/eeeeee/999999?text=Cert+Not+Found")}
@@ -430,7 +459,7 @@ export default function AwardsTab() {
                   
                   {/* Status Overlay */}
                   <div className="absolute top-2 left-2 bg-red-700 text-white text-[10px] px-2 py-0.5 rounded-md font-semibold">
-                    {awardCertificateFile ? "เกียรติบัตรใหม่ที่เลือก" : "เกียรติบัตรเดิม"}
+                    {awardCertPreview ? "เกียรติบัตรใหม่ที่เลือก" : "เกียรติบัตรเดิม"}
                   </div>
 
                   {/* Action Overlay */}

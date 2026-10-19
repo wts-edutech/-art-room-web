@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { 
   Trash2, 
@@ -100,13 +100,44 @@ export default function ActivitiesTab() {
   const [activityExistingImages, setActivityExistingImages] = useState<string[]>([]);
   const [coverImageId, setCoverImageId] = useState<string>("");
   
+  // Clean Object URLs with memoization and explicit revoking to prevent memory leaks and stutter
+  const [newImagePreviews, setNewImagePreviews] = useState<{ id: string; file: File; url: string }[]>([]);
+  const [certPreviewUrl, setCertPreviewUrl] = useState<string>("");
+
+  useEffect(() => {
+    const previews = activityImageFiles.map((file, i) => ({
+      id: `new-${i}`,
+      file,
+      url: URL.createObjectURL(file),
+    }));
+    setNewImagePreviews(previews);
+
+    return () => {
+      previews.forEach((p) => URL.revokeObjectURL(p.url));
+    };
+  }, [activityImageFiles]);
+
   // Certificate states (รองรับทั้งไฟล์และลิงก์)
   const [activityCertificateUrl, setActivityCertificateUrl] = useState("");
   const [activityCertificateFile, setActivityCertificateFile] = useState<File | null>(null);
 
+  useEffect(() => {
+    if (!activityCertificateFile) {
+      setCertPreviewUrl("");
+      return;
+    }
+    const url = URL.createObjectURL(activityCertificateFile);
+    setCertPreviewUrl(url);
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [activityCertificateFile]);
+
   const [editingActivityId, setEditingActivityId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitProgress, setSubmitProgress] = useState("");
+  const [isCleaningDuplicates, setIsCleaningDuplicates] = useState(false);
 
   // Awards sync tracking & Modal
   const [isSendingAward, setIsSendingAward] = useState(false);
@@ -148,6 +179,45 @@ export default function ActivitiesTab() {
     fetchData();
   }, []);
 
+  // Duplicate detection
+  const duplicateGroups = useMemo(() => {
+    const groups: Record<string, any[]> = {};
+    activitiesList.forEach((act) => {
+      const key = `${(act.title || "").trim().toLowerCase()}____${(act.date || "").trim()}`;
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(act);
+    });
+    return Object.values(groups).filter((g) => g.length > 1);
+  }, [activitiesList]);
+
+  const totalDuplicatesCount = duplicateGroups.reduce((acc, g) => acc + (g.length - 1), 0);
+
+  const handleCleanupDuplicates = async () => {
+    if (!confirm(`ต้องการล้างรายการกิจกรรมที่ซ้ำกัน (${totalDuplicatesCount} รายการ) โดยจะเก็บรายการล่าสุดไว้ใช่หรือไม่?`)) return;
+    setIsCleaningDuplicates(true);
+    try {
+      for (const group of duplicateGroups) {
+        // Keep the latest record (sort by id descending)
+        const sorted = [...group].sort((a, b) => {
+          const idA = a.id || "";
+          const idB = b.id || "";
+          return idB.localeCompare(idA);
+        });
+        const toDelete = sorted.slice(1);
+        for (const item of toDelete) {
+          await fetch(`/api/activities?id=${item.id}`, { method: "DELETE" });
+        }
+      }
+      await fetchData();
+      alert("ล้างรายการกิจกรรมที่ซ้ำกันเรียบร้อยแล้ว");
+    } catch (err) {
+      console.error("Cleanup failed:", err);
+      alert("เกิดข้อผิดพลาดในการล้างรายการซ้ำ");
+    } finally {
+      setIsCleaningDuplicates(false);
+    }
+  };
+
   const handleAddActivity = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activityTitle || !activityDate) return;
@@ -166,6 +236,7 @@ export default function ActivitiesTab() {
     }
     
     setIsSubmitting(true);
+    setSubmitProgress("กำลังประมวลผลข้อมูล...");
     const formData = new FormData();
     if (editingActivityId) formData.append("id", editingActivityId);
     formData.append("title", activityTitle);
@@ -176,13 +247,26 @@ export default function ActivitiesTab() {
     formData.append("category", activityCategory || "ทั่วไป");
     formData.append("color", activityColor || "red");
     
-    // Process new images
-    for (let i = 0; i < activityImageFiles.length; i++) {
-      const file = activityImageFiles[i];
-      const compressed = await optimizeImageToFile(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.82 });
-      formData.append("images", compressed);
-      if (coverImageId === `new-${i}` || (!coverImageId && i === 0 && activityExistingImages.length === 0)) {
-        formData.append("image", compressed);
+    // Process new images in parallel with lightweight options (ultra fast and responsive)
+    if (activityImageFiles.length > 0) {
+      setSubmitProgress(`กำลังปรับขนาดรูปภาพ ${activityImageFiles.length} รูป...`);
+      const compressedFiles = await Promise.all(
+        activityImageFiles.map((file) =>
+          optimizeImageToFile(file, {
+            maxWidth: 960,
+            maxHeight: 960,
+            quality: 0.72,
+            autoTrimBorders: false, // Prevents heavy CPU canvas pixel analysis loops
+          })
+        )
+      );
+
+      for (let i = 0; i < compressedFiles.length; i++) {
+        const compressed = compressedFiles[i];
+        formData.append("images", compressed);
+        if (coverImageId === `new-${i}` || (!coverImageId && i === 0 && activityExistingImages.length === 0)) {
+          formData.append("image", compressed);
+        }
       }
     }
 
@@ -198,7 +282,13 @@ export default function ActivitiesTab() {
     if (activityCertificateFile) {
       const isImg = activityCertificateFile.type.startsWith("image/");
       if (isImg) {
-        const compressedCert = await optimizeImageToFile(activityCertificateFile, { maxWidth: 1600, maxHeight: 1600, quality: 0.82 });
+        setSubmitProgress("กำลังปรับขนาดเกียรติบัตร...");
+        const compressedCert = await optimizeImageToFile(activityCertificateFile, {
+          maxWidth: 1200,
+          maxHeight: 1200,
+          quality: 0.75,
+          autoTrimBorders: false,
+        });
         formData.append("certificate", compressedCert);
       } else {
         formData.append("certificate", activityCertificateFile);
@@ -208,6 +298,7 @@ export default function ActivitiesTab() {
     }
 
     try {
+      setSubmitProgress("กำลังบันทึกลงระบบ...");
       const method = editingActivityId ? "PUT" : "POST";
       const res = await fetch("/api/activities", {
         method,
@@ -225,6 +316,7 @@ export default function ActivitiesTab() {
       alert("ไม่สามารถบันทึกกิจกรรมได้");
     } finally {
       setIsSubmitting(false);
+      setSubmitProgress("");
     }
   };
 
@@ -669,18 +761,18 @@ export default function ActivitiesTab() {
                       })}
 
                       {/* New Uploaded Images */}
-                      {activityImageFiles.map((file, i) => {
-                        const isCover = coverImageId === `new-${i}` || (!coverImageId && activityExistingImages.length === 0 && i === 0);
+                      {newImagePreviews.map((item, i) => {
+                        const isCover = coverImageId === item.id || (!coverImageId && activityExistingImages.length === 0 && i === 0);
                         return (
                           <div 
-                            key={`new-${i}`} 
+                            key={item.id} 
                             className={`relative aspect-square bg-gray-950 rounded-xl overflow-hidden border-2 transition-all flex items-center justify-center group ${
                               isCover ? "border-orange-500 ring-2 ring-orange-500/40 shadow-sm" : "border-emerald-300 opacity-90 hover:opacity-100"
                             }`}
                           >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img 
-                              src={URL.createObjectURL(file)} 
+                              src={item.url} 
                               alt={`new ${i}`} 
                               className="max-h-full max-w-full object-contain" 
                             />
@@ -694,7 +786,7 @@ export default function ActivitiesTab() {
                             ) : (
                               <button
                                 type="button"
-                                onClick={() => setCoverImageId(`new-${i}`)}
+                                onClick={() => setCoverImageId(item.id)}
                                 className="absolute bottom-1 inset-x-1 bg-black/80 hover:bg-orange-500 text-white text-[9px] py-1 rounded-md font-bold transition-all z-20 shadow-xs cursor-pointer"
                               >
                                 ตั้งเป็นโปรไฟล์
@@ -706,7 +798,7 @@ export default function ActivitiesTab() {
                               type="button" 
                               onClick={() => {
                                 setActivityImageFiles((prev) => prev.filter((_, idx) => idx !== i));
-                                if (coverImageId === `new-${i}`) setCoverImageId("");
+                                if (coverImageId === item.id) setCoverImageId("");
                               }} 
                               className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white p-1 rounded-full shadow-sm z-20 cursor-pointer"
                               title="ลบรูปนี้"
@@ -760,7 +852,6 @@ export default function ActivitiesTab() {
                         const file = e.target.files?.[0];
                         if (file) {
                           setActivityCertificateFile(file);
-                          setActivityCertificateUrl(URL.createObjectURL(file));
                         }
                       }}
                     />
@@ -770,12 +861,12 @@ export default function ActivitiesTab() {
                   {(activityCertificateFile || activityCertificateUrl) && (
                     <div className="flex items-center justify-between p-2 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900">
                       <div className="flex items-center gap-2 min-w-0 pr-2">
-                        {activityCertificateFile?.type === "application/pdf" || activityCertificateUrl.endsWith(".pdf") ? (
+                        {activityCertificateFile?.type === "application/pdf" || (!activityCertificateFile && activityCertificateUrl.endsWith(".pdf")) ? (
                           <FileText className="w-5 h-5 text-amber-600 shrink-0" />
                         ) : (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
-                            src={activityCertificateUrl}
+                            src={certPreviewUrl || activityCertificateUrl}
                             alt="Certificate"
                             className="w-8 h-8 rounded object-cover border border-amber-200 shrink-0 bg-white"
                             onError={(e) => (e.currentTarget.style.display = "none")}
@@ -795,6 +886,7 @@ export default function ActivitiesTab() {
                         onClick={() => {
                           setActivityCertificateFile(null);
                           setActivityCertificateUrl("");
+                          setCertPreviewUrl("");
                           const input = document.getElementById("activityCertFileInput") as HTMLInputElement;
                           if (input) input.value = "";
                         }}
@@ -835,7 +927,7 @@ export default function ActivitiesTab() {
                   {isSubmitting ? (
                     <>
                       <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
-                      <span>กำลังบันทึก...</span>
+                      <span>{submitProgress || "กำลังบันทึก..."}</span>
                     </>
                   ) : editingActivityId ? (
                     "บันทึกการแก้ไข"
@@ -866,9 +958,27 @@ export default function ActivitiesTab() {
                 <Calendar className="text-orange-500 w-4 h-4" /> 
                 รายการกิจกรรมทั้งหมด
               </h2>
-              <span className="text-xs font-semibold text-gray-600 bg-white px-2.5 py-1 rounded-full border border-gray-200 shadow-2xs">
-                {activitiesList.length} รายการ
-              </span>
+              <div className="flex items-center gap-2">
+                {totalDuplicatesCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleCleanupDuplicates}
+                    disabled={isCleaningDuplicates}
+                    className="px-2.5 py-1 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-300 rounded-lg flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
+                    title="ลบรายการกิจกรรมที่มีชื่อและวันเดียวกันซ้ำกัน โดยเก็บข้อมูลล่าสุดไว้"
+                  >
+                    {isCleaningDuplicates ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-600" />
+                    ) : (
+                      <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                    )}
+                    <span>🧹 ล้างข้อมูลซ้ำ ({totalDuplicatesCount})</span>
+                  </button>
+                )}
+                <span className="text-xs font-semibold text-gray-600 bg-white px-2.5 py-1 rounded-full border border-gray-200 shadow-2xs">
+                  {activitiesList.length} รายการ
+                </span>
+              </div>
             </div>
 
             {isLoading ? (

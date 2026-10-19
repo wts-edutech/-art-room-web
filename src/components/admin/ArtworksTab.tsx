@@ -42,9 +42,22 @@ export default function ArtworksTab() {
   const [customDimensions, setCustomDimensions] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [artworkPreview, setArtworkPreview] = useState<string>("");
   const [editingArtworkId, setEditingArtworkId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!imageFile) {
+      setArtworkPreview("");
+      return;
+    }
+    const url = URL.createObjectURL(imageFile);
+    setArtworkPreview(url);
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [imageFile]);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -173,7 +186,7 @@ export default function ArtworksTab() {
   };
 
   const handleAiAutoEnhance = async () => {
-    const currentSrc = imageFile ? URL.createObjectURL(imageFile) : imageUrl;
+    const currentSrc = artworkPreview || imageUrl;
     if (!currentSrc) return;
 
     try {
@@ -199,7 +212,6 @@ export default function ArtworksTab() {
         if (!blob) return;
         const file = new File([blob], "ai-enhanced-artwork.jpg", { type: "image/jpeg" });
         setImageFile(file);
-        setImageUrl(URL.createObjectURL(file));
       }, "image/jpeg", 0.90);
     } catch (err) {
       console.error("AI Enhance error:", err);
@@ -207,7 +219,7 @@ export default function ArtworksTab() {
   };
 
   const handleRotateImage = async () => {
-    const currentSrc = imageFile ? URL.createObjectURL(imageFile) : imageUrl;
+    const currentSrc = artworkPreview || imageUrl;
     if (!currentSrc) return;
 
     try {
@@ -233,7 +245,6 @@ export default function ArtworksTab() {
         if (!blob) return;
         const file = new File([blob], "rotated-artwork.jpg", { type: "image/jpeg" });
         setImageFile(file);
-        setImageUrl(URL.createObjectURL(file));
       }, "image/jpeg", 0.90);
     } catch (err) {
       console.error("Rotate error:", err);
@@ -383,11 +394,11 @@ export default function ArtworksTab() {
               </div>
               
               {/* Image Preview with AI Enhance, Rotate, Change & Clear buttons */}
-              {imageFile || (editingArtworkId && imageUrl) ? (
+              {artworkPreview || (editingArtworkId && imageUrl) ? (
                 <div className="mt-3 relative w-full h-64 bg-slate-900/5 rounded-2xl overflow-hidden border border-slate-200 p-2 group shadow-inner flex flex-col items-center justify-center">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img 
-                    src={imageFile ? URL.createObjectURL(imageFile) : imageUrl} 
+                    src={artworkPreview || imageUrl} 
                     alt="preview" 
                     className="max-h-full w-auto max-w-full object-contain rounded-xl shadow-sm" 
                     onError={(e) => (e.currentTarget.src = "https://placehold.co/600x400/eeeeee/999999?text=Image+Not+Found")}
