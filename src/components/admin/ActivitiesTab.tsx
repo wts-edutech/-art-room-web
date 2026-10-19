@@ -151,6 +151,19 @@ export default function ActivitiesTab() {
   const handleAddActivity = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activityTitle || !activityDate) return;
+
+    // Check if adding duplicate activity title & date without editing mode
+    if (!editingActivityId) {
+      const duplicate = activitiesList.find(
+        (a) => a.title?.trim() === activityTitle.trim() && a.date?.trim() === activityDate.trim()
+      );
+      if (duplicate) {
+        const proceed = confirm(
+          `⚠️ พบกิจกรรม "${activityTitle}" ในวันที่เดียวกันนี้อยู่ในระบบแล้ว\n\nต้องการเพิ่มเป็นกิจกรรมใหม่อีกรายการหนึ่งใช่หรือไม่?\n\n(หากต้องการแก้ไขกิจกรรมเดิม กรุณากด "ยกเลิก" แล้วไปกดปุ่ม "✏️ แก้ไข" ที่การ์ดกิจกรรมนั้นแทน)`
+        );
+        if (!proceed) return;
+      }
+    }
     
     setIsSubmitting(true);
     const formData = new FormData();
