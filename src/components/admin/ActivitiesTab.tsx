@@ -213,6 +213,10 @@ export default function ActivitiesTab() {
   const [ocrStatus, setOcrStatus] = useState("");
   const [detectedNameChips, setDetectedNameChips] = useState<string[]>([]);
 
+  // Student roster for smart linking & autocomplete
+  const [studentsList, setStudentsList] = useState<Array<{ id: string; name: string; classroom: string; grade_level?: string }>>([]);
+  const [isStudentDropdownOpen, setIsStudentDropdownOpen] = useState(false);
+
   // Send to Awards Customization Modal State
   const [awardModalData, setAwardModalData] = useState<{
     activity: any;
@@ -246,7 +250,27 @@ export default function ActivitiesTab() {
 
   useEffect(() => {
     fetchData();
+    // Load student roster for smart linking
+    fetch("/api/students")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) setStudentsList(data);
+      })
+      .catch((err) => console.error("Failed to load students", err));
   }, []);
+
+  const filteredStudents = useMemo(() => {
+    if (!awardModalData?.student) return [];
+    const query = awardModalData.student.trim().toLowerCase();
+    if (!query) return [];
+    return studentsList
+      .filter((s) => 
+        (s.name && s.name.toLowerCase().includes(query)) ||
+        (s.id && s.id.includes(query)) ||
+        (s.classroom && s.classroom.toLowerCase().includes(query))
+      )
+      .slice(0, 8);
+  }, [studentsList, awardModalData?.student]);
 
   // Duplicate detection
   const duplicateGroups = useMemo(() => {
@@ -459,14 +483,14 @@ export default function ActivitiesTab() {
     }
   };
 
-  // OCR Poster / Certificate Scanner
-  const handleOcrScan = async (imageUrl: string) => {
+  // OCR Poster / Certificate Scanner with Student Roster matching
+  const handleOcrScan = async (imageUrl: string, currentStudents = studentsList) => {
     if (!imageUrl) return;
     setIsOcrScanning(true);
-    setOcrStatus("กำลังเชื่อมต่อระบบอ่านตัวอักษร...");
+    setOcrStatus("🔍 กำลังอ่านข้อความจากโปสเตอร์/เกียรติบัตร...");
     try {
       if (!(window as any).Tesseract) {
-        setOcrStatus("กำลังโหลดโมเดล OCR (ภาษาไทย & อังกฤษ)...");
+        setOcrStatus("กำลังโหลดระบบอ่านภาพ AI (Tesseract)...");
         await new Promise<void>((resolve, reject) => {
           const script = document.createElement("script");
           script.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
@@ -477,7 +501,7 @@ export default function ActivitiesTab() {
       }
 
       const Tesseract = (window as any).Tesseract;
-      setOcrStatus("กำลังสแกนอ่านข้อความในโปสเตอร์/เกียรติบัตร...");
+      setOcrStatus("🔍 กำลังสแกนหาชื่อนักเรียนในภาพโปสเตอร์...");
 
       const worker = await Tesseract.createWorker("tha+eng");
       const ret = await worker.recognize(imageUrl);
@@ -486,12 +510,26 @@ export default function ActivitiesTab() {
       const text = ret?.data?.text || "";
       const { names, grade, awardLevel } = extractThaiNamesAndInfo(text);
 
+      // Match against official student roster
+      const matchedFromRoster = currentStudents.filter((s) => {
+        if (!s.name) return false;
+        const clean = s.name.replace(/^(เด็กชาย|เด็กหญิง|นาย|นางสาว|ด\.ช\.|ด\.ญ\.)\s*/, "").trim();
+        const parts = clean.split(/\s+/).filter(p => p.length >= 3);
+        if (clean && text.includes(clean)) return true;
+        if (parts.length > 0 && parts.every(p => text.includes(p))) return true;
+        return false;
+      });
+
+      const candidateNames = [...names];
+      matchedFromRoster.forEach(s => {
+        if (!candidateNames.includes(s.name)) candidateNames.unshift(s.name);
+      });
+
       const lines = text
         .split("\n")
         .map((l: string) => l.trim())
         .filter((l: string) => l.length >= 3 && l.length <= 40);
 
-      const candidateNames = [...names];
       for (const line of lines) {
         if (
           /^[ก-๙\s]{4,30}$/.test(line) &&
@@ -508,25 +546,26 @@ export default function ActivitiesTab() {
       const allFound = Array.from(new Set(candidateNames));
       if (allFound.length > 0) {
         setDetectedNameChips((prev) => Array.from(new Set([...prev, ...allFound])));
-        if (awardModalData) {
-          setAwardModalData((prev) =>
-            prev
-              ? {
-                  ...prev,
-                  student: allFound[0],
-                  grade: grade || prev.grade,
-                  awardLevel: awardLevel || prev.awardLevel,
-                }
-              : null
-          );
-        }
-        setOcrStatus(`✨ สแกนสำเร็จ! พบ ${allFound.length} ข้อความ (คลิกที่แท็กชื่อเพื่อเลือกได้ทันที)`);
+        setAwardModalData((prev) => {
+          if (!prev) return null;
+          const chosenStudent = prev.student && prev.student.trim() !== "" ? prev.student : allFound[0];
+          const chosenGrade = matchedFromRoster.length > 0 && matchedFromRoster[0].classroom
+            ? matchedFromRoster[0].classroom
+            : (grade || prev.grade);
+          return {
+            ...prev,
+            student: chosenStudent,
+            grade: chosenGrade,
+            awardLevel: awardLevel || prev.awardLevel,
+          };
+        });
+        setOcrStatus(`✨ ตรวจพบชื่อสำเร็จ: "${allFound[0]}" ${allFound.length > 1 ? `(+อีก ${allFound.length - 1} ข้อความ)` : ""}`);
       } else {
-        setOcrStatus("สแกนเสร็จสิ้น ไม่พบชื่อในรูปแบบมาตรฐาน สามารถกดปุ่มแว่นขยายเพื่อดูภาพใหญ่และพิมพ์ชื่อได้ค่ะ");
+        setOcrStatus("สแกนเสร็จสิ้น ไม่พบชื่อในรูปแบบมาตรฐาน สามารถพิมพ์ค้นหาชื่อจากรายชื่อนักเรียนในโรงเรียนด้านขวาได้เลยค่ะ");
       }
     } catch (err) {
       console.error("OCR error:", err);
-      setOcrStatus("ไม่สามารถสแกนอัตโนมัติได้ สามารถกดปุ่มแว่นขยายเพื่อซูมดูภาพใหญ่ได้ค่ะ");
+      setOcrStatus("ไม่สามารถสแกนอัตโนมัติได้ สามารถเลือกชื่อจากรายชื่อนักเรียนด้านขวาได้เลยค่ะ");
     } finally {
       setIsOcrScanning(false);
     }
@@ -541,16 +580,37 @@ export default function ActivitiesTab() {
     const fullText = `${activity.title || ""} ${activity.description || ""}`;
     const { names, grade, awardLevel } = extractThaiNamesAndInfo(fullText);
 
-    let defaultStudent = names.length > 0 ? names[0] : "";
-    if (!defaultStudent) {
-      defaultStudent = "นักเรียนตัวแทนโรงเรียนวชิรธรรมสาธิต";
+    // Match against official student roster in memory
+    const matchedStudents = studentsList.filter((s) => {
+      if (!s.name) return false;
+      const clean = s.name.replace(/^(เด็กชาย|เด็กหญิง|นาย|นางสาว|ด\.ช\.|ด\.ญ\.)\s*/, "").trim();
+      const parts = clean.split(/\s+/).filter(p => p.length >= 3);
+      if (clean && fullText.includes(clean)) return true;
+      if (parts.length > 0 && parts.every(p => fullText.includes(p))) return true;
+      return false;
+    });
+
+    const candidateChips = [...names];
+    matchedStudents.forEach(ms => {
+      if (!candidateChips.includes(ms.name)) candidateChips.unshift(ms.name);
+    });
+
+    let defaultStudent = "";
+    let defaultGrade = grade || "ม.3/1";
+
+    if (matchedStudents.length > 0) {
+      defaultStudent = matchedStudents[0].name;
+      if (matchedStudents[0].classroom) defaultGrade = matchedStudents[0].classroom;
+    } else if (names.length > 0) {
+      defaultStudent = names[0];
     }
 
-    setDetectedNameChips(names);
+    setDetectedNameChips(candidateChips);
     setActivePosterIndex(0);
     setIsZoomViewerOpen(false);
     setZoomScale(1);
     setOcrStatus("");
+    setIsStudentDropdownOpen(false);
 
     // Choose primary cover image
     let cover = activity.imageUrl || (allImgs.length > 0 ? allImgs[0] : "");
@@ -559,7 +619,7 @@ export default function ActivitiesTab() {
       activity,
       title: activity.title || "กิจกรรมศิลปะ",
       student: defaultStudent,
-      grade: grade || "ม.3/1",
+      grade: defaultGrade,
       awardLevel: awardLevel || "รางวัลชนะเลิศ",
       competitionLevel: "ระดับชาติ/ประเทศ",
       year: year || "2568",
@@ -570,6 +630,13 @@ export default function ActivitiesTab() {
       certificateUrl: activity.certificateUrl || activity.certificate_url || "",
       isHighlight: true,
     });
+
+    // Auto-trigger OCR scanning on poster if cover exists and no student was found yet
+    if (cover) {
+      setTimeout(() => {
+        handleOcrScan(cover, studentsList);
+      }, 350);
+    }
   };
 
   // Confirm sending verified data to Awards
@@ -1551,22 +1618,95 @@ export default function ActivitiesTab() {
                       </div>
                     )}
 
-                    {/* 1. Student Name */}
-                    <div>
+                    {/* 1. Student Name with Live Autocomplete Search */}
+                    <div className="relative">
                       <div className="flex items-center justify-between mb-1">
-                        <label className="font-bold text-gray-800">
-                          ชื่อนักเรียน / ผู้ได้รับรางวัล <span className="text-red-500">*</span>
+                        <label className="font-bold text-gray-800 flex items-center gap-1.5">
+                          <span>ชื่อนักเรียน / ผู้ได้รับรางวัล</span>
+                          <span className="text-red-500">*</span>
                         </label>
-                        <span className="text-[10px] text-gray-400">ระบุชื่อจริงหรือชื่อกลุ่มตัวแทน</span>
+                        <span className="text-[10px] text-amber-700 bg-amber-100/80 px-2 py-0.5 rounded-md font-medium">
+                          {studentsList.length > 0 ? `ค้นหาได้จากฐานข้อมูล (${studentsList.length.toLocaleString()} คน)` : "พิมพ์ชื่อนักเรียน"}
+                        </span>
                       </div>
-                      <input 
-                        type="text" 
-                        required
-                        value={awardModalData.student}
-                        onChange={(e) => setAwardModalData({ ...awardModalData, student: e.target.value })}
-                        placeholder="เช่น เด็กหญิงโชคดี มีแมว หรือ คณะนักเรียนตัวแทน"
-                        className="w-full h-9.5 px-3 rounded-xl border border-gray-300 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none text-xs bg-white font-medium shadow-2xs"
-                      />
+                      <div className="relative">
+                        <input 
+                          type="text" 
+                          required
+                          value={awardModalData.student}
+                          onChange={(e) => {
+                            setAwardModalData({ ...awardModalData, student: e.target.value });
+                            setIsStudentDropdownOpen(true);
+                          }}
+                          onFocus={() => setIsStudentDropdownOpen(true)}
+                          placeholder="พิมพ์ชื่อ, นามสกุล หรือเลขประจำตัวนักเรียน เพื่อค้นหา..."
+                          className="w-full h-10 px-3 pr-8 rounded-xl border border-gray-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none text-xs bg-white font-medium shadow-2xs"
+                        />
+                        {awardModalData.student ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAwardModalData({ ...awardModalData, student: "" });
+                              setIsStudentDropdownOpen(true);
+                            }}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer p-1"
+                            title="ล้างข้อความ"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        ) : (
+                          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                        )}
+                      </div>
+
+                      {/* Live Filter Autocomplete Dropdown */}
+                      {isStudentDropdownOpen && awardModalData.student.trim().length >= 1 && (
+                        <div className="absolute left-0 right-0 top-full mt-1 bg-white rounded-2xl shadow-xl border border-amber-200 max-h-56 overflow-y-auto z-50 divide-y divide-gray-100 animate-in fade-in slide-in-from-top-1 duration-150">
+                          {filteredStudents.length > 0 ? (
+                            <>
+                              <div className="px-3 py-1.5 bg-amber-50/80 text-[10px] font-bold text-amber-900 flex items-center justify-between">
+                                <span>พบนักเรียนในโรงเรียน {filteredStudents.length} คน (คลิกเพื่อเลือกทันที):</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setIsStudentDropdownOpen(false)}
+                                  className="text-gray-400 hover:text-gray-600"
+                                >
+                                  ปิด
+                                </button>
+                              </div>
+                              {filteredStudents.map((s) => (
+                                <button
+                                  key={s.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setAwardModalData({
+                                      ...awardModalData,
+                                      student: s.name,
+                                      grade: s.classroom || awardModalData.grade,
+                                    });
+                                    setIsStudentDropdownOpen(false);
+                                  }}
+                                  className="w-full px-3 py-2 text-left hover:bg-amber-50 flex items-center justify-between transition-colors cursor-pointer"
+                                >
+                                  <div>
+                                    <div className="font-bold text-gray-900 text-xs flex items-center gap-1.5">
+                                      <span>{s.name}</span>
+                                    </div>
+                                    <span className="text-[10px] text-gray-400">เลขประจำตัว: {s.id}</span>
+                                  </div>
+                                  <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md">
+                                    ห้อง {s.classroom || "-"}
+                                  </span>
+                                </button>
+                              ))}
+                            </>
+                          ) : (
+                            <div className="p-3 text-center text-gray-500 text-[11px]">
+                              ไม่พบนักเรียนตรงกับ "{awardModalData.student}" (สามารถใช้ชื่อที่พิมพ์นี้ได้เลยค่ะ)
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {/* 2. Grade Level & Award Level */}
