@@ -21,6 +21,70 @@ import {
 } from "lucide-react";
 
 import { optimizeImageToFile } from "@/lib/image-optimizer";
+import { GRADE_GROUPS } from "@/lib/constants/grades";
+
+const AWARD_LEVELS = [
+  "รางวัลชนะเลิศอันดับ 1 (เหรียญทอง)",
+  "รางวัลชนะเลิศ",
+  "รางวัลรองชนะเลิศอันดับที่ 1",
+  "รางวัลรองชนะเลิศอันดับที่ 2",
+  "รางวัลยอดเยี่ยม",
+  "รางวัลระดับเหรียญทอง",
+  "รางวัลระดับเหรียญเงิน",
+  "รางวัลระดับเหรียญทองแดง",
+  "รางวัลชมเชย",
+  "รางวัลเข้าร่วม",
+  "ผ่านการคัดเลือก",
+  "อื่นๆ",
+];
+
+const COMPETITION_LEVELS = [
+  "ระดับสถานศึกษา/กลุ่มโรงเรียนฯ",
+  "ระดับเขตพื้นที่/ระดับจังหวัด",
+  "ระดับภาค/ระดับกลุ่มสถานศึกษา",
+  "ระดับชาติ/ประเทศ",
+  "ระดับนานาชาติ",
+  "อื่นๆ",
+];
+
+// Helper to convert Thai date string into standard DD/MM/YYYY and 4-digit BE Year
+function parseThaiDateToStandard(thaiDateStr: string): { formattedDate: string; year: string } {
+  if (!thaiDateStr) {
+    const curYear = (new Date().getFullYear() + 543).toString();
+    return { formattedDate: "", year: curYear };
+  }
+
+  // Check if year 25xx is in the string
+  const yearMatch = thaiDateStr.match(/\b(25\d{2})\b/);
+  const year = yearMatch ? yearMatch[1] : (new Date().getFullYear() + 543).toString();
+
+  // If already DD/MM/YYYY
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(thaiDateStr.trim())) {
+    return { formattedDate: thaiDateStr.trim(), year };
+  }
+
+  // Extract day number (1-31)
+  const dayMatch = thaiDateStr.match(/\b([1-9]|[12]\d|3[01])\b/);
+  const day = dayMatch ? dayMatch[1].padStart(2, "0") : "01";
+
+  // Match Thai month name
+  const monthMap: Record<string, string> = {
+    "มกรา": "01", "กุมภา": "02", "มีนา": "03", "เมษา": "04", "พฤษภา": "05", "มิถุนา": "06",
+    "กรกฎา": "07", "สิงหา": "08", "กันยา": "09", "ตุลา": "10", "พฤศจิกา": "11", "ธันวา": "12"
+  };
+  let month = "01";
+  for (const [key, val] of Object.entries(monthMap)) {
+    if (thaiDateStr.includes(key)) {
+      month = val;
+      break;
+    }
+  }
+
+  return {
+    formattedDate: `${day}/${month}/${year}`,
+    year
+  };
+}
 
 export default function ActivitiesTab() {
   const [activitiesList, setActivitiesList] = useState<any[]>([]);
@@ -44,10 +108,27 @@ export default function ActivitiesTab() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Awards sync tracking
-  const [sendingAwardId, setSendingAwardId] = useState<string | null>(null);
+  // Awards sync tracking & Modal
+  const [isSendingAward, setIsSendingAward] = useState(false);
   const [sentAwardIds, setSentAwardIds] = useState<Record<string, boolean>>({});
   const [toastMessage, setToastMessage] = useState<{ id: string; title: string; text: string } | null>(null);
+
+  // Send to Awards Customization Modal State
+  const [awardModalData, setAwardModalData] = useState<{
+    activity: any;
+    title: string;
+    student: string;
+    grade: string;
+    awardLevel: string;
+    competitionLevel: string;
+    year: string;
+    date: string;
+    organization: string;
+    description: string;
+    imageUrl: string;
+    certificateUrl: string;
+    isHighlight: boolean;
+  } | null>(null);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -164,7 +245,7 @@ export default function ActivitiesTab() {
     setActivityCategory(activity.category || "ทั่วไป");
     setActivityColor(activity.color || "red");
     setActivityImageUrl(activity.imageUrl || "");
-    setActivityCertificateUrl(activity.certificateUrl || "");
+    setActivityCertificateUrl(activity.certificateUrl || activity.certificate_url || "");
     setActivityCertificateFile(null);
     setActivityImageFiles([]);
     
@@ -204,31 +285,64 @@ export default function ActivitiesTab() {
     }
   };
 
-  // 1-Click Send Activity to Awards Page
-  const handleSendToAwards = async (activity: any) => {
-    setSendingAwardId(activity.id);
+  // Open Send to Awards Customization Modal
+  const handleOpenSendToAwardsModal = (activity: any) => {
+    const { formattedDate, year } = parseThaiDateToStandard(activity.date || "");
+
+    // Choose primary cover image
+    let cover = activity.imageUrl || "";
+    if (!cover && activity.images) {
+      try {
+        const parsed = typeof activity.images === "string" ? JSON.parse(activity.images) : activity.images;
+        if (Array.isArray(parsed) && parsed.length > 0) cover = parsed[0];
+      } catch {}
+    }
+
+    setAwardModalData({
+      activity,
+      title: activity.title || "กิจกรรมศิลปะ",
+      student: "นักเรียนตัวแทนโรงเรียนวชิรธรรมสาธิต",
+      grade: "ม.3/1",
+      awardLevel: "รางวัลชนะเลิศ",
+      competitionLevel: "ระดับชาติ/ประเทศ",
+      year: year || "2568",
+      date: formattedDate || activity.date || "",
+      organization: activity.location || "กลุ่มสาระการเรียนรู้ศิลปะ โรงเรียนวชิรธรรมสาธิต",
+      description: activity.description || "",
+      imageUrl: cover,
+      certificateUrl: activity.certificateUrl || activity.certificate_url || "",
+      isHighlight: true,
+    });
+  };
+
+  // Confirm sending verified data to Awards
+  const handleConfirmSendToAwards = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!awardModalData) return;
+    if (!awardModalData.title || !awardModalData.student) {
+      alert("กรุณาระบุชื่อกิจกรรมและชื่อนักเรียน");
+      return;
+    }
+
+    setIsSendingAward(true);
     try {
-      // Extract Thai Year from date (e.g. "2568") or default to current Thai Year
-      const match = (activity.date || "").match(/25\d{2}/);
-      const year = match ? match[0] : (new Date().getFullYear() + 543).toString();
-
       const formData = new FormData();
-      formData.append("title", activity.title || "กิจกรรมศิลปะ");
-      formData.append("student", "นักเรียนตัวแทนโรงเรียนวชิรธรรมสาธิต");
-      formData.append("grade", "มัธยมศึกษา");
-      formData.append("description", activity.description || "");
-      formData.append("year", year);
-      formData.append("date", activity.date || "");
-      formData.append("awardLevel", "เข้าร่วมการแข่งขัน / ได้รับรางวัล");
-      formData.append("competitionLevel", "ระดับชาติ/ประเทศ");
-      formData.append("organization", activity.location || "กลุ่มสาระการเรียนรู้ศิลปะ โรงเรียนวชิรธรรมสาธิต");
-      formData.append("isHighlight", "true");
+      formData.append("title", awardModalData.title.trim());
+      formData.append("student", awardModalData.student.trim());
+      formData.append("grade", awardModalData.grade.trim());
+      formData.append("description", awardModalData.description || "");
+      formData.append("year", awardModalData.year.trim());
+      formData.append("date", awardModalData.date.trim());
+      formData.append("awardLevel", awardModalData.awardLevel.trim());
+      formData.append("competitionLevel", awardModalData.competitionLevel.trim());
+      formData.append("organization", awardModalData.organization.trim());
+      formData.append("isHighlight", awardModalData.isHighlight ? "true" : "false");
 
-      if (activity.imageUrl) {
-        formData.append("imageUrl", activity.imageUrl);
+      if (awardModalData.imageUrl) {
+        formData.append("imageUrl", awardModalData.imageUrl);
       }
-      if (activity.certificateUrl) {
-        formData.append("certificateUrl", activity.certificateUrl);
+      if (awardModalData.certificateUrl) {
+        formData.append("certificateUrl", awardModalData.certificateUrl);
       }
 
       const res = await fetch("/api/awards", {
@@ -237,22 +351,23 @@ export default function ActivitiesTab() {
       });
 
       if (res.ok) {
-        setSentAwardIds((prev) => ({ ...prev, [activity.id]: true }));
+        setSentAwardIds((prev) => ({ ...prev, [awardModalData.activity.id]: true }));
         setToastMessage({
-          id: activity.id,
-          title: activity.title,
-          text: "🏆 คัดลอกและส่งไปเป็นผลงานใน 'หน้ารางวัลที่ได้รับ' สำเร็จแล้ว!"
+          id: awardModalData.activity.id,
+          title: awardModalData.title,
+          text: `🏆 บันทึกผลงานของ "${awardModalData.student}" เข้าสู่ "หน้ารางวัลที่ได้รับ" เรียบร้อยแล้ว!`
         });
+        setAwardModalData(null);
         setTimeout(() => setToastMessage(null), 8000);
       } else {
         const err = (await res.json()) as any;
         alert(err.error || "เกิดข้อผิดพลาดในการส่งข้อมูลไปหน้ารางวัล");
       }
-    } catch (error) {
-      console.error("Failed to send to awards:", error);
-      alert("ไม่สามารถส่งข้อมูลไปหน้ารางวัลได้ กรุณาลองใหม่อีกครั้ง");
+    } catch (err: any) {
+      console.error("Failed to send award:", err);
+      alert("ไม่สามารถบันทึกผลงานได้: " + (err?.message || ""));
     } finally {
-      setSendingAwardId(null);
+      setIsSendingAward(false);
     }
   };
 
@@ -262,27 +377,27 @@ export default function ActivitiesTab() {
     <div className="space-y-6">
       {/* Toast Notification Banner */}
       {toastMessage && (
-        <div className="bg-emerald-500 text-white p-4 rounded-2xl shadow-lg flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-4 duration-300">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-bold">
+        <div className="bg-emerald-600 text-white p-4 rounded-2xl shadow-lg flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-bold shrink-0">
               <Check className="w-5 h-5 text-white" />
             </div>
-            <div>
-              <p className="text-xs sm:text-sm font-bold">{toastMessage.text}</p>
-              <p className="text-[11px] text-emerald-100 font-light truncate max-w-md">
-                กิจกรรม: {toastMessage.title} (ข้อมูลรูปภาพและเกียรติบัตรถูกส่งไปยังระบบรางวัลแล้ว)
+            <div className="min-w-0">
+              <p className="text-xs sm:text-sm font-bold truncate">{toastMessage.text}</p>
+              <p className="text-[11px] text-emerald-100 font-light truncate">
+                กิจกรรม: {toastMessage.title} (ข้อมูลรูปภาพ เกียรติบัตร และระดับรางวัลแสดงใน /awards ทันที)
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <a
               href="/awards"
               target="_blank"
               rel="noreferrer"
-              className="px-3 py-1.5 rounded-lg bg-white text-emerald-800 text-xs font-bold hover:bg-emerald-50 transition-colors inline-flex items-center gap-1 shrink-0"
+              className="px-3.5 py-1.5 rounded-xl bg-white text-emerald-900 text-xs font-bold hover:bg-emerald-50 transition-colors inline-flex items-center gap-1 shadow-xs"
             >
               <span>เปิดดูหน้ารางวัล</span>
-              <ExternalLink className="w-3 h-3" />
+              <ExternalLink className="w-3.5 h-3.5" />
             </a>
             <button
               type="button"
@@ -340,7 +455,7 @@ export default function ActivitiesTab() {
 
             <form onSubmit={handleAddActivity} className="space-y-3.5">
               <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">หัวข้อกิจกรรม</label>
+                <label className="text-xs font-semibold text-slate-700 block mb-1">หัวข้อกิจกรรม *</label>
                 <input 
                   type="text" 
                   required 
@@ -352,7 +467,7 @@ export default function ActivitiesTab() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">รายละเอียดกิจกรรม</label>
+                <label className="text-xs font-semibold text-slate-700 block mb-1">รายละเอียดกิจกรรม *</label>
                 <textarea 
                   required 
                   value={activityDesc} 
@@ -363,7 +478,7 @@ export default function ActivitiesTab() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">วันที่ (เช่น 12 ตุลาคม 2566)</label>
+                <label className="text-xs font-semibold text-slate-700 block mb-1">วันที่ (เช่น 12 ตุลาคม 2566) *</label>
                 <input 
                   type="text" 
                   required 
@@ -518,7 +633,7 @@ export default function ActivitiesTab() {
                               <button
                                 type="button"
                                 onClick={() => setCoverImageId(`existing-${i}`)}
-                                className="absolute bottom-1 inset-x-1 bg-black/80 hover:bg-orange-500 text-white text-[9px] py-1 rounded-md font-bold transition-all z-20 shadow-xs"
+                                className="absolute bottom-1 inset-x-1 bg-black/80 hover:bg-orange-500 text-white text-[9px] py-1 rounded-md font-bold transition-all z-20 shadow-xs cursor-pointer"
                               >
                                 ตั้งเป็นโปรไฟล์
                               </button>
@@ -531,7 +646,7 @@ export default function ActivitiesTab() {
                                 setActivityExistingImages((prev) => prev.filter((_, idx) => idx !== i));
                                 if (coverImageId === `existing-${i}`) setCoverImageId("");
                               }} 
-                              className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white p-1 rounded-full shadow-sm z-20"
+                              className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white p-1 rounded-full shadow-sm z-20 cursor-pointer"
                               title="ลบรูปนี้"
                             >
                               <Trash2 className="w-2.5 h-2.5" />
@@ -567,7 +682,7 @@ export default function ActivitiesTab() {
                               <button
                                 type="button"
                                 onClick={() => setCoverImageId(`new-${i}`)}
-                                className="absolute bottom-1 inset-x-1 bg-black/80 hover:bg-orange-500 text-white text-[9px] py-1 rounded-md font-bold transition-all z-20 shadow-xs"
+                                className="absolute bottom-1 inset-x-1 bg-black/80 hover:bg-orange-500 text-white text-[9px] py-1 rounded-md font-bold transition-all z-20 shadow-xs cursor-pointer"
                               >
                                 ตั้งเป็นโปรไฟล์
                               </button>
@@ -580,7 +695,7 @@ export default function ActivitiesTab() {
                                 setActivityImageFiles((prev) => prev.filter((_, idx) => idx !== i));
                                 if (coverImageId === `new-${i}`) setCoverImageId("");
                               }} 
-                              className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white p-1 rounded-full shadow-sm z-20"
+                              className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white p-1 rounded-full shadow-sm z-20 cursor-pointer"
                               title="ลบรูปนี้"
                             >
                               <Trash2 className="w-2.5 h-2.5" />
@@ -768,6 +883,7 @@ export default function ActivitiesTab() {
                     imgCount = activity.imageUrl ? 1 : 0;
                   }
 
+                  const cert = activity.certificateUrl || activity.certificate_url;
                   const isSent = sentAwardIds[activity.id];
 
                   return (
@@ -845,7 +961,7 @@ export default function ActivitiesTab() {
                           )}
 
                           {/* Certificate Badge if attached */}
-                          {activity.certificateUrl && (
+                          {cert && (
                             <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold mb-1">
                               <Award className="w-3 h-3 text-amber-500" />
                               <span>แนบเกียรติบัตรแล้ว</span>
@@ -856,27 +972,21 @@ export default function ActivitiesTab() {
 
                       {/* Card Actions */}
                       <div className="p-3.5 pt-0 space-y-2">
-                        {/* 1-Click Send to Awards Button */}
+                        {/* Send to Awards Button (Opens Customization Dialog) */}
                         <button 
                           type="button"
-                          onClick={() => handleSendToAwards(activity)} 
-                          disabled={sendingAwardId === activity.id}
+                          onClick={() => handleOpenSendToAwardsModal(activity)} 
                           className={`w-full py-1.5 px-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
                             isSent
                               ? "bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100"
                               : "bg-amber-500 hover:bg-amber-600 text-white active:scale-98"
                           }`}
-                          title="คัดลอกรูปภาพ เกียรติบัตร และข้อมูลนี้ไปสร้างเป็นรางวัลในหน้ารางวัลที่ได้รับ (/awards) ทันที"
+                          title="ส่งข้อมูลกิจกรรมนี้ไปยัง 'หน้ารางวัลที่ได้รับ' (/awards) พร้อมระบุชื่อนักเรียนและระดับรางวัล"
                         >
-                          {sendingAwardId === activity.id ? (
-                            <>
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                              <span>กำลังส่งข้อมูลไปหน้ารางวัล...</span>
-                            </>
-                          ) : isSent ? (
+                          {isSent ? (
                             <>
                               <Check className="w-3.5 h-3.5 text-emerald-600" />
-                              <span>✓ ส่งไปหน้ารางวัลแล้ว (กดส่งซ้ำได้)</span>
+                              <span>✓ ส่งไปหน้ารางวัลแล้ว (คลิกเพื่อแก้ไข/ส่งเพิ่ม)</span>
                             </>
                           ) : (
                             <>
@@ -912,6 +1022,203 @@ export default function ActivitiesTab() {
           </div>
         </div>
       </div>
+
+      {/* Send to Awards Confirmation & Verification Modal */}
+      {awardModalData && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => setAwardModalData(null)}
+        >
+          <div 
+            className="bg-white rounded-3xl max-w-xl w-full max-h-[92vh] overflow-hidden flex flex-col shadow-2xl border border-gray-100 animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 sm:p-5 border-b border-gray-100 bg-gradient-to-r from-amber-50 to-orange-50">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold shadow-xs">
+                  <Award className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-bold font-kanit text-gray-900 leading-tight">
+                    ส่งข้อมูลไปยัง "หน้ารางวัลที่ได้รับ" (/awards)
+                  </h3>
+                  <p className="text-[11px] text-gray-500">
+                    ตรวจเช็คและระบุชื่อนักเรียน/ระดับรางวัล เพื่อให้ข้อมูลแสดงตรงกันอย่างสมบูรณ์
+                  </p>
+                </div>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setAwardModalData(null)}
+                className="w-8 h-8 rounded-full bg-white hover:bg-gray-100 text-gray-500 flex items-center justify-center transition-colors cursor-pointer border border-gray-200"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Body / Form */}
+            <form onSubmit={handleConfirmSendToAwards} className="p-4 sm:p-5 overflow-y-auto space-y-3.5 text-xs">
+              
+              {/* Linked Activity Preview */}
+              <div className="p-3 rounded-2xl bg-gray-50 border border-gray-200 flex items-center gap-3">
+                {awardModalData.imageUrl ? (
+                  <div className="w-14 h-14 rounded-xl bg-gray-950 overflow-hidden shrink-0 border border-gray-300 flex items-center justify-center">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={awardModalData.imageUrl} alt="" className="max-h-full max-w-full object-contain" />
+                  </div>
+                ) : (
+                  <div className="w-14 h-14 rounded-xl bg-gray-200 text-gray-400 flex items-center justify-center shrink-0">
+                    <ImageIcon className="w-6 h-6" />
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <span className="text-[10px] font-bold text-orange-600 bg-orange-100/70 px-2 py-0.5 rounded-md inline-block mb-0.5">
+                    ดึงข้อมูลจากกิจกรรม
+                  </span>
+                  <p className="font-bold font-kanit text-gray-900 truncate">{awardModalData.title}</p>
+                  <div className="flex items-center gap-2 text-[11px] text-gray-500 mt-0.5">
+                    <span>📅 {awardModalData.date}</span>
+                    {awardModalData.certificateUrl && (
+                      <span className="text-amber-600 font-bold flex items-center gap-0.5">
+                        <Award className="w-3 h-3" /> แนบเกียรติบัตรแล้ว
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* 1. Student Name */}
+              <div>
+                <label className="font-bold text-gray-800 block mb-1">
+                  ชื่อนักเรียน / ผู้ได้รับรางวัล <span className="text-red-500">*</span>
+                </label>
+                <input 
+                  type="text" 
+                  required
+                  value={awardModalData.student}
+                  onChange={(e) => setAwardModalData({ ...awardModalData, student: e.target.value })}
+                  placeholder="เช่น เด็กหญิงโชคดี มีแมว หรือ คณะนักเรียนตัวแทน"
+                  className="w-full h-9 px-3 rounded-xl border border-gray-300 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none text-xs bg-white font-medium"
+                />
+              </div>
+
+              {/* 2. Grade Level & Award Level */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-gray-800 block mb-1">ระดับชั้นเรียน</label>
+                  <select 
+                    value={awardModalData.grade}
+                    onChange={(e) => setAwardModalData({ ...awardModalData, grade: e.target.value })}
+                    className="w-full h-9 px-2.5 rounded-xl border border-gray-300 focus:border-amber-500 outline-none text-xs bg-white cursor-pointer font-medium"
+                  >
+                    <option value="">-- เลือกระดับชั้นเรียน --</option>
+                    {GRADE_GROUPS.map((group) => (
+                      <optgroup key={group.level} label={group.label}>
+                        <option value={group.level}>ทั้งระดับชั้น ({group.level})</option>
+                        {group.rooms.map((room) => (
+                          <option key={room} value={room}>{room}</option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="font-bold text-gray-800 block mb-1">ระดับรางวัลที่ได้รับ</label>
+                  <select 
+                    value={awardModalData.awardLevel}
+                    onChange={(e) => setAwardModalData({ ...awardModalData, awardLevel: e.target.value })}
+                    className="w-full h-9 px-2.5 rounded-xl border border-gray-300 focus:border-amber-500 outline-none text-xs bg-white cursor-pointer font-medium"
+                  >
+                    {AWARD_LEVELS.map((lvl) => (
+                      <option key={lvl} value={lvl}>{lvl}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* 3. Competition Level & Year */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-gray-800 block mb-1">ระดับการแข่งขัน</label>
+                  <select 
+                    value={awardModalData.competitionLevel}
+                    onChange={(e) => setAwardModalData({ ...awardModalData, competitionLevel: e.target.value })}
+                    className="w-full h-9 px-2.5 rounded-xl border border-gray-300 focus:border-amber-500 outline-none text-xs bg-white cursor-pointer font-medium"
+                  >
+                    {COMPETITION_LEVELS.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="font-bold text-gray-800 block mb-1">ปี พ.ศ. (เช่น 2568)</label>
+                  <input 
+                    type="text" 
+                    value={awardModalData.year}
+                    onChange={(e) => setAwardModalData({ ...awardModalData, year: e.target.value })}
+                    className="w-full h-9 px-3 rounded-xl border border-gray-300 focus:border-amber-500 outline-none text-xs bg-white font-mono"
+                  />
+                </div>
+              </div>
+
+              {/* 4. Title & Organization */}
+              <div>
+                <label className="font-bold text-gray-800 block mb-1">ชื่อกิจกรรม / ผลงานรางวัล *</label>
+                <input 
+                  type="text" 
+                  required
+                  value={awardModalData.title}
+                  onChange={(e) => setAwardModalData({ ...awardModalData, title: e.target.value })}
+                  className="w-full h-9 px-3 rounded-xl border border-gray-300 focus:border-amber-500 outline-none text-xs bg-white font-medium"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-gray-800 block mb-1">หน่วยงานที่จัด / สถานที่</label>
+                <input 
+                  type="text" 
+                  value={awardModalData.organization}
+                  onChange={(e) => setAwardModalData({ ...awardModalData, organization: e.target.value })}
+                  placeholder="เช่น มหาวิทยาลัยเทคโนโลยีราชมงคลกรุงเทพ"
+                  className="w-full h-9 px-3 rounded-xl border border-gray-300 focus:border-amber-500 outline-none text-xs bg-white"
+                />
+              </div>
+
+              {/* Modal Actions */}
+              <div className="flex items-center gap-2 pt-3 border-t border-gray-100">
+                <Button
+                  type="submit"
+                  disabled={isSendingAward}
+                  className="flex-1 h-10 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-xs cursor-pointer"
+                >
+                  {isSendingAward ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin mr-1.5" />
+                      <span>กำลังบันทึกเข้าหน้ารางวัล...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Award className="w-4 h-4 mr-1.5" />
+                      <span>ยืนยันบันทึกส่งไปหน้ารางวัลทันที</span>
+                    </>
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setAwardModalData(null)}
+                  className="h-10 rounded-xl px-4 border-gray-300 text-xs font-semibold cursor-pointer"
+                >
+                  ยกเลิก
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

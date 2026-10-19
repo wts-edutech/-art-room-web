@@ -26,7 +26,11 @@ export async function GET() {
     await ensureColumns();
     const db = getDb();
     const all = await db.select().from(activities).orderBy(desc(activities.createdAt));
-    return NextResponse.json(all);
+    const normalized = (all || []).map((item: any) => ({
+      ...item,
+      certificateUrl: item.certificateUrl || item.certificate_url || null,
+    }));
+    return NextResponse.json(normalized);
   } catch (error) {
     console.error("GET /api/activities error:", error);
     return NextResponse.json({ error: 'Failed to fetch' }, { status: 500 });
