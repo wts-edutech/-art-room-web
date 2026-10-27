@@ -1,4 +1,4 @@
-import { FaFacebook, FaInstagram, FaYoutube, FaTiktok, FaLine, FaFacebookMessenger } from "react-icons/fa";
+import { FaFacebook, FaYoutube, FaTiktok, FaLine, FaFacebookMessenger } from "react-icons/fa";
 import Link from "next/link";
 
 export default function SocialSection() {
@@ -20,12 +20,6 @@ export default function SocialSection() {
       url: "https://m.me/334064356461582",
       icon: <FaFacebookMessenger className="w-5 h-5" />,
       color: "bg-[#0084FF] text-white hover:bg-[#0073e6]",
-    },
-    {
-      name: "Instagram",
-      url: "https://www.instagram.com/w.t.artroom",
-      icon: <FaInstagram className="w-5 h-5" />,
-      color: "bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] text-white hover:opacity-90",
     },
     {
       name: "TikTok",
