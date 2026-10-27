@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { 
   X, Upload, Image as ImageIcon, Check, 
   User, Phone, Mail, GraduationCap, ShieldCheck, 
@@ -17,6 +18,12 @@ interface ProfileSettingsModalProps {
 }
 
 export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }: ProfileSettingsModalProps) {
+  // Client mount check for React Portal
+  const [mounted, setMounted] = useState<boolean>(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // User Profile State
   const [role, setRole] = useState<string>("student"); // student | guest | teacher | admin
   const [userRoleTitle, setUserRoleTitle] = useState<string>("นักเรียน");
@@ -287,15 +294,15 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
   const currentResolvedAvatar = resolveUserAvatar(avatarValue, fullName);
   const passValidation = validatePassword(newPassword);
   const passwordsMatch = Boolean(newPassword && confirmPassword && newPassword === confirmPassword);
 
-  return (
+  return createPortal(
     <div 
-      className="fixed inset-0 z-[9999] overflow-y-auto bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center p-3 sm:p-4 py-6 sm:py-8 animate-in fade-in duration-200"
+      className="fixed inset-0 z-[99999] overflow-y-auto bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center p-3 sm:p-4 py-6 sm:py-8 animate-in fade-in duration-200"
       onClick={onClose}
     >
       {/* Floating Top-Right Close Button for Quick Exit on Any Screen */}
@@ -310,11 +317,12 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
       </button>
 
       <div 
-        className="bg-white rounded-3xl w-full max-w-lg sm:max-w-xl max-h-[85vh] sm:max-h-[88vh] flex flex-col min-h-0 shadow-2xl border border-orange-100 overflow-hidden animate-in zoom-in-95 duration-200 relative my-auto"
+        className="bg-white rounded-3xl w-full max-w-lg sm:max-w-xl max-h-[90vh] flex flex-col shadow-2xl border border-orange-100 overflow-hidden animate-in zoom-in-95 duration-200 relative my-auto"
+        style={{ maxHeight: 'min(90vh, 780px)' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Sticky Header */}
-        <div className="shrink-0 px-4 sm:px-6 py-3.5 bg-white/95 backdrop-blur-md border-b border-gray-100 flex items-center justify-between">
+        <div className="shrink-0 px-4 sm:px-6 py-3.5 bg-white border-b border-gray-100 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shadow-2xs">
               <User className="w-4 h-4" />
@@ -349,7 +357,10 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
         {/* Modal Form wrapping Scrollable Body & Sticky Footer */}
         <form onSubmit={handleSave} className="flex flex-col flex-1 min-h-0 overflow-hidden">
           {/* Scrollable Body */}
-          <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 space-y-4">
+          <div 
+            className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4"
+            style={{ maxHeight: 'calc(min(90vh, 780px) - 125px)' }}
+          >
             {/* Avatar Showcase & Selection Header */}
             <div className="bg-gradient-to-br from-amber-50/90 via-orange-50/50 to-white rounded-2xl p-4 border border-orange-200/90 shadow-xs flex flex-col sm:flex-row items-center gap-4">
               {/* Current Active Avatar Circle */}
@@ -852,6 +863,7 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

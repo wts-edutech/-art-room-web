@@ -10,7 +10,9 @@ export interface LogoSettings {
   schoolName: string;
   showText: boolean;
   logoShape: "square" | "circle" | "rounded";
-  logoSize: "compact" | "normal" | "large";
+  logoSize: "compact" | "normal" | "large" | "custom";
+  customSize?: number;
+  logoScale?: number;
   updatedAt?: string;
 }
 
@@ -22,7 +24,9 @@ export const DEFAULT_LOGO_SETTINGS: LogoSettings = {
   schoolName: "WACHIRATHAMMASATIT SCHOOL",
   showText: true,
   logoShape: "rounded",
-  logoSize: "normal",
+  logoSize: "large",
+  customSize: 72,
+  logoScale: 100,
 };
 
 interface LogoContextType {
@@ -71,7 +75,9 @@ export function LogoProvider({ children }: { children: React.ReactNode }) {
           schoolName: data.schoolName || DEFAULT_LOGO_SETTINGS.schoolName,
           showText: data.showText !== undefined ? Boolean(data.showText) : true,
           logoShape: data.logoShape || "rounded",
-          logoSize: data.logoSize || "normal",
+          logoSize: data.logoSize || "large",
+          customSize: typeof data.customSize === "number" ? data.customSize : (data.logoSize === "compact" ? 44 : data.logoSize === "large" ? 72 : 56),
+          logoScale: typeof data.logoScale === "number" ? data.logoScale : 100,
           updatedAt: data.updatedAt,
         };
         setLogoSettings(merged);

@@ -54,7 +54,7 @@ import HeroButtonTab from "@/components/admin/HeroButtonTab";
 import CommentsModerationTab from "@/components/admin/CommentsModerationTab";
 import AdminSecurityTab from "@/components/admin/AdminSecurityTab";
 import DownloadsTab from "@/components/admin/DownloadsTab";
-import LogoSettingsTab from "@/components/admin/LogoSettingsTab";
+import SiteLogoSettingsSection from "@/components/admin/SiteLogoSettingsSection";
 import { useSiteLogo } from "@/context/LogoContext";
 
 type AdminTabKey = 
@@ -73,8 +73,8 @@ type AdminTabKey =
   | "testimonials" 
   | "ideas" 
   | "teachers" 
-  | "siteLogo"
   | "heroButton" 
+  | "siteLogo"
   | "comments" 
   | "adminSecurity";
 
@@ -137,7 +137,7 @@ const ADMIN_CATEGORIES: AdminMenuCategory[] = [
     title: "การตั้งค่า & ความปลอดภัย",
     icon: Shield,
     items: [
-      { key: "siteLogo", label: "ตั้งค่ารูปโลโก้ & แบรนด์", sublabel: "เปลี่ยนรูปโลโก้ / ตราโรงเรียน / ข้อความ", icon: ImageIcon, badge: "New", isSpecial: true },
+      { key: "siteLogo", label: "ตั้งค่ารูปโลโก้ & แบรนด์", sublabel: "Logo & Brand Customizer", icon: ImageIcon, isSpecial: true },
       { key: "heroButton", label: "ตั้งค่าปุ่ม AI Art Model", sublabel: "Hero Section Link", icon: Sparkles, isSpecial: true },
       { key: "adminSecurity", label: "ศูนย์ความปลอดภัย & Master PIN", sublabel: "เปลี่ยนรหัส / เตะอุปกรณ์ / K1234", icon: KeyRound, badge: "Master", isSpecial: true },
     ]
@@ -153,16 +153,6 @@ export default function AdminPage() {
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [selectedMobileCategory, setSelectedMobileCategory] = useState<string>("all");
   const [mobileSearch, setMobileSearch] = useState("");
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const tab = params.get("tab");
-      if (tab === "logo" || tab === "siteLogo") {
-        setActiveTab("siteLogo");
-      }
-    }
-  }, []);
 
   useEffect(() => {
     fetch("/api/visitors")
@@ -233,55 +223,26 @@ export default function AdminPage() {
       {/* ===== DESKTOP SIDEBAR (Visible md+) ===== */}
       {/* ============================================================ */}
       <aside className="w-64 bg-white border-r border-gray-100 text-gray-800 flex flex-col hidden md:flex shrink-0">
-        <div className="p-4 border-b border-gray-100 bg-gradient-to-br from-orange-50/50 to-amber-50/30">
+        <div className="p-6 border-b border-gray-100">
           <div className="flex items-center gap-3">
-            <div 
-              onClick={() => setActiveTab("siteLogo")}
-              className="w-11 h-11 bg-white rounded-xl flex items-center justify-center font-bold text-xl shadow-xs overflow-hidden border border-orange-200 cursor-pointer hover:scale-105 transition-transform shrink-0"
-              title="คลิกเพื่อเปลี่ยนรูปโลโก้"
-            >
+            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center font-bold text-xl shadow-xs overflow-hidden border border-gray-200 p-1 shrink-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img 
                 src={logoSettings.logoUrl || "/school-logo.png"} 
                 alt={logoSettings.logoAlt || "School Logo"} 
-                className="w-full h-full object-contain p-1" 
-                onError={(e) => { (e.target as HTMLImageElement).src = "/school-logo.png"; }}
+                className={`w-full h-full object-contain ${
+                  logoSettings.logoShape === "circle" ? "rounded-full" : logoSettings.logoShape === "square" ? "rounded-none" : "rounded-xl"
+                }`}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "/school-logo.png";
+                }}
               />
             </div>
-            <div className="min-w-0 flex-1">
-              <span className="font-bold text-sm tracking-tight font-kanit block text-gray-900 leading-tight">Admin Art Room</span>
-              <button
-                type="button"
-                onClick={() => setActiveTab("siteLogo")}
-                className="mt-1 inline-flex items-center gap-1 text-[11px] font-bold text-orange-700 bg-orange-100 hover:bg-orange-200 px-2 py-0.5 rounded-md transition-colors cursor-pointer"
-              >
-                <span>✏️ เปลี่ยนรูปโลโก้</span>
-              </button>
+            <div>
+              <span className="font-bold text-base tracking-tight font-kanit block text-gray-900 leading-tight">Admin Art Room</span>
+              <span className="text-[10px] text-gray-400 font-medium">{logoSettings.schoolName || "โรงเรียนวชิรธรรมสาธิต"}</span>
             </div>
           </div>
-        </div>
-
-        {/* Quick Prominent Shortcut Card */}
-        <div className="p-3 border-b border-gray-100 bg-white">
-          <button
-            type="button"
-            onClick={() => setActiveTab("siteLogo")}
-            className={`w-full p-2.5 rounded-xl font-bold text-xs flex items-center justify-between transition-all cursor-pointer ${
-              activeTab === "siteLogo"
-                ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md shadow-orange-500/20 font-extrabold"
-                : "bg-orange-50/80 hover:bg-orange-100 text-orange-900 border border-orange-200 shadow-2xs"
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <span className="text-base">🖼️</span>
-              <span>ตั้งค่ารูปภาพโลโก้</span>
-            </div>
-            <span className={`text-[9px] font-black px-1.5 py-0.2 rounded-full ${
-              activeTab === "siteLogo" ? "bg-white text-orange-600" : "bg-red-600 text-white animate-pulse"
-            }`}>
-              NEW
-            </span>
-          </button>
         </div>
         
         <div className="p-3.5 flex-1 overflow-y-auto space-y-5">
@@ -359,18 +320,22 @@ export default function AdminPage() {
         {/* Drawer Header */}
         <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-orange-500 to-amber-500 text-white flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center p-1 shadow-md">
+            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center p-1 shadow-md shrink-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img 
                 src={logoSettings.logoUrl || "/school-logo.png"} 
                 alt={logoSettings.logoAlt || "School Logo"} 
-                className="w-full h-full object-contain" 
-                onError={(e) => { (e.target as HTMLImageElement).src = "/school-logo.png"; }}
+                className={`w-full h-full object-contain ${
+                  logoSettings.logoShape === "circle" ? "rounded-full" : logoSettings.logoShape === "square" ? "rounded-none" : "rounded-xl"
+                }`}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "/school-logo.png";
+                }}
               />
             </div>
             <div>
               <h2 className="font-bold text-sm font-kanit leading-tight">Admin System Art Room</h2>
-              <p className="text-[10px] text-white/80">ระบบจัดการสารสนเทศ ({allMenuItems.length} เมนู)</p>
+              <p className="text-[10px] text-white/80">ระบบจัดการสารสนเทศ (17 เมนู)</p>
             </div>
           </div>
           <button
@@ -496,16 +461,14 @@ export default function AdminPage() {
             <img 
               src={logoSettings.logoUrl || "/school-logo.png"} 
               alt={logoSettings.logoAlt || "School Logo"} 
-              className="w-6 h-6 object-contain rounded-full bg-white border border-gray-200 p-0.5 shrink-0" 
-              onError={(e) => { (e.target as HTMLImageElement).src = "/school-logo.png"; }}
+              className={`w-8 h-8 object-contain bg-white border border-gray-200 p-0.5 shrink-0 ${
+                logoSettings.logoShape === "circle" ? "rounded-full" : logoSettings.logoShape === "square" ? "rounded-none" : "rounded-lg"
+              }`}
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = "/school-logo.png";
+              }}
             />
-            <button
-              type="button"
-              onClick={() => setActiveTab("siteLogo")}
-              className="text-[11px] font-bold text-orange-700 bg-orange-100 hover:bg-orange-200 px-2 py-0.5 rounded-lg border border-orange-200 flex items-center gap-1 cursor-pointer shrink-0"
-            >
-              <span>🖼️ เปลี่ยนโลโก้</span>
-            </button>
+            <span className="font-bold text-xs truncate font-kanit text-gray-800">Admin System</span>
           </div>
 
           <button 
@@ -541,33 +504,8 @@ export default function AdminPage() {
               </div>
             </div>
 
-            {/* Header Actions & Visitor Metric Badges */}
+            {/* Compact Luxury Visitor Metric Badges */}
             <div className="flex items-center gap-2 sm:gap-3 self-start lg:self-center shrink-0 flex-wrap">
-              {/* Eye-catching prominent Logo Change button right in the header bar */}
-              <button
-                type="button"
-                onClick={() => setActiveTab("siteLogo")}
-                className={`px-4 py-2 sm:py-2.5 rounded-2xl border font-bold text-xs sm:text-sm flex items-center gap-2.5 transition-all cursor-pointer shadow-xs ${
-                  activeTab === "siteLogo"
-                    ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white border-transparent ring-2 ring-orange-500/40 shadow-md shadow-orange-500/20 font-extrabold"
-                    : "bg-gradient-to-r from-orange-50 to-amber-50 hover:from-orange-100 hover:to-amber-100 text-orange-900 border-orange-300 hover:border-orange-400"
-                }`}
-                title="คลิกเพื่อตั้งค่าและเปลี่ยนรูปโลโก้"
-              >
-                <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-orange-500 text-white flex items-center justify-center shrink-0 shadow-xs">
-                  <ImageIcon className="w-4 h-4" />
-                </span>
-                <div className="text-left">
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-bold">เปลี่ยนรูปโลโก้</span>
-                    <span className="text-[9px] bg-red-600 text-white px-1.5 py-0.2 rounded-full font-black animate-pulse">
-                      NEW
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-orange-700 font-medium hidden sm:block">ตราโรงเรียน & แบรนด์</p>
-                </div>
-              </button>
-
               <div className="bg-gray-50/80 px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl border border-gray-200 shadow-2xs flex items-center gap-2 sm:gap-3">
                 <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center font-bold">
                   <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -594,38 +532,6 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* Prominent High-Visibility Banner for Site Logo Settings */}
-          {activeTab !== "siteLogo" && (
-            <div className="bg-gradient-to-r from-orange-600 via-amber-500 to-orange-500 rounded-3xl p-4 sm:p-5 text-white shadow-lg shadow-orange-500/20 flex flex-col md:flex-row md:items-center justify-between gap-4 border-2 border-amber-300/40 animate-in fade-in">
-              <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-white text-orange-600 flex items-center justify-center shadow-md shrink-0">
-                  <ImageIcon className="w-6 h-6" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="bg-white/20 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider backdrop-blur-xs">
-                      เมนูใหม่ที่เพิ่มเข้ามา
-                    </span>
-                    <h3 className="font-heading font-black text-base sm:text-lg tracking-tight">
-                      ต้องการเปลี่ยนรูปภาพโลโก้และตราโรงเรียน? (Logo Settings)
-                    </h3>
-                  </div>
-                  <p className="text-xs sm:text-sm text-amber-50 mt-1 leading-relaxed">
-                    คุณสามารถอัปโหลดรูปโลโก้ใหม่ ปรับขนาด (กะทัดรัด/มาตรฐาน/เด่นชัด) และเปลี่ยนทรงขอบมนหรือวงกลมได้ทันที
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setActiveTab("siteLogo")}
-                className="px-5 py-3 rounded-2xl bg-white text-orange-700 hover:bg-orange-50 font-bold text-sm shadow-md hover:shadow-lg transition-all active:scale-95 cursor-pointer whitespace-nowrap flex items-center justify-center gap-2 shrink-0"
-              >
-                <span>คลิกเปลี่ยนรูปโลโก้ที่นี่</span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-
           {/* ============================================================ */}
           {/* ===== MOBILE EXPANDED CATEGORY FILTER & SWIPEABLE TABS ===== */}
           {/* ============================================================ */}
@@ -641,28 +547,15 @@ export default function AdminPage() {
                 onClick={() => setIsMobileDrawerOpen(true)}
                 className="text-[11px] text-orange-600 font-bold flex items-center gap-1 cursor-pointer hover:underline"
               >
-                <span>ดูทั้งหมด ({allMenuItems.length})</span>
+                <span>ดูทั้งหมด (18)</span>
                 <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>
 
             {/* Category Quick Pills */}
             <div className="flex space-x-1.5 overflow-x-auto pb-1 scrollbar-none">
-              <button
-                type="button"
-                onClick={() => setActiveTab("siteLogo")}
-                className={`flex-shrink-0 px-3 py-1 rounded-xl text-[11px] font-black transition-all cursor-pointer flex items-center gap-1 ${
-                  activeTab === "siteLogo"
-                    ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-xs"
-                    : "bg-orange-100 text-orange-900 border border-orange-300 hover:bg-orange-200"
-                }`}
-              >
-                <span>🎨 เปลี่ยนโลโก้</span>
-                <span className="bg-red-600 text-white text-[9px] px-1 py-0.2 rounded-full font-bold">NEW</span>
-              </button>
-
               {[
-                { id: "all", label: `ทั้งหมด (${allMenuItems.length})` },
+                { id: "all", label: "ทั้งหมด (18)" },
                 { id: "teaching", label: "🎓 ระบบสอน (6)" },
                 { id: "artworks", label: "🎨 ผลงาน (5)" },
                 { id: "users", label: "👥 ผู้ใช้ (5)" },
@@ -743,7 +636,7 @@ export default function AdminPage() {
             {activeTab === "testimonials" && <TestimonialsTab />}
             {activeTab === "ideas" && <IdeasTab />}
             {activeTab === "comments" && <CommentsModerationTab />}
-            {activeTab === "siteLogo" && <LogoSettingsTab />}
+            {activeTab === "siteLogo" && <SiteLogoSettingsSection />}
             {activeTab === "heroButton" && <HeroButtonTab />}
             {activeTab === "adminSecurity" && <AdminSecurityTab />}
           </div>

@@ -18,6 +18,16 @@ export default function Navbar() {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isTeachersEnabled, setIsTeachersEnabled] = useState(true);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 15);
+    };
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const updateUserData = () => {
     const name = localStorage.getItem("artroom_author_name");
@@ -76,8 +86,19 @@ export default function Navbar() {
   const { logoSettings } = useSiteLogo();
   const resolvedAvatar = resolveUserAvatar(userAvatar, userName);
 
+  const sizePx = logoSettings.customSize ?? (
+    logoSettings.logoSize === "compact" ? 44 :
+    logoSettings.logoSize === "large" ? 72 : 56
+  );
+  const scalePercent = (logoSettings.logoScale || 100) / 100;
+
   return (
-    <header className="sticky top-0 left-0 right-0 w-full z-50 bg-[#FDF7F0] md:bg-white/95 md:backdrop-blur-md md:border-b md:border-gray-100 transition-all duration-300 pointer-events-auto">
+    <>
+      <header className={`sticky top-0 left-0 right-0 w-full z-50 transition-all duration-300 pointer-events-auto ${
+      isScrolled
+        ? "bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-200/90"
+        : "bg-[#FDF7F0] md:bg-white/95 md:backdrop-blur-md md:border-b md:border-gray-100"
+    }`}>
       {/* Integrated LiveClock Bar — hidden on mobile <640px, shown sm+ */}
       <div className="navbar-clock-bar w-full bg-gradient-to-r from-orange-500 to-pink-500 text-white h-8 overflow-hidden hidden sm:flex items-center">
         <div className="container mx-auto px-4 h-full flex items-center justify-center sm:justify-end gap-3 text-[10px] sm:text-xs font-medium">
@@ -85,30 +106,47 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Main Navigation Bar (64px) */}
-      <div className="max-w-[1700px] w-full mx-auto px-3 sm:px-4 lg:px-5 xl:px-8 h-16 flex items-center justify-between">
+      {/* Main Navigation Bar with Dynamic Sizing */}
+      <div 
+        className="max-w-[1700px] w-full mx-auto px-3 sm:px-4 lg:px-5 xl:px-8 py-1.5 flex items-center justify-between transition-all"
+        style={{ minHeight: `${Math.max(64, Math.min(140, sizePx + 14))}px` }}
+      >
         
-        {/* Logo Section — matching mockup */}
-        <div className="flex items-center gap-2 sm:gap-2.5 xl:gap-3 h-full min-w-0 flex-shrink-0">
-          <Link href="/" className="flex items-center gap-2.5 sm:gap-2.5 xl:gap-3 group min-w-0 flex-shrink-0">
+        {/* Logo Section — Prominent & Clearly Visible */}
+        <div className="flex items-center gap-2 sm:gap-3 xl:gap-4 h-full min-w-0 flex-shrink-0">
+          <Link href="/" className="flex items-center gap-2.5 sm:gap-3.5 xl:gap-4 group min-w-0 flex-shrink-0 py-1">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img 
-              src={logoSettings.logoUrl || "/school-logo.png"} 
-              alt={logoSettings.logoAlt || "ตราโรงเรียนวชิรธรรมสาธิต"} 
-              className={`w-9 h-9 sm:w-10 sm:h-10 object-contain shrink-0 group-hover:scale-105 transition-transform ${
-                logoSettings.logoShape === "circle" ? "rounded-full" : logoSettings.logoShape === "square" ? "rounded-none" : "rounded-xl"
-              }`} 
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = "/school-logo.png";
+            <div 
+              className={`relative flex items-center justify-center shrink-0 overflow-hidden ${
+                logoSettings.logoShape === "circle" ? "rounded-full" : logoSettings.logoShape === "square" ? "rounded-none" : "rounded-2xl"
+              }`}
+              style={{
+                width: `${sizePx}px`,
+                height: `${sizePx}px`,
+                maxWidth: "140px",
+                maxHeight: "140px",
               }}
-            />
+            >
+              <img 
+                src={logoSettings.logoUrl || "/school-logo.png"} 
+                alt={logoSettings.logoAlt || "ตราโรงเรียนวชิรธรรมสาธิต"} 
+                className="w-full h-full object-contain shrink-0 group-hover:scale-105 transition-transform duration-200 drop-shadow-xs"
+                style={{
+                  transform: scalePercent !== 1 ? `scale(${scalePercent})` : undefined,
+                  transformOrigin: "center center",
+                }}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "/school-logo.png";
+                }}
+              />
+            </div>
             {logoSettings.showText && (
               <div className="flex flex-col justify-center min-w-0">
-                <span className="font-heading font-black text-[17px] md:text-[20px] xl:text-[23px] tracking-tight leading-none">
+                <span className="font-heading font-black text-[18px] md:text-[22px] xl:text-[25px] tracking-tight leading-none">
                   <span className="text-red-600">{logoSettings.brandNamePrefix || "ART"} </span>
                   <span className="text-gray-900">{logoSettings.brandNameSuffix || "ROOM"}</span>
                 </span>
-                <span className="block text-[8.5px] sm:text-[9.5px] md:text-[10px] text-slate-500 font-semibold tracking-wider uppercase leading-tight mt-0.5 whitespace-nowrap">
+                <span className="block text-[9px] sm:text-[10px] md:text-[11px] text-slate-500 font-semibold tracking-wider uppercase leading-tight mt-1 whitespace-nowrap">
                   {logoSettings.schoolName || "WACHIRATHAMMASATIT SCHOOL"}
                 </span>
               </div>
@@ -390,13 +428,14 @@ export default function Navbar() {
           )}
         </div>
       </div>
-
-      {/* Global Profile Settings Modal */}
-      <ProfileSettingsModal 
-        isOpen={isProfileModalOpen} 
-        onClose={() => setIsProfileModalOpen(false)} 
-      />
     </header>
+
+    {/* Global Profile Settings Modal — rendered outside header so fixed position is never trapped */}
+    <ProfileSettingsModal 
+      isOpen={isProfileModalOpen} 
+      onClose={() => setIsProfileModalOpen(false)} 
+    />
+  </>
   );
 }
 

@@ -229,8 +229,8 @@ export default function BottomNavbar() {
               <img
                 src={logoSettings.logoUrl || "/school-logo.png"}
                 alt={logoSettings.logoAlt || "Logo"}
-                className={`w-9 h-9 object-contain shrink-0 ${
-                  logoSettings.logoShape === "circle" ? "rounded-full" : logoSettings.logoShape === "square" ? "rounded-none" : "rounded-xl"
+                className={`w-11 h-11 sm:w-12 sm:h-12 object-contain shrink-0 ${
+                  logoSettings.logoShape === "circle" ? "rounded-full" : logoSettings.logoShape === "square" ? "rounded-none" : "rounded-2xl"
                 }`}
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = "/school-logo.png";

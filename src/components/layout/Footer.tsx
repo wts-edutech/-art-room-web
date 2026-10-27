@@ -27,8 +27,8 @@ export default function Footer() {
             <img 
               src={logoSettings.logoUrl || "/school-logo.png"} 
               alt={logoSettings.logoAlt || "School Logo"} 
-              className={`w-12 h-12 object-contain ${
-                logoSettings.logoShape === "circle" ? "rounded-full" : logoSettings.logoShape === "square" ? "rounded-none" : "rounded-xl"
+              className={`w-14 h-14 sm:w-16 sm:h-16 object-contain shrink-0 ${
+                logoSettings.logoShape === "circle" ? "rounded-full" : logoSettings.logoShape === "square" ? "rounded-none" : "rounded-2xl"
               }`}
               onError={(e) => {
                 (e.target as HTMLImageElement).src = "/school-logo.png";
@@ -65,8 +65,14 @@ export default function Footer() {
               <Lock className="w-3.5 h-3.5" />
             </Link>
           </p>
-          <p className="text-[11px] text-gray-400 flex items-center gap-2 justify-center md:justify-end">
-            <span>ผลงานและภาพถ่ายบนเว็บไซต์นี้จัดทำขึ้นเพื่อการศึกษาและการประชาสัมพันธ์ตาม พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล (PDPA)</span>
+          <p className="text-[11px] text-gray-400 flex flex-wrap items-center gap-2 justify-center md:justify-end">
+            <Link href="/privacy-policy" className="text-gray-400 hover:text-red-600 transition-colors">
+              นโยบายความเป็นส่วนตัว
+            </Link>
+            <span>•</span>
+            <Link href="/terms" className="text-gray-400 hover:text-red-600 transition-colors">
+              ข้อกำหนดการใช้งาน
+            </Link>
             <span>•</span>
             <button
               type="button"

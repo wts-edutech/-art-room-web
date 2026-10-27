@@ -290,7 +290,7 @@ export default function LoginPage() {
             <img 
               src={logoSettings.logoUrl || "/school-logo.png"} 
               alt={logoSettings.logoAlt || "School Logo"} 
-              className={`w-20 h-20 sm:w-22 sm:h-22 object-contain mx-auto ${
+              className={`w-24 h-24 sm:w-28 sm:h-28 object-contain mx-auto drop-shadow-xs ${
                 logoSettings.logoShape === "circle" ? "rounded-full" : logoSettings.logoShape === "square" ? "rounded-none" : "rounded-2xl"
               }`}
               onError={(e) => {

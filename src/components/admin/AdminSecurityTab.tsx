@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import MasterPinConfirmModal from "@/components/modals/MasterPinConfirmModal";
+import SiteLogoSettingsSection from "./SiteLogoSettingsSection";
 
 interface SessionItem {
   id: string;
@@ -658,6 +659,11 @@ export default function AdminSecurityTab() {
           </details>
         </div>
       </div>
+
+      {/* ============================================================ */}
+      {/* ===== SECTION: SITE LOGO & SCHOOL BRAND SETTINGS CARD ===== */}
+      {/* ============================================================ */}
+      <SiteLogoSettingsSection />
 
       {/* ============================================================ */}
       {/* ===== SECTION 2: ACTIVE ADMIN SESSIONS / DEVICES ===== */}

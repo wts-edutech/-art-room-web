@@ -12,7 +12,9 @@ export interface LogoSettings {
   schoolName: string;
   showText: boolean;
   logoShape: "square" | "circle" | "rounded";
-  logoSize: "compact" | "normal" | "large";
+  logoSize: "compact" | "normal" | "large" | "custom";
+  customSize?: number;
+  logoScale?: number;
   updatedAt?: string;
 }
 
@@ -24,7 +26,9 @@ const DEFAULT_SETTINGS: LogoSettings = {
   schoolName: "WACHIRATHAMMASATIT SCHOOL",
   showText: true,
   logoShape: "rounded",
-  logoSize: "normal",
+  logoSize: "large",
+  customSize: 72,
+  logoScale: 100,
   updatedAt: new Date().toISOString(),
 };
 
@@ -119,6 +123,8 @@ export async function POST(request: Request) {
         showText: formData.get("showText") !== null ? formData.get("showText") === "true" : undefined,
         logoShape: (formData.get("logoShape") as any) || undefined,
         logoSize: (formData.get("logoSize") as any) || undefined,
+        customSize: formData.get("customSize") ? Number(formData.get("customSize")) : undefined,
+        logoScale: formData.get("logoScale") ? Number(formData.get("logoScale")) : undefined,
       };
     } else {
       payload = await request.json().catch(() => ({}));
@@ -134,7 +140,9 @@ export async function POST(request: Request) {
       schoolName: (payload.schoolName ?? memorySettings.schoolName ?? DEFAULT_SETTINGS.schoolName).trim(),
       showText: payload.showText !== undefined ? Boolean(payload.showText) : (memorySettings.showText ?? true),
       logoShape: payload.logoShape || memorySettings.logoShape || "rounded",
-      logoSize: payload.logoSize || memorySettings.logoSize || "normal",
+      logoSize: payload.logoSize || memorySettings.logoSize || "large",
+      customSize: typeof payload.customSize === "number" ? Math.max(30, Math.min(200, payload.customSize)) : (memorySettings.customSize ?? 72),
+      logoScale: typeof payload.logoScale === "number" ? Math.max(80, Math.min(200, payload.logoScale)) : (memorySettings.logoScale ?? 100),
       updatedAt,
     };
 
