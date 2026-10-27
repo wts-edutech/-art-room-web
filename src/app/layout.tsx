@@ -8,6 +8,7 @@ import LiveClock from "@/components/ui/LiveClock";
 import FloatingSocialSidebar from "@/components/ui/FloatingSocialSidebar";
 import VisitorTracker from "@/components/VisitorTracker";
 import BottomNavbar from "@/components/layout/BottomNavbar";
+import { LogoProvider } from "@/context/LogoContext";
 
 const prompt = Prompt({
   variable: "--font-prompt",
@@ -53,13 +54,15 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col overflow-x-hidden has-bottom-nav">
         <SessionProvider>
-          <SecuritySessionWatcher />
-          <VisitorTracker />
-          <LiveClock />
-          {children}
-          <CookieConsent />
-          <FloatingSocialSidebar />
-          <BottomNavbar />
+          <LogoProvider>
+            <SecuritySessionWatcher />
+            <VisitorTracker />
+            <LiveClock />
+            {children}
+            <CookieConsent />
+            <FloatingSocialSidebar />
+            <BottomNavbar />
+          </LogoProvider>
         </SessionProvider>
       </body>
     </html>

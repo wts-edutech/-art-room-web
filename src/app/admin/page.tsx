@@ -54,6 +54,8 @@ import HeroButtonTab from "@/components/admin/HeroButtonTab";
 import CommentsModerationTab from "@/components/admin/CommentsModerationTab";
 import AdminSecurityTab from "@/components/admin/AdminSecurityTab";
 import DownloadsTab from "@/components/admin/DownloadsTab";
+import LogoSettingsTab from "@/components/admin/LogoSettingsTab";
+import { useSiteLogo } from "@/context/LogoContext";
 
 type AdminTabKey = 
   | "submissionsCenter" 
@@ -71,6 +73,7 @@ type AdminTabKey =
   | "testimonials" 
   | "ideas" 
   | "teachers" 
+  | "siteLogo"
   | "heroButton" 
   | "comments" 
   | "adminSecurity";
@@ -134,6 +137,7 @@ const ADMIN_CATEGORIES: AdminMenuCategory[] = [
     title: "การตั้งค่า & ความปลอดภัย",
     icon: Shield,
     items: [
+      { key: "siteLogo", label: "ตั้งค่ารูปโลโก้ & แบรนด์", sublabel: "เปลี่ยนรูปโลโก้ / ตราโรงเรียน / ข้อความ", icon: ImageIcon, badge: "New", isSpecial: true },
       { key: "heroButton", label: "ตั้งค่าปุ่ม AI Art Model", sublabel: "Hero Section Link", icon: Sparkles, isSpecial: true },
       { key: "adminSecurity", label: "ศูนย์ความปลอดภัย & Master PIN", sublabel: "เปลี่ยนรหัส / เตะอุปกรณ์ / K1234", icon: KeyRound, badge: "Master", isSpecial: true },
     ]
@@ -142,6 +146,7 @@ const ADMIN_CATEGORIES: AdminMenuCategory[] = [
 
 export default function AdminPage() {
   const router = useRouter();
+  const { logoSettings } = useSiteLogo();
   const [activeTab, setActiveTab] = useState<AdminTabKey>("submissionsCenter");
   const [gradingAssignmentId, setGradingAssignmentId] = useState<string | undefined>(undefined);
   const [visitorStats, setVisitorStats] = useState({ total: 0, today: 0 });
@@ -222,7 +227,12 @@ export default function AdminPage() {
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center font-bold text-xl shadow-inner overflow-hidden border border-gray-200">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/school-logo.png" alt="School Logo" className="w-full h-full object-cover" />
+              <img 
+                src={logoSettings.logoUrl || "/school-logo.png"} 
+                alt={logoSettings.logoAlt || "School Logo"} 
+                className="w-full h-full object-contain p-1" 
+                onError={(e) => { (e.target as HTMLImageElement).src = "/school-logo.png"; }}
+              />
             </div>
             <div>
               <span className="font-bold text-base tracking-tight font-kanit block text-gray-900 leading-tight">Admin Art Room</span>
@@ -308,11 +318,16 @@ export default function AdminPage() {
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center p-1 shadow-md">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/school-logo.png" alt="School Logo" className="w-full h-full object-contain" />
+              <img 
+                src={logoSettings.logoUrl || "/school-logo.png"} 
+                alt={logoSettings.logoAlt || "School Logo"} 
+                className="w-full h-full object-contain" 
+                onError={(e) => { (e.target as HTMLImageElement).src = "/school-logo.png"; }}
+              />
             </div>
             <div>
               <h2 className="font-bold text-sm font-kanit leading-tight">Admin System Art Room</h2>
-              <p className="text-[10px] text-white/80">ระบบจัดการสารสนเทศ (17 เมนู)</p>
+              <p className="text-[10px] text-white/80">ระบบจัดการสารสนเทศ ({allMenuItems.length} เมนู)</p>
             </div>
           </div>
           <button
@@ -435,7 +450,12 @@ export default function AdminPage() {
 
           <div className="flex items-center gap-1.5 min-w-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/school-logo.png" alt="School Logo" className="w-6 h-6 object-cover rounded-full bg-white border border-gray-200" />
+            <img 
+              src={logoSettings.logoUrl || "/school-logo.png"} 
+              alt={logoSettings.logoAlt || "School Logo"} 
+              className="w-6 h-6 object-contain rounded-full bg-white border border-gray-200 p-0.5" 
+              onError={(e) => { (e.target as HTMLImageElement).src = "/school-logo.png"; }}
+            />
             <span className="font-bold text-xs truncate font-kanit text-gray-800">Admin System</span>
           </div>
 
@@ -515,7 +535,7 @@ export default function AdminPage() {
                 onClick={() => setIsMobileDrawerOpen(true)}
                 className="text-[11px] text-orange-600 font-bold flex items-center gap-1 cursor-pointer hover:underline"
               >
-                <span>ดูทั้งหมด (17)</span>
+                <span>ดูทั้งหมด ({allMenuItems.length})</span>
                 <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -523,11 +543,11 @@ export default function AdminPage() {
             {/* Category Quick Pills */}
             <div className="flex space-x-1.5 overflow-x-auto pb-1 scrollbar-none">
               {[
-                { id: "all", label: "ทั้งหมด (17)" },
+                { id: "all", label: `ทั้งหมด (${allMenuItems.length})` },
                 { id: "teaching", label: "🎓 ระบบสอน (6)" },
                 { id: "artworks", label: "🎨 ผลงาน (5)" },
                 { id: "users", label: "👥 ผู้ใช้ (5)" },
-                { id: "security", label: "🔐 ปลอดภัย (2)" },
+                { id: "security", label: "🔐 ตั้งค่า & ปลอดภัย (3)" },
               ].map((cat) => (
                 <button
                   key={cat.id}
@@ -604,6 +624,7 @@ export default function AdminPage() {
             {activeTab === "testimonials" && <TestimonialsTab />}
             {activeTab === "ideas" && <IdeasTab />}
             {activeTab === "comments" && <CommentsModerationTab />}
+            {activeTab === "siteLogo" && <LogoSettingsTab />}
             {activeTab === "heroButton" && <HeroButtonTab />}
             {activeTab === "adminSecurity" && <AdminSecurityTab />}
           </div>

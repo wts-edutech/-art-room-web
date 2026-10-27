@@ -8,6 +8,7 @@ import { Menu, X, ChevronDown, LogOut, Calendar, Clock, Settings, User, Newspape
 import ProfileSettingsModal from "@/components/modals/ProfileSettingsModal";
 import { resolveUserAvatar } from "@/lib/art-avatars";
 import { performGlobalLogout, syncAuthWithServer } from "@/lib/client-auth";
+import { useSiteLogo } from "@/context/LogoContext";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -72,6 +73,7 @@ export default function Navbar() {
     await performGlobalLogout("/");
   };
 
+  const { logoSettings } = useSiteLogo();
   const resolvedAvatar = resolveUserAvatar(userAvatar, userName);
 
   return (
@@ -91,19 +93,26 @@ export default function Navbar() {
           <Link href="/" className="flex items-center gap-2.5 sm:gap-2.5 xl:gap-3 group min-w-0 flex-shrink-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img 
-              src="/school-logo.png" 
-              alt="ตราโรงเรียนวชิรธรรมสาธิต" 
-              className="w-9 h-9 sm:w-10 sm:h-10 object-contain shrink-0 group-hover:scale-105 transition-transform" 
+              src={logoSettings.logoUrl || "/school-logo.png"} 
+              alt={logoSettings.logoAlt || "ตราโรงเรียนวชิรธรรมสาธิต"} 
+              className={`w-9 h-9 sm:w-10 sm:h-10 object-contain shrink-0 group-hover:scale-105 transition-transform ${
+                logoSettings.logoShape === "circle" ? "rounded-full" : logoSettings.logoShape === "square" ? "rounded-none" : "rounded-xl"
+              }`} 
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = "/school-logo.png";
+              }}
             />
-            <div className="flex flex-col justify-center min-w-0">
-              <span className="font-heading font-black text-[17px] md:text-[20px] xl:text-[23px] tracking-tight leading-none">
-                <span className="text-red-600">ART </span>
-                <span className="text-gray-900">ROOM</span>
-              </span>
-              <span className="block text-[8.5px] sm:text-[9.5px] md:text-[10px] text-slate-500 font-semibold tracking-wider uppercase leading-tight mt-0.5 whitespace-nowrap">
-                WACHIRATHAMMASATIT SCHOOL
-              </span>
-            </div>
+            {logoSettings.showText && (
+              <div className="flex flex-col justify-center min-w-0">
+                <span className="font-heading font-black text-[17px] md:text-[20px] xl:text-[23px] tracking-tight leading-none">
+                  <span className="text-red-600">{logoSettings.brandNamePrefix || "ART"} </span>
+                  <span className="text-gray-900">{logoSettings.brandNameSuffix || "ROOM"}</span>
+                </span>
+                <span className="block text-[8.5px] sm:text-[9.5px] md:text-[10px] text-slate-500 font-semibold tracking-wider uppercase leading-tight mt-0.5 whitespace-nowrap">
+                  {logoSettings.schoolName || "WACHIRATHAMMASATIT SCHOOL"}
+                </span>
+              </div>
+            )}
           </Link>
         </div>
         

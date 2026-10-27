@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSiteLogo } from "@/context/LogoContext";
 import {
   Home,
   BookOpen,
@@ -33,6 +34,7 @@ import { performGlobalLogout } from "@/lib/client-auth";
 
 export default function BottomNavbar() {
   const pathname = usePathname();
+  const { logoSettings } = useSiteLogo();
   const [userName, setUserName] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
@@ -225,19 +227,26 @@ export default function BottomNavbar() {
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/school-logo.png"
-                alt="Logo"
-                className="w-9 h-9 object-contain shrink-0"
+                src={logoSettings.logoUrl || "/school-logo.png"}
+                alt={logoSettings.logoAlt || "Logo"}
+                className={`w-9 h-9 object-contain shrink-0 ${
+                  logoSettings.logoShape === "circle" ? "rounded-full" : logoSettings.logoShape === "square" ? "rounded-none" : "rounded-xl"
+                }`}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "/school-logo.png";
+                }}
               />
-              <div className="flex flex-col justify-center min-w-0">
-                <span className="font-heading font-black text-lg tracking-tight leading-none">
-                  <span className="text-red-600">ART </span>
-                  <span className="text-gray-900">ROOM</span>
-                </span>
-                <span className="text-[9px] text-gray-500 font-semibold tracking-wider uppercase leading-tight mt-0.5 truncate">
-                  WACHIRATHAMMASATIT SCHOOL
-                </span>
-              </div>
+              {logoSettings.showText && (
+                <div className="flex flex-col justify-center min-w-0">
+                  <span className="font-heading font-black text-lg tracking-tight leading-none">
+                    <span className="text-red-600">{logoSettings.brandNamePrefix || "ART"} </span>
+                    <span className="text-gray-900">{logoSettings.brandNameSuffix || "ROOM"}</span>
+                  </span>
+                  <span className="text-[9px] text-gray-500 font-semibold tracking-wider uppercase leading-tight mt-0.5 truncate">
+                    {logoSettings.schoolName || "WACHIRATHAMMASATIT SCHOOL"}
+                  </span>
+                </div>
+              )}
             </Link>
 
             {/* Big Close Button (>= 44px) */}

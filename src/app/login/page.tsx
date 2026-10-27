@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { setStudentAuth, setGuestAuth } from "@/lib/client-auth";
+import { useSiteLogo } from "@/context/LogoContext";
 import { 
   User, 
   Users, 
@@ -83,6 +84,7 @@ const PROVIDERS: SocialProvider[] = [
 ];
 
 export default function LoginPage() {
+  const { logoSettings } = useSiteLogo();
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [activeTab, setActiveTab] = useState<"student" | "guest">("student");
@@ -286,9 +288,14 @@ export default function LoginPage() {
         <div className="text-center mb-7">
           <Link href="/" className="inline-block mb-3 hover:scale-105 transition-transform">
             <img 
-              src="/school-logo.png" 
-              alt="School Logo" 
-              className="w-20 h-20 sm:w-22 sm:h-22 object-contain mx-auto"
+              src={logoSettings.logoUrl || "/school-logo.png"} 
+              alt={logoSettings.logoAlt || "School Logo"} 
+              className={`w-20 h-20 sm:w-22 sm:h-22 object-contain mx-auto ${
+                logoSettings.logoShape === "circle" ? "rounded-full" : logoSettings.logoShape === "square" ? "rounded-none" : "rounded-2xl"
+              }`}
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = "/school-logo.png";
+              }}
             />
           </Link>
           <h1 className="text-2xl sm:text-3xl font-bold font-heading text-gray-900 tracking-tight">เข้าสู่ระบบห้องเรียนศิลปะ</h1>

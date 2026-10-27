@@ -2,9 +2,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Eye, Lock } from "lucide-react";
+import { useSiteLogo } from "@/context/LogoContext";
 
 export default function Footer() {
   const [visitorCount, setVisitorCount] = useState(0);
+  const { logoSettings } = useSiteLogo();
 
   useEffect(() => {
     fetch("/api/visitors")
@@ -23,19 +25,26 @@ export default function Footer() {
           <div className="flex items-center gap-3.5">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img 
-              src="/school-logo.png" 
-              alt="School Logo" 
-              className="w-12 h-12 object-contain" 
+              src={logoSettings.logoUrl || "/school-logo.png"} 
+              alt={logoSettings.logoAlt || "School Logo"} 
+              className={`w-12 h-12 object-contain ${
+                logoSettings.logoShape === "circle" ? "rounded-full" : logoSettings.logoShape === "square" ? "rounded-none" : "rounded-xl"
+              }`}
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = "/school-logo.png";
+              }}
             />
-            <div>
-              <span className="font-heading font-black text-xl tracking-wide block leading-none">
-                <span className="text-red-600">ART </span>
-                <span className="text-gray-900">ROOM</span>
-              </span>
-              <span className="text-[10px] text-gray-500 font-bold block mt-1">
-                WACHIRATHAMMASATIT SCHOOL
-              </span>
-            </div>
+            {logoSettings.showText && (
+              <div>
+                <span className="font-heading font-black text-xl tracking-wide block leading-none">
+                  <span className="text-red-600">{logoSettings.brandNamePrefix || "ART"} </span>
+                  <span className="text-gray-900">{logoSettings.brandNameSuffix || "ROOM"}</span>
+                </span>
+                <span className="text-[10px] text-gray-500 font-bold block mt-1">
+                  {logoSettings.schoolName || "WACHIRATHAMMASATIT SCHOOL"}
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gray-50 border border-gray-200 text-gray-700 text-xs font-medium">
