@@ -386,11 +386,23 @@ export async function PUT(request: Request) {
     const content = body.content ? String(body.content) : null;
     const orderIndex = Number(body.orderIndex) || 0;
 
-    await d1.prepare(`
-      UPDATE downloads 
-      SET title = ?, description = ?, category = ?, grade = ?, file_name = ?, file_size = ?, file_url = ?, image_url = ?, topic = ?, media_type = ?, content = ?, order_index = ?
-      WHERE id = ?
-    `).bind(title, description, category, grade, fileName, fileSize, fileUrl, imageUrl, topic, mediaType, content, orderIndex, id).run();
+    const downloadsCount = typeof body.downloadsCount === 'number'
+      ? Math.max(0, Math.floor(body.downloadsCount))
+      : undefined;
+
+    if (downloadsCount !== undefined) {
+      await d1.prepare(`
+        UPDATE downloads 
+        SET title = ?, description = ?, category = ?, grade = ?, file_name = ?, file_size = ?, file_url = ?, image_url = ?, topic = ?, media_type = ?, content = ?, order_index = ?, downloads_count = ?
+        WHERE id = ?
+      `).bind(title, description, category, grade, fileName, fileSize, fileUrl, imageUrl, topic, mediaType, content, orderIndex, downloadsCount, id).run();
+    } else {
+      await d1.prepare(`
+        UPDATE downloads 
+        SET title = ?, description = ?, category = ?, grade = ?, file_name = ?, file_size = ?, file_url = ?, image_url = ?, topic = ?, media_type = ?, content = ?, order_index = ?
+        WHERE id = ?
+      `).bind(title, description, category, grade, fileName, fileSize, fileUrl, imageUrl, topic, mediaType, content, orderIndex, id).run();
+    }
 
     return NextResponse.json({ success: true, id });
 
@@ -439,13 +451,33 @@ export async function PATCH(request: Request) {
 
     const d1 = await getD1();
     if (d1) {
+      // Robustly increment downloads_count using COALESCE
       await d1.prepare(`
-        UPDATE downloads SET downloads_count = downloads_count + 1 WHERE id = ?
+        UPDATE downloads SET downloads_count = COALESCE(downloads_count, 0) + 1 WHERE id = ?
       `).bind(id).run();
+
+      // Also increment in lessons table in case the ID belongs to lessons
+      try {
+        await d1.prepare(`
+          UPDATE lessons SET views = COALESCE(views, 0) + 1 WHERE id = ?
+        `).bind(id).run();
+      } catch {}
+
+      let updatedCount = null;
+      try {
+        const stmt = d1.prepare(`SELECT downloads_count as downloadsCount FROM downloads WHERE id = ?`).bind(id);
+        const row = typeof stmt.first === 'function' ? await stmt.first() : null;
+        if (row && typeof row.downloadsCount === 'number') {
+          updatedCount = row.downloadsCount;
+        }
+      } catch {}
+
+      return NextResponse.json({ success: true, downloadsCount: updatedCount });
     }
 
     return NextResponse.json({ success: true });
-  } catch {
+  } catch (err: any) {
+    console.error("PATCH /api/downloads error:", err);
     return NextResponse.json({ success: true });
   }
 }

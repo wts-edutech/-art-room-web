@@ -62,6 +62,31 @@ export default function MaterialsList({
 
   const handleView = (item: any) => {
     setPreviewItem(item);
+
+    const targetKey = item.id;
+    const rawKey = item.rawId;
+
+    // Increment count on card click / preview
+    setDownloadCounts(prev => ({
+      ...prev,
+      [targetKey]: (prev[targetKey] ?? item.downloadsCount ?? 0) + 1,
+      ...(rawKey ? { [rawKey]: (prev[rawKey] ?? item.downloadsCount ?? 0) + 1 } : {})
+    }));
+
+    if (item.rawId) {
+      fetch(`/api/downloads?id=${encodeURIComponent(item.rawId)}`, { method: "PATCH" })
+        .then(res => res.json())
+        .then(data => {
+          if (data && typeof data.downloadsCount === 'number') {
+            setDownloadCounts(prev => ({
+              ...prev,
+              [targetKey]: data.downloadsCount,
+              ...(rawKey ? { [rawKey]: data.downloadsCount } : {})
+            }));
+          }
+        })
+        .catch(() => {});
+    }
   };
 
   const handleDownload = async (e: React.MouseEvent, item: any) => {
@@ -79,15 +104,30 @@ export default function MaterialsList({
       type: "loading"
     });
 
+    const targetKey = item.id;
+    const rawKey = item.rawId;
+
     // Optimistically increment download count
     setDownloadCounts(prev => ({
       ...prev,
-      [item.id]: (prev[item.id] ?? item.downloadsCount ?? 0) + 1
+      [targetKey]: (prev[targetKey] ?? item.downloadsCount ?? 0) + 1,
+      ...(rawKey ? { [rawKey]: (prev[rawKey] ?? item.downloadsCount ?? 0) + 1 } : {})
     }));
 
     // Trigger API download count increment
     if (item.rawId) {
-      fetch(`/api/downloads?id=${encodeURIComponent(item.rawId)}`, { method: "PATCH" }).catch(() => {});
+      fetch(`/api/downloads?id=${encodeURIComponent(item.rawId)}`, { method: "PATCH" })
+        .then(res => res.json())
+        .then(data => {
+          if (data && typeof data.downloadsCount === 'number') {
+            setDownloadCounts(prev => ({
+              ...prev,
+              [targetKey]: data.downloadsCount,
+              ...(rawKey ? { [rawKey]: data.downloadsCount } : {})
+            }));
+          }
+        })
+        .catch(() => {});
     }
 
     try {
@@ -138,11 +178,17 @@ export default function MaterialsList({
 
   // Fetch dynamic downloads from API
   useEffect(() => {
-    fetch("/api/downloads")
+    fetch("/api/downloads", { cache: "no-store" })
       .then(res => res.json())
       .then((data: any) => {
         if (data && Array.isArray(data.downloads) && data.downloads.length > 0) {
           setDownloads(data.downloads);
+          const map: Record<string, number> = {};
+          data.downloads.forEach((dl: any) => {
+            map[`dl-${dl.id}`] = dl.downloadsCount ?? 0;
+            map[dl.id] = dl.downloadsCount ?? 0;
+          });
+          setDownloadCounts(prev => ({ ...map, ...prev }));
         }
       })
       .catch(() => {});
@@ -647,7 +693,7 @@ export default function MaterialsList({
                     <div className="flex items-center justify-between gap-1 text-[10px] sm:text-xs">
                       <div className="flex items-center gap-1 text-gray-500 font-medium" title="จำนวนดาวน์โหลด">
                         <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-400 shrink-0" />
-                        <span>{downloadCounts[item.id] ?? item.downloadsCount ?? 342} ครั้ง</span>
+                        <span>{(downloadCounts[item.id] ?? downloadCounts[item.rawId] ?? item.downloadsCount ?? 0)} ครั้ง</span>
                       </div>
 
                       <Link
@@ -861,7 +907,7 @@ export default function MaterialsList({
                         <div className="flex items-center gap-3 text-xs text-gray-400 mt-0.5">
                           <span>ขนาด: {previewItem.fileSize || "1.4 MB"}</span>
                           <span>•</span>
-                          <span>ดาวน์โหลดแล้ว: {downloadCounts[previewItem.id] ?? previewItem.downloadsCount ?? 0} ครั้ง</span>
+                          <span>ดาวน์โหลดแล้ว: {(downloadCounts[previewItem.id] ?? downloadCounts[previewItem.rawId] ?? previewItem.downloadsCount ?? 0)} ครั้ง</span>
                         </div>
                       </div>
                     </div>

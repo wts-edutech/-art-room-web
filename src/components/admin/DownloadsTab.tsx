@@ -145,6 +145,7 @@ export default function DownloadsTab() {
   const [fileSize, setFileSize] = useState("1.5 MB");
   const [fileUrl, setFileUrl] = useState("");
   const [orderIndex, setOrderIndex] = useState(1);
+  const [downloadsCount, setDownloadsCount] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
 
   // Fetch Data
@@ -287,6 +288,7 @@ export default function DownloadsTab() {
     setFileSize("1.5 MB");
     setFileUrl("");
     setOrderIndex(downloads.length + 1);
+    setDownloadsCount(0);
     setIsModalOpen(true);
   };
 
@@ -301,6 +303,7 @@ export default function DownloadsTab() {
     setFileSize(item.fileSize || "1.0 MB");
     setFileUrl(item.fileUrl || "");
     setOrderIndex(item.orderIndex || 1);
+    setDownloadsCount(item.downloadsCount || 0);
     setIsModalOpen(true);
   };
 
@@ -380,6 +383,7 @@ export default function DownloadsTab() {
             fileSize: fileSize.trim() || "1.0 MB",
             fileUrl: fileUrl.trim(),
             orderIndex: Number(orderIndex) || 0,
+            downloadsCount: Math.max(0, Number(downloadsCount) || 0),
           }),
         });
 
@@ -404,6 +408,7 @@ export default function DownloadsTab() {
             fileSize: fileSize.trim() || "1.0 MB",
             fileUrl: fileUrl.trim(),
             orderIndex: Number(orderIndex) || 0,
+            downloadsCount: Math.max(0, Number(downloadsCount) || 0),
           }),
         });
 
@@ -764,9 +769,39 @@ export default function DownloadsTab() {
                       <span className="text-[11px] text-gray-400">
                         {item.fileSize || "1.0 MB"}
                       </span>
-                      <span className="text-[11px] text-emerald-600 font-medium">
-                        ดาวน์โหลดแล้ว {item.downloadsCount || 0} ครั้ง
-                      </span>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const val = prompt(`แก้ไขจำนวนครั้งการดาวน์โหลดสำหรับ "${item.title}":`, String(item.downloadsCount || 0));
+                          if (val !== null) {
+                            const newCount = Math.max(0, parseInt(val) || 0);
+                            const res = await fetch("/api/downloads", {
+                              method: "PUT",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                id: item.id,
+                                title: item.title,
+                                description: item.description,
+                                category: item.category,
+                                grade: item.grade,
+                                fileName: item.fileName,
+                                fileSize: item.fileSize,
+                                fileUrl: item.fileUrl,
+                                orderIndex: item.orderIndex,
+                                downloadsCount: newCount,
+                              }),
+                            });
+                            if (res.ok) {
+                              fetchData();
+                            }
+                          }
+                        }}
+                        className="text-[11px] text-emerald-700 hover:text-emerald-950 bg-emerald-50 hover:bg-emerald-100 font-semibold px-2 py-0.5 rounded-lg border border-emerald-200 transition-colors cursor-pointer flex items-center gap-1"
+                        title="คลิกเพื่อแก้ไขจำนวนครั้งดาวน์โหลด"
+                      >
+                        <span>ดาวน์โหลดแล้ว {item.downloadsCount || 0} ครั้ง</span>
+                        <Pencil className="w-2.5 h-2.5 opacity-70" />
+                      </button>
                     </div>
 
                     <h4 className="font-bold text-gray-900 text-sm sm:text-base">
@@ -936,6 +971,19 @@ export default function DownloadsTab() {
                     value={orderIndex}
                     onChange={(e) => setOrderIndex(Number(e.target.value))}
                     className="w-full px-3.5 py-2 text-xs sm:text-sm border border-gray-200 rounded-xl focus:border-red-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                    ยอดดาวน์โหลด / เข้าชม (ครั้ง)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={downloadsCount}
+                    onChange={(e) => setDownloadsCount(Math.max(0, parseInt(e.target.value) || 0))}
+                    className="w-full px-3.5 py-2 text-xs sm:text-sm border border-gray-200 rounded-xl focus:border-red-500 focus:outline-none font-bold text-emerald-800"
                   />
                 </div>
               </div>
