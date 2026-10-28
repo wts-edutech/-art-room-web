@@ -605,42 +605,47 @@ export default function ExamLockModal({
             <div className="max-w-3xl mx-auto w-full space-y-4 sm:space-y-6 pb-12 sm:pb-16">
               {currentQuestion ? (
                 <>
-                  {/* Question Header */}
-                  <div className="flex items-center justify-between pb-2.5 sm:pb-3 border-b border-gray-200 gap-2">
-                    <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                      {/* Quick Prev Button */}
+                  {/* Question Header: Balanced Stepper Pill & Answer Status */}
+                  <div className="flex items-center justify-between pb-2.5 sm:pb-3 border-b border-gray-200 gap-2 w-full">
+                    {/* Left: Question Navigation Pill / Stepper */}
+                    <div className="inline-flex items-center bg-gray-100 p-0.5 rounded-full border border-gray-200/80 shadow-2xs shrink-0">
                       <button
                         type="button"
                         onClick={() => setCurrentIdx((prev) => Math.max(0, prev - 1))}
                         disabled={currentIdx === 0}
-                        className="w-7 h-7 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed transition-colors shrink-0"
+                        className="w-7 h-7 min-w-[28px] max-w-[28px] min-h-[28px] max-h-[28px] aspect-square rounded-full flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-white active:bg-gray-200 disabled:opacity-20 disabled:cursor-not-allowed transition-all cursor-pointer shrink-0"
                         title="ข้อก่อนหน้า"
                       >
-                        <ArrowLeft className="w-3.5 h-3.5" />
+                        <ArrowLeft className="w-3.5 h-3.5 shrink-0" />
                       </button>
 
-                      <span className="px-2.5 sm:px-3.5 py-1 rounded-xl bg-orange-500 text-white font-bold text-xs font-kanit shadow-xs shrink-0">
-                        ข้อที่ {currentQuestion.questionNumber} จาก {questions.length}
+                      <span className="px-2.5 sm:px-3 text-xs font-bold font-kanit text-gray-800 whitespace-nowrap select-none">
+                        ข้อที่ {currentQuestion.questionNumber} <span className="text-gray-400 font-normal">/ {questions.length}</span>
                       </span>
 
-                      {/* Quick Next Button */}
                       <button
                         type="button"
                         onClick={() => setCurrentIdx((prev) => Math.min(questions.length - 1, prev + 1))}
                         disabled={currentIdx === questions.length - 1}
-                        className="w-7 h-7 rounded-lg bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed transition-colors shadow-2xs shrink-0"
+                        className="w-7 h-7 min-w-[28px] max-w-[28px] min-h-[28px] max-h-[28px] aspect-square rounded-full flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-white active:bg-gray-200 disabled:opacity-20 disabled:cursor-not-allowed transition-all cursor-pointer shrink-0"
                         title="ข้อถัดไป"
                       >
-                        <ArrowRight className="w-3.5 h-3.5" />
+                        <ArrowRight className="w-3.5 h-3.5 shrink-0" />
                       </button>
+                    </div>
 
+                    {/* Right: Answer Status Badge */}
+                    <div className="shrink-0">
                       {answers[currentQuestion.questionNumber] ? (
-                        <span className="text-[11px] sm:text-xs font-semibold text-emerald-600 flex items-center gap-1 bg-emerald-50 px-2 sm:px-2.5 py-0.5 rounded-full border border-emerald-200 shrink-0">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> บันทึกแล้ว
+                        <span className="h-7 px-2.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] sm:text-xs font-semibold shadow-2xs inline-flex items-center gap-1 shrink-0 whitespace-nowrap">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                          <span>บันทึกแล้ว</span>
                         </span>
                       ) : (
-                        <span className="text-[11px] sm:text-xs text-amber-700 bg-amber-50 px-2 sm:px-2.5 py-0.5 rounded-full border border-amber-200 font-medium shrink-0">
-                          ยังไม่ได้เลือกคำตอบ
+                        <span className="h-7 px-2.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-[11px] sm:text-xs font-medium shadow-2xs inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0 animate-pulse" />
+                          <span className="hidden xs:inline">ยังไม่ได้เลือก</span>
+                          <span className="xs:hidden">ยังไม่เลือก</span>
                         </span>
                       )}
                     </div>
@@ -690,12 +695,12 @@ export default function ExamLockModal({
                   </div>
 
                   {/* Action Buttons: Directly below Choices ก, ข, ค, ง (Single unified row) */}
-                  <div className="pt-4 sm:pt-6 border-t border-gray-100 flex items-center justify-between gap-2 sm:gap-3">
+                  <div className="pt-4 sm:pt-6 border-t border-gray-100 grid grid-cols-3 gap-2 sm:gap-3 w-full">
                     <button
                       type="button"
                       onClick={() => setCurrentIdx((prev) => Math.max(0, prev - 1))}
                       disabled={currentIdx === 0}
-                      className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 active:bg-gray-100 text-gray-700 font-bold text-xs sm:text-sm transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed shadow-2xs active:scale-95 shrink-0"
+                      className="h-11 sm:h-12 w-full inline-flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-4 rounded-xl sm:rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 active:bg-gray-100 text-gray-700 font-bold text-xs sm:text-sm transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed shadow-2xs active:scale-95"
                     >
                       <ArrowLeft className="w-4 h-4 shrink-0" />
                       <span className="hidden xs:inline">ข้อก่อนหน้า</span>
@@ -705,9 +710,9 @@ export default function ExamLockModal({
                     <button
                       type="button"
                       onClick={() => setShowMobileMap(true)}
-                      className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-orange-50 hover:bg-orange-100 active:bg-orange-200/70 text-orange-800 font-bold text-xs sm:text-sm border border-orange-200/80 active:scale-95 transition-all cursor-pointer shadow-2xs"
+                      className="h-11 sm:h-12 w-full inline-flex items-center justify-center gap-1 px-1.5 sm:px-3 rounded-xl sm:rounded-2xl bg-orange-50 hover:bg-orange-100 active:bg-orange-200/70 text-orange-800 font-bold text-[11px] sm:text-sm border border-orange-200/80 active:scale-95 transition-all cursor-pointer shadow-2xs"
                     >
-                      <HelpCircle className="w-4 h-4 text-orange-500 shrink-0" />
+                      <HelpCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-orange-500 shrink-0" />
                       <span className="truncate">ผังข้อ ({answeredCount}/{questions.length})</span>
                     </button>
 
@@ -715,7 +720,7 @@ export default function ExamLockModal({
                       <button
                         type="button"
                         onClick={() => setCurrentIdx((prev) => Math.min(questions.length - 1, prev + 1))}
-                        className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3.5 sm:px-6 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-bold text-xs sm:text-sm shadow-md shadow-orange-500/25 active:scale-95 transition-all cursor-pointer shrink-0"
+                        className="h-11 sm:h-12 w-full inline-flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-4 rounded-xl sm:rounded-2xl bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-bold text-xs sm:text-sm shadow-md shadow-orange-500/25 active:scale-95 transition-all cursor-pointer"
                         style={{ backgroundColor: "#f97316", color: "#ffffff" }}
                       >
                         <span>ข้อถัดไป</span>
@@ -725,7 +730,7 @@ export default function ExamLockModal({
                       <button
                         type="button"
                         onClick={handleConfirmSubmit}
-                        className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3.5 sm:px-6 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs sm:text-sm shadow-md shadow-emerald-600/25 active:scale-95 transition-all cursor-pointer shrink-0"
+                        className="h-11 sm:h-12 w-full inline-flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-4 rounded-xl sm:rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs sm:text-sm shadow-md shadow-emerald-600/25 active:scale-95 transition-all cursor-pointer animate-pulse"
                         style={{ backgroundColor: "#059669", color: "#ffffff" }}
                       >
                         <Send className="w-4 h-4 shrink-0" />
