@@ -602,7 +602,7 @@ export default function ExamLockModal({
           <main 
             className="flex-1 p-3.5 sm:p-6 md:p-8 overflow-y-auto w-full"
           >
-            <div className="max-w-3xl mx-auto w-full space-y-4 sm:space-y-6 pb-6">
+            <div className="max-w-3xl mx-auto w-full space-y-4 sm:space-y-6 pb-12 sm:pb-16">
               {currentQuestion ? (
                 <>
                   {/* Question Header */}
@@ -689,45 +689,46 @@ export default function ExamLockModal({
                     })}
                   </div>
 
-                  {/* Prominent Action Buttons: Directly below Choices ก, ข, ค, ง */}
-                  <div className="pt-4 border-t border-gray-100 flex items-center justify-between gap-2 sm:gap-3">
+                  {/* Action Buttons: Directly below Choices ก, ข, ค, ง (Single unified row) */}
+                  <div className="pt-4 sm:pt-6 border-t border-gray-100 flex items-center justify-between gap-2 sm:gap-3">
                     <button
                       type="button"
                       onClick={() => setCurrentIdx((prev) => Math.max(0, prev - 1))}
                       disabled={currentIdx === 0}
-                      className="inline-flex items-center gap-1.5 px-3.5 sm:px-5 py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-bold text-xs sm:text-sm transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed shadow-2xs"
+                      className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 active:bg-gray-100 text-gray-700 font-bold text-xs sm:text-sm transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed shadow-2xs active:scale-95 shrink-0"
                     >
-                      <ArrowLeft className="w-4 h-4" />
-                      <span>ข้อก่อนหน้า</span>
+                      <ArrowLeft className="w-4 h-4 shrink-0" />
+                      <span className="hidden xs:inline">ข้อก่อนหน้า</span>
+                      <span className="xs:hidden">ก่อนหน้า</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => setShowMobileMap(true)}
-                      className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-800 font-bold text-xs sm:text-sm border border-orange-200 active:scale-95 transition-all cursor-pointer"
+                      className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-orange-50 hover:bg-orange-100 active:bg-orange-200/70 text-orange-800 font-bold text-xs sm:text-sm border border-orange-200/80 active:scale-95 transition-all cursor-pointer shadow-2xs"
                     >
-                      <HelpCircle className="w-4 h-4 text-orange-500" />
-                      <span>ผังข้อ ({answeredCount}/{questions.length})</span>
+                      <HelpCircle className="w-4 h-4 text-orange-500 shrink-0" />
+                      <span className="truncate">ผังข้อ ({answeredCount}/{questions.length})</span>
                     </button>
 
                     {currentIdx < questions.length - 1 ? (
                       <button
                         type="button"
                         onClick={() => setCurrentIdx((prev) => Math.min(questions.length - 1, prev + 1))}
-                        className="inline-flex items-center gap-2 px-5 sm:px-6 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-bold text-xs sm:text-sm shadow-md shadow-orange-500/20 active:scale-95 transition-all cursor-pointer"
+                        className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3.5 sm:px-6 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-bold text-xs sm:text-sm shadow-md shadow-orange-500/25 active:scale-95 transition-all cursor-pointer shrink-0"
                         style={{ backgroundColor: "#f97316", color: "#ffffff" }}
                       >
                         <span>ข้อถัดไป</span>
-                        <ArrowRight className="w-4 h-4" />
+                        <ArrowRight className="w-4 h-4 shrink-0" />
                       </button>
                     ) : (
                       <button
                         type="button"
                         onClick={handleConfirmSubmit}
-                        className="inline-flex items-center gap-2 px-5 sm:px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs sm:text-sm shadow-md shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer"
+                        className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3.5 sm:px-6 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs sm:text-sm shadow-md shadow-emerald-600/25 active:scale-95 transition-all cursor-pointer shrink-0"
                         style={{ backgroundColor: "#059669", color: "#ffffff" }}
                       >
-                        <Send className="w-4 h-4" />
+                        <Send className="w-4 h-4 shrink-0" />
                         <span>ส่งข้อสอบ</span>
                       </button>
                     )}
@@ -740,59 +741,6 @@ export default function ExamLockModal({
               )}
             </div>
           </main>
-
-          {/* Pinned Bottom Navigation Controls: Always visible, never pushed behind browser toolbar */}
-          <footer className="bg-white border-t border-gray-200 px-3 sm:px-6 py-2.5 sm:py-3 shrink-0 z-20 shadow-xs pb-[max(0.625rem,env(safe-area-inset-bottom))]">
-            <div className="max-w-3xl mx-auto w-full flex items-center justify-between gap-2 sm:gap-3">
-              <button
-                type="button"
-                onClick={() => setCurrentIdx((prev) => Math.max(0, prev - 1))}
-                disabled={currentIdx === 0}
-                className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-bold text-xs transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                <span className="hidden xs:inline sm:inline">ข้อก่อนหน้า</span>
-                <span className="xs:hidden sm:hidden">ก่อนหน้า</span>
-              </button>
-
-              {/* Mobile Question Map Button (Opens Bottom Sheet) */}
-              <button
-                type="button"
-                onClick={() => setShowMobileMap(true)}
-                className="md:hidden inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-800 font-bold text-xs border border-orange-200 active:scale-95 transition-all cursor-pointer"
-              >
-                <HelpCircle className="w-3.5 h-3.5 text-orange-500" />
-                <span>ผังข้อ ({answeredCount}/{questions.length})</span>
-              </button>
-
-              {/* Desktop answered progress */}
-              <div className="hidden md:block text-xs text-gray-500 font-medium">
-                ตอบแล้ว <strong>{answeredCount}</strong> จาก <strong>{questions.length}</strong> ข้อ
-              </div>
-
-              {currentIdx < questions.length - 1 ? (
-                <button
-                  type="button"
-                  onClick={() => setCurrentIdx((prev) => Math.min(questions.length - 1, prev + 1))}
-                  className="inline-flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-6 py-2 sm:py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs shadow-md shadow-orange-500/20 active:scale-95 transition-all cursor-pointer"
-                  style={{ backgroundColor: "#f97316", color: "#ffffff" }}
-                >
-                  <span>ข้อถัดไป</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleConfirmSubmit}
-                  className="inline-flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-6 py-2 sm:py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer"
-                  style={{ backgroundColor: "#059669", color: "#ffffff" }}
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>ส่งข้อสอบ</span>
-                </button>
-              )}
-            </div>
-          </footer>
         </div>
       </div>
 
