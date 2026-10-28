@@ -47,16 +47,16 @@ export default function TestimonialsSection() {
                   </span>
 
                   {testimonial.univImageUrl ? (
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-orange-50/60 border border-orange-100 p-1 flex items-center justify-center shrink-0 shadow-2xs">
+                    <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-white border border-gray-100/90 shadow-2xs p-1 flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-105">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={testimonial.univImageUrl}
                         alt="ตรามหาวิทยาลัย"
-                        className="w-full h-full object-contain"
+                        className="w-full h-full object-contain mix-blend-multiply drop-shadow-2xs"
                       />
                     </div>
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-orange-50/40 flex items-center justify-center text-orange-300">
+                    <div className="w-9 h-9 rounded-xl bg-orange-50/50 border border-orange-100 flex items-center justify-center text-orange-400">
                       <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
                       </svg>
