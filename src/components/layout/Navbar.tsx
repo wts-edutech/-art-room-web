@@ -140,7 +140,10 @@ export default function Navbar() {
                   transformOrigin: "center center",
                 }}
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/artroom-logo.png";
+                  const target = e.target as HTMLImageElement;
+                  if (!target.src.endsWith("/school-logo.png")) {
+                    target.src = "/school-logo.png";
+                  }
                 }}
               />
             </div>

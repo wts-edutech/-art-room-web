@@ -52,7 +52,7 @@ export function LogoProvider({ children }: { children: React.ReactNode }) {
         const cached = localStorage.getItem(STORAGE_KEY);
         if (cached) {
           const parsed = JSON.parse(cached);
-          if (parsed.logoUrl === "/school-logo.png") {
+          if (parsed.logoUrl === "/school-logo.png" || parsed.logoUrl?.includes("Uk1GRsDYAABXRU")) {
             parsed.logoUrl = "/artroom-logo.png";
           }
           return { ...DEFAULT_LOGO_SETTINGS, ...parsed };

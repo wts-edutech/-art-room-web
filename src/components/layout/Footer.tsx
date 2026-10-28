@@ -31,7 +31,10 @@ export default function Footer() {
                 logoSettings.logoShape === "circle" ? "rounded-full" : logoSettings.logoShape === "square" ? "rounded-none" : "rounded-2xl"
               }`}
               onError={(e) => {
-                (e.target as HTMLImageElement).src = "/artroom-logo.png";
+                const target = e.target as HTMLImageElement;
+                if (!target.src.endsWith("/school-logo.png")) {
+                  target.src = "/school-logo.png";
+                }
               }}
             />
             {logoSettings.showText && (
