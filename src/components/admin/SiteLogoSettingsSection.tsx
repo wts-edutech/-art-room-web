@@ -522,49 +522,117 @@ export default function SiteLogoSettingsSection() {
           </div>
         </div>
 
-        {/* Section 2: Logo Image Upload Dropzone */}
-        <div className="space-y-2">
+        {/* Section 2: Logo Image Upload Dropzone & Live Image Card */}
+        <div className="space-y-3">
           <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center justify-between">
             <span className="flex items-center gap-1.5">
               <ImageIcon className="w-3.5 h-3.5 text-orange-600" />
-              อัปโหลดรูปภาพตราโรงเรียน/โลโก้ใหม่
+              รูปภาพตราโรงเรียน / โลโก้เว็บไซต์
             </span>
             <span className="text-[11px] text-gray-400 font-normal">
               รองรับ PNG (แนะนำพื้นหลังโปร่งใส), WebP, JPG, SVG
             </span>
           </label>
 
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/png,image/webp,image/jpeg,image/svg+xml"
+            className="hidden"
+            onChange={(e) => {
+              if (e.target.files && e.target.files[0]) {
+                handleFileUpload(e.target.files[0]);
+              }
+            }}
+          />
+
+          {/* Active Image Visual Preview Card — ให้มองเห็นรูปภาพที่ดาวน์โหลด/อัปโหลดมาได้ทันที */}
+          <div className="bg-gradient-to-r from-orange-50 via-amber-50/40 to-white rounded-2xl p-4 sm:p-5 border-2 border-orange-200/90 shadow-xs flex flex-col sm:flex-row items-center gap-4 sm:gap-5">
+            <div 
+              className={`relative w-28 h-28 sm:w-32 sm:h-32 bg-white border-2 border-orange-300 shadow-md flex items-center justify-center shrink-0 overflow-hidden ${
+                getLogoShapeClasses(settings.logoShape)
+              }`}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={settings.logoUrl || "/artroom-logo.png"}
+                alt="ภาพโลโก้ที่เลือก"
+                className="w-full h-full object-contain"
+                style={{
+                  transform: currentScale !== 100 ? `scale(${currentScale / 100})` : undefined,
+                  transformOrigin: "center center",
+                }}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "/artroom-logo.png";
+                }}
+              />
+            </div>
+
+            <div className="flex-1 text-center sm:text-left min-w-0">
+              <div className="flex items-center justify-center sm:justify-start gap-2 mb-1.5 flex-wrap">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-600 text-white shadow-xs">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  รูปภาพที่เลือกอยู่ขณะนี้
+                </span>
+                {settings.logoUrl?.startsWith("data:") ? (
+                  <span className="text-[11px] font-bold text-orange-800 bg-orange-100 px-2.5 py-0.5 rounded-full border border-orange-200">
+                    ไฟล์ที่อัปโหลดจากเครื่อง
+                  </span>
+                ) : (
+                  <span className="text-[11px] font-bold text-gray-700 bg-gray-100 px-2.5 py-0.5 rounded-full border border-gray-200 truncate max-w-[200px]">
+                    {settings.logoUrl || "/artroom-logo.png"}
+                  </span>
+                )}
+              </div>
+              
+              <p className="text-xs text-gray-700 font-medium leading-relaxed">
+                {settings.logoUrl?.startsWith("data:") 
+                  ? "รูปภาพที่คุณดาวน์โหลด/อัปโหลดมาพร้อมใช้งานแล้ว! (สามารถกดบันทึกเพื่อนำไปแสดงผลบนแถบ Navbar ทั่วทั้งเว็บได้ทันที)"
+                  : settings.logoUrl === "/artroom-logo.png"
+                  ? "โลโก้การ์ตูน Art Room โรงเรียนวชิรธรรมสาธิต (รูปหลักมาตรฐาน)"
+                  : "รูปภาพจาก URL ที่ระบุ"}
+              </p>
+
+              <div className="mt-3 flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  เลือกรูปอื่นใหม่
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSettings({ ...settings, logoUrl: "/artroom-logo.png" })}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-gray-100 text-gray-700 border border-gray-200 text-xs font-semibold transition-all shadow-2xs cursor-pointer"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-gray-400" />
+                  ใช้รูปการ์ตูน Art Room ดั้งเดิม
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Dropzone for drag-and-drop */}
           <div
             onDragOver={(e) => e.preventDefault()}
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
-            className="border-2 border-dashed border-orange-200 hover:border-orange-500 bg-orange-50/20 hover:bg-orange-50/40 rounded-2xl p-5 sm:p-6 flex flex-col items-center justify-center gap-2.5 cursor-pointer transition-all group"
+            className="border-2 border-dashed border-orange-200 hover:border-orange-400 bg-orange-50/10 hover:bg-orange-50/30 rounded-2xl p-3 sm:p-4 flex items-center justify-center gap-3 cursor-pointer transition-all group"
           >
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/png,image/webp,image/jpeg,image/svg+xml"
-              className="hidden"
-              onChange={(e) => {
-                if (e.target.files && e.target.files[0]) {
-                  handleFileUpload(e.target.files[0]);
-                }
-              }}
-            />
-
-            <div className="w-12 h-12 rounded-2xl bg-white border border-orange-200 shadow-2xs flex items-center justify-center text-orange-600 group-hover:scale-110 transition-transform">
+            <div className="w-9 h-9 rounded-xl bg-white border border-orange-200 shadow-2xs flex items-center justify-center text-orange-600 group-hover:scale-105 transition-transform shrink-0">
               {isOptimizing ? (
-                <div className="w-5 h-5 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+                <div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
               ) : (
-                <Upload className="w-5 h-5" />
+                <Upload className="w-4 h-4" />
               )}
             </div>
-
-            <div className="text-center">
-              <p className="text-xs sm:text-sm font-bold text-gray-800">
-                {isOptimizing ? "กำลังประมวลผลรูปภาพ..." : "ลากรูปภาพมาวางที่นี่ หรือคลิกเพื่อเลือกไฟล์"}
+            <div className="text-left min-w-0">
+              <p className="text-xs font-bold text-gray-700">
+                {isOptimizing ? "กำลังประมวลผลรูปภาพ..." : "ลากรูปภาพมาวางที่นี่ หรือคลิกเพื่อเปลี่ยนไฟล์"}
               </p>
-              <p className="text-[11px] text-gray-400 mt-0.5">
+              <p className="text-[10px] text-gray-400">
                 ขนาดสูงสุด 10MB (ระบบปรับขนาดและบีบอัดให้อัตโนมัติ เพื่อความเร็วสูงสุด)
               </p>
             </div>
@@ -575,18 +643,27 @@ export default function SiteLogoSettingsSection() {
             <div className="flex items-center gap-2">
               <input
                 type="text"
-                value={settings.logoUrl}
-                onChange={(e) => setSettings({ ...settings, logoUrl: e.target.value })}
+                value={settings.logoUrl?.startsWith("data:") ? "ไฟล์รูปภาพในเครื่อง (Base64 Image Data พร้อมบันทึก)" : settings.logoUrl}
+                onChange={(e) => {
+                  if (!settings.logoUrl?.startsWith("data:")) {
+                    setSettings({ ...settings, logoUrl: e.target.value });
+                  }
+                }}
+                readOnly={settings.logoUrl?.startsWith("data:")}
                 placeholder="หรือกรอก URL รูปภาพ เช่น /artroom-logo.png หรือ https://..."
-                className="flex-1 px-3.5 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-xs font-mono text-gray-700"
+                className={`flex-1 px-3.5 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-xs font-mono ${
+                  settings.logoUrl?.startsWith("data:") ? "bg-gray-50 text-gray-500 font-semibold cursor-default" : "text-gray-700"
+                }`}
               />
-              <button
-                type="button"
-                onClick={() => setSettings({ ...settings, logoUrl: "/artroom-logo.png" })}
-                className="px-3 py-2 rounded-xl border border-gray-200 text-xs text-gray-600 hover:bg-gray-50 transition-colors whitespace-nowrap cursor-pointer"
-              >
-                ใช้รูปการ์ตูน Art Room
-              </button>
+              {settings.logoUrl?.startsWith("data:") && (
+                <button
+                  type="button"
+                  onClick={() => setSettings({ ...settings, logoUrl: "/artroom-logo.png" })}
+                  className="px-3 py-2 rounded-xl border border-gray-200 text-xs text-gray-600 hover:bg-gray-50 transition-colors whitespace-nowrap cursor-pointer"
+                >
+                  ล้างค่า
+                </button>
+              )}
             </div>
           </div>
         </div>

@@ -75,7 +75,7 @@ export async function GET() {
     if (result?.value) {
       try {
         const parsed = JSON.parse(result.value);
-        if (!parsed.logoUrl || parsed.logoUrl === "/school-logo.png" || parsed.logoUrl.startsWith("data:image")) {
+        if (!parsed.logoUrl || parsed.logoUrl === "/school-logo.png") {
           parsed.logoUrl = "/artroom-logo.png";
         }
         memorySettings = {

@@ -52,7 +52,7 @@ export function LogoProvider({ children }: { children: React.ReactNode }) {
         const cached = localStorage.getItem(STORAGE_KEY);
         if (cached) {
           const parsed = JSON.parse(cached);
-          if (parsed.logoUrl === "/school-logo.png" || parsed.logoUrl?.startsWith("data:image")) {
+          if (parsed.logoUrl === "/school-logo.png") {
             parsed.logoUrl = "/artroom-logo.png";
           }
           return { ...DEFAULT_LOGO_SETTINGS, ...parsed };
@@ -72,7 +72,7 @@ export function LogoProvider({ children }: { children: React.ReactNode }) {
       if (res.ok) {
         const data: any = await res.json();
         const rawLogoUrl = data.logoUrl;
-        const normalizedLogoUrl = (!rawLogoUrl || rawLogoUrl === "/school-logo.png" || rawLogoUrl.startsWith("data:image"))
+        const normalizedLogoUrl = (!rawLogoUrl || rawLogoUrl === "/school-logo.png")
           ? "/artroom-logo.png"
           : rawLogoUrl;
 
