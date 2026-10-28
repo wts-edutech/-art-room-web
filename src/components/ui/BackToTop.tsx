@@ -68,18 +68,18 @@ export default function BackToTop() {
         </div>
 
         {/* Die-cut Mascot Logo Button */}
-        <div className="relative w-14 h-14 sm:w-16 sm:h-16 transition-all duration-300 drop-shadow-[0_8px_16px_rgba(0,0,0,0.28)] hover:drop-shadow-[0_12px_24px_rgba(132,204,22,0.45)] group-hover:-translate-y-1">
+        <div className="relative w-[52px] h-[65px] sm:w-[62px] sm:h-[78px] transition-all duration-300 drop-shadow-[0_8px_16px_rgba(0,0,0,0.25)] hover:drop-shadow-[0_12px_24px_rgba(132,204,22,0.45)] group-hover:-translate-y-1.5">
           <Image
             src="/images/artroom-mascot-transparent.png"
             alt="Art Room Mascot Back to Top"
-            width={72}
-            height={72}
-            className="w-full h-full object-contain filter"
+            width={80}
+            height={100}
+            className="w-full h-full object-contain filter select-none pointer-events-none"
             priority={false}
           />
 
-          {/* Subtle Upward Mini Indicator Badge on bottom-right of mascot */}
-          <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-gradient-to-tr from-orange-500 to-amber-400 text-white flex items-center justify-center shadow-xs border border-white transition-transform group-hover:scale-110">
+          {/* Subtle Upward Mini Indicator Badge */}
+          <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-gradient-to-tr from-orange-500 to-amber-400 text-white flex items-center justify-center shadow-md border-2 border-white transition-transform duration-200 group-hover:scale-110">
             <ChevronUp className="w-3.5 h-3.5 stroke-[3]" />
           </div>
         </div>
