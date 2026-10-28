@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import Link from "next/link";
 import { 
   MessageSquare, Send, Heart, Reply, Trash2, Sparkles, 
@@ -110,10 +110,10 @@ export default function CommunityDiscussion({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Read user info
-  useEffect(() => {
-    const name = localStorage.getItem("artroom_author_name") || "";
-    const role = localStorage.getItem("artroom_user_role") || "student";
-    const avatar = localStorage.getItem("artroom_user_avatar") || "";
+  const loadUserData = useCallback(() => {
+    const name = localStorage.getItem("artroom_display_name") || localStorage.getItem("artroom_author_name") || "";
+    const role = localStorage.getItem("artroom_user_role") || localStorage.getItem("artroom_role") || "student";
+    const avatar = localStorage.getItem("artroom_avatar") || localStorage.getItem("artroom_user_avatar") || "";
     const email = localStorage.getItem("artroom_author_email") || "";
 
     setUserName(name);
@@ -121,13 +121,28 @@ export default function CommunityDiscussion({
     setUserAvatar(avatar);
     setUserEmail(email);
     setIsLoggedIn(!!name.trim());
+  }, []);
+
+  useEffect(() => {
+    loadUserData();
 
     syncAuthWithServer().then((auth) => {
       if (auth.isAdmin) {
         setUserRole("admin");
         setIsLoggedIn(true);
+      } else if (auth.authenticated && auth.user) {
+        if (auth.user.name) setUserName(auth.user.name);
+        if (auth.user.avatar) {
+          setUserAvatar(auth.user.avatar);
+          localStorage.setItem("artroom_avatar", auth.user.avatar);
+          localStorage.setItem("artroom_user_avatar", auth.user.avatar);
+        }
+        setIsLoggedIn(true);
       }
     });
+
+    window.addEventListener("artroom_profile_updated", loadUserData);
+    window.addEventListener("storage", loadUserData);
 
     // Load liked comments from localStorage
     try {
@@ -136,7 +151,12 @@ export default function CommunityDiscussion({
         setLikedMap(JSON.parse(savedLikes));
       }
     } catch {}
-  }, [topicId]);
+
+    return () => {
+      window.removeEventListener("artroom_profile_updated", loadUserData);
+      window.removeEventListener("storage", loadUserData);
+    };
+  }, [loadUserData, topicId]);
 
   // Fetch comments
   const fetchComments = async () => {
@@ -201,12 +221,13 @@ export default function CommunityDiscussion({
 
     const commentText = newComment.trim();
     const tempId = `temp-${Date.now()}`;
+    const currentAvatarVal = userAvatar || localStorage.getItem("artroom_avatar") || localStorage.getItem("artroom_user_avatar") || "";
     const optimisticComment: CommentItem = {
       id: tempId,
       lessonId: topicId,
       author: effectiveAuthor,
       authorEmail: userEmail || "",
-      authorImage: userAvatar || "",
+      authorImage: currentAvatarVal,
       text: commentText,
       time: new Date().toISOString(),
     };
@@ -236,7 +257,7 @@ export default function CommunityDiscussion({
           text: commentText,
           author: effectiveAuthor,
           authorEmail: userEmail || "",
-          authorImage: userAvatar || "",
+          authorImage: currentAvatarVal,
         }),
       });
 

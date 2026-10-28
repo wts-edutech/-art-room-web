@@ -2,7 +2,7 @@ export const runtime = 'edge';
 
 import { NextResponse } from 'next/server';
 import { getDb } from '@/db';
-import { comments } from '@/db/schema';
+import { comments, students } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { getSession, checkIsAdmin } from '@/lib/api-auth';
 import { checkProfanity, PROFANITY_ALERT_MESSAGE } from '@/lib/profanity-filter';
@@ -52,13 +52,24 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     }
 
     const db = getDb();
+
+    let authorAvatar = body.authorImage || '';
+    if (session && session.role === 'student' && session.userId) {
+      try {
+        const studentRec = await db.select({ avatar: students.avatar }).from(students).where(eq(students.id, session.userId)).get();
+        if (studentRec?.avatar) {
+          authorAvatar = studentRec.avatar;
+        }
+      } catch (e) {}
+    }
+
     const newComment = {
       id: Date.now().toString(),
       ideaId: ideaId,
       lessonId: '-', // generic foreign key placeholder
       author: authorName,
       authorEmail: session?.userId || '',
-      authorImage: body.authorImage || '',
+      authorImage: authorAvatar,
       text: text,
       time: new Date().toISOString()
     };

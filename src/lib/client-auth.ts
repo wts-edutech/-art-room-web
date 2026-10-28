@@ -14,6 +14,7 @@ export const ALL_AUTH_KEYS = [
   "artroom_student_grade",
   "artroom_grade_level",
   "artroom_avatar",
+  "artroom_user_avatar",
   "artroom_phone",
   "artroom_display_name",
   "artroom_provider",
@@ -63,8 +64,10 @@ export function setStudentAuth(
   if (student.avatar !== undefined) {
     if (student.avatar) {
       localStorage.setItem("artroom_avatar", student.avatar);
+      localStorage.setItem("artroom_user_avatar", student.avatar);
     } else {
       localStorage.removeItem("artroom_avatar");
+      localStorage.removeItem("artroom_user_avatar");
     }
   }
 

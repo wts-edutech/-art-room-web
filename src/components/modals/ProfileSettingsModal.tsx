@@ -282,7 +282,10 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
       localStorage.setItem("artroom_author_name", fullName.trim());
       localStorage.setItem("artroom_display_name", (displayName || fullName).trim());
       if (phone.trim()) localStorage.setItem("artroom_phone", phone.trim());
-      if (avatarValue) localStorage.setItem("artroom_avatar", avatarValue);
+      if (avatarValue) {
+        localStorage.setItem("artroom_avatar", avatarValue);
+        localStorage.setItem("artroom_user_avatar", avatarValue);
+      }
       if (fullGrade) {
         localStorage.setItem("artroom_student_grade", fullGrade);
         localStorage.setItem("artroom_classroom", fullGrade);

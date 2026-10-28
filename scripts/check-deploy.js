@@ -35,9 +35,34 @@ const req = https.request(options, (res) => {
       const json = JSON.parse(body);
       if (json.success && json.result && json.result.length > 0) {
         console.log(`Found ${json.result.length} deployments:`);
-        json.result.slice(0, 5).forEach((d, idx) => {
+        const latest = json.result[0];
+        json.result.slice(0, 3).forEach((d, idx) => {
           console.log(`[${idx + 1}] ID: ${d.id} | Stage: ${d.latest_stage?.name} (${d.latest_stage?.status}) | URL: ${d.url} | Created: ${d.created_on}`);
+          if (d.stages) {
+            console.log('    Stages:', d.stages.map(s => `${s.name}: ${s.status}`).join(', '));
+          }
         });
+        if (latest) {
+          const logOpt = {
+            hostname: 'api.cloudflare.com',
+            port: 443,
+            path: `/client/v4/accounts/${ACCOUNT_ID}/pages/projects/${PROJECT_NAME}/deployments/${latest.id}/history?page=1&per_page=50`,
+            headers: { 'Authorization': `Bearer ${TOKEN}` }
+          };
+          https.get(logOpt, (lRes) => {
+            let lBody = '';
+            lRes.on('data', c => lBody += c);
+            lRes.on('end', () => {
+              try {
+                const lj = JSON.parse(lBody);
+                if (lj.result && lj.result.data) {
+                  console.log('\n--- Latest Deployment Logs ---');
+                  console.log(lj.result.data.map(l => l.line).join('\n'));
+                }
+              } catch (e) {}
+            });
+          });
+        }
       } else {
         console.log('Error:', JSON.stringify(json.errors || json));
       }

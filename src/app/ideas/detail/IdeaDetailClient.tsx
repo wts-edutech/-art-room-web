@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
@@ -220,15 +220,27 @@ export default function IdeaDetailClient() {
     return <File className="w-5 h-5 text-gray-500" />;
   };
 
-  useEffect(() => {
-    const name = localStorage.getItem("artroom_author_name");
+  const loadUserData = useCallback(() => {
+    const name = localStorage.getItem("artroom_display_name") || localStorage.getItem("artroom_author_name");
     const role = localStorage.getItem("artroom_role") || localStorage.getItem("artroom_user_role");
-    const avatar = localStorage.getItem("artroom_user_avatar") || "";
+    const avatar = localStorage.getItem("artroom_avatar") || localStorage.getItem("artroom_user_avatar") || "";
     setIsLoggedIn(!!name);
     if (name) setAuthorName(name);
     if (role) setUserRole(role);
     if (avatar) setUserAvatar(avatar);
+  }, []);
 
+  useEffect(() => {
+    loadUserData();
+    window.addEventListener("artroom_profile_updated", loadUserData);
+    window.addEventListener("storage", loadUserData);
+    return () => {
+      window.removeEventListener("artroom_profile_updated", loadUserData);
+      window.removeEventListener("storage", loadUserData);
+    };
+  }, [loadUserData]);
+
+  useEffect(() => {
     if (id) {
       // Load saved interaction states
       const savedBookmark = isIdeaBookmarked(id) || localStorage.getItem(`artroom_idea_bookmark_${id}`) === "true";
@@ -342,7 +354,7 @@ export default function IdeaDetailClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           authorName: authorName,
-          authorImage: userAvatar,
+          authorImage: userAvatar || localStorage.getItem("artroom_avatar") || localStorage.getItem("artroom_user_avatar") || "",
           text: commentText.trim()
         })
       });

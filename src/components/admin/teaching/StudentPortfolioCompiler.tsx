@@ -26,6 +26,7 @@ import {
   Check
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { resolveUserAvatar } from "@/lib/art-avatars";
 
 interface StudentPortfolioCompilerProps {
   initialClassroom?: string;
@@ -689,26 +690,45 @@ export default function StudentPortfolioCompiler({ initialClassroom }: StudentPo
               </div>
 
               {/* Student Metadata */}
-              <div className="bg-gray-50 p-4 rounded-2xl border border-gray-200 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                <div>
-                  <span className="text-gray-500 block">ชื่อ-นามสกุล นักเรียน:</span>
-                  <span className="font-bold text-gray-900 text-sm font-kanit">{selectedStudent.name}</span>
+              <div className="bg-gray-50 p-4 rounded-2xl border border-gray-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs">
+                <div className="flex items-center gap-3">
+                  {(() => {
+                    const resolvedAv = resolveUserAvatar(selectedStudent.avatar, selectedStudent.name);
+                    return (
+                      <div className="w-12 h-12 rounded-xl bg-white border border-gray-200 overflow-hidden flex items-center justify-center shrink-0 shadow-2xs">
+                        {resolvedAv.type === "image" ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={resolvedAv.value} alt={selectedStudent.name} className="w-full h-full object-cover" />
+                        ) : resolvedAv.type === "preset" ? (
+                          <span className="text-xl select-none">{resolvedAv.value}</span>
+                        ) : (
+                          <span className="text-sm font-bold text-orange-600">{resolvedAv.value}</span>
+                        )}
+                      </div>
+                    );
+                  })()}
+                  <div>
+                    <span className="text-gray-500 block">ชื่อ-นามสกุล นักเรียน:</span>
+                    <span className="font-bold text-gray-900 text-sm font-kanit">{selectedStudent.name}</span>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-gray-500 block">รหัสประจำตัว:</span>
-                  <span className="font-mono font-bold text-gray-900 text-sm">{selectedStudent.id}</span>
-                </div>
-                <div>
-                  <span className="text-gray-500 block">ระดับชั้น/ห้องเรียน:</span>
-                  <span className="font-bold text-orange-600 text-sm">
-                    ห้อง {selectedStudent.classroom || selectedClassroom}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-gray-500 block">คะแนนสะสมรวม:</span>
-                  <span className="font-bold text-emerald-700 text-sm">
-                    {studentStats.totalScore} / {studentStats.maxScore || 10} ({studentStats.pct}%)
-                  </span>
+                <div className="grid grid-cols-3 gap-3 sm:gap-4 text-xs flex-1 max-w-lg">
+                  <div>
+                    <span className="text-gray-500 block">รหัสประจำตัว:</span>
+                    <span className="font-mono font-bold text-gray-900 text-sm">{selectedStudent.id}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 block">ระดับชั้น/ห้องเรียน:</span>
+                    <span className="font-bold text-orange-600 text-sm">
+                      ห้อง {selectedStudent.classroom || selectedClassroom}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 block">คะแนนสะสมรวม:</span>
+                    <span className="font-bold text-emerald-700 text-sm">
+                      {studentStats.totalScore} / {studentStats.maxScore || 10} ({studentStats.pct}%)
+                    </span>
+                  </div>
                 </div>
               </div>
 

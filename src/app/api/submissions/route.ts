@@ -30,13 +30,18 @@ export async function GET(request: Request) {
       list = list.filter(s => s.classroom === classroom);
     }
 
-    // Attach assignment details
-    const assignmentsList = await db.select().from(assignments);
+    // Attach assignment and student avatar details
+    const [assignmentsList, studentsList] = await Promise.all([
+      db.select().from(assignments),
+      db.select({ id: students.id, avatar: students.avatar }).from(students),
+    ]);
     const assignmentMap = new Map(assignmentsList.map(a => [a.id, a]));
+    const studentAvatarMap = new Map(studentsList.map(s => [s.id, s.avatar]));
 
     const enriched = list.map(item => ({
       ...item,
       assignment: assignmentMap.get(item.assignmentId) || null,
+      studentAvatar: studentAvatarMap.get(item.studentId) || null,
     }));
 
     return NextResponse.json(enriched);

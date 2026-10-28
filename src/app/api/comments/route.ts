@@ -2,7 +2,7 @@ export const runtime = 'edge';
 
 import { NextResponse } from 'next/server';
 import { getDb } from '@/db';
-import { comments } from '@/db/schema';
+import { comments, students } from '@/db/schema';
 import { eq, desc, inArray } from 'drizzle-orm';
 import { getSession, checkIsAdmin } from '@/lib/api-auth';
 import { checkProfanity, analyzeComment, PROFANITY_ALERT_MESSAGE } from '@/lib/profanity-filter';
@@ -30,11 +30,29 @@ export async function GET(request: Request) {
         .limit(isAdminQuery ? 500 : 100);
     }
 
-    // Attach moderation flag analysis
+    // Lookup students to dynamically inject their live avatar if not set or if updated!
+    const studentMapById = new Map<string, string>();
+    const studentMapByName = new Map<string, string>();
+    try {
+      const allStuds = await db.select({ id: students.id, name: students.name, avatar: students.avatar }).from(students);
+      for (const s of allStuds) {
+        if (s.avatar) {
+          studentMapById.set(s.id, s.avatar);
+          studentMapByName.set(s.name.trim(), s.avatar);
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to load students avatar map for comments:', e);
+    }
+
+    // Attach moderation flag analysis and live student avatar
     const enhanced = (rows || []).map((item) => {
       const analysis = analyzeComment(item.text);
+      const cleanId = (item.authorEmail || '').replace(/@.*$/, '').trim();
+      const liveAvatar = studentMapById.get(cleanId) || studentMapByName.get(item.author.trim()) || item.authorImage || '';
       return {
         ...item,
+        authorImage: liveAvatar,
         isFlagged: analysis.isFlagged,
         flaggedWord: analysis.flaggedWord,
       };
@@ -84,12 +102,23 @@ export async function POST(request: Request) {
     }
 
     const db = getDb();
+
+    let authorAvatar = body.authorImage || '';
+    if (session && session.role === 'student' && session.userId) {
+      try {
+        const studentRec = await db.select({ avatar: students.avatar }).from(students).where(eq(students.id, session.userId)).get();
+        if (studentRec?.avatar) {
+          authorAvatar = studentRec.avatar;
+        }
+      } catch (e) {}
+    }
+
     const newEntry = {
       id: Date.now().toString(),
       lessonId: lessonId,
       author: authorName,
       authorEmail: session?.userId || body.authorEmail || '',
-      authorImage: body.authorImage || '',
+      authorImage: authorAvatar,
       text: text,
       time: new Date().toISOString(),
     };

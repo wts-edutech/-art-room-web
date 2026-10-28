@@ -203,6 +203,7 @@ export default function LoginPage() {
         classroom: data.student.classroom,
         gradeLevel: data.student.gradeLevel,
         email: `${cleanId}@wachiratham.ac.th`,
+        avatar: data.student.avatar || null,
       });
       
       window.location.href = getRedirectPath();

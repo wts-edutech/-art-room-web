@@ -2,7 +2,7 @@ export const runtime = 'edge';
 
 import { NextResponse } from 'next/server';
 import { getDb } from '@/db';
-import { students } from '@/db/schema';
+import { students, comments } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { cookies } from 'next/headers';
 import { getSession, getAdminSession } from '@/lib/api-auth';
@@ -102,6 +102,14 @@ export async function POST(request: Request) {
           }
           if (avatar !== undefined) {
             updateFields.avatar = String(avatar).trim();
+            // Automatically sync all existing comments for this student across all discussion systems!
+            try {
+              await db.update(comments)
+                .set({ authorImage: String(avatar).trim() })
+                .where(eq(comments.authorEmail, targetStudentId));
+            } catch (cErr) {
+              console.warn("Could not batch update comments avatar:", cErr);
+            }
           }
           if (hashedPassword) {
             updateFields.password = hashedPassword;

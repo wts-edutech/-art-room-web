@@ -2,7 +2,7 @@ export const runtime = 'edge';
 
 import { NextResponse } from 'next/server';
 import { getDb } from '@/db';
-import { ideas, comments } from '@/db/schema';
+import { ideas, comments, students } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { checkIsAdmin } from '@/lib/api-auth';
 
@@ -66,17 +66,33 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       }
     }
     
+    const studentMapById = new Map<string, string>();
+    const studentMapByName = new Map<string, string>();
+    try {
+      const allStuds = await db.select({ id: students.id, name: students.name, avatar: students.avatar }).from(students);
+      for (const s of allStuds) {
+        if (s.avatar) {
+          studentMapById.set(s.id, s.avatar);
+          studentMapByName.set(s.name.trim(), s.avatar);
+        }
+      }
+    } catch (e) {}
+
     const ideaWithComments = {
       ...ideaData,
       files: safeFiles,
-      comments: ideaComments.map((c: any) => ({
-        id: c.id,
-        authorName: c.author,
-        authorEmail: c.authorEmail || '',
-        authorImage: c.authorImage || '',
-        text: c.text,
-        createdAt: c.time,
-      }))
+      comments: ideaComments.map((c: any) => {
+        const cleanId = (c.authorEmail || '').replace(/@.*$/, '').trim();
+        const liveAvatar = studentMapById.get(cleanId) || studentMapByName.get(c.author?.trim()) || c.authorImage || '';
+        return {
+          id: c.id,
+          authorName: c.author,
+          authorEmail: c.authorEmail || '',
+          authorImage: liveAvatar,
+          text: c.text,
+          createdAt: c.time,
+        };
+      })
     };
     
     return NextResponse.json(ideaWithComments);
