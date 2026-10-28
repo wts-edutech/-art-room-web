@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { 
   BookOpen, 
@@ -31,7 +31,9 @@ import {
   CheckCircle2,
   Shield,
   Layers,
-  ChevronDown
+  ChevronDown,
+  Edit3,
+  RefreshCw
 } from "lucide-react";
 
 // Import tabs
@@ -150,22 +152,47 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<AdminTabKey>("submissionsCenter");
   const [gradingAssignmentId, setGradingAssignmentId] = useState<string | undefined>(undefined);
   const [visitorStats, setVisitorStats] = useState({ total: 0, today: 0 });
+  const [isEditVisitorModalOpen, setIsEditVisitorModalOpen] = useState(false);
+  const [editVisitorData, setEditVisitorData] = useState({ total: 0, today: 0 });
+  const [isSavingVisitor, setIsSavingVisitor] = useState(false);
+  const [isRefreshingVisitor, setIsRefreshingVisitor] = useState(false);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [selectedMobileCategory, setSelectedMobileCategory] = useState<string>("all");
   const [mobileSearch, setMobileSearch] = useState("");
 
+  const fetchVisitors = useCallback(async () => {
+    setIsRefreshingVisitor(true);
+    try {
+      const res = await fetch("/api/visitors");
+      const data = await res.json();
+      const todayStr = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Bangkok',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).format(new Date());
+
+      const todayCount = Number(data.today ?? data.daily?.[todayStr]) || 0;
+      const totalCount = Number(data.total) || 0;
+
+      setVisitorStats({
+        total: totalCount,
+        today: todayCount,
+      });
+      setEditVisitorData({
+        total: totalCount,
+        today: todayCount,
+      });
+    } catch (err) {
+      console.error("Failed to fetch visitors:", err);
+    } finally {
+      setIsRefreshingVisitor(false);
+    }
+  }, []);
+
   useEffect(() => {
-    fetch("/api/visitors")
-      .then(res => res.json())
-      .then(data => {
-        const todayStr = new Date().toISOString().split('T')[0];
-        setVisitorStats({
-          total: data.total || 0,
-          today: data.daily?.[todayStr] || 0
-        });
-      })
-      .catch(err => console.error("Failed to fetch visitors:", err));
-  }, [activeTab]);
+    fetchVisitors();
+  }, [fetchVisitors, activeTab]);
 
   const handleLogout = () => {
     try {
@@ -518,15 +545,42 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className="bg-emerald-50/50 px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl border border-emerald-200/80 shadow-2xs flex items-center gap-2 sm:gap-3">
+              <div className="group relative bg-emerald-50/60 hover:bg-emerald-50 px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl border border-emerald-200/90 hover:border-emerald-300 shadow-2xs flex items-center gap-2 sm:gap-3 transition-all">
                 <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
                   <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </div>
                 <div>
-                  <p className="text-[9px] sm:text-[10px] text-emerald-700 font-bold uppercase tracking-wider">เข้าชมวันนี้</p>
+                  <p className="text-[9px] sm:text-[10px] text-emerald-700 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    <span>เข้าชมวันนี้</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  </p>
                   <p className="text-sm sm:text-base font-bold font-kanit text-emerald-800 leading-none mt-0.5">
                     {visitorStats.today.toLocaleString()} <span className="text-xs font-normal text-emerald-600">คน</span>
                   </p>
+                </div>
+
+                {/* Edit & Refresh Actions */}
+                <div className="flex items-center gap-0.5 pl-1.5 border-l border-emerald-200/60 ml-0.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditVisitorData({ total: visitorStats.total, today: visitorStats.today });
+                      setIsEditVisitorModalOpen(true);
+                    }}
+                    className="p-1 sm:p-1.5 text-emerald-700 hover:text-emerald-950 hover:bg-emerald-200/60 rounded-xl transition-all cursor-pointer"
+                    title="แก้ไขจำนวนผู้เข้าชม"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={fetchVisitors}
+                    disabled={isRefreshingVisitor}
+                    className="p-1 sm:p-1.5 text-emerald-700 hover:text-emerald-950 hover:bg-emerald-200/60 rounded-xl transition-all cursor-pointer disabled:opacity-50"
+                    title="รีเฟรชข้อมูลล่าสุด"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isRefreshingVisitor ? "animate-spin" : ""}`} />
+                  </button>
                 </div>
               </div>
             </div>
@@ -641,6 +695,117 @@ export default function AdminPage() {
             {activeTab === "adminSecurity" && <AdminSecurityTab />}
           </div>
         </div>
+
+        {/* ============================================================ */}
+        {/* ===== MODAL แก้ไขจำนวนผู้เข้าชม (VISITOR STATS EDIT MODAL) ===== */}
+        {/* ============================================================ */}
+        {isEditVisitorModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+            <div className="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-gray-100 animate-in fade-in zoom-in-95 duration-200">
+              <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+                    <Users className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900 font-kanit text-lg">แก้ไขจำนวนผู้เข้าชมเว็บไซต์</h3>
+                    <p className="text-xs text-gray-500">ปรับแต่งสถิติผู้เข้าชมวันนี้และทั้งหมด</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsEditVisitorModalOpen(false)}
+                  className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="py-4 space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                    จำนวนผู้เข้าชมวันนี้ (คน)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={editVisitorData.today}
+                    onChange={(e) => setEditVisitorData(prev => ({ ...prev, today: Math.max(0, parseInt(e.target.value) || 0) }))}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none text-base font-bold text-emerald-800 font-kanit"
+                  />
+                  <p className="text-[11px] text-gray-400 mt-1">แสดงบนการ์ด &quot;เข้าชมวันนี้&quot;</p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                    จำนวนผู้เข้าชมทั้งหมด (คน)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={editVisitorData.total}
+                    onChange={(e) => setEditVisitorData(prev => ({ ...prev, total: Math.max(0, parseInt(e.target.value) || 0) }))}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none text-base font-bold text-gray-900 font-kanit"
+                  />
+                  <p className="text-[11px] text-gray-400 mt-1">แสดงบนการ์ด &quot;ผู้เข้าชมทั้งหมด&quot; และท้ายเว็บ (Footer)</p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setIsEditVisitorModalOpen(false)}
+                  disabled={isSavingVisitor}
+                  className="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setIsSavingVisitor(true);
+                    try {
+                      const res = await fetch("/api/visitors", {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(editVisitorData),
+                      });
+                      if (res.ok) {
+                        const data = await res.json();
+                        setVisitorStats({
+                          total: data.total,
+                          today: data.today,
+                        });
+                        setIsEditVisitorModalOpen(false);
+                      } else {
+                        alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+                      }
+                    } catch (e) {
+                      console.error("Save visitor error:", e);
+                      alert("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้");
+                    } finally {
+                      setIsSavingVisitor(false);
+                    }
+                  }}
+                  disabled={isSavingVisitor}
+                  className="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-95 rounded-xl shadow-md transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  {isSavingVisitor ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>กำลังบันทึก...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>บันทึกการแก้ไข</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
