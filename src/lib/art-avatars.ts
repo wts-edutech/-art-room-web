@@ -116,13 +116,35 @@ export function getArtAvatarById(id?: string | null): ArtAvatarPreset | undefine
 }
 
 /**
+ * Deterministically assign an art avatar preset from the 8 presets based on student ID or name
+ */
+export function getDefaultStudentPreset(identifier?: string | null): ArtAvatarPreset {
+  const str = String(identifier || "art-room-student").trim();
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
+  }
+  const index = Math.abs(hash) % ART_AVATAR_PRESETS.length;
+  return ART_AVATAR_PRESETS[index];
+}
+
+/**
  * Returns user avatar display data:
  * - If it's a data:image or http url -> returns as image src
  * - If it matches an ArtAvatarPreset ID -> returns preset details
+ * - If no avatar is set, automatically assigns a deterministic art preset based on userName
  * - Otherwise falls back to initials
  */
 export function resolveUserAvatar(avatarValue?: string | null, userName?: string | null) {
   if (!avatarValue) {
+    if (userName && userName.trim()) {
+      const defaultPreset = getDefaultStudentPreset(userName);
+      return {
+        type: "preset" as const,
+        value: defaultPreset.iconEmoji,
+        preset: defaultPreset,
+      };
+    }
     const initial = (userName || "A").trim().charAt(0).toUpperCase();
     return {
       type: "initials" as const,
@@ -145,6 +167,16 @@ export function resolveUserAvatar(avatarValue?: string | null, userName?: string
       type: "preset" as const,
       value: preset.iconEmoji,
       preset,
+    };
+  }
+
+  // Fallback to deterministic preset if avatarValue is unresolvable
+  if (userName && userName.trim()) {
+    const defaultPreset = getDefaultStudentPreset(userName);
+    return {
+      type: "preset" as const,
+      value: defaultPreset.iconEmoji,
+      preset: defaultPreset,
     };
   }
 

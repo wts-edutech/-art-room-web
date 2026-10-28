@@ -10,7 +10,7 @@ import {
   Lock, Eye, EyeOff, CheckCircle2, AlertCircle,
   ExternalLink
 } from "lucide-react";
-import { ART_AVATAR_PRESETS, getArtAvatarById, resolveUserAvatar, ArtAvatarPreset } from "@/lib/art-avatars";
+import { ART_AVATAR_PRESETS, getArtAvatarById, resolveUserAvatar, ArtAvatarPreset, getDefaultStudentPreset } from "@/lib/art-avatars";
 import { validatePassword } from "@/lib/password-validator";
 
 interface ProfileSettingsModalProps {
@@ -133,9 +133,11 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
         setAvatarMode("preset");
       }
     } else {
-      // Default: If student, select first preset, else social avatar
+      // Default: If student, automatically select assigned art preset
       if (savedRole === "student") {
-        setAvatarValue("art-brush");
+        const savedStudentId = localStorage.getItem("artroom_student_id") || "";
+        const defaultPreset = getDefaultStudentPreset(savedStudentId || savedName);
+        setAvatarValue(defaultPreset.id);
         setAvatarMode("preset");
       } else {
         // Auto-generate high-res provider avatar for guest if none
@@ -608,16 +610,27 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
 
               {/* Field 1: Full Name */}
               <div>
-                <label className="block text-xs sm:text-[13px] font-semibold text-gray-700 mb-1.5">
-                  ชื่อ - นามสกุลจริง <span className="text-red-500">*</span>
+                <label className="block text-xs sm:text-[13px] font-semibold text-gray-700 mb-1.5 flex items-center justify-between">
+                  <span>ชื่อ - นามสกุลจริง {role !== "student" && <span className="text-red-500">*</span>}</span>
+                  {role === "student" && (
+                    <span className="text-[11px] text-amber-800 font-semibold bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/90 flex items-center gap-1 shadow-2xs">
+                      <Lock className="w-3 h-3 text-amber-600" />
+                      ล็อกตามทะเบียนนักเรียน
+                    </span>
+                  )}
                 </label>
                 <input 
                   type="text"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
+                  disabled={role === "student"}
                   placeholder="เช่น กฤตยชญ์ วงศ์สว่าง"
-                  className="w-full h-10 px-3.5 rounded-xl border border-gray-200 bg-white focus:border-amber-400 focus:ring-4 focus:ring-amber-400/10 outline-none text-[13px] sm:text-[13.5px] text-gray-800 font-normal leading-normal transition-all"
-                  required
+                  className={`w-full h-10 px-3.5 rounded-xl border text-[13px] sm:text-[13.5px] font-normal leading-normal transition-all outline-none ${
+                    role === "student"
+                      ? "bg-gray-100/90 text-gray-700 border-gray-200 cursor-not-allowed select-none"
+                      : "bg-white text-gray-800 border-gray-200 focus:border-amber-400 focus:ring-4 focus:ring-amber-400/10"
+                  }`}
+                  required={role !== "student"}
                 />
               </div>
 
@@ -625,13 +638,13 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
               <div>
                 <label className="block text-xs sm:text-[13px] font-semibold text-gray-700 mb-1.5 flex items-center justify-between">
                   <span>ชื่อแสดงผลในระบบ (Display Name)</span>
-                  <span className="text-[11px] text-gray-400 font-normal">ปรากฏในคอมเมนต์และไอเดีย</span>
+                  <span className="text-[11px] text-gray-400 font-normal">ชื่อเล่นหรือนามแฝงในระบบ</span>
                 </label>
                 <input 
                   type="text"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="เช่น อาร์ตี้ ม.3 หรือ ครูต้องใจ"
+                  placeholder={fullName ? `เช่น ${fullName.split(" ")[0]} หรือชื่อเล่น` : "เช่น อาร์ตี้ ม.3 หรือ ครูต้องใจ"}
                   className="w-full h-10 px-3.5 rounded-xl border border-gray-200 bg-white focus:border-amber-400 focus:ring-4 focus:ring-amber-400/10 outline-none text-[13px] sm:text-[13.5px] text-gray-800 font-normal leading-normal transition-all"
                 />
               </div>

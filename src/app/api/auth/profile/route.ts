@@ -93,7 +93,7 @@ export async function POST(request: Request) {
         const existing = await db.select().from(students).where(eq(students.id, targetStudentId)).get();
         if (existing) {
           const updateFields: any = {};
-          if (name) updateFields.name = String(name).trim();
+          if (name && studentSession?.role !== 'student') updateFields.name = String(name).trim();
           if (grade) {
             updateFields.classroom = String(grade).trim();
             if (String(grade).includes('/')) {
