@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Prompt, Kanit } from "next/font/google";
+import { Sarabun, Prompt, Kanit } from "next/font/google";
 import "./globals.css";
 import CookieConsent from "@/components/ui/CookieConsent";
 import SessionProvider from "@/components/providers/SessionProvider";
@@ -10,6 +10,13 @@ import VisitorTracker from "@/components/VisitorTracker";
 import BottomNavbar from "@/components/layout/BottomNavbar";
 import BackToTop from "@/components/ui/BackToTop";
 import { LogoProvider } from "@/context/LogoContext";
+
+const sarabun = Sarabun({
+  variable: "--font-sarabun",
+  subsets: ["thai", "latin"],
+  weight: ["300", "400", "500", "600", "700", "800"],
+  display: "swap",
+});
 
 const prompt = Prompt({
   variable: "--font-prompt",
@@ -132,13 +139,43 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="th" className={`${prompt.variable} ${kanit.variable} h-full antialiased`}>
+    <html lang="th" className={`${sarabun.variable} ${prompt.variable} ${kanit.variable} h-full antialiased`}>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
           href="https://fonts.googleapis.com/css2?family=Itim&family=Kanit:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,600;1,700&family=Mali:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,600;1,700&display=swap"
           rel="stylesheet"
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var saved = localStorage.getItem('artroom_selected_font');
+                  var cookieMatch = document.cookie.match(/(?:^|;\\s*)artroom_selected_font=([^;]*)/);
+                  var fontId = saved || (cookieMatch ? decodeURIComponent(cookieMatch[1]) : 'sarabun');
+                  if (!fontId || fontId === 'prompt') {
+                    fontId = 'sarabun';
+                  }
+                  var fontMap = {
+                    sarabun: "'Sarabun', sans-serif",
+                    prompt: "'Prompt', sans-serif",
+                    kanit: "'Kanit', sans-serif",
+                    matchanamphung: "'Matchanamphung', 'Sarabun', sans-serif",
+                    hamsters: "'FH Hamsters', 'Sarabun', sans-serif",
+                    "kancha-easy": "'KanchaEasy', 'Sarabun', sans-serif",
+                    ebwriter: "'EBWriter', 'Sarabun', sans-serif",
+                    mali: "'Mali', cursive, sans-serif",
+                    itim: "'Itim', cursive, sans-serif"
+                  };
+                  var family = fontMap[fontId] || "'Sarabun', sans-serif";
+                  document.documentElement.style.setProperty('--user-font', family);
+                  document.documentElement.style.fontFamily = family;
+                } catch(e) {}
+              })();
+            `,
+          }}
         />
         <script
           type="application/ld+json"

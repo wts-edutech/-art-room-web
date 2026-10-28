@@ -24,7 +24,16 @@ export interface FontOption {
 }
 
 export const FONTS_LIST: FontOption[] = [
-  // 1. ฟอนต์มาตรฐานระดับชาติ
+  // 1. ฟอนต์ทางการมาตรฐานระดับชาติ
+  {
+    id: "sarabun",
+    name: "สารบรรณ (Sarabun)",
+    subName: "ฟอนต์ทางการมาตรฐานชาติ สุภาพ เรียบร้อย ชัดเจน (แนะนำ)",
+    family: "'Sarabun', sans-serif",
+    previewClass: "font-preview-sarabun",
+    category: "มาตรฐาน",
+    tagColor: "bg-emerald-50 text-emerald-700 border-emerald-200"
+  },
   {
     id: "prompt",
     name: "พร้อมท์ (Prompt)",
@@ -33,15 +42,6 @@ export const FONTS_LIST: FontOption[] = [
     previewClass: "font-preview-prompt",
     category: "มาตรฐาน",
     tagColor: "bg-blue-50 text-blue-700 border-blue-200"
-  },
-  {
-    id: "sarabun",
-    name: "สารบรรณ (Sarabun)",
-    subName: "ฟอนต์ทางการมาตรฐานชาติ อ่านง่าย เรียบร้อย",
-    family: "'Sarabun', sans-serif",
-    previewClass: "font-preview-sarabun",
-    category: "มาตรฐาน",
-    tagColor: "bg-emerald-50 text-emerald-700 border-emerald-200"
   },
   {
     id: "kanit",
@@ -166,7 +166,7 @@ export function applyActiveFont(fontFamily: string) {
 }
 
 export default function FontSelectorDropdown() {
-  const [selectedFontId, setSelectedFontId] = useState<string>("prompt");
+  const [selectedFontId, setSelectedFontId] = useState<string>("sarabun");
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<"ทั้งหมด" | "มาตรฐาน" | "วัยรุ่นหัวกลม" | "ลายมือ">("ทั้งหมด");
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -198,7 +198,7 @@ export default function FontSelectorDropdown() {
       console.warn("Could not read font from storage:", e);
     }
     // Default fallback
-    applyActiveFont("'Prompt', sans-serif");
+    applyActiveFont("'Sarabun', sans-serif");
   }, []);
 
   // Handle font selection: Instant live update + local and cookie persistence

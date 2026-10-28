@@ -759,7 +759,7 @@ export default function SubmissionsPage() {
                 >
                   <ClipboardList className="w-4 h-4 sm:w-5 sm:h-5 text-orange-500 shrink-0" />
                   <span className="truncate">
-                    <span>🚨 งานที่ต้องส่ง</span>
+                    <span>งานที่ต้องส่ง</span>
                     <span className="hidden sm:inline font-normal text-xs text-slate-400 ml-1">(To-Do)</span>
                   </span>
                   {actionNeededCount > 0 ? (
@@ -784,7 +784,7 @@ export default function SubmissionsPage() {
                 >
                   <Palette className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
                   <span className="truncate">
-                    <span>🎨 คลังผลงาน</span>
+                    <span>คลังผลงาน</span>
                     <span className="hidden sm:inline font-normal text-xs opacity-80 ml-1">(Portfolio)</span>
                   </span>
                   {submittedWorksCount > 0 && (
