@@ -1065,7 +1065,7 @@ export default function SubmissionsPage() {
                           isNeedsResubmit
                             ? "bg-rose-50/40 border-rose-300 shadow-md"
                             : !isSubmitted
-                            ? "bg-white border-red-200 shadow-md hover:shadow-lg hover:border-red-400"
+                            ? "bg-white border-orange-200 shadow-md hover:shadow-lg hover:border-orange-400"
                             : isGraded
                             ? "bg-white border-emerald-100 shadow-sm"
                             : "bg-white border-gray-100 shadow-sm"
@@ -1076,7 +1076,7 @@ export default function SubmissionsPage() {
                           isNeedsResubmit
                             ? "bg-gradient-to-r from-rose-500 to-red-400"
                             : !isSubmitted
-                            ? "bg-gradient-to-r from-red-600 to-rose-500"
+                            ? "bg-gradient-to-r from-orange-500 to-amber-400"
                             : isGraded
                             ? "bg-gradient-to-r from-emerald-500 to-teal-400"
                             : "bg-gradient-to-r from-amber-400 to-yellow-300"
