@@ -95,6 +95,14 @@ export default function ExamLockModal({
     fetchQuestions();
   }, [quiz.id]);
 
+  // Hide BottomNavbar and external floating widgets during exam
+  useEffect(() => {
+    document.body.classList.add("exam-mode-active");
+    return () => {
+      document.body.classList.remove("exam-mode-active");
+    };
+  }, []);
+
   // Handle Fullscreen toggle
   const enterFullscreen = async () => {
     try {
@@ -338,7 +346,7 @@ export default function ExamLockModal({
   // ----------------------------------------------------
   if (phase === "intro") {
     return (
-      <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
+      <div className="fixed inset-0 z-[99990] bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
         <div className="bg-white rounded-2xl sm:rounded-3xl max-w-xl w-full p-4 sm:p-7 shadow-2xl border border-gray-100 flex flex-col space-y-3.5 sm:space-y-5 max-h-[92vh] overflow-y-auto animate-in zoom-in-95 duration-200">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2 sm:gap-2.5">
@@ -420,7 +428,7 @@ export default function ExamLockModal({
   if (phase === "result" && examResult) {
     const percentage = Math.round((examResult.score / examResult.totalQuestions) * 100);
     return (
-      <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-[99990] bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
         <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-gray-100 text-center space-y-5 animate-in zoom-in-95 duration-200">
           <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center">
             <CheckCircle2 className="w-9 h-9" />
@@ -470,7 +478,7 @@ export default function ExamLockModal({
   // RENDER PHASE 2 & 3: EXAM RUNNING / FULLSCREEN LOCKED
   // ----------------------------------------------------
   return (
-    <div className="fixed inset-0 z-50 bg-gray-100 text-gray-900 flex flex-col select-none overflow-hidden font-sans h-dvh max-h-dvh">
+    <div className="fixed inset-0 z-[99990] bg-gray-100 text-gray-900 flex flex-col select-none overflow-hidden font-sans h-dvh max-h-dvh">
       {/* 1. Locked Top Navigation Bar */}
       <header className="bg-white border-b border-gray-200 px-3 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between shadow-xs shrink-0">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -505,7 +513,7 @@ export default function ExamLockModal({
           </div>
         </div>
 
-        {/* Right: Student name & Submit button (Desktop only in top header to avoid mobile fullscreen toast) */}
+        {/* Right: Student name & Submit button (Visible on both mobile & desktop) */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <div className="hidden sm:block text-right text-xs">
             <p className="font-bold text-gray-800 truncate max-w-[140px]">{student.name}</p>
@@ -516,10 +524,10 @@ export default function ExamLockModal({
             type="button"
             onClick={handleConfirmSubmit}
             disabled={phase === "submitting"}
-            className="hidden md:inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+            className="inline-flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs shadow-xs active:scale-95 transition-all cursor-pointer disabled:opacity-50"
           >
             <Send className="w-3.5 h-3.5" />
-            <span>{phase === "submitting" ? "กำลังส่ง..." : "ส่งข้อสอบ"}</span>
+            <span>{phase === "submitting" ? "ส่ง..." : "ส่งข้อสอบ"}</span>
           </button>
         </div>
       </header>
@@ -735,7 +743,7 @@ export default function ExamLockModal({
       {/* 3. Mobile Question Navigator Drawer / Bottom Sheet */}
       {showMobileMap && (
         <div 
-          className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-xs flex flex-col justify-end md:hidden animate-in fade-in duration-200"
+          className="fixed inset-0 z-[99995] bg-black/60 backdrop-blur-xs flex flex-col justify-end md:hidden animate-in fade-in duration-200"
           onClick={() => setShowMobileMap(false)}
         >
           <div 
@@ -830,7 +838,7 @@ export default function ExamLockModal({
 
       {/* 4. Anti-Cheat Warning Popup (Infraction detected) */}
       {showWarningModal && (
-        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[99999] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-5 sm:p-7 shadow-2xl border-2 border-red-500 text-center space-y-4 max-h-[92vh] overflow-y-auto animate-in zoom-in-95 duration-200">
             <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-red-100 text-red-600 mx-auto flex items-center justify-center animate-bounce">
               <ShieldAlert className="w-7 h-7 sm:w-8 sm:h-8" />

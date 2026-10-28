@@ -326,3 +326,15 @@
   }
 }
 
+/* ==========================================================================
+   EXAM MODE ISOLATION (Hide all app navbars, bottom bars, and floating widgets)
+   ========================================================================== */
+body.exam-mode-active .bottom-nav,
+body.exam-mode-active .floating-social-sidebar,
+body.exam-mode-active #cookie-consent {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+
