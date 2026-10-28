@@ -114,6 +114,7 @@ export async function POST(request: Request) {
         name: student.name,
         classroom: student.classroom || '',
         gradeLevel: student.gradeLevel || '',
+        avatar: student.avatar || null,
         role: 'student'
       },
       device: deviceInfo.summary

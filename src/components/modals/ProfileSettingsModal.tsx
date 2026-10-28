@@ -90,10 +90,15 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
     setPhone(savedPhone);
     setProvider(savedProvider);
 
-    // Extract studentId if email is 12345@wachiratham.ac.th
+    // Extract studentId if email is 12345@wachiratham.ac.th or from localStorage
     if (savedRole === "student") {
-      const match = savedEmail.match(/^(\d{5})@/);
-      if (match) setStudentId(match[1]);
+      const savedStudentId = localStorage.getItem("artroom_student_id") || "";
+      if (savedStudentId) {
+        setStudentId(savedStudentId);
+      } else {
+        const match = savedEmail.match(/^(\d{5})@/);
+        if (match) setStudentId(match[1]);
+      }
       
       // Parse grade and room
       if (savedGrade.includes("/")) {
@@ -164,8 +169,13 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
               setRoom(r || "1");
             }
           }
-          if (!savedAvatar && data.user.avatar) {
+          if (data.user.avatar) {
             setAvatarValue(data.user.avatar);
+            if (data.user.avatar.startsWith("data:") || data.user.avatar.startsWith("http")) {
+              setAvatarMode("upload");
+            } else {
+              setAvatarMode("preset");
+            }
           }
         }
       })
@@ -291,7 +301,7 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          studentId: role === "student" ? studentId : undefined,
+          studentId: role === "student" ? (studentId || localStorage.getItem("artroom_student_id") || undefined) : undefined,
           name: fullName.trim(),
           displayName: (displayName || fullName).trim(),
           phone: phone.trim(),

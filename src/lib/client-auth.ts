@@ -41,6 +41,7 @@ export function setStudentAuth(
     classroom?: string;
     gradeLevel?: string;
     email?: string;
+    avatar?: string | null;
   },
   emitEvent: boolean = true
 ): void {
@@ -58,6 +59,14 @@ export function setStudentAuth(
   localStorage.setItem("artroom_role", "student");
   localStorage.setItem("artroom_user_role", "นักเรียน WTS");
   localStorage.setItem("artroom_student_id", cleanId);
+
+  if (student.avatar !== undefined) {
+    if (student.avatar) {
+      localStorage.setItem("artroom_avatar", student.avatar);
+    } else {
+      localStorage.removeItem("artroom_avatar");
+    }
+  }
 
   if (cleanRoom) {
     localStorage.setItem("artroom_classroom", cleanRoom);
@@ -171,6 +180,7 @@ export async function syncAuthWithServer(): Promise<{
             name: data.user.name,
             classroom: data.user.classroom,
             gradeLevel: data.user.gradeLevel,
+            avatar: data.user.avatar,
           },
           false // DO NOT emit event here to prevent infinite recursion
         );

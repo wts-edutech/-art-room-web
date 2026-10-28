@@ -56,17 +56,15 @@ import { validatePassword, hashPassword } from '@/lib/password-validator';
 
 export async function POST(request: Request) {
   try {
-    const cookieStore = await cookies();
-    const sessionToken = cookieStore.get('session_token')?.value;
-    let session = null;
-    if (sessionToken) {
-      session = await verifySessionToken(sessionToken);
-    }
+    const studentSession = await getSession();
+    const adminSession = await getAdminSession();
 
     const body = await request.json().catch(() => ({}));
     const { name, phone, grade, avatar, displayName, studentId, newPassword, confirmPassword } = body;
 
-    const targetStudentId = studentId ? String(studentId).trim() : (session?.role === 'student' ? session.userId : null);
+    const targetStudentId = studentId 
+      ? String(studentId).trim() 
+      : (studentSession?.role === 'student' ? studentSession.userId : null);
 
     let passwordChanged = false;
     let hashedPassword: string | null = null;
@@ -92,14 +90,6 @@ export async function POST(request: Request) {
     if (targetStudentId) {
       try {
         const db = getDb();
-        // Auto-migration for avatar column in students table if missing
-        try {
-          const d1 = (globalThis as any)?.__D1_DATABASE || (process.env as any)?.__D1_DATABASE;
-          if (d1?.prepare) {
-            await d1.prepare("ALTER TABLE students ADD COLUMN avatar TEXT;").run();
-          }
-        } catch {}
-
         const existing = await db.select().from(students).where(eq(students.id, targetStudentId)).get();
         if (existing) {
           const updateFields: any = {};
@@ -122,7 +112,7 @@ export async function POST(request: Request) {
           }
         }
       } catch (dbErr) {
-        console.warn("DB update student error (continuing with client sync):", dbErr);
+        console.error("DB update student error:", dbErr);
       }
     }
 
