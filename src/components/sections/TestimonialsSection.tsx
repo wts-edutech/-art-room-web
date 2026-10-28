@@ -30,40 +30,42 @@ export default function TestimonialsSection() {
           </p>
         </div>
 
-        {/* 2 columns on mobile, 2 columns on desktop */}
-        <div className="grid grid-cols-2 gap-2.5 sm:gap-6 md:gap-8">
+        {/* 1 column on mobile (ข้อความแสดงครบ), 2 columns on tablet/desktop */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6 md:gap-8">
           {(Array.isArray(testimonials) ? testimonials : []).map((testimonial: any, index: number) => (
             <Card key={index} className="group h-full border border-gray-100 shadow-xs hover:shadow-lg transition-all duration-300 rounded-2xl sm:rounded-[2rem] hover:-translate-y-1 bg-gradient-to-br from-white to-gray-50/50 flex flex-col">
-              <CardContent className="p-3.5 sm:p-8 md:p-10 flex flex-col h-full relative overflow-hidden justify-between">
+              <CardContent className="p-4 sm:p-8 md:p-10 flex flex-col h-full relative overflow-hidden justify-between">
                 <Quote className="absolute top-3 right-3 sm:top-6 sm:right-6 w-8 h-8 sm:w-20 sm:h-20 text-gray-50 opacity-40 group-hover:scale-110 transition-transform duration-500 group-hover:text-red-50 pointer-events-none" />
                 
                 {testimonial.univImageUrl && (
-                  <div className="absolute top-3 right-3 sm:top-6 sm:right-6 w-8 h-8 sm:w-16 sm:h-16 z-10 group-hover:scale-105 transition-all duration-300">
+                  <div className="absolute top-3 right-3 sm:top-6 sm:right-6 w-10 h-10 sm:w-16 sm:h-16 z-10 group-hover:scale-105 transition-all duration-300">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={testimonial.univImageUrl} alt="University Logo" className="w-full h-full object-contain drop-shadow-xs" />
                   </div>
                 )}
 
-                <p className="text-gray-700 text-[11px] sm:text-base md:text-[17px] mb-3 sm:mb-6 flex-grow leading-relaxed font-light relative z-10 italic line-clamp-3 sm:line-clamp-none">
+                <p className={`text-gray-700 text-[13px] sm:text-base md:text-[17px] mb-3 sm:mb-6 flex-grow leading-relaxed font-light relative z-10 italic break-words ${
+                  testimonial.univImageUrl ? "pr-12 sm:pr-20" : ""
+                }`}>
                   &quot;{testimonial.quote}&quot;
                 </p>
 
-                <div className="flex items-center gap-2 sm:gap-4 mt-auto pt-2 sm:pt-4 border-t border-gray-100 relative z-10">
-                  <div className="w-8 h-8 sm:w-14 sm:h-14 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center text-gray-400 overflow-hidden shadow-inner shrink-0 border border-white">
+                <div className="flex items-center gap-3 sm:gap-4 mt-auto pt-3 sm:pt-4 border-t border-gray-100 relative z-10">
+                  <div className="w-10 h-10 sm:w-14 sm:h-14 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center text-gray-400 overflow-hidden shadow-inner shrink-0 border border-white">
                     {testimonial.imageUrl ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img src={testimonial.imageUrl} alt={testimonial.name} className="w-full h-full object-cover" />
                     ) : (
-                      <svg className="w-4 h-4 sm:w-8 sm:h-8 opacity-70" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <svg className="w-5 h-5 sm:w-8 sm:h-8 opacity-70" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
                       </svg>
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-heading font-bold text-xs sm:text-lg text-gray-900 leading-tight truncate">
+                    <h3 className="font-heading font-bold text-sm sm:text-lg text-gray-900 leading-tight break-words">
                       {testimonial.name}
                     </h3>
-                    <p className="text-orange-500 font-medium text-[9.5px] sm:text-xs md:text-sm leading-tight truncate mt-0.5">
+                    <p className="text-orange-500 font-medium text-xs md:text-sm leading-snug break-words mt-0.5">
                       {testimonial.university}
                     </p>
                   </div>
