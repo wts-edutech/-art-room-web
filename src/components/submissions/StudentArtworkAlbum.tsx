@@ -18,6 +18,7 @@ import {
   Eye,
   Lock
 } from "lucide-react";
+import { optimizeImageUrl } from "@/lib/image-utils";
 
 interface StudentArtworkAlbumProps {
   student: { id: string; name: string; classroom: string };
@@ -232,8 +233,10 @@ export default function StudentArtworkAlbum({
                   {artworkImg && !isFailed ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img
-                      src={artworkImg}
+                      src={optimizeImageUrl(artworkImg, { width: 600 })}
                       alt={assignment.title}
+                      loading="lazy"
+                      decoding="async"
                       onError={() => setFailedImages((prev) => ({ ...prev, [submission.id]: true }))}
                       className="relative h-full w-full object-contain p-2 transition-transform duration-300 group-hover/img:scale-105"
                     />

@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import { resolveUserAvatar } from "@/lib/art-avatars";
 import { isIdeaBookmarked, toggleIdeaBookmark, BOOKMARKS_EVENT } from "@/lib/bookmarks";
+import LiteYouTube from "@/components/ui/LiteYouTube";
+import { optimizeImageUrl, formatDocumentPreviewUrl } from "@/lib/image-utils";
 
 interface CommentItem {
   id: string;
@@ -642,13 +644,11 @@ export default function IdeaDetailClient() {
                       วิดีโอสาธิตและวิธีทำ (Video Tutorial)
                     </h3>
                   </div>
-                  <div className="relative aspect-video w-full rounded-3xl overflow-hidden bg-black shadow-md border border-gray-100">
-                    <iframe
-                      src={`https://www.youtube.com/embed/${ytId}?rel=0`}
-                      title={idea.title}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      className="w-full h-full border-0"
+                  <div className="rounded-3xl overflow-hidden shadow-md border border-gray-100">
+                    <LiteYouTube 
+                      videoId={ytId} 
+                      title={idea.title} 
+                      className="w-full"
                     />
                   </div>
                 </div>
@@ -1115,8 +1115,9 @@ export default function IdeaDetailClient() {
               ) : (
                 <div className="w-full h-full min-h-[500px] flex flex-col items-center justify-center bg-white rounded-2xl p-4 sm:p-6 text-center">
                   <iframe 
-                    src={previewFile.url} 
+                    src={formatDocumentPreviewUrl(previewFile.url)} 
                     title={previewFile.name}
+                    loading="lazy"
                     className="w-full h-[60vh] rounded-xl border border-gray-200"
                   />
                   <div className="mt-3 flex items-center gap-3">

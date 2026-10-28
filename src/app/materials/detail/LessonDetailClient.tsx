@@ -16,6 +16,8 @@ import {
   toggleMaterialBookmark, 
   BOOKMARKS_EVENT 
 } from "@/lib/bookmarks";
+import LiteYouTube from "@/components/ui/LiteYouTube";
+import { optimizeImageUrl, formatDocumentPreviewUrl } from "@/lib/image-utils";
 
 export default function LessonDetailPage() {
   const searchParams = useSearchParams();
@@ -251,31 +253,31 @@ export default function LessonDetailPage() {
                 }
 
                 return (
-                  <div className={`w-full overflow-hidden rounded-t-3xl ${isImage ? "bg-gray-100 min-h-[400px] flex items-center justify-center" : isPdf ? "bg-gray-100" : "aspect-video bg-gray-900 relative"}`}>
+                  <div className={`w-full overflow-hidden rounded-t-3xl ${isImage ? "bg-gray-100 min-h-[400px] flex items-center justify-center" : isPdf ? "bg-gray-100" : "bg-gray-900 relative"}`}>
                     {isImage ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img 
-                        src={lesson.imageUrl || contentUrl} 
+                        src={optimizeImageUrl(lesson.imageUrl || contentUrl, { width: 1200 })} 
                         alt={lesson.title} 
+                        loading="lazy"
+                        decoding="async"
                         className="w-full h-auto max-h-[80vh] object-contain"
                         onError={(e) => (e.currentTarget.src = "https://placehold.co/1200x800/eeeeee/999999?text=Image+Not+Found")}
                       />
                     ) : isPdf ? (
                       <iframe 
                         className="w-full min-h-[70vh] border-0"
-                        src={contentUrl}
-                        title={lesson.title} 
+                        src={formatDocumentPreviewUrl(contentUrl)}
+                        title={lesson.title}
+                        loading="lazy"
                       >
                       </iframe>
                     ) : (
-                      <iframe 
-                        className="absolute top-0 left-0 w-full h-full"
-                        src={`https://www.youtube.com/embed/${lesson.videoId || "AB1QIlCEDDU"}`}
-                        title={lesson.title} 
-                        frameBorder="0" 
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                        allowFullScreen>
-                      </iframe>
+                      <LiteYouTube 
+                        videoId={lesson.videoId || "AB1QIlCEDDU"} 
+                        title={lesson.title}
+                        className="w-full aspect-video"
+                      />
                     )}
                   </div>
                 );

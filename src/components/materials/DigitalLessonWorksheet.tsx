@@ -7,6 +7,7 @@ import {
   Layers, Lightbulb, PenTool, Circle, Info
 } from "lucide-react";
 import Link from "next/link";
+import { formatDocumentPreviewUrl } from "@/lib/image-utils";
 
 interface DigitalLessonWorksheetProps {
   title?: string;
@@ -568,8 +569,9 @@ export default function DigitalLessonWorksheet({
           {pdfUrl ? (
             <iframe
               className="w-full min-h-[70vh] rounded-2xl border border-gray-200 bg-white"
-              src={pdfUrl}
+              src={formatDocumentPreviewUrl(pdfUrl)}
               title={title}
+              loading="lazy"
             />
           ) : (
             <div className="p-12 text-center text-gray-400 bg-gray-50 rounded-2xl">

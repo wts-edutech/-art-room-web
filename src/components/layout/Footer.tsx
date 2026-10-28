@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Eye, Lock } from "lucide-react";
 import { useSiteLogo } from "@/context/LogoContext";
+import { optimizeImageUrl } from "@/lib/image-utils";
 
 export default function Footer() {
   const [visitorCount, setVisitorCount] = useState(0);
@@ -25,8 +26,10 @@ export default function Footer() {
           <div className="flex items-center gap-3.5">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img 
-              src={logoSettings.logoUrl || "/artroom-logo.png"} 
+              src={optimizeImageUrl(logoSettings.logoUrl, { width: 150, fallback: "/artroom-logo.png" })} 
               alt={logoSettings.logoAlt || "School Logo"} 
+              loading="lazy"
+              decoding="async"
               className={`w-14 h-14 sm:w-16 sm:h-16 object-contain shrink-0 ${
                 logoSettings.logoShape === "circle" ? "rounded-full" : logoSettings.logoShape === "square" ? "rounded-none" : "rounded-2xl"
               }`}

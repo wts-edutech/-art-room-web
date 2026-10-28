@@ -9,6 +9,8 @@ import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import CommunityDiscussion from "@/components/common/CommunityDiscussion";
+import LiteYouTube from "@/components/ui/LiteYouTube";
+import { optimizeImageUrl, formatDocumentPreviewUrl } from "@/lib/image-utils";
 
 export default function LessonDetailPage() {
   const searchParams = useSearchParams();
@@ -180,27 +182,27 @@ export default function LessonDetailPage() {
                 {lesson.category === "สื่อภาพ" ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img 
-                    src={lesson.imageUrl} 
+                    src={optimizeImageUrl(lesson.imageUrl, { width: 1200 })} 
                     alt={lesson.title} 
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-auto max-h-[80vh] object-contain"
                     onError={(e) => (e.currentTarget.src = "https://placehold.co/1200x800/eeeeee/999999?text=Image+Not+Found")}
                   />
                 ) : lesson.category === "สื่อเอกสาร PDF" ? (
                   <iframe 
-                    className="w-full min-h-[70vh]"
-                    src={lesson.pdfUrl}
+                    className="w-full min-h-[70vh] border-0"
+                    src={formatDocumentPreviewUrl(lesson.pdfUrl)}
                     title={lesson.title}
+                    loading="lazy"
                   >
                   </iframe>
                 ) : (
-                  <iframe 
-                    className="absolute top-0 left-0 w-full h-full"
-                    src={`https://www.youtube.com/embed/${lesson.videoId}`}
-                    title={lesson.title} 
-                    frameBorder="0" 
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                    allowFullScreen>
-                  </iframe>
+                  <LiteYouTube 
+                    videoId={lesson.videoId} 
+                    title={lesson.title}
+                    className="w-full aspect-video"
+                  />
                 )}
               </div>
               

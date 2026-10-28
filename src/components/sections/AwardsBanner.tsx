@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Medal } from "lucide-react";
 
+import { optimizeImageUrl } from "@/lib/image-utils";
+
 export default function AwardsBanner({ awards }: { awards: any[] }) {
   // Fallback to all awards if no explicit highlights are set
   const highlights = awards.filter(a => a.isHighlight).length > 0 
@@ -42,8 +44,10 @@ export default function AwardsBanner({ awards }: { awards: any[] }) {
               // eslint-disable-next-line @next/next/no-img-element
               <img 
                 key={current.id || currentIndex}
-                src={current.imageUrl} 
+                src={optimizeImageUrl(current.imageUrl, { width: 800 })} 
                 alt={current.title}
+                loading="lazy"
+                decoding="async"
                 className="max-h-full max-w-full object-contain rounded-lg drop-shadow-sm transition-all duration-300"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';

@@ -14,6 +14,7 @@ import {
   ChevronRight,
   Palette
 } from "lucide-react";
+import { optimizeImageUrl } from "@/lib/image-utils";
 
 export default function ArtworksGallery() {
   const [artworks, setArtworks] = useState<any[]>([]);
@@ -208,8 +209,10 @@ export default function ArtworksGallery() {
                   {/* Artwork Image */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img 
-                    src={artwork.imageUrl} 
+                    src={optimizeImageUrl(artwork.imageUrl, { width: 600 })} 
                     alt={artwork.title} 
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 block"
                     onError={(e) => (e.currentTarget.src = "https://placehold.co/600x400/eeeeee/999999?text=Image+Not+Found")}
                   />
@@ -373,8 +376,9 @@ export default function ArtworksGallery() {
               {/* Image */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={selectedArtwork.imageUrl}
+                src={optimizeImageUrl(selectedArtwork.imageUrl, { width: 1200 })}
                 alt={selectedArtwork.title}
+                decoding="async"
                 className="max-h-[60vh] sm:max-h-[66vh] w-auto max-w-full object-contain rounded-xl shadow-2xl select-none"
                 onError={(e) => (e.currentTarget.src = "https://placehold.co/800x600/222222/ffffff?text=Image+Not+Found")}
               />

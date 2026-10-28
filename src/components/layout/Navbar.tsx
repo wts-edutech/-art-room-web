@@ -9,6 +9,7 @@ import ProfileSettingsModal from "@/components/modals/ProfileSettingsModal";
 import { resolveUserAvatar } from "@/lib/art-avatars";
 import { performGlobalLogout, syncAuthWithServer } from "@/lib/client-auth";
 import { useSiteLogo } from "@/context/LogoContext";
+import { optimizeImageUrl } from "@/lib/image-utils";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -132,8 +133,9 @@ export default function Navbar() {
               }}
             >
               <img 
-                src={logoSettings.logoUrl || "/artroom-logo.png"} 
+                src={optimizeImageUrl(logoSettings.logoUrl, { width: 250, fallback: "/artroom-logo.png" })} 
                 alt={logoSettings.logoAlt || "โลโก้ Art Room โรงเรียนวชิรธรรมสาธิต"} 
+                decoding="async"
                 className="w-full h-full object-contain shrink-0 group-hover:scale-105 transition-transform duration-200 drop-shadow-xs"
                 style={{
                   transform: scalePercent !== 1 ? `scale(${scalePercent})` : undefined,

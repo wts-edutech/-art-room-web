@@ -132,6 +132,10 @@ export default function HomeWelcomePopup({ forceOpen }: HomeWelcomePopupProps) {
           <img 
             src="/wts-emblem-official.png" 
             alt="ตราโรงเรียนวชิรธรรมสาธิต" 
+            loading="lazy"
+            decoding="async"
+            width={64}
+            height={64}
             className="w-14 h-14 sm:w-16 sm:h-16 object-contain hover:scale-105 transition-transform drop-shadow-xs"
           />
         </div>
@@ -151,6 +155,8 @@ export default function HomeWelcomePopup({ forceOpen }: HomeWelcomePopupProps) {
             <img
               src="/images/cute-art-welcome.jpg"
               alt="เด็กๆ วาดภาพศิลปะอย่างมีความสุข"
+              loading="lazy"
+              decoding="async"
               className="w-full h-auto object-contain hover:scale-105 transition-transform duration-300"
             />
           </div>

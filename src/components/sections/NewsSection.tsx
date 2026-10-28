@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ArrowRight, ExternalLink } from "lucide-react";
+import { optimizeImageUrl } from "@/lib/image-utils";
 
 export default function NewsSection({ featuredNews }: { featuredNews?: any }) {
   const defaultFeatured = {
@@ -48,8 +49,10 @@ export default function NewsSection({ featuredNews }: { featuredNews?: any }) {
               <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-500 z-10 pointer-events-none"></div>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img 
-                src={item.imageUrl} 
+                src={optimizeImageUrl(item.imageUrl, { width: 1000 })} 
                 alt={item.title}
+                loading="lazy"
+                decoding="async"
                 className="relative z-10 max-h-full max-w-full object-contain transform group-hover:scale-105 transition-transform duration-700 ease-out rounded-lg sm:rounded-xl drop-shadow-md"
                 onError={(e) => (e.currentTarget.src = "https://placehold.co/1200x630/1e293b/ffffff?text=PR+News")}
               />

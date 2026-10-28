@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { optimizeImageUrl } from "@/lib/image-utils";
 
 export default function TestimonialsSection() {
   const [testimonials, setTestimonials] = useState<any[]>([]);
@@ -50,8 +51,10 @@ export default function TestimonialsSection() {
                     <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-white border border-gray-100/90 shadow-2xs p-1 flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-105">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={testimonial.univImageUrl}
+                        src={optimizeImageUrl(testimonial.univImageUrl, { width: 120 })}
                         alt="ตรามหาวิทยาลัย"
+                        loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-contain mix-blend-multiply drop-shadow-2xs"
                       />
                     </div>
@@ -74,7 +77,13 @@ export default function TestimonialsSection() {
                   <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center text-gray-400 overflow-hidden shrink-0 border-2 border-orange-200/80 shadow-2xs">
                     {testimonial.imageUrl ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
-                      <img src={testimonial.imageUrl} alt={testimonial.name} className="w-full h-full object-cover" />
+                      <img 
+                        src={optimizeImageUrl(testimonial.imageUrl, { width: 160 })} 
+                        alt={testimonial.name} 
+                        loading="lazy" 
+                        decoding="async" 
+                        className="w-full h-full object-cover" 
+                      />
                     ) : (
                       <svg className="w-6 h-6 sm:w-8 sm:h-8 opacity-70 text-gray-500" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />

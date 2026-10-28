@@ -16,6 +16,7 @@ import {
   toggleMaterialBookmark, 
   BOOKMARKS_EVENT 
 } from "@/lib/bookmarks";
+import { optimizeImageUrl, formatDocumentPreviewUrl } from "@/lib/image-utils";
 
 interface MaterialsListProps {
   initialLessons: any[];
@@ -583,14 +584,17 @@ export default function MaterialsList({
                       ) : (
                         /* eslint-disable-next-line @next/next/no-img-element */
                         <img 
-                          src={
+                          src={optimizeImageUrl(
                             item.imageUrl 
                               ? item.imageUrl 
                               : item.videoId 
                                 ? `https://img.youtube.com/vi/${item.videoId}/hqdefault.jpg`
-                                : "https://images.unsplash.com/photo-1541701494587-cb58502866ab?q=80&w=800&auto=format&fit=crop"
-                          } 
+                                : "https://images.unsplash.com/photo-1541701494587-cb58502866ab?q=80&w=800&auto=format&fit=crop",
+                            { width: 600 }
+                          )} 
                           alt={item.title} 
+                          loading="lazy"
+                          decoding="async"
                           className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
                           onError={(e) => (e.currentTarget.src = "https://images.unsplash.com/photo-1541701494587-cb58502866ab?q=80&w=800&auto=format&fit=crop")}
                         />
@@ -847,8 +851,9 @@ export default function MaterialsList({
                   <div className="relative aspect-video w-full rounded-3xl overflow-hidden bg-black shadow-md border border-gray-200">
                     {previewItem.videoId ? (
                       <iframe
-                        src={`https://www.youtube-nocookie.com/embed/${previewItem.videoId}?autoplay=1`}
+                        src={`https://www.youtube-nocookie.com/embed/${previewItem.videoId}?autoplay=1&rel=0`}
                         title={previewItem.title}
+                        loading="lazy"
                         className="w-full h-full border-0"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
@@ -929,8 +934,9 @@ export default function MaterialsList({
                   <div className="w-full h-[45vh] sm:h-[50vh] rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-inner relative flex flex-col items-center justify-center">
                     {previewItem.fileUrl ? (
                       <iframe
-                        src={`${previewItem.fileUrl}#toolbar=0`}
+                        src={formatDocumentPreviewUrl(previewItem.fileUrl)}
                         title={previewItem.title}
+                        loading="lazy"
                         className="w-full h-full border-0"
                       />
                     ) : (

@@ -14,21 +14,21 @@ import { LogoProvider } from "@/context/LogoContext";
 const sarabun = Sarabun({
   variable: "--font-sarabun",
   subsets: ["thai", "latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
 const prompt = Prompt({
   variable: "--font-prompt",
   subsets: ["thai", "latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
+  weight: ["400", "600", "700"],
   display: "swap",
 });
 
 const kanit = Kanit({
   variable: "--font-kanit",
   subsets: ["thai", "latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "600", "700"],
   display: "swap",
 });
 
@@ -141,12 +141,26 @@ export default function RootLayout({
   return (
     <html lang="th" className={`${sarabun.variable} ${prompt.variable} ${kanit.variable} h-full antialiased`}>
       <head>
+        {/* DNS prefetch for critical external CDNs */}
+        <link rel="dns-prefetch" href="https://lh3.googleusercontent.com" />
+        <link rel="dns-prefetch" href="https://img.youtube.com" />
+        <link rel="dns-prefetch" href="https://www.youtube-nocookie.com" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* Asynchronous non-render-blocking handwriting fonts for optional font selector */}
         <link
-          href="https://fonts.googleapis.com/css2?family=Itim&family=Kanit:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,600;1,700&family=Mali:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,600;1,700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Itim&family=Mali:wght@400;600;700&display=swap"
           rel="stylesheet"
+          media="print"
+          // @ts-expect-error - standard non-blocking CSS pattern
+          onLoad="this.media='all'"
         />
+        <noscript>
+          <link
+            href="https://fonts.googleapis.com/css2?family=Itim&family=Mali:wght@400;600;700&display=swap"
+            rel="stylesheet"
+          />
+        </noscript>
         <script
           dangerouslySetInnerHTML={{
             __html: `

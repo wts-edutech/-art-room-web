@@ -1,21 +1,18 @@
-import { PlayCircle } from "lucide-react";
+import LiteYouTube from "@/components/ui/LiteYouTube";
 
 export default function VideoGallerySection() {
   const videos = [
     {
-      title: "เทคนิคการระบายสีน้ำเบื้องต้น",
-      embedUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", // Placeholder, will be replaced with real video if provided
-      thumbnailUrl: "https://images.unsplash.com/photo-1513364776144-60967b0f800f?q=80&w=1000&auto=format&fit=crop",
+      title: "เทคนิคการวาดเส้น ประเภทของเส้น",
+      videoId: "AB1QIlCEDDU",
     },
     {
-      title: "การวาดเส้นด้วยดินสอ EE",
-      embedUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", 
-      thumbnailUrl: "https://images.unsplash.com/photo-1513364776144-60967b0f800f?q=80&w=1000&auto=format&fit=crop",
+      title: "สอนลงสีไม้รูปมังคุด",
+      videoId: "Frj7Onjr4kg",
     },
     {
-      title: "เทคนิคการใช้สีโปสเตอร์",
-      embedUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", 
-      thumbnailUrl: "https://images.unsplash.com/photo-1513364776144-60967b0f800f?q=80&w=1000&auto=format&fit=crop",
+      title: "เทคนิคสีไม้ รูปผีเสื้อ",
+      videoId: "71JjYfjynTM",
     }
   ];
 
@@ -32,19 +29,14 @@ export default function VideoGallerySection() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {(Array.isArray(videos) ? videos : []).map((video, index) => (
+          {videos.map((video, index) => (
             <div key={index} className="group flex flex-col bg-gray-800 rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-gray-700">
-              {/* Video Container */}
-              <div className="relative w-full aspect-video bg-black">
-                {/* We use iframe directly for videos */}
-                <iframe 
-                  className="absolute inset-0 w-full h-full"
-                  src={video.embedUrl} 
-                  title={video.title} 
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                  allowFullScreen
-                ></iframe>
-              </div>
+              {/* Lite Video Container (Lazy-loaded, Zero Initial Lag) */}
+              <LiteYouTube 
+                videoId={video.videoId} 
+                title={video.title} 
+                className="w-full"
+              />
               <div className="p-6">
                 <h3 className="text-xl font-bold font-heading text-white group-hover:text-(--color-accent-yellow) transition-colors line-clamp-2">
                   {video.title}
