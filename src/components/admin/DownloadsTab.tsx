@@ -22,11 +22,15 @@ import {
   FileCheck2,
   Lock,
   Unlock,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Video,
+  Presentation,
+  Image as ImageIcon
 } from "lucide-react";
 
 import AiMaterialStudioModal from "./materials/AiMaterialStudioModal";
 import MaterialLivePreviewModal from "./materials/MaterialLivePreviewModal";
+import { analyzeAndTransformUrl, SmartUrlAnalysis } from "@/lib/url-converter";
 
 export interface DownloadItem {
   id: string;
@@ -144,6 +148,10 @@ export default function DownloadsTab() {
   const [fileName, setFileName] = useState("");
   const [fileSize, setFileSize] = useState("1.5 MB");
   const [fileUrl, setFileUrl] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [mediaType, setMediaType] = useState<"pdf" | "video" | "canva" | "image">("pdf");
+  const [videoId, setVideoId] = useState("");
+  const [urlAnalysis, setUrlAnalysis] = useState<SmartUrlAnalysis | null>(null);
   const [orderIndex, setOrderIndex] = useState(1);
   const [downloadsCount, setDownloadsCount] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
@@ -287,6 +295,10 @@ export default function DownloadsTab() {
     setFileName("");
     setFileSize("1.5 MB");
     setFileUrl("");
+    setImageUrl("");
+    setMediaType("pdf");
+    setVideoId("");
+    setUrlAnalysis(null);
     setOrderIndex(downloads.length + 1);
     setDownloadsCount(0);
     setIsModalOpen(true);
@@ -302,9 +314,52 @@ export default function DownloadsTab() {
     setFileName(item.fileName || "");
     setFileSize(item.fileSize || "1.0 MB");
     setFileUrl(item.fileUrl || "");
+    setImageUrl(item.imageUrl || "");
+    setMediaType(item.mediaType || "pdf");
+    setVideoId(item.videoId || "");
     setOrderIndex(item.orderIndex || 1);
     setDownloadsCount(item.downloadsCount || 0);
+    if (item.fileUrl) {
+      const analysis = analyzeAndTransformUrl(item.fileUrl, item.title);
+      setUrlAnalysis(analysis);
+    } else {
+      setUrlAnalysis(null);
+    }
     setIsModalOpen(true);
+  };
+
+  // Smart URL Change handler with real-time auto-transform
+  const handleSmartUrlInput = (rawVal: string) => {
+    setFileUrl(rawVal);
+    if (!rawVal.trim()) {
+      setUrlAnalysis(null);
+      return;
+    }
+
+    const analysis = analyzeAndTransformUrl(rawVal, title);
+    setUrlAnalysis(analysis);
+
+    if (analysis.type !== "unknown") {
+      setFileUrl(analysis.transformedUrl);
+      if (analysis.suggestedMediaType) {
+        setMediaType(analysis.suggestedMediaType);
+      }
+      if (analysis.suggestedCategory) {
+        setCategory(analysis.suggestedCategory);
+      }
+      if (analysis.imageUrl) {
+        setImageUrl(analysis.imageUrl);
+      }
+      if (analysis.videoId) {
+        setVideoId(analysis.videoId);
+      }
+      if (analysis.suggestedFileName && (!fileName.trim() || fileName.endsWith(".pdf"))) {
+        setFileName(analysis.suggestedFileName);
+      }
+      if (analysis.suggestedFileSize && (fileSize === "1.5 MB" || !fileSize.trim())) {
+        setFileSize(analysis.suggestedFileSize);
+      }
+    }
   };
 
   // Delete item
@@ -382,6 +437,9 @@ export default function DownloadsTab() {
             fileName: fileName.trim() || `${title}.pdf`,
             fileSize: fileSize.trim() || "1.0 MB",
             fileUrl: fileUrl.trim(),
+            imageUrl: imageUrl.trim() || null,
+            mediaType: mediaType || "pdf",
+            videoId: videoId || null,
             orderIndex: Number(orderIndex) || 0,
             downloadsCount: Math.max(0, Number(downloadsCount) || 0),
           }),
@@ -407,6 +465,9 @@ export default function DownloadsTab() {
             fileName: fileName.trim() || `${title}.pdf`,
             fileSize: fileSize.trim() || "1.0 MB",
             fileUrl: fileUrl.trim(),
+            imageUrl: imageUrl.trim() || null,
+            mediaType: mediaType || "pdf",
+            videoId: videoId || null,
             orderIndex: Number(orderIndex) || 0,
             downloadsCount: Math.max(0, Number(downloadsCount) || 0),
           }),
@@ -1004,14 +1065,14 @@ export default function DownloadsTab() {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="block text-xs font-bold text-gray-700">
-                    ลิงก์ดาวน์โหลดไฟล์ (PDF / Google Drive) <span className="text-red-500">*</span>
+                    ลิงก์ดาวน์โหลดไฟล์ / แสดงผล <span className="text-red-500">*</span>
                   </label>
                   <label className="text-[11px] text-red-600 hover:text-red-700 font-bold cursor-pointer flex items-center gap-1">
                     <Upload className="w-3 h-3" />
                     <span>{isUploading ? "กำลังอัปโหลด..." : "อัปโหลดไฟล์จากเครื่อง"}</span>
                     <input
                       type="file"
-                      accept=".pdf,.doc,.docx,.ppt,.pptx,.zip"
+                      accept=".pdf,.doc,.docx,.ppt,.pptx,.zip,.jpg,.jpeg,.png"
                       onChange={handleFileUpload}
                       disabled={isUploading}
                       className="hidden"
@@ -1021,14 +1082,70 @@ export default function DownloadsTab() {
                 <input
                   type="url"
                   required
-                  placeholder="https://... หรืออัปโหลดไฟล์ด้านบน"
+                  placeholder="วางลิงก์ YouTube, Google Drive, Canva หรือรูปภาพที่นี่..."
                   value={fileUrl}
-                  onChange={(e) => setFileUrl(e.target.value)}
-                  className="w-full px-3.5 py-2 text-xs sm:text-sm border border-gray-200 rounded-xl focus:border-red-500 focus:outline-none"
+                  onChange={(e) => handleSmartUrlInput(e.target.value)}
+                  className="w-full px-3.5 py-2 text-xs sm:text-sm border border-gray-200 rounded-xl focus:border-red-500 focus:outline-none transition-all font-mono text-gray-800"
                 />
-                <p className="text-[10px] text-gray-400 mt-1">
-                  สามารถวางลิงก์ตรง PDF หรือลิงก์แชร์จาก Google Drive (ตั้งค่าสิทธิ์ &quot;ทุกคนที่มีลิงก์ดูได้&quot;)
+                
+                {/* Friendly guidance text */}
+                <p className="text-[10px] text-gray-500 mt-1 flex items-center gap-1">
+                  <span>💡</span>
+                  <span>สามารถวางลิงก์ YouTube, Google Drive, รูปภาพ หรือลิ้งแคนวา Canva ได้ทันที ระบบจะแปลงให้อัตโนมัติ</span>
                 </p>
+
+                {/* Live Detection & Preview Box */}
+                {urlAnalysis && urlAnalysis.type !== "unknown" && (
+                  <div className="mt-2.5 p-3 rounded-2xl border border-gray-200 bg-gray-50/80 flex flex-col gap-2 transition-all">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border ${urlAnalysis.badgeClass}`}>
+                        {urlAnalysis.type === "youtube" && <Video className="w-3.5 h-3.5" />}
+                        {urlAnalysis.type === "canva" && <Presentation className="w-3.5 h-3.5" />}
+                        {urlAnalysis.type === "gdrive_pdf" && <FileText className="w-3.5 h-3.5" />}
+                        {urlAnalysis.type === "gdrive_image" && <ImageIcon className="w-3.5 h-3.5" />}
+                        {urlAnalysis.type === "direct_image" && <ImageIcon className="w-3.5 h-3.5" />}
+                        {urlAnalysis.type === "direct_pdf" && <FileText className="w-3.5 h-3.5" />}
+                        <span>ตรวจพบ: {urlAnalysis.label}</span>
+                      </div>
+
+                      {fileUrl && (
+                        <a
+                          href={fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-700 bg-white px-2.5 py-1 rounded-lg border border-gray-200 shadow-2xs hover:bg-gray-50 transition-colors"
+                        >
+                          <span>ทดสอบเปิดลิงก์</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+                    </div>
+
+                    <p className="text-[11px] text-gray-600 leading-relaxed">
+                      {urlAnalysis.message}
+                    </p>
+
+                    {(urlAnalysis.imageUrl || (mediaType === "image" && fileUrl)) && (
+                      <div className="flex items-center gap-2.5 pt-1.5 border-t border-gray-200/60">
+                        <div className="w-16 h-10 sm:w-20 sm:h-12 rounded-lg overflow-hidden bg-black/10 shrink-0 border border-gray-200">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={urlAnalysis.imageUrl || fileUrl}
+                            alt="ภาพตัวอย่าง"
+                            className="w-full h-full object-cover"
+                            onError={(e) => (e.currentTarget.style.display = "none")}
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <span className="text-[10px] text-gray-400 block">ลิงก์ที่แปลงแล้ว:</span>
+                          <span className="text-[11px] font-mono text-gray-700 truncate block font-medium">
+                            {fileUrl}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="pt-4 border-t border-gray-100 flex items-center justify-end gap-2">
