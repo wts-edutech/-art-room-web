@@ -94,11 +94,11 @@ export default function Navbar() {
 
   return (
     <>
-      <header className={`sticky top-0 left-0 right-0 w-full z-50 transition-all duration-300 pointer-events-auto ${
-      isScrolled
-        ? "bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-200/90"
-        : "bg-[#FDF7F0] md:bg-white/95 md:backdrop-blur-md md:border-b md:border-gray-100"
-    }`}>
+      <header className={`sticky top-0 left-0 right-0 w-full z-50 transition-all duration-300 pointer-events-auto bg-white ${
+        isScrolled
+          ? "shadow-sm border-b border-gray-200/90"
+          : "border-b border-gray-100"
+      }`}>
       {/* Integrated LiveClock Bar — hidden on mobile <640px, shown sm+ */}
       <div className="navbar-clock-bar w-full bg-gradient-to-r from-orange-500 to-pink-500 text-white h-8 overflow-hidden hidden sm:flex items-center">
         <div className="container mx-auto px-4 h-full flex items-center justify-center sm:justify-end gap-3 text-[10px] sm:text-xs font-medium">
