@@ -644,17 +644,6 @@ export default function ExamLockModal({
                         </span>
                       )}
                     </div>
-
-                    {/* Mobile Submit Button: Placed safely right here in Question Header row - NEVER covered by browser toasts */}
-                    <button
-                      type="button"
-                      onClick={handleConfirmSubmit}
-                      disabled={phase === "submitting"}
-                      className="md:hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs shadow-xs active:scale-95 transition-all shrink-0 cursor-pointer"
-                    >
-                      <Send className="w-3 h-3" />
-                      <span>{phase === "submitting" ? "ส่ง..." : "ส่งข้อสอบ"}</span>
-                    </button>
                   </div>
 
                   {/* Question Text Box */}
