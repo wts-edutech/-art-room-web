@@ -84,6 +84,54 @@ export function analyzeAndTransformUrl(rawUrl: string, currentTitle: string = ""
     };
   }
 
+  // 0. Check Data URL (Uploaded from computer)
+  if (url.startsWith("data:")) {
+    if (url.startsWith("data:application/pdf")) {
+      return {
+        type: "direct_pdf",
+        label: "ไฟล์ PDF จากเครื่องคอมพิวเตอร์",
+        badgeClass: "bg-red-50 text-red-700 border-red-200",
+        iconType: "pdf",
+        originalUrl: url,
+        transformedUrl: url,
+        previewUrl: url,
+        suggestedMediaType: "pdf",
+        suggestedCategory: "ใบงานและแบบฝึกหัด",
+        suggestedFileName: `${currentTitle || "document"}.pdf`,
+        message: "อัปโหลดไฟล์เอกสาร PDF สำเร็จ พร้อมเปิดอ่านและดาวน์โหลด",
+      };
+    }
+    if (url.startsWith("data:image/")) {
+      return {
+        type: "direct_image",
+        label: "รูปภาพจากเครื่องคอมพิวเตอร์",
+        badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-200",
+        iconType: "image",
+        originalUrl: url,
+        transformedUrl: url,
+        previewUrl: url,
+        imageUrl: url,
+        suggestedMediaType: "image",
+        suggestedCategory: "สื่อภาพและเทคนิค",
+        suggestedFileName: `${currentTitle || "image"}.jpg`,
+        message: "อัปโหลดรูปภาพสำเร็จ พร้อมแสดงตัวอย่างและดาวน์โหลด",
+      };
+    }
+    return {
+      type: "direct_pdf",
+      label: "ไฟล์แนบจากเครื่องคอมพิวเตอร์",
+      badgeClass: "bg-blue-50 text-blue-700 border-blue-200",
+      iconType: "link",
+      originalUrl: url,
+      transformedUrl: url,
+      previewUrl: url,
+      suggestedMediaType: "pdf",
+      suggestedCategory: "ใบงานและแบบฝึกหัด",
+      suggestedFileName: `${currentTitle || "file"}.dat`,
+      message: "อัปโหลดไฟล์แนบสำเร็จ พร้อมสำหรับดาวน์โหลด",
+    };
+  }
+
   // 1. Check YouTube
   const ytId = extractYouTubeVideoId(url);
   if (ytId) {
@@ -242,3 +290,31 @@ export function analyzeAndTransformUrl(rawUrl: string, currentTitle: string = ""
     message: "ลิงก์ภายนอกทั่วไป สามารถเปิดดูและดาวน์โหลดได้ตามปกติ",
   };
 }
+
+/**
+ * Safely opens a URL in a new tab, handling both normal URLs and data: URLs (preventing browser top-frame block)
+ */
+export function openSafeUrl(url: string) {
+  if (!url) return;
+  if (url.startsWith("data:")) {
+    try {
+      const arr = url.split(",");
+      const mime = arr[0].match(/:(.*?);/)?.[1] || "application/octet-stream";
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      const blob = new Blob([u8arr], { type: mime });
+      const blobUrl = URL.createObjectURL(blob);
+      window.open(blobUrl, "_blank");
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+      return;
+    } catch (err) {
+      console.error("Failed to open data URL as blob:", err);
+    }
+  }
+  window.open(url, "_blank");
+}
+

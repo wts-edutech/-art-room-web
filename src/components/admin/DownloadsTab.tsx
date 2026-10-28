@@ -30,7 +30,7 @@ import {
 
 import AiMaterialStudioModal from "./materials/AiMaterialStudioModal";
 import MaterialLivePreviewModal from "./materials/MaterialLivePreviewModal";
-import { analyzeAndTransformUrl, SmartUrlAnalysis } from "@/lib/url-converter";
+import { analyzeAndTransformUrl, SmartUrlAnalysis, openSafeUrl } from "@/lib/url-converter";
 
 export interface DownloadItem {
   id: string;
@@ -388,28 +388,103 @@ export default function DownloadsTab() {
 
     // Auto fill filename & size
     setFileName(file.name);
-    const sizeInMB = (file.size / (1024 * 1024)).toFixed(1);
-    setFileSize(`${sizeInMB} MB`);
+    const sizeDisplay = file.size >= 1024 * 1024 
+      ? `${(file.size / (1024 * 1024)).toFixed(1)} MB` 
+      : `${Math.round(file.size / 1024)} KB`;
+    setFileSize(sizeDisplay);
+
+    // Auto fill title if empty
+    if (!title.trim()) {
+      const cleanName = file.name.replace(/\.[^/.]+$/, "");
+      setTitle(cleanName);
+    }
+
+    // Friendly notice if file is very large (> 3 MB)
+    if (file.size > 3 * 1024 * 1024) {
+      alert("⚠️ ไฟล์มีขนาดเกิน 3 MB สำหรับไฟล์เอกสารขนาดใหญ่ ขอแนะนำให้อัปโหลดขึ้น Google Drive แล้วนำลิงก์แชร์มาวาง เพื่อให้ระบบโหลดได้รวดเร็วและไม่มีข้อจำกัดขนาดไฟล์ครับ");
+    }
 
     setIsUploading(true);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
+      // 1. Read file client-side instantly via FileReader (0-latency, 100% reliable)
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error("อ่านไฟล์ล้มเหลว"));
+        reader.readAsDataURL(file);
       });
-      const data = await res.json();
-      if (res.ok && data.url) {
-        setFileUrl(data.url);
-      } else {
-        alert(data.error || "อัปโหลดไฟล์ไม่สำเร็จ กรุณากรอกลิงก์ตรงด้วยตนเอง");
+
+      if (!dataUrl) {
+        throw new Error("ไม่สามารถอ่านข้อมูลไฟล์ได้");
       }
-    } catch (err) {
+
+      setFileUrl(dataUrl);
+
+      // 2. Intelligent type detection & category recommendation
+      const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+      const isImg = file.type.startsWith("image/") || /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(file.name);
+
+      if (isPdf) {
+        setMediaType("pdf");
+        if (category === "สื่อภาพและเทคนิค" || category === "วิดีโอประกอบการสอน") {
+          setCategory("ใบงานและแบบฝึกหัด");
+        }
+        setUrlAnalysis({
+          type: "direct_pdf",
+          label: "ไฟล์ PDF จากเครื่องคอมพิวเตอร์",
+          message: "อัปโหลดและประมวลผลไฟล์ PDF สำเร็จ พร้อมเปิดอ่านและดาวน์โหลด",
+          badgeClass: "bg-red-50 text-red-700 border-red-200",
+          iconType: "pdf",
+          originalUrl: dataUrl,
+          transformedUrl: dataUrl,
+          previewUrl: dataUrl,
+          suggestedMediaType: "pdf",
+          suggestedCategory: "ใบงานและแบบฝึกหัด",
+          suggestedFileName: file.name,
+          suggestedFileSize: sizeDisplay,
+        });
+      } else if (isImg) {
+        setMediaType("image");
+        setImageUrl(dataUrl);
+        setCategory("สื่อภาพและเทคนิค");
+        setUrlAnalysis({
+          type: "direct_image",
+          label: "รูปภาพจากเครื่องคอมพิวเตอร์",
+          message: "อัปโหลดรูปภาพสำเร็จ พร้อมแสดงตัวอย่างและดาวน์โหลด",
+          badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-200",
+          iconType: "image",
+          originalUrl: dataUrl,
+          transformedUrl: dataUrl,
+          previewUrl: dataUrl,
+          imageUrl: dataUrl,
+          suggestedMediaType: "image",
+          suggestedCategory: "สื่อภาพและเทคนิค",
+          suggestedFileName: file.name,
+          suggestedFileSize: sizeDisplay,
+        });
+      } else {
+        setMediaType("pdf");
+        setUrlAnalysis({
+          type: "direct_pdf",
+          label: `ไฟล์เอกสารแนบ (${file.name.split('.').pop()?.toUpperCase() || "FILE"})`,
+          message: `อัปโหลดไฟล์ "${file.name}" สำเร็จ พร้อมสำหรับดาวน์โหลด`,
+          badgeClass: "bg-blue-50 text-blue-700 border-blue-200",
+          iconType: "link",
+          originalUrl: dataUrl,
+          transformedUrl: dataUrl,
+          previewUrl: dataUrl,
+          suggestedMediaType: "pdf",
+          suggestedCategory: "ใบงานและแบบฝึกหัด",
+          suggestedFileName: file.name,
+          suggestedFileSize: sizeDisplay,
+        });
+      }
+    } catch (err: any) {
       console.error("Upload error:", err);
-      alert("อัปโหลดไฟล์ล้มเหลว กรุณาระบุลิงก์ตรงภายนอก");
+      alert("เกิดข้อผิดพลาดในการอ่านไฟล์ กรุณาลองใหม่อีกครั้ง หรือระบุลิงก์ตรงภายนอก");
     } finally {
       setIsUploading(false);
+      e.target.value = "";
     }
   };
 
@@ -888,15 +963,14 @@ export default function DownloadsTab() {
                   >
                     <Eye className="w-4 h-4" />
                   </button>
-                  <a
-                    href={item.fileUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-2xl transition-colors"
+                  <button
+                    type="button"
+                    onClick={() => openSafeUrl(item.fileUrl)}
+                    className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-2xl transition-colors cursor-pointer"
                     title="เปิดดูไฟล์ต้นฉบับ"
                   >
                     <ExternalLink className="w-4 h-4" />
-                  </a>
+                  </button>
                   <button
                     onClick={() => handleOpenEditModal(item)}
                     className="p-2 text-gray-500 hover:text-amber-600 hover:bg-amber-50 rounded-2xl transition-colors cursor-pointer"
@@ -1109,15 +1183,14 @@ export default function DownloadsTab() {
                       </div>
 
                       {fileUrl && (
-                        <a
-                          href={fileUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-700 bg-white px-2.5 py-1 rounded-lg border border-gray-200 shadow-2xs hover:bg-gray-50 transition-colors"
+                        <button
+                          type="button"
+                          onClick={() => openSafeUrl(fileUrl)}
+                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-700 bg-white px-2.5 py-1 rounded-lg border border-gray-200 shadow-2xs hover:bg-gray-50 transition-colors cursor-pointer"
                         >
                           <span>ทดสอบเปิดลิงก์</span>
                           <ExternalLink className="w-3 h-3" />
-                        </a>
+                        </button>
                       )}
                     </div>
 
