@@ -534,7 +534,7 @@ export default function ExamLockModal({
 
       {/* 2. Main Exam Layout: Question Navigator (Left sidebar on desktop) + Content Area */}
       <div 
-        className="flex-1 flex flex-row overflow-hidden w-full relative"
+        className="flex-1 flex flex-row min-h-0 overflow-hidden w-full relative"
       >
         {/* Sidebar Question Navigator (Visible on Desktop md:flex, Hidden on Mobile) */}
         <aside 
@@ -597,7 +597,7 @@ export default function ExamLockModal({
         </aside>
 
         {/* Right Content Area: Main scrollable questions + Pinned Bottom Bar */}
-        <div className="flex-1 flex flex-col h-full overflow-hidden w-full">
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden w-full">
           {/* Main Question Display Area */}
           <main 
             className="flex-1 p-3.5 sm:p-6 md:p-8 overflow-y-auto w-full"
@@ -607,10 +607,33 @@ export default function ExamLockModal({
                 <>
                   {/* Question Header */}
                   <div className="flex items-center justify-between pb-2.5 sm:pb-3 border-b border-gray-200 gap-2">
-                    <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                      {/* Quick Prev Button */}
+                      <button
+                        type="button"
+                        onClick={() => setCurrentIdx((prev) => Math.max(0, prev - 1))}
+                        disabled={currentIdx === 0}
+                        className="w-7 h-7 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed transition-colors shrink-0"
+                        title="ข้อก่อนหน้า"
+                      >
+                        <ArrowLeft className="w-3.5 h-3.5" />
+                      </button>
+
                       <span className="px-2.5 sm:px-3.5 py-1 rounded-xl bg-orange-500 text-white font-bold text-xs font-kanit shadow-xs shrink-0">
                         ข้อที่ {currentQuestion.questionNumber} จาก {questions.length}
                       </span>
+
+                      {/* Quick Next Button */}
+                      <button
+                        type="button"
+                        onClick={() => setCurrentIdx((prev) => Math.min(questions.length - 1, prev + 1))}
+                        disabled={currentIdx === questions.length - 1}
+                        className="w-7 h-7 rounded-lg bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed transition-colors shadow-2xs shrink-0"
+                        title="ข้อถัดไป"
+                      >
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+
                       {answers[currentQuestion.questionNumber] ? (
                         <span className="text-[11px] sm:text-xs font-semibold text-emerald-600 flex items-center gap-1 bg-emerald-50 px-2 sm:px-2.5 py-0.5 rounded-full border border-emerald-200 shrink-0">
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> บันทึกแล้ว
@@ -675,6 +698,50 @@ export default function ExamLockModal({
                         </button>
                       );
                     })}
+                  </div>
+
+                  {/* Prominent Action Buttons: Directly below Choices ก, ข, ค, ง */}
+                  <div className="pt-4 border-t border-gray-100 flex items-center justify-between gap-2 sm:gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setCurrentIdx((prev) => Math.max(0, prev - 1))}
+                      disabled={currentIdx === 0}
+                      className="inline-flex items-center gap-1.5 px-3.5 sm:px-5 py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-bold text-xs sm:text-sm transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed shadow-2xs"
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                      <span>ข้อก่อนหน้า</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowMobileMap(true)}
+                      className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-800 font-bold text-xs sm:text-sm border border-orange-200 active:scale-95 transition-all cursor-pointer"
+                    >
+                      <HelpCircle className="w-4 h-4 text-orange-500" />
+                      <span>ผังข้อ ({answeredCount}/{questions.length})</span>
+                    </button>
+
+                    {currentIdx < questions.length - 1 ? (
+                      <button
+                        type="button"
+                        onClick={() => setCurrentIdx((prev) => Math.min(questions.length - 1, prev + 1))}
+                        className="inline-flex items-center gap-2 px-5 sm:px-6 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-bold text-xs sm:text-sm shadow-md shadow-orange-500/20 active:scale-95 transition-all cursor-pointer"
+                        style={{ backgroundColor: "#f97316", color: "#ffffff" }}
+                      >
+                        <span>ข้อถัดไป</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleConfirmSubmit}
+                        className="inline-flex items-center gap-2 px-5 sm:px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs sm:text-sm shadow-md shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer"
+                        style={{ backgroundColor: "#059669", color: "#ffffff" }}
+                      >
+                        <Send className="w-4 h-4" />
+                        <span>ส่งข้อสอบ</span>
+                      </button>
+                    )}
                   </div>
                 </>
               ) : (

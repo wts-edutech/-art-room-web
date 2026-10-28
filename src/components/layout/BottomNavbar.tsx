@@ -42,6 +42,18 @@ export default function BottomNavbar() {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isTeachersEnabled, setIsTeachersEnabled] = useState(true);
   const [mounted, setMounted] = useState(false);
+  const [isExamActive, setIsExamActive] = useState(false);
+
+  // Detect exam mode to unmount BottomNavbar completely during active exam
+  useEffect(() => {
+    const checkExam = () => {
+      setIsExamActive(document.body.classList.contains("exam-mode-active"));
+    };
+    checkExam();
+    const observer = new MutationObserver(checkExam);
+    observer.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
 
   // Accordion state inside full-screen menu
   const [expandedSections, setExpandedSections] = useState<{ [key: string]: boolean }>({
@@ -120,6 +132,8 @@ export default function BottomNavbar() {
   const isMoreActive = isMoreMenuOpen;
 
   const resolvedAvatar = resolveUserAvatar(userAvatar, userName);
+
+  if (isExamActive) return null;
 
   return (
     <>
