@@ -320,6 +320,19 @@ export default function ExamLockModal({
   const answeredCount = Object.keys(answers).length;
   const currentQuestion = questions[currentIdx];
 
+  // Confirm and submit helper
+  const handleConfirmSubmit = useCallback(() => {
+    if (answeredCount < questions.length) {
+      if (confirm(`คุณยังตอบไม่ครบ (ตอบแล้ว ${answeredCount}/${questions.length} ข้อ)\nคุณแน่ใจหรือไม่ว่าต้องการส่งข้อสอบตอนนี้?`)) {
+        handleSubmitExam("completed");
+      }
+    } else {
+      if (confirm("ยืนยันการส่งข้อสอบและตรวจคำตอบทันที?")) {
+        handleSubmitExam("completed");
+      }
+    }
+  }, [answeredCount, questions.length, handleSubmitExam]);
+
   // ----------------------------------------------------
   // RENDER PHASE 1: INTRO / RULES MODAL
   // ----------------------------------------------------
@@ -457,7 +470,7 @@ export default function ExamLockModal({
   // RENDER PHASE 2 & 3: EXAM RUNNING / FULLSCREEN LOCKED
   // ----------------------------------------------------
   return (
-    <div className="fixed inset-0 z-50 bg-gray-100 text-gray-900 flex flex-col select-none overflow-hidden font-sans">
+    <div className="fixed inset-0 z-50 bg-gray-100 text-gray-900 flex flex-col select-none overflow-hidden font-sans h-dvh max-h-dvh">
       {/* 1. Locked Top Navigation Bar */}
       <header className="bg-white border-b border-gray-200 px-3 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between shadow-xs shrink-0">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -492,7 +505,7 @@ export default function ExamLockModal({
           </div>
         </div>
 
-        {/* Right: Student name & Submit button */}
+        {/* Right: Student name & Submit button (Desktop only in top header to avoid mobile fullscreen toast) */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <div className="hidden sm:block text-right text-xs">
             <p className="font-bold text-gray-800 truncate max-w-[140px]">{student.name}</p>
@@ -501,27 +514,17 @@ export default function ExamLockModal({
 
           <button
             type="button"
-            onClick={() => {
-              if (answeredCount < questions.length) {
-                if (confirm(`คุณยังตอบไม่ครบ (ตอบแล้ว ${answeredCount}/${questions.length} ข้อ)\nคุณแน่ใจหรือไม่ว่าต้องการส่งข้อสอบตอนนี้?`)) {
-                  handleSubmitExam("completed");
-                }
-              } else {
-                if (confirm("ยืนยันการส่งข้อสอบและตรวจคำตอบทันที?")) {
-                  handleSubmitExam("completed");
-                }
-              }
-            }}
+            onClick={handleConfirmSubmit}
             disabled={phase === "submitting"}
-            className="inline-flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+            className="hidden md:inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs active:scale-95 transition-all cursor-pointer disabled:opacity-50"
           >
             <Send className="w-3.5 h-3.5" />
-            <span>{phase === "submitting" ? "ส่ง..." : "ส่งข้อสอบ"}</span>
+            <span>{phase === "submitting" ? "กำลังส่ง..." : "ส่งข้อสอบ"}</span>
           </button>
         </div>
       </header>
 
-      {/* 2. Main Exam Layout: Question Navigator (Left sidebar on desktop) + Question Area */}
+      {/* 2. Main Exam Layout: Question Navigator (Left sidebar on desktop) + Content Area */}
       <div 
         className="flex-1 flex flex-row overflow-hidden w-full relative"
       >
@@ -585,136 +588,148 @@ export default function ExamLockModal({
           </div>
         </aside>
 
-        {/* Main Question Display Area: Full width on mobile */}
-        <main 
-          className="flex-1 p-3.5 sm:p-6 md:p-10 overflow-y-auto flex flex-col justify-between w-full"
-        >
-          <div className="max-w-3xl mx-auto w-full space-y-4 sm:space-y-6">
-            {currentQuestion ? (
-              <>
-                {/* Question Header */}
-                <div className="flex items-center justify-between pb-2.5 sm:pb-3 border-b border-gray-200">
-                  <div className="flex items-center gap-2">
-                    <span className="px-2.5 sm:px-3.5 py-1 rounded-xl bg-orange-500 text-white font-bold text-xs font-kanit shadow-xs">
-                      ข้อที่ {currentQuestion.questionNumber} จาก {questions.length}
-                    </span>
-                    {answers[currentQuestion.questionNumber] ? (
-                      <span className="text-[11px] sm:text-xs font-semibold text-emerald-600 flex items-center gap-1 bg-emerald-50 px-2 sm:px-2.5 py-0.5 rounded-full border border-emerald-200">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> บันทึกแล้ว
+        {/* Right Content Area: Main scrollable questions + Pinned Bottom Bar */}
+        <div className="flex-1 flex flex-col h-full overflow-hidden w-full">
+          {/* Main Question Display Area */}
+          <main 
+            className="flex-1 p-3.5 sm:p-6 md:p-8 overflow-y-auto w-full"
+          >
+            <div className="max-w-3xl mx-auto w-full space-y-4 sm:space-y-6 pb-6">
+              {currentQuestion ? (
+                <>
+                  {/* Question Header */}
+                  <div className="flex items-center justify-between pb-2.5 sm:pb-3 border-b border-gray-200 gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="px-2.5 sm:px-3.5 py-1 rounded-xl bg-orange-500 text-white font-bold text-xs font-kanit shadow-xs shrink-0">
+                        ข้อที่ {currentQuestion.questionNumber} จาก {questions.length}
                       </span>
-                    ) : (
-                      <span className="text-[11px] sm:text-xs text-amber-700 bg-amber-50 px-2 sm:px-2.5 py-0.5 rounded-full border border-amber-200 font-medium">
-                        ยังไม่ได้เลือกคำตอบ
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Question Text Box */}
-                <div className="bg-white p-4 sm:p-6 md:p-7 rounded-2xl sm:rounded-3xl border border-gray-200 shadow-xs">
-                  <h2 className="text-base sm:text-xl font-bold text-gray-900 leading-relaxed font-kanit">
-                    {currentQuestion.questionText}
-                  </h2>
-                </div>
-
-                {/* 4 Choices */}
-                <div className="space-y-2.5 sm:space-y-3">
-                  {[
-                    { key: "A", text: currentQuestion.choiceA, label: "ก" },
-                    { key: "B", text: currentQuestion.choiceB, label: "ข" },
-                    { key: "C", text: currentQuestion.choiceC, label: "ค" },
-                    { key: "D", text: currentQuestion.choiceD, label: "ง" },
-                  ].map((choice) => {
-                    const isSelected = answers[currentQuestion.questionNumber] === choice.key;
-
-                    return (
-                      <button
-                        key={choice.key}
-                        type="button"
-                        onClick={() => handleSelectChoice(currentQuestion.questionNumber, choice.key as any)}
-                        className={`w-full p-3 sm:p-4 md:p-5 rounded-xl sm:rounded-2xl border text-left flex items-center gap-3 sm:gap-4 transition-all cursor-pointer ${
-                          isSelected
-                            ? "bg-orange-50 border-orange-500 text-orange-950 shadow-xs ring-2 ring-orange-500/20"
-                            : "bg-white border-gray-200 hover:border-orange-300 hover:bg-orange-50/20 text-gray-800"
-                        }`}
-                      >
-                        <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center shrink-0 border transition-colors ${
-                          isSelected
-                            ? "bg-orange-500 text-white border-orange-500 shadow-xs"
-                            : "bg-gray-50 text-gray-700 border-gray-300"
-                        }`}>
-                          {choice.label}
-                        </div>
-                        <span className="text-xs sm:text-base font-medium leading-relaxed">
-                          {choice.text}
+                      {answers[currentQuestion.questionNumber] ? (
+                        <span className="text-[11px] sm:text-xs font-semibold text-emerald-600 flex items-center gap-1 bg-emerald-50 px-2 sm:px-2.5 py-0.5 rounded-full border border-emerald-200 shrink-0">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> บันทึกแล้ว
                         </span>
-                      </button>
-                    );
-                  })}
+                      ) : (
+                        <span className="text-[11px] sm:text-xs text-amber-700 bg-amber-50 px-2 sm:px-2.5 py-0.5 rounded-full border border-amber-200 font-medium shrink-0">
+                          ยังไม่ได้เลือกคำตอบ
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Mobile Submit Button: Placed safely right here in Question Header row - NEVER covered by browser toasts */}
+                    <button
+                      type="button"
+                      onClick={handleConfirmSubmit}
+                      disabled={phase === "submitting"}
+                      className="md:hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs shadow-xs active:scale-95 transition-all shrink-0 cursor-pointer"
+                    >
+                      <Send className="w-3 h-3" />
+                      <span>{phase === "submitting" ? "ส่ง..." : "ส่งข้อสอบ"}</span>
+                    </button>
+                  </div>
+
+                  {/* Question Text Box */}
+                  <div className="bg-white p-4 sm:p-6 md:p-7 rounded-2xl sm:rounded-3xl border border-gray-200 shadow-xs">
+                    <h2 className="text-base sm:text-xl font-bold text-gray-900 leading-relaxed font-kanit">
+                      {currentQuestion.questionText}
+                    </h2>
+                  </div>
+
+                  {/* 4 Choices */}
+                  <div className="space-y-2.5 sm:space-y-3">
+                    {[
+                      { key: "A", text: currentQuestion.choiceA, label: "ก" },
+                      { key: "B", text: currentQuestion.choiceB, label: "ข" },
+                      { key: "C", text: currentQuestion.choiceC, label: "ค" },
+                      { key: "D", text: currentQuestion.choiceD, label: "ง" },
+                    ].map((choice) => {
+                      const isSelected = answers[currentQuestion.questionNumber] === choice.key;
+
+                      return (
+                        <button
+                          key={choice.key}
+                          type="button"
+                          onClick={() => handleSelectChoice(currentQuestion.questionNumber, choice.key as any)}
+                          className={`w-full p-3 sm:p-4 md:p-5 rounded-xl sm:rounded-2xl border text-left flex items-center gap-3 sm:gap-4 transition-all cursor-pointer ${
+                            isSelected
+                              ? "bg-orange-50 border-orange-500 text-orange-950 shadow-xs ring-2 ring-orange-500/20"
+                              : "bg-white border-gray-200 hover:border-orange-300 hover:bg-orange-50/20 text-gray-800"
+                          }`}
+                        >
+                          <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center shrink-0 border transition-colors ${
+                            isSelected
+                              ? "bg-orange-500 text-white border-orange-500 shadow-xs"
+                              : "bg-gray-50 text-gray-700 border-gray-300"
+                          }`}>
+                            {choice.label}
+                          </div>
+                          <span className="text-xs sm:text-base font-medium leading-relaxed">
+                            {choice.text}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-20 text-gray-400">
+                  กำลังโหลดข้อสอบ...
                 </div>
-              </>
-            ) : (
-              <div className="text-center py-20 text-gray-400">
-                กำลังโหลดข้อสอบ...
-              </div>
-            )}
-          </div>
-
-          {/* Navigation Controls (Prev / Question Map Trigger / Next) */}
-          <div className="max-w-3xl mx-auto w-full pt-4 sm:pt-6 border-t border-gray-200 flex items-center justify-between gap-2 sm:gap-3 mt-6 sm:mt-8">
-            <button
-              type="button"
-              onClick={() => setCurrentIdx((prev) => Math.max(0, prev - 1))}
-              disabled={currentIdx === 0}
-              className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-bold text-xs transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span className="hidden xs:inline sm:inline">ข้อก่อนหน้า</span>
-              <span className="xs:hidden sm:hidden">ก่อนหน้า</span>
-            </button>
-
-            {/* Mobile Question Map Button (Opens Bottom Sheet) */}
-            <button
-              type="button"
-              onClick={() => setShowMobileMap(true)}
-              className="md:hidden inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-800 font-bold text-xs border border-orange-200 active:scale-95 transition-all cursor-pointer"
-            >
-              <HelpCircle className="w-3.5 h-3.5 text-orange-500" />
-              <span>ผังข้อ ({answeredCount}/{questions.length})</span>
-            </button>
-
-            {/* Desktop answered progress */}
-            <div className="hidden md:block text-xs text-gray-500 font-medium">
-              ตอบแล้ว <strong>{answeredCount}</strong> จาก <strong>{questions.length}</strong> ข้อ
+              )}
             </div>
+          </main>
 
-            {currentIdx < questions.length - 1 ? (
+          {/* Pinned Bottom Navigation Controls: Always visible, never pushed behind browser toolbar */}
+          <footer className="bg-white border-t border-gray-200 px-3 sm:px-6 py-2.5 sm:py-3 shrink-0 z-20 shadow-xs pb-[max(0.625rem,env(safe-area-inset-bottom))]">
+            <div className="max-w-3xl mx-auto w-full flex items-center justify-between gap-2 sm:gap-3">
               <button
                 type="button"
-                onClick={() => setCurrentIdx((prev) => Math.min(questions.length - 1, prev + 1))}
-                className="inline-flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-6 py-2 sm:py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs shadow-md shadow-orange-500/20 active:scale-95 transition-all cursor-pointer"
-                style={{ backgroundColor: "#f97316", color: "#ffffff" }}
+                onClick={() => setCurrentIdx((prev) => Math.max(0, prev - 1))}
+                disabled={currentIdx === 0}
+                className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-bold text-xs transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs"
               >
-                <span>ข้อถัดไป</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span className="hidden xs:inline sm:inline">ข้อก่อนหน้า</span>
+                <span className="xs:hidden sm:hidden">ก่อนหน้า</span>
               </button>
-            ) : (
+
+              {/* Mobile Question Map Button (Opens Bottom Sheet) */}
               <button
                 type="button"
-                onClick={() => {
-                  if (confirm("คุณทำถึงข้อสุดท้ายแล้ว ต้องการส่งข้อสอบและตรวจคำตอบทันทีหรือไม่?")) {
-                    handleSubmitExam("completed");
-                  }
-                }}
-                className="inline-flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-6 py-2 sm:py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer"
-                style={{ backgroundColor: "#059669", color: "#ffffff" }}
+                onClick={() => setShowMobileMap(true)}
+                className="md:hidden inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-800 font-bold text-xs border border-orange-200 active:scale-95 transition-all cursor-pointer"
               >
-                <Send className="w-3.5 h-3.5" />
-                <span>ส่งข้อสอบ</span>
+                <HelpCircle className="w-3.5 h-3.5 text-orange-500" />
+                <span>ผังข้อ ({answeredCount}/{questions.length})</span>
               </button>
-            )}
-          </div>
-        </main>
+
+              {/* Desktop answered progress */}
+              <div className="hidden md:block text-xs text-gray-500 font-medium">
+                ตอบแล้ว <strong>{answeredCount}</strong> จาก <strong>{questions.length}</strong> ข้อ
+              </div>
+
+              {currentIdx < questions.length - 1 ? (
+                <button
+                  type="button"
+                  onClick={() => setCurrentIdx((prev) => Math.min(questions.length - 1, prev + 1))}
+                  className="inline-flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-6 py-2 sm:py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs shadow-md shadow-orange-500/20 active:scale-95 transition-all cursor-pointer"
+                  style={{ backgroundColor: "#f97316", color: "#ffffff" }}
+                >
+                  <span>ข้อถัดไป</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleConfirmSubmit}
+                  className="inline-flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-6 py-2 sm:py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer"
+                  style={{ backgroundColor: "#059669", color: "#ffffff" }}
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>ส่งข้อสอบ</span>
+                </button>
+              )}
+            </div>
+          </footer>
+        </div>
       </div>
 
       {/* 3. Mobile Question Navigator Drawer / Bottom Sheet */}
@@ -784,16 +799,30 @@ export default function ExamLockModal({
               })}
             </div>
 
-            {/* Legend */}
-            <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-500">
-              <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-md bg-emerald-500 inline-block shrink-0" />
-                <span>ตอบแล้ว ({answeredCount})</span>
+            {/* Legend & Submit button */}
+            <div className="pt-3 border-t border-gray-100 flex flex-col gap-3">
+              <div className="flex items-center justify-between text-[11px] text-gray-500">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 rounded-md bg-emerald-500 inline-block shrink-0" />
+                  <span>ตอบแล้ว ({answeredCount})</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 rounded-md bg-gray-200 border border-gray-300 inline-block shrink-0" />
+                  <span>ยังไม่ตอบ ({questions.length - answeredCount})</span>
+                </div>
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-md bg-gray-200 border border-gray-300 inline-block shrink-0" />
-                <span>ยังไม่ตอบ ({questions.length - answeredCount})</span>
-              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowMobileMap(false);
+                  handleConfirmSubmit();
+                }}
+                className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer"
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>ส่งข้อสอบทันที ({answeredCount}/{questions.length} ข้อ)</span>
+              </button>
             </div>
           </div>
         </div>
