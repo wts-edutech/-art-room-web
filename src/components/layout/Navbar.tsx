@@ -132,15 +132,15 @@ export default function Navbar() {
               }}
             >
               <img 
-                src={logoSettings.logoUrl || "/school-logo.png"} 
-                alt={logoSettings.logoAlt || "ตราโรงเรียนวชิรธรรมสาธิต"} 
+                src={logoSettings.logoUrl || "/artroom-logo.png"} 
+                alt={logoSettings.logoAlt || "โลโก้ Art Room โรงเรียนวชิรธรรมสาธิต"} 
                 className="w-full h-full object-contain shrink-0 group-hover:scale-105 transition-transform duration-200 drop-shadow-xs"
                 style={{
                   transform: scalePercent !== 1 ? `scale(${scalePercent})` : undefined,
                   transformOrigin: "center center",
                 }}
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/school-logo.png";
+                  (e.target as HTMLImageElement).src = "/artroom-logo.png";
                 }}
               />
             </div>

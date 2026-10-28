@@ -76,7 +76,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/school-logo.png",
+        url: "/artroom-logo.png",
         width: 800,
         height: 800,
         alt: "Art Room วชิรธรรมสาธิต",
@@ -88,11 +88,11 @@ export const metadata: Metadata = {
     title: "Art Room - โรงเรียนวชิรธรรมสาธิต",
     description:
       "เว็บไซต์สำหรับสื่อการเรียนการสอนศิลปะรูปแบบออนไลน์ โรงเรียนวชิรธรรมสาธิต",
-    images: ["/school-logo.png"],
+    images: ["/artroom-logo.png"],
   },
   icons: {
     icon: "/favicon.ico",
-    apple: "/school-logo.png",
+    apple: "/artroom-logo.png",
   },
   robots: {
     index: true,
@@ -113,7 +113,7 @@ const structuredData = {
   name: "Art Room - โรงเรียนวชิรธรรมสาธิต",
   alternateName: "Wachirathammasatit School Art Room",
   url: SITE_URL,
-  logo: `${SITE_URL}/school-logo.png`,
+  logo: `${SITE_URL}/artroom-logo.png`,
   description:
     "เว็บไซต์สำหรับสื่อการเรียนการสอนศิลปะรูปแบบออนไลน์ โรงเรียนวชิรธรรมสาธิต",
   address: {

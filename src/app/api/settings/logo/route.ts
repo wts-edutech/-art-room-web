@@ -19,15 +19,15 @@ export interface LogoSettings {
 }
 
 const DEFAULT_SETTINGS: LogoSettings = {
-  logoUrl: "/school-logo.png",
-  logoAlt: "ตราโรงเรียนวชิรธรรมสาธิต",
+  logoUrl: "/artroom-logo.png",
+  logoAlt: "โลโก้ Art Room โรงเรียนวชิรธรรมสาธิต",
   brandNamePrefix: "ART",
   brandNameSuffix: "ROOM",
   schoolName: "WACHIRATHAMMASATIT SCHOOL",
   showText: true,
-  logoShape: "rounded",
+  logoShape: "circle",
   logoSize: "large",
-  customSize: 72,
+  customSize: 90,
   logoScale: 100,
   updatedAt: new Date().toISOString(),
 };
@@ -75,6 +75,9 @@ export async function GET() {
     if (result?.value) {
       try {
         const parsed = JSON.parse(result.value);
+        if (!parsed.logoUrl || parsed.logoUrl === "/school-logo.png" || parsed.logoUrl.startsWith("data:image")) {
+          parsed.logoUrl = "/artroom-logo.png";
+        }
         memorySettings = {
           ...DEFAULT_SETTINGS,
           ...parsed,

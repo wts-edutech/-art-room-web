@@ -338,7 +338,7 @@ export default function SiteLogoSettingsSection() {
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={settings.logoUrl || "/school-logo.png"}
+                  src={settings.logoUrl || "/artroom-logo.png"}
                   alt={settings.logoAlt || "ตราโรงเรียน"}
                   className="w-full h-full object-contain shrink-0 transition-transform duration-150"
                   style={{
@@ -346,7 +346,7 @@ export default function SiteLogoSettingsSection() {
                     transformOrigin: "center center",
                   }}
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src = "/school-logo.png";
+                    (e.target as HTMLImageElement).src = "/artroom-logo.png";
                   }}
                 />
               </div>
@@ -577,15 +577,15 @@ export default function SiteLogoSettingsSection() {
                 type="text"
                 value={settings.logoUrl}
                 onChange={(e) => setSettings({ ...settings, logoUrl: e.target.value })}
-                placeholder="หรือกรอก URL รูปภาพ เช่น /school-logo.png หรือ https://..."
+                placeholder="หรือกรอก URL รูปภาพ เช่น /artroom-logo.png หรือ https://..."
                 className="flex-1 px-3.5 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-xs font-mono text-gray-700"
               />
               <button
                 type="button"
-                onClick={() => setSettings({ ...settings, logoUrl: "/school-logo.png" })}
+                onClick={() => setSettings({ ...settings, logoUrl: "/artroom-logo.png" })}
                 className="px-3 py-2 rounded-xl border border-gray-200 text-xs text-gray-600 hover:bg-gray-50 transition-colors whitespace-nowrap cursor-pointer"
               >
-                ใช้รูปดั้งเดิม
+                ใช้รูปการ์ตูน Art Room
               </button>
             </div>
           </div>

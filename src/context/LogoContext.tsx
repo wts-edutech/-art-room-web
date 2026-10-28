@@ -17,15 +17,15 @@ export interface LogoSettings {
 }
 
 export const DEFAULT_LOGO_SETTINGS: LogoSettings = {
-  logoUrl: "/school-logo.png",
-  logoAlt: "ตราโรงเรียนวชิรธรรมสาธิต",
+  logoUrl: "/artroom-logo.png",
+  logoAlt: "โลโก้ Art Room โรงเรียนวชิรธรรมสาธิต",
   brandNamePrefix: "ART",
   brandNameSuffix: "ROOM",
   schoolName: "WACHIRATHAMMASATIT SCHOOL",
   showText: true,
-  logoShape: "rounded",
+  logoShape: "circle",
   logoSize: "large",
-  customSize: 72,
+  customSize: 90,
   logoScale: 100,
 };
 
@@ -51,7 +51,11 @@ export function LogoProvider({ children }: { children: React.ReactNode }) {
       try {
         const cached = localStorage.getItem(STORAGE_KEY);
         if (cached) {
-          return { ...DEFAULT_LOGO_SETTINGS, ...JSON.parse(cached) };
+          const parsed = JSON.parse(cached);
+          if (parsed.logoUrl === "/school-logo.png" || parsed.logoUrl?.startsWith("data:image")) {
+            parsed.logoUrl = "/artroom-logo.png";
+          }
+          return { ...DEFAULT_LOGO_SETTINGS, ...parsed };
         }
       } catch {
         // Fallback to default
@@ -67,16 +71,21 @@ export function LogoProvider({ children }: { children: React.ReactNode }) {
       const res = await fetch("/api/settings/logo");
       if (res.ok) {
         const data: any = await res.json();
+        const rawLogoUrl = data.logoUrl;
+        const normalizedLogoUrl = (!rawLogoUrl || rawLogoUrl === "/school-logo.png" || rawLogoUrl.startsWith("data:image"))
+          ? "/artroom-logo.png"
+          : rawLogoUrl;
+
         const merged: LogoSettings = {
-          logoUrl: data.logoUrl || DEFAULT_LOGO_SETTINGS.logoUrl,
+          logoUrl: normalizedLogoUrl,
           logoAlt: data.logoAlt || DEFAULT_LOGO_SETTINGS.logoAlt,
           brandNamePrefix: data.brandNamePrefix || DEFAULT_LOGO_SETTINGS.brandNamePrefix,
           brandNameSuffix: data.brandNameSuffix || DEFAULT_LOGO_SETTINGS.brandNameSuffix,
           schoolName: data.schoolName || DEFAULT_LOGO_SETTINGS.schoolName,
           showText: data.showText !== undefined ? Boolean(data.showText) : true,
-          logoShape: data.logoShape || "rounded",
+          logoShape: data.logoShape || "circle",
           logoSize: data.logoSize || "large",
-          customSize: typeof data.customSize === "number" ? data.customSize : (data.logoSize === "compact" ? 44 : data.logoSize === "large" ? 72 : 56),
+          customSize: typeof data.customSize === "number" ? data.customSize : 90,
           logoScale: typeof data.logoScale === "number" ? data.logoScale : 100,
           updatedAt: data.updatedAt,
         };

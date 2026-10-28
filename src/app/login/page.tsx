@@ -288,13 +288,13 @@ export default function LoginPage() {
         <div className="text-center mb-7">
           <Link href="/" className="inline-block mb-3 hover:scale-105 transition-transform">
             <img 
-              src={logoSettings.logoUrl || "/school-logo.png"} 
+              src={logoSettings.logoUrl || "/artroom-logo.png"} 
               alt={logoSettings.logoAlt || "School Logo"} 
               className={`w-24 h-24 sm:w-28 sm:h-28 object-contain mx-auto drop-shadow-xs ${
                 logoSettings.logoShape === "circle" ? "rounded-full" : logoSettings.logoShape === "square" ? "rounded-none" : "rounded-2xl"
               }`}
               onError={(e) => {
-                (e.target as HTMLImageElement).src = "/school-logo.png";
+                (e.target as HTMLImageElement).src = "/artroom-logo.png";
               }}
             />
           </Link>

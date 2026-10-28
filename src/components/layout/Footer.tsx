@@ -25,13 +25,13 @@ export default function Footer() {
           <div className="flex items-center gap-3.5">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img 
-              src={logoSettings.logoUrl || "/school-logo.png"} 
+              src={logoSettings.logoUrl || "/artroom-logo.png"} 
               alt={logoSettings.logoAlt || "School Logo"} 
               className={`w-14 h-14 sm:w-16 sm:h-16 object-contain shrink-0 ${
                 logoSettings.logoShape === "circle" ? "rounded-full" : logoSettings.logoShape === "square" ? "rounded-none" : "rounded-2xl"
               }`}
               onError={(e) => {
-                (e.target as HTMLImageElement).src = "/school-logo.png";
+                (e.target as HTMLImageElement).src = "/artroom-logo.png";
               }}
             />
             {logoSettings.showText && (

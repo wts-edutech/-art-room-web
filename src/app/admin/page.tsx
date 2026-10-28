@@ -228,13 +228,13 @@ export default function AdminPage() {
             <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center font-bold text-xl shadow-xs overflow-hidden border border-gray-200 p-1 shrink-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img 
-                src={logoSettings.logoUrl || "/school-logo.png"} 
+                src={logoSettings.logoUrl || "/artroom-logo.png"} 
                 alt={logoSettings.logoAlt || "School Logo"} 
                 className={`w-full h-full object-contain ${
                   logoSettings.logoShape === "circle" ? "rounded-full" : logoSettings.logoShape === "square" ? "rounded-none" : "rounded-xl"
                 }`}
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/school-logo.png";
+                  (e.target as HTMLImageElement).src = "/artroom-logo.png";
                 }}
               />
             </div>
@@ -323,13 +323,13 @@ export default function AdminPage() {
             <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center p-1 shadow-md shrink-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img 
-                src={logoSettings.logoUrl || "/school-logo.png"} 
+                src={logoSettings.logoUrl || "/artroom-logo.png"} 
                 alt={logoSettings.logoAlt || "School Logo"} 
                 className={`w-full h-full object-contain ${
                   logoSettings.logoShape === "circle" ? "rounded-full" : logoSettings.logoShape === "square" ? "rounded-none" : "rounded-xl"
                 }`}
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/school-logo.png";
+                  (e.target as HTMLImageElement).src = "/artroom-logo.png";
                 }}
               />
             </div>
@@ -459,13 +459,13 @@ export default function AdminPage() {
           <div className="flex items-center gap-1.5 min-w-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img 
-              src={logoSettings.logoUrl || "/school-logo.png"} 
+              src={logoSettings.logoUrl || "/artroom-logo.png"} 
               alt={logoSettings.logoAlt || "School Logo"} 
               className={`w-8 h-8 object-contain bg-white border border-gray-200 p-0.5 shrink-0 ${
                 logoSettings.logoShape === "circle" ? "rounded-full" : logoSettings.logoShape === "square" ? "rounded-none" : "rounded-lg"
               }`}
               onError={(e) => {
-                (e.target as HTMLImageElement).src = "/school-logo.png";
+                (e.target as HTMLImageElement).src = "/artroom-logo.png";
               }}
             />
             <span className="font-bold text-xs truncate font-kanit text-gray-800">Admin System</span>
