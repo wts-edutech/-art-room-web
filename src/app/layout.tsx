@@ -8,6 +8,7 @@ import LiveClock from "@/components/ui/LiveClock";
 import FloatingSocialSidebar from "@/components/ui/FloatingSocialSidebar";
 import VisitorTracker from "@/components/VisitorTracker";
 import BottomNavbar from "@/components/layout/BottomNavbar";
+import BackToTop from "@/components/ui/BackToTop";
 import { LogoProvider } from "@/context/LogoContext";
 
 const prompt = Prompt({
@@ -153,6 +154,7 @@ export default function RootLayout({
             {children}
             <CookieConsent />
             <FloatingSocialSidebar />
+            <BackToTop />
             <BottomNavbar />
           </LogoProvider>
         </SessionProvider>
