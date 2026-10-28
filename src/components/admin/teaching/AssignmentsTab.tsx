@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { 
   Plus, 
@@ -43,6 +43,65 @@ export default function AssignmentsTab({ onGoToGrading }: { onGoToGrading?: (ass
   const [maxScore, setMaxScore] = useState("10");
   const [dueDate, setDueDate] = useState("");
   const [isActive, setIsActive] = useState(true);
+
+  // List Filter State
+  const [filterGrade, setFilterGrade] = useState<string>("all");
+  const [filterRoom, setFilterRoom] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterSearch, setFilterSearch] = useState<string>("");
+
+  const availableFilterRooms = useMemo(() => {
+    if (filterGrade === "all") {
+      return classrooms.map((r) => r.name);
+    }
+    return classrooms.filter((r) => r.gradeLevel === filterGrade).map((r) => r.name);
+  }, [classrooms, filterGrade]);
+
+  const getCountForGrade = (grade: string) => {
+    if (grade === "all") return assignments.length;
+    return assignments.filter((item) => {
+      const rooms = item.classroomsList || [];
+      return rooms.length > 0 ? rooms.some((r: string) => r.startsWith(grade)) : true;
+    }).length;
+  };
+
+  const filteredAssignments = useMemo(() => {
+    return assignments.filter((item) => {
+      const rooms = item.classroomsList || [];
+
+      // 1. Filter by Grade (ม.1 - ม.6)
+      if (filterGrade !== "all") {
+        if (rooms.length > 0) {
+          const hasGrade = rooms.some((r: string) => r.startsWith(filterGrade));
+          if (!hasGrade) return false;
+        }
+      }
+
+      // 2. Filter by Room (e.g. ม.3/1)
+      if (filterRoom !== "all") {
+        if (rooms.length > 0) {
+          if (!rooms.includes(filterRoom)) return false;
+        }
+      }
+
+      // 3. Filter by Status
+      if (filterStatus === "active" && !item.isActive) return false;
+      if (filterStatus === "inactive" && item.isActive) return false;
+
+      // 4. Search
+      if (filterSearch.trim()) {
+        const query = filterSearch.trim().toLowerCase();
+        const titleMatch = item.title?.toLowerCase().includes(query);
+        const descMatch = item.description?.toLowerCase().includes(query);
+        const subjectMatch =
+          item.subject?.name?.toLowerCase().includes(query) ||
+          item.subject?.code?.toLowerCase().includes(query);
+        if (!titleMatch && !descMatch && !subjectMatch) return false;
+      }
+
+      return true;
+    });
+  }, [assignments, filterGrade, filterRoom, filterStatus, filterSearch]);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -735,16 +794,150 @@ export default function AssignmentsTab({ onGoToGrading }: { onGoToGrading?: (ass
         </div>
       )}
 
+      {/* Search & Filter Toolbar */}
+      <div className="bg-white p-4 sm:p-5 rounded-xl border border-gray-200/90 shadow-2xs space-y-3.5">
+        {/* Top: Grade Selector Tabs */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+            <span className="text-xs font-bold text-gray-500 mr-1 flex items-center gap-1 shrink-0">
+              <Filter className="w-3.5 h-3.5" />
+              <span>ระดับชั้น:</span>
+            </span>
+            {["all", "ม.1", "ม.2", "ม.3", "ม.4", "ม.5", "ม.6"].map((g) => {
+              const count = getCountForGrade(g);
+              const isSelected = filterGrade === g;
+              return (
+                <button
+                  key={g}
+                  type="button"
+                  onClick={() => {
+                    setFilterGrade(g);
+                    setFilterRoom("all");
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
+                    isSelected
+                      ? "bg-orange-500 text-white shadow-xs"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900"
+                  }`}
+                >
+                  <span>{g === "all" ? "ทุกระดับชั้น" : g}</span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                      isSelected ? "bg-white/20 text-white" : "bg-white text-gray-500 border border-gray-200"
+                    }`}
+                  >
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Result Count and Clear Filter */}
+          {(filterGrade !== "all" || filterRoom !== "all" || filterStatus !== "all" || filterSearch) && (
+            <button
+              type="button"
+              onClick={() => {
+                setFilterGrade("all");
+                setFilterRoom("all");
+                setFilterStatus("all");
+                setFilterSearch("");
+              }}
+              className="text-xs text-red-600 hover:text-red-700 font-semibold self-end sm:self-center shrink-0 cursor-pointer flex items-center gap-1"
+            >
+              <X className="w-3 h-3" />
+              <span>ล้างตัวกรอง (แสดงทั้งหมด)</span>
+            </button>
+          )}
+        </div>
+
+        {/* Bottom row: Classroom select, Status select, Search Input */}
+        <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 pt-2 border-t border-gray-100">
+          {/* Room filter */}
+          <div className="sm:col-span-3">
+            <select
+              value={filterRoom}
+              onChange={(e) => setFilterRoom(e.target.value)}
+              className="w-full h-9 px-3 rounded-lg border border-gray-200 text-xs font-medium text-gray-700 bg-gray-50/50 focus:bg-white focus:border-orange-500 outline-none transition-colors"
+            >
+              <option value="all">
+                {filterGrade === "all" ? "ทุกห้องเรียน (All Classes)" : `ทุกห้องของ ${filterGrade}`}
+              </option>
+              {availableFilterRooms.map((r) => (
+                <option key={r} value={r}>
+                  ห้อง {r}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Status filter */}
+          <div className="sm:col-span-3">
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="w-full h-9 px-3 rounded-lg border border-gray-200 text-xs font-medium text-gray-700 bg-gray-50/50 focus:bg-white focus:border-orange-500 outline-none transition-colors"
+            >
+              <option value="all">ทุกสถานะการรับงาน</option>
+              <option value="active">เปิดรับการส่งงาน (Active)</option>
+              <option value="inactive">ระงับการรับงานชั่วคราว</option>
+            </select>
+          </div>
+
+          {/* Search box */}
+          <div className="sm:col-span-6 relative">
+            <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="ค้นหาชื่องาน, รายละเอียด หรือรหัสวิชา..."
+              value={filterSearch}
+              onChange={(e) => setFilterSearch(e.target.value)}
+              className="w-full h-9 pl-8 pr-8 rounded-lg border border-gray-200 text-xs text-gray-800 bg-gray-50/50 focus:bg-white focus:border-orange-500 outline-none transition-colors"
+            />
+            {filterSearch && (
+              <button
+                type="button"
+                onClick={() => setFilterSearch("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Assignments List */}
       <div className="space-y-3.5">
-        {assignments.length === 0 ? (
+        {filteredAssignments.length === 0 ? (
           <div className="bg-white rounded-xl p-12 text-center text-gray-400 border border-gray-200">
             <FileText className="w-12 h-12 mx-auto mb-3 opacity-30 text-gray-400" />
-            <p className="text-sm font-semibold text-gray-700">ยังไม่มีข้อมูลการมอบหมายงานในระบบ</p>
-            <p className="text-xs text-gray-400 mt-1">คลิกปุ่ม "+ มอบหมายงานใหม่" ด้านบนเพื่อเริ่มบันทึกภาระงาน</p>
+            <p className="text-sm font-semibold text-gray-700">
+              {assignments.length === 0
+                ? "ยังไม่มีข้อมูลการมอบหมายงานในระบบ"
+                : `ไม่พบภาระงานที่ตรงกับตัวกรอง ${filterGrade !== "all" ? `ระดับชั้น ${filterGrade}` : ""} ${filterRoom !== "all" ? `ห้อง ${filterRoom}` : ""}`}
+            </p>
+            <p className="text-xs text-gray-400 mt-1">
+              {assignments.length === 0 ? (
+                "คลิกปุ่ม \"+ มอบหมายงานใหม่\" ด้านบนเพื่อเริ่มบันทึกภาระงาน"
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFilterGrade("all");
+                    setFilterRoom("all");
+                    setFilterStatus("all");
+                    setFilterSearch("");
+                  }}
+                  className="text-orange-600 hover:underline font-semibold cursor-pointer"
+                >
+                  คลิกที่นี่เพื่อแสดงภาระงานทั้งหมด
+                </button>
+              )}
+            </p>
           </div>
         ) : (
-          assignments.map((item) => {
+          filteredAssignments.map((item) => {
             const hasDue = item.dueDate;
             const isExpired = hasDue ? new Date() > new Date(item.dueDate) : false;
             const isSelective = item.targetStudentsList && Array.isArray(item.targetStudentsList) && item.targetStudentsList.length > 0;

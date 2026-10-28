@@ -261,20 +261,6 @@ export default function SubmissionsPage() {
 
       let assList = Array.isArray(dataAss) ? dataAss : [];
 
-      // If no assignments found for specific classroom filter, fetch all active assignments
-      // so student can always see and submit any assignment!
-      if (assList.length === 0 && classroom) {
-        try {
-          const fallbackRes = await fetch(`/api/assignments?activeOnly=true`);
-          if (fallbackRes.ok) {
-            const fallbackData = await fallbackRes.json();
-            if (Array.isArray(fallbackData) && fallbackData.length > 0) {
-              assList = fallbackData;
-            }
-          }
-        } catch {}
-      }
-
       const subList = Array.isArray(dataSub) ? dataSub : [];
       const tempSubMap = new Map(subList.map((s: any) => [s.assignmentId, s]));
       const missingCount = assList.filter((a: any) => !tempSubMap.has(a.id) || tempSubMap.get(a.id)?.status === "resubmit").length;
