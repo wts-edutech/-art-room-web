@@ -94,11 +94,14 @@ export default function Navbar() {
 
   return (
     <>
-      <header className={`sticky top-0 left-0 right-0 w-full z-50 transition-all duration-300 pointer-events-auto bg-white ${
-        isScrolled
-          ? "shadow-sm border-b border-gray-200/90"
-          : "border-b border-gray-100"
-      }`}>
+      <header 
+        style={{ backgroundColor: "#ffffff" }}
+        className={`sticky top-0 left-0 right-0 w-full z-50 transition-all duration-300 pointer-events-auto bg-white ${
+          isScrolled
+            ? "shadow-sm border-b border-gray-200/90"
+            : "border-b border-gray-100"
+        }`}
+      >
       {/* Integrated LiveClock Bar — hidden on mobile <640px, shown sm+ */}
       <div className="navbar-clock-bar w-full bg-gradient-to-r from-orange-500 to-pink-500 text-white h-8 overflow-hidden hidden sm:flex items-center">
         <div className="container mx-auto px-4 h-full flex items-center justify-center sm:justify-end gap-3 text-[10px] sm:text-xs font-medium">
@@ -108,8 +111,8 @@ export default function Navbar() {
 
       {/* Main Navigation Bar with Dynamic Sizing */}
       <div 
-        className="max-w-[1700px] w-full mx-auto px-3 sm:px-4 lg:px-5 xl:px-8 py-1.5 flex items-center justify-between transition-all"
-        style={{ minHeight: `${Math.max(64, Math.min(140, sizePx + 14))}px` }}
+        className="max-w-[1700px] w-full mx-auto px-3 sm:px-4 lg:px-5 xl:px-8 py-1.5 flex items-center justify-between transition-all bg-white"
+        style={{ minHeight: `${Math.max(64, Math.min(140, sizePx + 14))}px`, backgroundColor: "#ffffff" }}
       >
         
         {/* Logo Section — Prominent & Clearly Visible */}
@@ -117,7 +120,7 @@ export default function Navbar() {
           <Link href="/" className="flex items-center gap-2.5 sm:gap-3.5 xl:gap-4 group min-w-0 flex-shrink-0 py-1">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <div 
-              className={`relative flex items-center justify-center shrink-0 overflow-hidden ${
+              className={`relative flex items-center justify-center shrink-0 overflow-hidden bg-white ${
                 logoSettings.logoShape === "circle" ? "rounded-full" : logoSettings.logoShape === "square" ? "rounded-none" : "rounded-2xl"
               }`}
               style={{
@@ -125,6 +128,7 @@ export default function Navbar() {
                 height: `${sizePx}px`,
                 maxWidth: "140px",
                 maxHeight: "140px",
+                backgroundColor: "#ffffff",
               }}
             >
               <img 
