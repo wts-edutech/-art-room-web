@@ -288,7 +288,7 @@ export default function MaterialLivePreviewModal({
                   <div className="flex items-center gap-3">
                     <div className="w-14 h-14 rounded-2xl bg-white border border-gray-200 shadow-inner overflow-hidden shrink-0 flex items-center justify-center p-1">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src="/school-logo.png" alt="School Logo" className="w-full h-full object-contain" />
+                      <img src="/wts-emblem-official.png" alt="ตราโรงเรียนวชิรธรรมสาธิต" className="w-full h-full object-contain" />
                     </div>
                     <div>
                       <h3 className="font-bold text-sm sm:text-base text-gray-900 font-kanit">

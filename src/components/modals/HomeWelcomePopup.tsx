@@ -130,7 +130,7 @@ export default function HomeWelcomePopup({ forceOpen }: HomeWelcomePopupProps) {
         {/* 1. Top School Emblem */}
         <div className="flex justify-center pt-1 mb-2.5">
           <img 
-            src="/school-logo.png" 
+            src="/wts-emblem-official.png" 
             alt="ตราโรงเรียนวชิรธรรมสาธิต" 
             className="w-14 h-14 sm:w-16 sm:h-16 object-contain hover:scale-105 transition-transform drop-shadow-xs"
           />

@@ -9,7 +9,7 @@ function getToken() {
     const match = toml.match(/oauth_token\s*=\s*"([^"]+)"/);
     if (match) return match[1];
   } catch (e) {}
-  return 'cfoat_QrvsRv2ySVLzZSywPsQZZqpZJV1EwsJ_DOSGLK7WY7M.L3BCkaEmRLKQHQQWYw9A7-OsTsZdgC-7SM_GSC5jg34';
+  return 'cfoat_DdSPWqKerQVlcjGbHJXxsYGRbsnzaylJDlD_QyBmWhk.J5nUl6_7LO5PO3ejkwv9ZxD1vc7g-jr71Ox_pNaY2u8';
 }
 
 const ACCOUNT_ID = 'e4d1ad7b5737bce23e0af56b3470cf9f';

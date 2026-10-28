@@ -416,7 +416,7 @@ export default function SubmissionsPage() {
                   <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 p-1 flex items-center justify-center shrink-0 shadow-2xs overflow-hidden">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img 
-                      src="/school-logo.png" 
+                      src="/wts-emblem-official.png" 
                       alt="ตราโรงเรียนวชิรธรรมสาธิต" 
                       width={40}
                       height={40}

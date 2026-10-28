@@ -141,8 +141,8 @@ export default function Navbar() {
                 }}
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
-                  if (!target.src.endsWith("/school-logo.png")) {
-                    target.src = "/school-logo.png";
+                  if (!target.src.endsWith("/artroom-logo.png")) {
+                    target.src = "/artroom-logo.png";
                   }
                 }}
               />

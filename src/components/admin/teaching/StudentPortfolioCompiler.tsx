@@ -673,7 +673,7 @@ export default function StudentPortfolioCompiler({ initialClassroom }: StudentPo
               <div className="flex items-center justify-between border-b-2 border-orange-500 pb-4">
                 <div className="flex items-center gap-3">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/school-logo.png" alt="School Logo" className="w-14 h-14 object-contain" />
+                  <img src="/wts-emblem-official.png" alt="ตราโรงเรียนวชิรธรรมสาธิต" className="w-14 h-14 object-contain" />
                   <div>
                     <h2 className="font-extrabold text-base sm:text-lg font-kanit text-gray-900 leading-tight">
                       กลุ่มสาระการเรียนรู้ศิลปะ โรงเรียนวชิรธรรมสาธิต
