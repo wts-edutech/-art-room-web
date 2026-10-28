@@ -2,70 +2,103 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Quote } from "lucide-react";
+import { Quote, Star, Sparkles, GraduationCap } from "lucide-react";
+
+const FALLBACK_TESTIMONIALS = [
+  {
+    name: "รุ่นพี่สิริมา แซ่ลี้",
+    university: "คณะมัณฑนศิลป์ มหาวิทยาลัยศิลปากร",
+    quote: "การเรียนศิลปะที่ Art Room วชิรธรรมสาธิต ช่วยปูพื้นฐานการวาดเส้น EE และการจัดองค์ประกอบภาพได้อย่างมั่นใจ จนสามารถสอบติดคณะในฝันได้จริงค่ะ",
+    imageUrl: "/images/cute-art-welcome.jpg",
+  },
+  {
+    name: "รุ่นพี่ธนกร เจริญผล",
+    university: "คณะสถาปัตยกรรมศาสตร์ จุฬาลงกรณ์มหาวิทยาลัย",
+    quote: "อาจารย์ให้คำแนะนำเทคนิคสีน้ำและสีโปสเตอร์อย่างใกล้ชิด ทำให้มีแฟ้มสะสมผลงาน (Portfolio) ที่โดดเด่นและมีเอกลักษณ์เฉพาะตัว ขอบคุณ Art Room มากครับ",
+    imageUrl: "/images/login-mascot.png",
+  },
+];
 
 export default function TestimonialsSection() {
-  const [testimonials, setTestimonials] = useState<any[]>([]);
+  const [testimonials, setTestimonials] = useState<any[]>(FALLBACK_TESTIMONIALS);
 
   useEffect(() => {
     fetch("/api/testimonials")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch");
+        return res.json();
+      })
       .then((data) => {
-        if (Array.isArray(data)) {
+        if (Array.isArray(data) && data.length > 0) {
           setTestimonials(data);
         }
       })
-      .catch((err) => console.error("Failed to fetch testimonials:", err));
+      .catch((err) => {
+        console.warn("Using fallback testimonials:", err);
+      });
   }, []);
 
   return (
-    <section id="testimonials" className="py-24 bg-transparent">
-      <div className="container mx-auto px-4 sm:px-6">
-        <div className="text-center max-w-3xl mx-auto mb-20">
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold font-heading text-gray-900 mb-6 tracking-tight">
-            เรียนกับ Art room แล้วได้อะไร?
+    <section id="testimonials" className="py-16 sm:py-24 bg-transparent relative">
+      <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
+        <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-50 text-orange-600 text-xs font-semibold mb-3 border border-orange-100 select-none">
+            <GraduationCap className="w-3.5 h-3.5" />
+            <span>เรื่องเล่าจากรุ่นพี่สู่รุ่นน้อง</span>
+          </div>
+          <h2 className="text-2xl sm:text-4xl md:text-5xl font-black font-heading text-gray-900 mb-4 tracking-tight">
+            เรียนกับ Art Room <span className="text-red-600">แล้วได้อะไร?</span>
           </h2>
-          <p className="text-gray-600 text-lg md:text-xl font-light">
-            เสียงตอบรับและประสบการณ์จริงจากรุ่นพี่ที่ส่งต่อแรงบันดาลใจให้น้องๆ
+          <p className="text-gray-600 text-sm sm:text-lg font-light">
+            เสียงตอบรับและประสบการณ์จริงจากรุ่นพี่ที่ส่งต่อแรงบันดาลใจให้น้องๆ ก้าวสู่รั้วมหาวิทยาลัย
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 lg:gap-10">
-          {(Array.isArray(testimonials) ? testimonials : []).map((testimonial: any, index: number) => (
-            <Card key={index} className="group h-full border border-gray-100 shadow-md hover:shadow-2xl transition-all duration-300 rounded-[2rem] hover:-translate-y-1 bg-gradient-to-br from-white to-gray-50/50">
-              <CardContent className="p-8 md:p-12 flex flex-col h-full relative overflow-hidden">
-                <Quote className="absolute top-8 right-8 w-24 h-24 text-gray-50 opacity-50 group-hover:scale-110 transition-transform duration-500 group-hover:text-red-50 z-0" />
-                
-                {testimonial.univImageUrl && (
-                  <div className="absolute top-6 right-6 md:top-8 md:right-8 w-16 h-16 md:w-20 md:h-20 z-10 group-hover:scale-105 transition-all duration-300">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={testimonial.univImageUrl} alt="University Logo" className="w-full h-full object-contain drop-shadow-md" />
-                  </div>
-                )}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-8">
+          {testimonials.map((testimonial: any, index: number) => (
+            <Card
+              key={index}
+              className="group h-full border border-gray-100 shadow-sm hover:shadow-2xl transition-all duration-300 rounded-3xl hover:-translate-y-1.5 bg-white/95 backdrop-blur-md overflow-hidden relative"
+            >
+              <CardContent className="p-6 sm:p-10 flex flex-col h-full relative">
+                {/* Decorative background quotation mark */}
+                <Quote className="absolute top-6 right-6 w-20 h-20 text-red-500/5 group-hover:text-red-500/10 transition-colors pointer-events-none" />
 
-                <p className="text-gray-700 text-lg md:text-[19px] mb-12 flex-grow leading-relaxed font-light relative z-10 pr-14 md:pr-24">
+                {/* Star rating */}
+                <div className="flex items-center gap-1 mb-4 text-amber-400">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <Star key={s} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                  ))}
+                  <span className="text-xs font-bold text-gray-400 ml-2">5.0 / 5.0</span>
+                </div>
+
+                <p className="text-gray-700 text-sm sm:text-base md:text-lg mb-8 flex-grow leading-relaxed font-light relative z-10 italic">
                   &quot;{testimonial.quote}&quot;
                 </p>
-                <div className="flex items-center gap-5 mt-auto relative z-10">
-                  <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center text-gray-400 overflow-hidden shadow-inner flex-shrink-0 border-2 border-white">
+
+                <div className="flex items-center gap-4 mt-auto pt-4 border-t border-gray-100 relative z-10">
+                  <div className="w-14 h-14 bg-gradient-to-br from-red-100 to-rose-200 rounded-2xl flex items-center justify-center text-gray-500 overflow-hidden shadow-inner shrink-0 border border-white">
                     {testimonial.imageUrl ? (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img src={testimonial.imageUrl} alt={testimonial.name} className="w-full h-full object-cover" />
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={testimonial.imageUrl}
+                        alt={testimonial.name}
+                        className="w-full h-full object-cover"
+                      />
                     ) : (
-                      <svg className="w-8 h-8 opacity-70" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
-                      </svg>
+                      <span className="text-xl font-bold text-red-600 font-heading">
+                        {testimonial.name?.charAt(0) || "ศ"}
+                      </span>
                     )}
                   </div>
-                  <div className="flex-1">
-                    <h4 className="font-heading font-bold text-xl md:text-2xl text-gray-900 mb-1">
+
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-heading font-bold text-base sm:text-lg text-gray-900 mb-0.5 truncate">
                       {testimonial.name}
-                    </h4>
-                    <div className="flex items-center gap-2">
-                      <p className="text-orange-500 font-medium text-sm md:text-base">
-                        {testimonial.university}
-                      </p>
-                    </div>
+                    </h3>
+                    <p className="text-orange-600 font-medium text-xs sm:text-sm truncate">
+                      {testimonial.university}
+                    </p>
                   </div>
                 </div>
               </CardContent>

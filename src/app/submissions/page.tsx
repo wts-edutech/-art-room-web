@@ -1065,7 +1065,7 @@ export default function SubmissionsPage() {
                           isNeedsResubmit
                             ? "bg-rose-50/40 border-rose-300 shadow-md"
                             : !isSubmitted
-                            ? "bg-white border-orange-200 shadow-md hover:shadow-lg hover:border-orange-400"
+                            ? "bg-white border-red-200 shadow-md hover:shadow-lg hover:border-red-400"
                             : isGraded
                             ? "bg-white border-emerald-100 shadow-sm"
                             : "bg-white border-gray-100 shadow-sm"
@@ -1076,7 +1076,7 @@ export default function SubmissionsPage() {
                           isNeedsResubmit
                             ? "bg-gradient-to-r from-rose-500 to-red-400"
                             : !isSubmitted
-                            ? "bg-gradient-to-r from-orange-500 to-amber-400"
+                            ? "bg-gradient-to-r from-red-600 to-rose-500"
                             : isGraded
                             ? "bg-gradient-to-r from-emerald-500 to-teal-400"
                             : "bg-gradient-to-r from-amber-400 to-yellow-300"
@@ -1172,14 +1172,14 @@ export default function SubmissionsPage() {
                               <button
                                 type="button"
                                 onClick={() => setModalAssignment(assignment)}
-                                className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-2xl font-bold text-sm shadow-md active:scale-95 transition-all cursor-pointer ${
+                                className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-full font-bold text-sm shadow-md active:scale-95 transition-all cursor-pointer text-white ${
                                   isNeedsResubmit
-                                    ? "bg-gradient-to-r from-rose-600 to-red-500 hover:from-rose-700 hover:to-red-600 text-white shadow-rose-500/30"
-                                    : "bg-gradient-to-r from-red-600 to-orange-500 hover:from-red-700 hover:to-orange-600 text-white shadow-orange-500/30"
+                                    ? "bg-red-600 hover:bg-red-700 shadow-red-600/30"
+                                    : "bg-red-600 hover:bg-red-700 shadow-red-600/30"
                                 }`}
                               >
-                                <Camera className="w-5 h-5" />
-                                <span>{isNeedsResubmit ? "📸 ถ่ายรูปส่งแก้ไข" : "📸 ถ่ายภาพส่งงาน"}</span>
+                                <Camera className="w-5 h-5 text-white" />
+                                <span>{isNeedsResubmit ? "ถ่ายรูปส่งแก้ไข" : "ถ่ายภาพส่งงาน"}</span>
                               </button>
                             )}
 

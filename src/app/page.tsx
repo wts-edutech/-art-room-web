@@ -1,6 +1,10 @@
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import HeroSection from "@/components/sections/HeroSection";
+import QuickMenuSection from "@/components/sections/QuickMenuSection";
+import AwardsBanner from "@/components/sections/AwardsBanner";
+import ArtMediumsSection from "@/components/sections/ArtMediumsSection";
+import HomeArtworksPreview from "@/components/sections/HomeArtworksPreview";
 import FeaturesSection from "@/components/sections/FeaturesSection";
 import NewsSection from "@/components/sections/NewsSection";
 import TestimonialsSection from "@/components/sections/TestimonialsSection";
@@ -12,31 +16,41 @@ export default function Home() {
   return (
     <>
       <Navbar />
-      <main className="flex-1 flex flex-col relative min-h-screen bg-transparent pb-6">
+      <main className="flex-1 flex flex-col relative min-h-screen bg-transparent pb-6 overflow-x-clip">
         {/* Artistic Faded Watercolor Background Layer for Mobile & Desktop */}
         <div 
-          className="absolute inset-0 z-[-1] pointer-events-none opacity-30 md:opacity-40 bg-fixed bg-center bg-cover"
+          className="absolute inset-0 z-[-1] pointer-events-none opacity-25 md:opacity-35 bg-fixed bg-center bg-cover"
           style={{ backgroundImage: "url('/bg-art.jpg')" }}
         />
         
-        {/* 1. Hero Banner — Unified responsive layout matching desktop aesthetic */}
+        {/* 1. Hero Banner — Animated ambient glow, floating badges, statistics ribbon */}
         <HeroSection />
 
-        {/* 2. Why Art Room Features Grid */}
-        <div className="pt-2 md:pt-0">
-          <FeaturesSection />
-        </div>
+        {/* 2. Quick Access Menu — Mobile-first app dock shortcuts */}
+        <QuickMenuSection />
 
-        {/* 4. Featured Exhibition & News */}
+        {/* 3. Hall of Fame — Student competition winners & highlight awards */}
+        <AwardsBanner />
+
+        {/* 4. 4 Core Art Disciplines — Watercolor, Pencil, Poster, Drawing EE */}
+        <ArtMediumsSection />
+
+        {/* 5. Live Artworks Showcase — Featured student masterpieces with HD modal */}
+        <HomeArtworksPreview />
+
+        {/* 6. Why Art Room — Feature highlights */}
+        <FeaturesSection />
+
+        {/* 7. Featured Exhibition & School News */}
         <NewsSection />
 
-        {/* 5. Alumni Testimonials Carousel */}
+        {/* 8. Alumni Testimonials Carousel */}
         <TestimonialsSection />
 
-        {/* 6. School Map */}
+        {/* 9. School Map with 1-Click GPS Navigation */}
         <MapSection />
 
-        {/* 7. Social Links */}
+        {/* 10. Social Media Links */}
         <SocialSection />
       </main>
       <Footer />
