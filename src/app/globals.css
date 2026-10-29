@@ -78,9 +78,15 @@
     height: auto;
   }
 
-  /* Buttons must meet 44px touch target */
-  button, [role="button"], a.btn {
+  /* Buttons must meet 44px touch target (except switches and compact controls) */
+  button:not([role="switch"]):not([data-switch]):not(.no-min-h),
+  [role="button"]:not([role="switch"]):not([data-switch]):not(.no-min-h),
+  a.btn {
     min-height: 2.75rem; /* 44px */
+  }
+
+  [role="switch"], [data-switch] {
+    min-height: unset;
   }
 
   /* Responsive heading sizes with clamp */

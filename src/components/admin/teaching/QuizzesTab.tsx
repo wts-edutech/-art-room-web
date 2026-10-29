@@ -2030,14 +2030,19 @@ export default function QuizzesTab() {
                 </div>
                 <button
                   type="button"
+                  role="switch"
+                  data-switch="true"
+                  aria-checked={createQuizForm.isActive}
                   onClick={() => setCreateQuizForm((prev) => ({ ...prev, isActive: !prev.isActive }))}
-                  className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
+                  style={{ minHeight: "26px", height: "26px", width: "48px" }}
+                  className={`relative inline-flex items-center !h-[26px] !w-[48px] !min-h-[26px] !max-h-[26px] rounded-full p-0.5 transition-colors cursor-pointer ${
                     createQuizForm.isActive ? "bg-emerald-600" : "bg-gray-300"
                   }`}
                 >
                   <span
-                    className={`block w-5 h-5 rounded-full bg-white shadow-xs transition-transform transform ${
-                      createQuizForm.isActive ? "translate-x-6.5" : "translate-x-0.5"
+                    style={{ height: "22px", width: "22px" }}
+                    className={`block !w-[22px] !h-[22px] rounded-full bg-white shadow-md transition-transform transform ${
+                      createQuizForm.isActive ? "translate-x-[22px]" : "translate-x-0"
                     }`}
                   />
                 </button>

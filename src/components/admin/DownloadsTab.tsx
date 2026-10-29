@@ -747,15 +747,21 @@ export default function DownloadsTab() {
                   </span>
 
                   <button
+                    type="button"
+                    role="switch"
+                    data-switch="true"
+                    aria-checked={isOpen}
                     onClick={() => handleToggleGrade(key)}
                     disabled={isSavingGrades}
-                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    style={{ minHeight: "26px", height: "26px", width: "48px" }}
+                    className={`relative inline-flex items-center !h-[26px] !w-[48px] !min-h-[26px] !max-h-[26px] shrink-0 cursor-pointer rounded-full p-0.5 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-emerald-500/30 ${
                       isOpen ? "bg-emerald-600" : "bg-gray-300"
                     }`}
                   >
                     <span
-                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                        isOpen ? "translate-x-5" : "translate-x-0"
+                      style={{ height: "22px", width: "22px" }}
+                      className={`pointer-events-none inline-block !h-[22px] !w-[22px] transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
+                        isOpen ? "translate-x-[22px]" : "translate-x-0"
                       }`}
                     />
                   </button>
