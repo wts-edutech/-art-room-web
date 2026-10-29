@@ -56,10 +56,20 @@ interface QuizLineReminderModalProps {
   isOpen: boolean;
   onClose: () => void;
   quiz: QuizItem | null;
+  quizzes?: QuizItem[];
   attempts: QuizAttempt[];
   students: StudentRecord[];
   initialRoom?: string;
+  onSelectQuiz?: (quiz: QuizItem) => void;
 }
+
+const cleanName = (name: string) => {
+  return (name || "")
+    .trim()
+    .toLowerCase()
+    .replace(/^(นาย|นางสาว|น\.ส\.|นาง|เด็กชาย|ด\.ช\.|เด็กหญิง|ด\.ญ\.)\s*/, "")
+    .replace(/\s+/g, "");
+};
 
 const normalizeRoom = (roomStr: string) => {
   if (!roomStr) return "";
@@ -79,27 +89,51 @@ export default function QuizLineReminderModal({
   isOpen,
   onClose,
   quiz,
+  quizzes,
   attempts,
   students,
   initialRoom = "all",
+  onSelectQuiz,
 }: QuizLineReminderModalProps) {
-  if (!isOpen || !quiz) return null;
+  const [activeQuizId, setActiveQuizId] = useState<string>(quiz?.id || "");
+
+  useEffect(() => {
+    if (quiz?.id) {
+      setActiveQuizId(quiz.id);
+    }
+  }, [quiz?.id]);
+
+  const currentQuiz = useMemo(() => {
+    if (quizzes && quizzes.length > 0) {
+      return quizzes.find((q) => q.id === activeQuizId) || quiz;
+    }
+    return quiz;
+  }, [quizzes, activeQuizId, quiz]);
+
+  if (!isOpen || !currentQuiz) return null;
 
   // Available target rooms for this quiz
   const targetRooms = useMemo(() => {
-    if (quiz.targetClassrooms && quiz.targetClassrooms.length > 0) {
-      return quiz.targetClassrooms;
+    if (currentQuiz.targetClassrooms && currentQuiz.targetClassrooms.length > 0) {
+      return currentQuiz.targetClassrooms;
     }
     // Default 14 rooms for the grade
-    const grade = quiz.gradeLevel || "ม.4";
+    const grade = currentQuiz.gradeLevel || "ม.4";
     return Array.from({ length: 14 }, (_, i) => `${grade}/${i + 1}`);
-  }, [quiz]);
+  }, [currentQuiz]);
 
   const [selectedRoom, setSelectedRoom] = useState<string>(
-    initialRoom && initialRoom !== "all" && targetRooms.some(r => isRoomMatch(r, initialRoom))
+    initialRoom && initialRoom !== "all" && targetRooms.some((r) => isRoomMatch(r, initialRoom))
       ? initialRoom
       : targetRooms[0] || "all"
   );
+
+  // When currentQuiz changes, if selectedRoom is not valid for new quiz, reset to "all"
+  useEffect(() => {
+    if (selectedRoom !== "all" && !targetRooms.some((r) => isRoomMatch(r, selectedRoom))) {
+      setSelectedRoom("all");
+    }
+  }, [currentQuiz.id, targetRooms, selectedRoom]);
 
   const [customDeadline, setCustomDeadline] = useState<string>("ภายในวันนี้ เวลา 20:00 น.");
   const [customNote, setCustomNote] = useState<string>("กรุณาเข้าทำแบบทดสอบให้เรียบร้อยเพื่อบันทึกคะแนนเก็บและประเมินผลการเรียนรู้");
@@ -122,28 +156,38 @@ export default function QuizLineReminderModal({
     });
   }, [students, selectedRoom, targetRooms]);
 
-  // Set of submitted student IDs for this quiz in this room
-  const submittedIds = useMemo(() => {
-    const set = new Set<string>();
+  // Set of submitted student IDs and cleanNames for this quiz in this room
+  const { submittedIds, submittedNames } = useMemo(() => {
+    const ids = new Set<string>();
+    const names = new Set<string>();
     attempts.forEach((att) => {
-      if (att.quizId === quiz.id) {
+      if (att.quizId === currentQuiz.id) {
         if (selectedRoom === "all" || isRoomMatch(att.classroom, selectedRoom)) {
-          set.add(att.studentId.trim());
+          if (att.studentId) ids.add(att.studentId.trim());
+          if (att.studentName) names.add(cleanName(att.studentName));
         }
       }
     });
-    return set;
-  }, [attempts, quiz.id, selectedRoom]);
+    return { submittedIds: ids, submittedNames: names };
+  }, [attempts, currentQuiz.id, selectedRoom]);
 
-  // Unsubmitted students list
+  // Unsubmitted students list (checks both ID and cleanName for 100% accurate matching)
   const unsubmittedStudents = useMemo(() => {
-    return roomStudents.filter((s) => !submittedIds.has(s.id.trim()));
-  }, [roomStudents, submittedIds]);
+    return roomStudents.filter((s) => {
+      const idMatch = submittedIds.has(s.id.trim());
+      const nameMatch = submittedNames.has(cleanName(s.name));
+      return !(idMatch || nameMatch);
+    });
+  }, [roomStudents, submittedIds, submittedNames]);
 
   // Submitted students list
   const submittedStudents = useMemo(() => {
-    return roomStudents.filter((s) => submittedIds.has(s.id.trim()));
-  }, [roomStudents, submittedIds]);
+    return roomStudents.filter((s) => {
+      const idMatch = submittedIds.has(s.id.trim());
+      const nameMatch = submittedNames.has(cleanName(s.name));
+      return idMatch || nameMatch;
+    });
+  }, [roomStudents, submittedIds, submittedNames]);
 
   // Sync selectedStudentIds whenever unsubmitted list changes
   useEffect(() => {
@@ -191,14 +235,23 @@ export default function QuizLineReminderModal({
     const counts: Record<string, number> = {};
     targetRooms.forEach((room) => {
       const enrolled = students.filter((s) => isRoomMatch(s.classroom, room));
-      const submitted = new Set(
-        attempts.filter((a) => a.quizId === quiz.id && isRoomMatch(a.classroom, room)).map((a) => a.studentId.trim())
-      );
-      const missing = enrolled.filter((s) => !submitted.has(s.id.trim())).length;
+      const roomSubmittedIds = new Set<string>();
+      const roomSubmittedNames = new Set<string>();
+      attempts.forEach((att) => {
+        if (att.quizId === currentQuiz.id && isRoomMatch(att.classroom, room)) {
+          if (att.studentId) roomSubmittedIds.add(att.studentId.trim());
+          if (att.studentName) roomSubmittedNames.add(cleanName(att.studentName));
+        }
+      });
+      const missing = enrolled.filter((s) => {
+        const idMatch = roomSubmittedIds.has(s.id.trim());
+        const nameMatch = roomSubmittedNames.has(cleanName(s.name));
+        return !(idMatch || nameMatch);
+      }).length;
       counts[room] = missing;
     });
     return counts;
-  }, [targetRooms, students, attempts, quiz.id]);
+  }, [targetRooms, students, attempts, currentQuiz.id]);
 
   // Active students to be included in the LINE message
   const activeUnsubmittedList = useMemo(() => {
@@ -208,7 +261,7 @@ export default function QuizLineReminderModal({
   // Generate LINE Message text
   const lineMessage = useMemo(() => {
     const roomTitle = selectedRoom === "all" ? `ทุกห้อง (${targetRooms.join(", ")})` : `ห้อง ${selectedRoom}`;
-    const quizTitle = `${quiz.gradeLevel} (${quiz.code}): ${quiz.title}`;
+    const quizTitle = `${currentQuiz.gradeLevel} (${currentQuiz.code}): ${currentQuiz.title}`;
 
     let studentListStr = "";
     if (activeUnsubmittedList.length === 0) {
@@ -247,7 +300,7 @@ export default function QuizLineReminderModal({
     const percentDone = totalInClass > 0 ? Math.round((doneCount / totalInClass) * 100) : 0;
 
     return `📢 [แจ้งเตือน] นักเรียนที่ยังไม่ทำแบบทดสอบก่อนเรียน
-🎨 รายวิชาศิลปะ (ทัศนศิลป์) ${quiz.code || ""}
+🎨 รายวิชาศิลปะ (ทัศนศิลป์) ${currentQuiz.code || ""}
 📝 แบบทดสอบ: ${quizTitle}
 🏫 ระดับชั้น: ${roomTitle}
 
@@ -265,7 +318,7 @@ ${studentListStr}
 ${customNote ? `💬 ข้อความจากครูผู้สอน: ${customNote}\n` : ""}
 ขอบคุณนักเรียนทุกคนที่ให้ความร่วมมือค่ะ/ครับ 🙏✨`;
   }, [
-    quiz,
+    currentQuiz,
     selectedRoom,
     targetRooms,
     activeUnsubmittedList,
@@ -302,9 +355,9 @@ ${customNote ? `💬 ข้อความจากครูผู้สอน: 
       "รหัสนักเรียน": s.id,
       "ชื่อ-นามสกุล": s.name,
       "ห้องเรียน": s.classroom,
-      "ระดับชั้น": quiz.gradeLevel,
-      "รหัสวิชา": quiz.code,
-      "แบบทดสอบ": quiz.title,
+      "ระดับชั้น": currentQuiz.gradeLevel,
+      "รหัสวิชา": currentQuiz.code,
+      "แบบทดสอบ": currentQuiz.title,
       "สถานะ": "ยังไม่ทำแบบทดสอบ (ค้างส่ง)"
     }));
 
@@ -312,7 +365,7 @@ ${customNote ? `💬 ข้อความจากครูผู้สอน: 
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "รายชื่อค้างทำแบบทดสอบ");
     const roomSlug = selectedRoom === "all" ? "รวมทุกห้อง" : selectedRoom.replace("/", "_");
-    XLSX.writeFile(workbook, `นักเรียนค้างทำแบบทดสอบ_${quiz.code}_${roomSlug}_${new Date().toISOString().split("T")[0]}.xlsx`);
+    XLSX.writeFile(workbook, `นักเรียนค้างทำแบบทดสอบ_${currentQuiz.code}_${roomSlug}_${new Date().toISOString().split("T")[0]}.xlsx`);
   };
 
   return (
@@ -337,7 +390,7 @@ ${customNote ? `💬 ข้อความจากครูผู้สอน: 
                 </span>
               </div>
               <p className="text-xs text-emerald-50 font-light truncate max-w-xl">
-                {quiz.gradeLevel} ({quiz.code}): {quiz.title}
+                {currentQuiz.gradeLevel} ({currentQuiz.code}): {currentQuiz.title}
               </p>
             </div>
           </div>
@@ -351,6 +404,39 @@ ${customNote ? `💬 ข้อความจากครูผู้สอน: 
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {/* Quiz Switcher Header Bar */}
+        {quizzes && quizzes.length > 1 && (
+          <div className="bg-emerald-900/95 text-white px-5 py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-emerald-600/40">
+            <div className="flex items-center gap-2 shrink-0">
+              <BookOpen className="w-4 h-4 text-emerald-300" />
+              <span className="font-bold text-xs text-emerald-100">สลับชุดแบบทดสอบ:</span>
+            </div>
+            <div className="flex-1 max-w-lg">
+              <select
+                value={currentQuiz.id}
+                onChange={(e) => {
+                  const newId = e.target.value;
+                  setActiveQuizId(newId);
+                  const found = quizzes.find((q) => q.id === newId);
+                  if (found && onSelectQuiz) {
+                    onSelectQuiz(found);
+                  }
+                }}
+                className="w-full bg-white text-gray-900 font-bold text-xs rounded-xl px-3 py-1.5 border border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300 shadow-xs cursor-pointer truncate"
+              >
+                {quizzes.map((q) => {
+                  const cnt = attempts.filter((a) => a.quizId === q.id).length;
+                  return (
+                    <option key={q.id} value={q.id}>
+                      {q.gradeLevel} ({q.code}): {q.title} — [ส่งแล้ว {cnt} คน]
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+          </div>
+        )}
 
         {/* Modal Body */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 text-gray-800 text-xs">

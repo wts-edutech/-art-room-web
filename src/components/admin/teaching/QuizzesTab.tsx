@@ -1024,7 +1024,23 @@ export default function QuizzesTab() {
             <button
               type="button"
               onClick={() => {
-                const targetQuiz = currentSelectedQuiz || quizzesList[0];
+                let targetQuiz = currentSelectedQuiz;
+                if (!targetQuiz) {
+                  // If "all" is selected, find the quiz with attempts from the current table
+                  if (filteredAttempts.length > 0) {
+                    const found = quizzesList.find((q) => q.id === filteredAttempts[0].quizId);
+                    if (found) targetQuiz = found;
+                  }
+                  if (!targetQuiz) {
+                    // Sort quizzes by attempt count descending so active quizzes are prioritized
+                    const sorted = [...quizzesList].sort((a, b) => {
+                      const aCnt = attempts.filter((att) => att.quizId === a.id).length;
+                      const bCnt = attempts.filter((att) => att.quizId === b.id).length;
+                      return bCnt - aCnt;
+                    });
+                    targetQuiz = sorted[0] || quizzesList[0];
+                  }
+                }
                 if (targetQuiz) {
                   handleOpenLineReminder(targetQuiz, selectedRoomFilter);
                 } else {
@@ -2058,9 +2074,11 @@ export default function QuizzesTab() {
         isOpen={isLineReminderOpen}
         onClose={() => setIsLineReminderOpen(false)}
         quiz={lineReminderQuiz}
+        quizzes={quizzesList}
         attempts={attempts}
         students={studentsList}
         initialRoom={lineReminderRoom}
+        onSelectQuiz={(q) => setLineReminderQuiz(q)}
       />
     </div>
   );
