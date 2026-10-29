@@ -164,14 +164,17 @@ export default function ArtworksGallery() {
           </div>
         </div>
 
-        {/* Filter Pills */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
-          <Filter className="w-4 h-4 text-gray-400 mr-1 shrink-0" />
+        {/* Filter Pills (multi-line wrapped for mobile per user preference) */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1.5 text-xs text-gray-400 mr-1 shrink-0 font-medium">
+            <Filter className="w-3.5 h-3.5 text-gray-400" />
+            <span className="sm:hidden">ระดับชั้น:</span>
+          </div>
           {grades.map((grade) => (
             <button
               key={grade}
               onClick={() => setActiveFilter(grade)}
-              className={`px-4 py-2 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-all duration-200 cursor-pointer ${
+              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-all duration-200 cursor-pointer ${
                 activeFilter === grade
                   ? "bg-gradient-to-r from-orange-500 to-pink-500 text-white shadow-md shadow-pink-500/20 font-semibold"
                   : "bg-white text-gray-600 hover:bg-pink-50/50 hover:text-pink-600 border border-gray-200/80"
@@ -183,8 +186,8 @@ export default function ArtworksGallery() {
         </div>
       </div>
 
-      {/* Artworks Masonry Grid */}
-      <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-6 space-y-6">
+      {/* Artworks Masonry Grid (Mobile 1 column with smooth padding) */}
+      <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 sm:gap-6 space-y-4 sm:space-y-6">
         {filteredArtworks.map((artwork) => {
           const studentName = artwork.studentName || artwork.author || "ไม่ระบุชื่อ";
           const gradeDisplay = artwork.grade || artwork.year || "ทั่วไป";

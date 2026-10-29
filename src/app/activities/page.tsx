@@ -115,27 +115,29 @@ export default function ActivitiesPage() {
   return (
     <>
       <Navbar />
-      <main className="flex-1 flex flex-col pt-24 pb-24 min-h-screen bg-white">
+      <main className="flex-1 flex flex-col pt-20 sm:pt-24 pb-16 sm:pb-24 min-h-screen bg-white">
         
         {/* Hero Header Section */}
-        <section className="relative overflow-hidden bg-transparent pt-12 pb-10 border-b border-orange-100/40">
-          <div className="container mx-auto px-4 sm:px-6 max-w-7xl text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-orange-100/80 border border-orange-200 text-orange-800 text-xs sm:text-sm font-semibold mb-4 shadow-2xs">
-              <Images className="w-4 h-4 text-orange-600" />
-              <span>แกลเลอรีประมวลภาพกิจกรรมศิลปะ | Photo Gallery & Projects</span>
+        <section className="relative overflow-hidden bg-transparent pt-6 sm:pt-12 pb-6 sm:pb-10 border-b border-orange-100/40">
+          <div className="container mx-auto px-3.5 sm:px-6 max-w-7xl text-center">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-100/80 border border-orange-200 text-orange-800 text-[11px] sm:text-sm font-semibold mb-3 sm:mb-4 shadow-2xs">
+              <Images className="w-3.5 h-3.5 text-orange-600" />
+              <span>แกลเลอรีประมวลภาพกิจกรรมศิลปะ</span>
             </div>
 
-            <h1 className="text-3xl sm:text-5xl font-black text-gray-900 tracking-tight mb-4 font-heading">
+            <h1 className="text-2xl sm:text-5xl font-black text-gray-900 tracking-tight mb-2 sm:mb-4 font-heading">
               ประมวลภาพกิจกรรมศิลปะ
             </h1>
-            <p className="text-gray-600 text-sm sm:text-base max-w-2xl mx-auto font-light leading-relaxed">
+            <p className="text-gray-600 text-xs sm:text-base max-w-2xl mx-auto font-light leading-relaxed">
               ภาพบรรยากาศการเรียนการสอน กิจกรรมเวิร์กช็อป นิทรรศการ และความประทับใจของนักเรียนกลุ่มสาระการเรียนรู้ศิลปะ โรงเรียนวชิรธรรมสาธิต
             </p>
 
             {/* Notice Link to Calendar on News Page */}
-            <div className="mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/90 border border-orange-200/80 shadow-2xs text-xs text-gray-600">
-              <Calendar className="w-3.5 h-3.5 text-orange-600" />
-              <span>ต้องการดูปฏิทินและกำหนดการกิจกรรม?</span>
+            <div className="mt-4 sm:mt-5 inline-flex flex-col sm:flex-row items-center gap-1 sm:gap-2 px-3.5 py-1.5 sm:py-2 rounded-2xl bg-white/90 border border-orange-200/80 shadow-2xs text-[11px] sm:text-xs text-gray-600">
+              <div className="flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-orange-600" />
+                <span>ต้องการดูปฏิทินและกำหนดการกิจกรรม?</span>
+              </div>
               <Link 
                 href="/news" 
                 className="font-bold text-orange-600 hover:text-orange-700 hover:underline inline-flex items-center gap-1 cursor-pointer"
@@ -239,7 +241,7 @@ export default function ActivitiesPage() {
                     className="bg-white rounded-3xl overflow-hidden border border-gray-200/80 shadow-xs hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col h-full cursor-pointer group"
                   >
                     {/* Cover Image */}
-                    <div className="relative w-full h-64 sm:h-72 bg-gray-900 overflow-hidden">
+                    <div className="relative w-full h-48 sm:h-64 md:h-72 bg-gray-900 overflow-hidden">
                       {/* Blurred backdrop for irregular ratio images */}
                       <div 
                         className="absolute inset-0 bg-cover bg-center blur-md opacity-40 scale-110 pointer-events-none"

@@ -390,7 +390,7 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
   return (
     <>
       <Navbar />
-      <main className="flex-1 flex flex-col pt-24 sm:pt-28 min-h-screen bg-white text-gray-800 relative selection:bg-red-500 selection:text-white">
+      <main className="flex-1 flex flex-col pt-20 sm:pt-24 min-h-screen bg-white text-gray-800 relative selection:bg-red-500 selection:text-white">
         
         {/* Subtle Ambient Studio Lighting Blobs */}
         <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-gradient-to-b from-red-100/40 via-orange-100/20 to-transparent rounded-full blur-3xl pointer-events-none" />
@@ -399,7 +399,7 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
 
         {/* Admin Preview Notice Bar */}
         {!isTeachersEnabled && isAdmin && (
-          <div className="bg-amber-500/10 backdrop-blur-md border-b border-amber-300 py-2.5 px-4 text-amber-950 sticky top-20 z-30 shadow-2xs">
+          <div className="bg-amber-500/10 backdrop-blur-md border-b border-amber-300 py-2 px-4 text-amber-950 sticky top-16 sm:top-20 z-30 shadow-2xs">
             <div className="container mx-auto max-w-5xl flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
               <div className="flex items-center gap-2 font-medium">
                 <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0" />
@@ -421,17 +421,17 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
         )}
 
         {/* MODERN HERO HEADER */}
-        <section className="pt-8 sm:pt-12 pb-6 sm:pb-8 relative z-10">
-          <div className="container mx-auto px-4 sm:px-6 max-w-5xl text-center">
+        <section className="pt-4 sm:pt-8 pb-4 sm:pb-8 relative z-10">
+          <div className="container mx-auto px-3.5 sm:px-6 max-w-5xl text-center">
             
             {/* Top School Pill Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/90 backdrop-blur-md border border-red-100 shadow-xs text-red-700 text-xs sm:text-sm font-semibold mb-3 sm:mb-4">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/90 backdrop-blur-md border border-red-100 shadow-2xs text-red-700 text-[11px] sm:text-sm font-semibold mb-2.5 sm:mb-4">
               <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>
               <span>กลุ่มสาระการเรียนรู้ศิลปะ • โรงเรียนวชิรธรรมสาธิต</span>
             </div>
 
             {/* Main Page Title: Teacher Profile & Awards */}
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black font-heading text-gray-900 tracking-tight leading-tight mb-2 sm:mb-3">
+            <h1 className="text-2xl sm:text-5xl lg:text-6xl font-black font-heading text-gray-900 tracking-tight leading-tight mb-1.5 sm:mb-3">
               Teacher Profile{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 via-rose-500 to-amber-500">
                 &amp; Awards
@@ -439,7 +439,7 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
             </h1>
 
             {/* Subtitle */}
-            <p className="text-xs sm:text-base text-gray-600 max-w-2xl mx-auto font-light leading-relaxed mb-6 sm:mb-8">
+            <p className="text-xs sm:text-base text-gray-600 max-w-2xl mx-auto font-light leading-relaxed mb-4 sm:mb-8">
               ประวัติ ผลงานทางวิชาการ รางวัลเกียรติยศ และนวัตกรรมการสอนของ{" "}
               <strong className="font-semibold text-gray-900">{teacher.name || "นางสาวสีวลี ยืนยาว (ครูเก๋)"}</strong>
             </p>
@@ -553,20 +553,20 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
         </section>
 
         {/* MAIN PROFILE CARD: Luxury Studio Glass Card */}
-        <section id="overview" className="py-4 sm:py-8 relative z-10">
-          <div className="container mx-auto px-4 sm:px-6 max-w-5xl">
-            <div className="relative bg-white/95 backdrop-blur-xl rounded-3xl p-6 sm:p-10 border border-gray-200/80 shadow-xl shadow-red-950/5 overflow-hidden">
+        <section id="overview" className="py-2 sm:py-8 relative z-10">
+          <div className="container mx-auto px-3.5 sm:px-6 max-w-5xl">
+            <div className="relative bg-white/95 backdrop-blur-xl rounded-3xl p-4 sm:p-10 border border-gray-200/80 shadow-xl shadow-red-950/5 overflow-hidden">
               
               {/* Decorative Subtle Corner Aura */}
               <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl from-red-100/50 via-orange-100/20 to-transparent rounded-full blur-2xl pointer-events-none" />
 
-              <div className="relative z-10 flex flex-col lg:flex-row gap-8 lg:gap-12 items-center lg:items-start">
+              <div className="relative z-10 flex flex-col lg:flex-row gap-6 sm:gap-8 lg:gap-12 items-center lg:items-start">
                 
                 {/* Left: Portrait Showcase with Modern Studio Frame */}
-                <div className="w-full sm:w-72 shrink-0 flex flex-col items-center text-center">
+                <div className="w-full max-w-[260px] sm:w-72 shrink-0 flex flex-col items-center text-center">
                   
                   {/* Portrait Box with Double Ring Frame */}
-                  <div className="relative w-64 sm:w-72 aspect-[3/4] rounded-2xl overflow-hidden border border-gray-200/80 bg-gradient-to-b from-gray-900 to-gray-950 shadow-md ring-4 ring-red-50/80 flex items-center justify-center group/portrait">
+                  <div className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden border border-gray-200/80 bg-gradient-to-b from-gray-900 to-gray-950 shadow-md ring-4 ring-red-50/80 flex items-center justify-center group/portrait">
                     {teacher.imageUrl ? (
                       <>
                         {/* Ambient blurred backdrop for seamless fill */}

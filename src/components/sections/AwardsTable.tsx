@@ -188,7 +188,81 @@ export default function AwardsTable({ awards }: { awards: any[] }) {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Mobile View: Vertical Cards (No horizontal scrolling on phones) */}
+        <div className="md:hidden divide-y divide-gray-100">
+          {filteredAwards.length > 0 ? (
+            filteredAwards.map((award) => (
+              <div key={award.id} className="p-4 space-y-2.5 bg-white hover:bg-red-50/20 transition-colors">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-red-50 text-red-700 border border-red-200/70">
+                        {award.awardLevel || "รางวัล"}
+                      </span>
+                      {award.competitionLevel && (
+                        <span className="text-[10px] text-gray-500 font-medium">
+                          • {award.competitionLevel}
+                        </span>
+                      )}
+                    </div>
+                    <h4 className="font-bold text-gray-900 text-sm leading-snug">
+                      {award.student}
+                      {award.grade && <span className="text-xs text-gray-500 font-normal ml-1.5">({award.grade})</span>}
+                    </h4>
+                  </div>
+                  <span className="text-[11px] font-mono text-gray-400 shrink-0">
+                    {award.date || award.year || ""}
+                  </span>
+                </div>
+
+                {award.title && (
+                  <p className="text-xs font-medium text-gray-800 leading-snug">
+                    🏆 {award.title}
+                  </p>
+                )}
+
+                {award.description && (
+                  <p className="text-[11px] text-gray-500 leading-relaxed line-clamp-2 font-light">
+                    {award.description}
+                  </p>
+                )}
+
+                <div className="flex items-center gap-2 pt-1 flex-wrap">
+                  {award.imageUrl && (
+                    <button
+                      onClick={() => setModalItem({ url: award.imageUrl, title: award.title, type: "image", award })}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"
+                    >
+                      <Eye className="w-3.5 h-3.5 text-gray-500" />
+                      <span>ดูรูปผลงาน</span>
+                    </button>
+                  )}
+                  {(award.certificateUrl || award.imageUrl) && (
+                    <button
+                      onClick={() => setModalItem({ 
+                        url: award.certificateUrl || award.imageUrl, 
+                        title: `เกียรติบัตร - ${award.student}`, 
+                        type: "cert", 
+                        award 
+                      })}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200/80 transition-colors cursor-pointer"
+                    >
+                      <FileText className="w-3.5 h-3.5 text-red-600" />
+                      <span>ดูเกียรติบัตร</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="p-8 text-center text-gray-500 text-xs">
+              ไม่พบข้อมูลรางวัลที่ตรงกับเงื่อนไขการค้นหา
+            </div>
+          )}
+        </div>
+
+        {/* Desktop View: Full Detail Table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-sm border-collapse min-w-[1000px]">
             <thead>
               <tr className="bg-gray-50/90 text-gray-700 border-b border-gray-200 font-bold text-xs uppercase tracking-wider">
@@ -276,7 +350,7 @@ export default function AwardsTable({ awards }: { awards: any[] }) {
               ) : (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-gray-400 text-sm">
-                    ไม่พบข้อมูลรางวัลที่ตรงกับเงื่อนไข
+                    ไม่พบข้อมูลรางวัลที่ตรงกับเงื่อนไขการค้นหา
                   </td>
                 </tr>
               )}

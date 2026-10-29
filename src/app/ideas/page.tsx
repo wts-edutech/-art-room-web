@@ -139,12 +139,12 @@ export default function IdeasPage() {
   return (
     <>
       <Navbar />
-      <main className="flex-1 flex flex-col pt-20 sm:pt-28 pb-20 sm:pb-24 min-h-screen bg-white">
+      <main className="flex-1 flex flex-col pt-20 sm:pt-24 pb-16 sm:pb-24 min-h-screen bg-white">
         {/* Header Section */}
-        <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
-          <div className="text-center mb-6 sm:mb-10">
-            <div className="inline-flex items-center justify-center w-14 h-14 sm:w-20 sm:h-20 bg-gradient-to-tr from-amber-400 to-orange-500 rounded-2xl sm:rounded-3xl text-white mb-3 sm:mb-6 shadow-md sm:shadow-lg shadow-orange-500/20 transform hover:scale-105 transition-transform">
-              <Lightbulb className="w-7 h-7 sm:w-10 sm:h-10" />
+        <div className="container mx-auto px-3.5 sm:px-6 max-w-6xl">
+          <div className="text-center mb-5 sm:mb-10">
+            <div className="inline-flex items-center justify-center w-12 h-12 sm:w-20 sm:h-20 bg-gradient-to-tr from-amber-400 to-orange-500 rounded-2xl sm:rounded-3xl text-white mb-2.5 sm:mb-6 shadow-md shadow-orange-500/20 transform hover:scale-105 transition-transform">
+              <Lightbulb className="w-6 h-6 sm:w-10 sm:h-10" />
             </div>
             <h1 className="text-2xl sm:text-4xl md:text-5xl font-black text-gray-900 mb-2 sm:mb-4 tracking-tight leading-tight">
               ห้องสมุดไอเดียศิลปะ
@@ -154,7 +154,7 @@ export default function IdeasPage() {
               แบ่งปันโดยคุณครูและนักเรียน ชุมชนศิลปะ Art Room
             </p>
             
-            <div className="mt-4 sm:mt-8 flex flex-wrap items-center justify-center gap-2.5 sm:gap-4">
+            <div className="mt-4 sm:mt-8 flex flex-wrap items-center justify-center gap-2 sm:gap-4">
               <button 
                 onClick={handleShareClick} 
                 className="w-full sm:w-auto shrink-0 px-5 sm:px-8 py-2.5 sm:py-3.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold rounded-full transition-all duration-200 shadow-md sm:shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 hover:-translate-y-0.5 flex items-center justify-center gap-2 text-xs sm:text-base whitespace-nowrap cursor-pointer"
@@ -178,7 +178,7 @@ export default function IdeasPage() {
           {/* Search & Filter Control Bar */}
           <div className="max-w-4xl mx-auto mb-6 sm:mb-12">
             {/* Row 1: Search Input + Sorting Selector */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
               {/* Search Input */}
               <div className="relative flex-1">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
@@ -189,7 +189,7 @@ export default function IdeasPage() {
                   placeholder="ค้นหาไอเดีย สื่อการสอน หรือกิจกรรม..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full h-11 sm:h-13 pl-10 pr-9 rounded-xl sm:rounded-2xl border border-gray-200 bg-white focus:border-amber-400 focus:ring-4 focus:ring-amber-400/10 outline-none transition-all shadow-2xs text-base sm:text-sm text-gray-800 placeholder-gray-400 font-normal"
+                  className="w-full h-11 sm:h-13 pl-10 pr-9 rounded-xl sm:rounded-2xl border border-gray-200 bg-white focus:border-amber-400 focus:ring-4 focus:ring-amber-400/10 outline-none transition-all shadow-2xs text-xs sm:text-sm text-gray-800 placeholder-gray-400 font-normal"
                 />
                 {searchTerm && (
                   <button 
@@ -216,9 +216,9 @@ export default function IdeasPage() {
               </div>
             </div>
 
-            {/* Row 2: Category Filter Pills (Generously Spaced & Elegant) */}
-            <div className="mt-4 sm:mt-8">
-              <div className="flex items-center gap-2 overflow-x-auto pb-1.5 scrollbar-none sm:flex-wrap">
+            {/* Row 2: Category Filter Pills (multi-line wrapped for mobile per user preference) */}
+            <div className="mt-3.5 sm:mt-8">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                 <span className="text-xs text-gray-400 font-normal shrink-0 mr-1 hidden sm:inline">
                   หมวดหมู่:
                 </span>
@@ -237,7 +237,7 @@ export default function IdeasPage() {
                         outline: "none",
                         boxShadow: "none",
                       }}
-                      className={`category-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-normal tracking-tight transition-all duration-200 cursor-pointer active:scale-95 hover:-translate-y-0.5 whitespace-nowrap border-0 shrink-0 ${
+                      className={`category-btn px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-normal tracking-tight transition-all duration-200 cursor-pointer active:scale-95 hover:-translate-y-0.5 whitespace-nowrap border-0 shrink-0 ${
                         isSelected
                           ? "is-selected bg-[#ffb300] text-white shadow-xs font-medium"
                           : "bg-gray-100 text-gray-700 hover:bg-amber-100/60 hover:text-amber-900"

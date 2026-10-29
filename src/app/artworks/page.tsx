@@ -9,7 +9,7 @@ export default function ArtworksPage() {
       <Navbar />
       <main className="flex-1 flex flex-col min-h-screen bg-white">
         {/* Hero Section */}
-        <section className="relative pt-32 pb-20 overflow-hidden">
+        <section className="relative pt-20 sm:pt-32 pb-6 sm:pb-20 overflow-hidden">
           {/* Abstract Background Elements */}
           <div className="absolute top-0 inset-x-0 h-full overflow-hidden z-0">
             <div className="absolute -top-40 -right-40 w-[500px] h-[500px] bg-gradient-to-br from-pink-400/20 to-orange-400/20 rounded-full blur-3xl mix-blend-multiply opacity-70 animate-pulse"></div>
@@ -21,26 +21,26 @@ export default function ArtworksPage() {
           </div>
 
           <div className="container mx-auto px-4 sm:px-6 max-w-6xl relative z-10 text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 backdrop-blur-md border border-pink-100 shadow-sm text-pink-600 font-medium text-sm mb-6">
-              <Sparkles className="w-4 h-4" />
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/80 backdrop-blur-md border border-pink-100 shadow-2xs text-pink-600 font-medium text-xs sm:text-sm mb-3 sm:mb-6">
+              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span>หอศิลป์จำลอง (Virtual Art Gallery)</span>
             </div>
             
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold font-heading text-gray-900 mb-6 tracking-tight leading-tight">
-              รวบรวมผลงาน <br className="md:hidden" />
+            <h1 className="text-2xl sm:text-5xl lg:text-6xl font-bold font-heading text-gray-900 mb-2 sm:mb-6 tracking-tight leading-tight">
+              รวบรวมผลงาน <br className="sm:hidden" />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-pink-500">
                 สุดสร้างสรรค์
               </span>
             </h1>
             
-            <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto font-light leading-relaxed mb-10">
+            <p className="text-xs sm:text-lg md:text-xl text-gray-600 max-w-2xl mx-auto font-light leading-relaxed mb-4 sm:mb-10">
               พื้นที่จัดแสดงผลงานศิลปะของนักเรียนที่เต็มไปด้วยจินตนาการ ความตั้งใจ และทักษะที่ได้รับการพัฒนาในห้องเรียนศิลปะ
             </p>
           </div>
         </section>
 
         {/* Gallery Section */}
-        <div className="mb-24 relative z-10">
+        <div className="mb-12 sm:mb-24 relative z-10">
           <ArtworksGallery />
         </div>
       </main>

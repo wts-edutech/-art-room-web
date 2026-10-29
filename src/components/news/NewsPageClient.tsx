@@ -206,22 +206,22 @@ export default function NewsPageClient({
   return (
     <div className="w-full">
       {/* Hero Header Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-red-50/60 via-amber-50/30 to-transparent pt-12 pb-8 border-b border-red-100/50">
-        <div className="container mx-auto px-4 sm:px-6 max-w-6xl text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-100/80 border border-red-200 text-red-700 text-xs sm:text-sm font-semibold mb-4 shadow-2xs">
-            <Sparkles className="w-4 h-4 text-red-600 animate-pulse" />
+      <section className="relative overflow-hidden bg-gradient-to-b from-red-50/60 via-amber-50/30 to-transparent pt-6 sm:pt-12 pb-6 sm:pb-8 border-b border-red-100/50">
+        <div className="container mx-auto px-3.5 sm:px-6 max-w-6xl text-center">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-100/80 border border-red-200 text-red-700 text-[11px] sm:text-sm font-semibold mb-3 sm:mb-4 shadow-2xs">
+            <Sparkles className="w-3.5 h-3.5 text-red-600 animate-pulse" />
             <span>ข่าวสารและประชาสัมพันธ์ | PR & Art Room News</span>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl font-black text-gray-900 tracking-tight mb-4">
+          <h1 className="text-2xl sm:text-5xl font-black text-gray-900 tracking-tight mb-2 sm:mb-4">
             ข่าวสารและกิจกรรมศิลปะ
           </h1>
-          <p className="text-gray-600 text-sm sm:text-base max-w-2xl mx-auto font-light leading-relaxed">
+          <p className="text-gray-600 text-xs sm:text-base max-w-2xl mx-auto font-light leading-relaxed">
             ติดตามข่าวสารนิทรรศการผลงาน กิจกรรมสร้างสรรค์ และเรื่องราวน่าภาคภูมิใจของนักเรียนกลุ่มสาระการเรียนรู้ศิลปะ โรงเรียนวชิรธรรมสาธิต
           </p>
 
           {/* Search & Filter Bar */}
-          <div className="mt-8 max-w-3xl mx-auto flex flex-col sm:flex-row gap-3 items-center">
+          <div className="mt-5 sm:mt-8 max-w-3xl mx-auto flex flex-col sm:flex-row gap-3 items-center">
             <div className="relative w-full">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input 
@@ -229,12 +229,12 @@ export default function NewsPageClient({
                 placeholder="ค้นหาข่าวสาร นิทรรศการ หรือกิจกรรม..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full h-12 pl-12 pr-4 rounded-2xl bg-white border border-gray-200 focus:border-red-500 focus:ring-2 focus:ring-red-200 outline-none text-sm shadow-xs transition-all"
+                className="w-full h-11 sm:h-12 pl-11 pr-4 rounded-2xl bg-white border border-gray-200 focus:border-red-500 focus:ring-2 focus:ring-red-200 outline-none text-xs sm:text-sm shadow-xs transition-all"
               />
               {searchTerm && (
                 <button 
                   onClick={() => setSearchTerm("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -242,15 +242,15 @@ export default function NewsPageClient({
             </div>
           </div>
 
-          {/* Categories Pills */}
-          <div className="flex items-center justify-center flex-wrap gap-2 mt-5">
+          {/* Categories Pills (multi-line wrapped for mobile per user preference) */}
+          <div className="flex items-center justify-center flex-wrap gap-2 mt-4 sm:mt-5">
             {CATEGORIES.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all ${
+                className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition-all cursor-pointer ${
                   selectedCategory === cat
-                    ? "bg-red-600 text-white shadow-md shadow-red-200"
+                    ? "bg-red-600 text-white shadow-md shadow-red-200 font-bold"
                     : "bg-white text-gray-600 hover:bg-gray-100/80 border border-gray-200/80"
                 }`}
               >
@@ -261,30 +261,30 @@ export default function NewsPageClient({
         </div>
       </section>
 
-      <div className="container mx-auto px-4 sm:px-6 max-w-7xl py-10">
-        <div className="flex flex-col xl:flex-row gap-8 xl:gap-10 items-start">
+      <div className="container mx-auto px-3.5 sm:px-6 max-w-7xl py-6 sm:py-10">
+        <div className="flex flex-col xl:flex-row gap-6 xl:gap-10 items-start">
           
           {/* Main Column: News Content */}
-          <div className="flex-1 min-w-0 w-full space-y-10">
+          <div className="flex-1 min-w-0 w-full space-y-6 sm:space-y-10">
             {/* Featured Hero News (1.91:1 Standard Banner) */}
             {featured && selectedCategory === "ทั้งหมด" && !searchTerm && (
               <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                    <span className="w-2.5 h-6 bg-red-600 rounded-full"></span>
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 flex items-center gap-2">
+                    <span className="w-2.5 h-5 sm:h-6 bg-red-600 rounded-full"></span>
                     ข่าวเด่นน่าสนใจ (Featured News)
                   </h2>
-                  <span className="text-xs font-medium text-red-600 bg-red-50 px-3 py-1 rounded-full border border-red-100">
-                    Banner ไฮไลต์
+                  <span className="text-[11px] sm:text-xs font-medium text-red-600 bg-red-50 px-2.5 py-0.5 rounded-full border border-red-100">
+                    ไฮไลต์
                   </span>
                 </div>
 
                 <div 
                   onClick={() => setActiveModalNews(featured)}
-                  className="bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl border border-gray-100 flex flex-col md:flex-row cursor-pointer group transition-all duration-300"
+                  className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl border border-gray-100 flex flex-col md:flex-row cursor-pointer group transition-all duration-300"
                 >
                   {/* Banner Image Container */}
-                  <div className="relative w-full md:w-3/5 min-h-[260px] sm:min-h-[320px] md:h-[360px] overflow-hidden bg-gray-900 flex items-center justify-center">
+                  <div className="relative w-full md:w-3/5 min-h-[190px] sm:min-h-[280px] md:h-[360px] overflow-hidden bg-gray-900 flex items-center justify-center">
                     {/* Ambient blur */}
                     <div 
                       className="absolute inset-0 bg-cover bg-center blur-lg opacity-40 scale-110 pointer-events-none"

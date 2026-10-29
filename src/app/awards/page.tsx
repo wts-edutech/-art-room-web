@@ -28,14 +28,14 @@ export default function AwardsPage() {
   return (
     <>
       <Navbar />
-      <main className="flex-1 flex flex-col pt-24 min-h-screen bg-white">
+      <main className="flex-1 flex flex-col pt-20 sm:pt-24 min-h-screen bg-white">
         
         {/* Page Title */}
-        <div className="text-center pt-10 pb-4">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-red-100 rounded-full mb-4">
-            <Medal className="w-7 h-7 text-red-600" />
+        <div className="text-center pt-6 sm:pt-10 pb-3 sm:pb-4 px-4">
+          <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 bg-red-100 rounded-full mb-3 sm:mb-4 shadow-2xs">
+            <Medal className="w-6 h-6 sm:w-7 sm:h-7 text-red-600" />
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black text-gray-900 font-heading">รางวัลที่ได้รับ</h1>
+          <h1 className="text-2xl sm:text-4xl font-black text-gray-900 font-heading">รางวัลที่ได้รับ</h1>
         </div>
 
         {loading ? (
@@ -48,29 +48,29 @@ export default function AwardsPage() {
             {/* Banner Section */}
             <AwardsBanner awards={awardsList} />
 
-            <div className="w-full max-w-[1650px] mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
+            <div className="w-full max-w-[1650px] mx-auto px-3.5 sm:px-6 lg:px-8 py-6 sm:py-12">
               
-              {/* Stats Boxes */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-10 max-w-3xl mx-auto">
-                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 flex items-center justify-between">
+              {/* Stats Boxes (2-col grid on mobile for compactness) */}
+              <div className="grid grid-cols-2 gap-3 sm:gap-6 mb-6 sm:mb-10 max-w-3xl mx-auto">
+                <div className="bg-white rounded-2xl p-3.5 sm:p-6 shadow-2xs border border-gray-200 flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-semibold text-gray-500 mb-1">ผลรางวัลทั้งหมด</p>
-                    <p className="text-3xl font-black text-gray-900">{awardsList.length} <span className="text-sm font-normal text-gray-500">รายการ</span></p>
+                    <p className="text-[11px] sm:text-xs font-semibold text-gray-500 mb-0.5 sm:mb-1">ผลรางวัลทั้งหมด</p>
+                    <p className="text-xl sm:text-3xl font-black text-gray-900">{awardsList.length} <span className="text-[11px] sm:text-sm font-normal text-gray-500">รายการ</span></p>
                   </div>
-                  <div className="w-11 h-11 bg-red-50 text-red-600 rounded-xl flex items-center justify-center">
-                    <Sparkles className="w-5 h-5" />
+                  <div className="w-8 h-8 sm:w-11 sm:h-11 bg-red-50 text-red-600 rounded-xl flex items-center justify-center shrink-0">
+                    <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
                 </div>
 
-                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 flex items-center justify-between">
+                <div className="bg-white rounded-2xl p-3.5 sm:p-6 shadow-2xs border border-gray-200 flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-semibold text-gray-500 mb-1">นักเรียนที่ได้รับรางวัล</p>
-                    <p className="text-3xl font-black text-gray-900">
-                      {uniqueStudentsCount} <span className="text-sm font-normal text-gray-500">คน</span>
+                    <p className="text-[11px] sm:text-xs font-semibold text-gray-500 mb-0.5 sm:mb-1">นักเรียนที่ได้รางวัล</p>
+                    <p className="text-xl sm:text-3xl font-black text-gray-900">
+                      {uniqueStudentsCount} <span className="text-[11px] sm:text-sm font-normal text-gray-500">คน</span>
                     </p>
                   </div>
-                  <div className="w-11 h-11 bg-red-50 text-red-600 rounded-xl flex items-center justify-center">
-                    <GraduationCap className="w-5 h-5" />
+                  <div className="w-8 h-8 sm:w-11 sm:h-11 bg-red-50 text-red-600 rounded-xl flex items-center justify-center shrink-0">
+                    <GraduationCap className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
                 </div>
               </div>

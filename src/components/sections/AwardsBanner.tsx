@@ -33,13 +33,13 @@ export default function AwardsBanner({ awards }: { awards: any[] }) {
   const current = highlights[currentIndex];
 
   return (
-    <div className="w-full bg-[#FDF9F1] py-8 sm:py-10 border-b border-red-100/60">
-      <div className="container mx-auto px-4 sm:px-6 max-w-5xl relative">
+    <div className="w-full bg-[#FDF9F1] py-5 sm:py-10 border-b border-red-100/60">
+      <div className="container mx-auto px-3.5 sm:px-6 max-w-5xl relative">
         {/* Banner Card */}
-        <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-red-100 flex flex-col md:flex-row items-center gap-6 sm:gap-8">
+        <div className="bg-white rounded-2xl p-4 sm:p-8 shadow-xs border border-red-100 flex flex-col md:flex-row items-center gap-4 sm:gap-8">
           
           {/* Image Container */}
-          <div className="w-full md:w-1/2 h-[240px] sm:h-[300px] rounded-xl overflow-hidden border border-red-100 bg-red-50/30 flex items-center justify-center p-2 relative flex-shrink-0">
+          <div className="w-full md:w-1/2 h-[200px] sm:h-[300px] rounded-xl overflow-hidden border border-red-100 bg-red-50/30 flex items-center justify-center p-2 relative flex-shrink-0">
             {current.imageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img 
