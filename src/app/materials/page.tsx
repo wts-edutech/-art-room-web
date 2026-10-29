@@ -68,17 +68,13 @@ export default function MaterialsPage() {
   return (
     <>
       <Navbar />
-      <main className="flex-1 flex flex-col pt-20 sm:pt-28 pb-20 sm:pb-24 bg-[#FCFBF8]">
+      <main className="flex-1 flex flex-col pt-20 sm:pt-28 pb-20 sm:pb-24 bg-white">
         {/* Modern Studio Showcase Hero Banner */}
-        <section className="relative overflow-hidden bg-gradient-to-b from-red-50/70 via-orange-50/40 to-transparent pt-6 pb-7 sm:pt-12 sm:pb-14 border-b border-gray-100">
-          {/* Subtle Decorative Gradient Circles */}
-          <div className="absolute -top-24 -left-24 w-96 h-96 bg-red-200/30 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute top-10 -right-24 w-96 h-96 bg-amber-200/30 rounded-full blur-3xl pointer-events-none" />
-
+        <section className="relative bg-white pt-6 pb-7 sm:pt-12 sm:pb-14 border-b border-gray-100">
           <div className="container mx-auto px-4 sm:px-6 max-w-7xl relative z-10">
             <div className="text-center max-w-3xl mx-auto">
               {/* Badge */}
-              <div className="inline-flex items-center gap-2 px-3.5 py-1 sm:px-4 sm:py-1.5 rounded-full bg-white text-red-700 text-[11px] sm:text-sm font-bold mb-3 sm:mb-5 shadow-2xs border border-red-100">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1 sm:px-4 sm:py-1.5 rounded-full bg-red-50/80 text-red-700 text-[11px] sm:text-sm font-bold mb-3 sm:mb-5 shadow-2xs border border-red-100">
                 <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-500" />
                 <span>ศูนย์รวมสื่อการเรียนรู้และใบงานศิลปะ</span>
               </div>
