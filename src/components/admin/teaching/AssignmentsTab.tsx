@@ -1,6 +1,4 @@
-"use client";
-
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { 
   Plus, 
@@ -19,8 +17,16 @@ import {
   Filter,
   X,
   CheckSquare,
-  Square
+  Square,
+  Image as ImageIcon,
+  Paperclip,
+  Link as LinkIcon,
+  Download,
+  Loader2,
+  ExternalLink,
+  Upload
 } from "lucide-react";
+import { compressImage } from "@/lib/image-compressor";
 
 export default function AssignmentsTab({ onGoToGrading }: { onGoToGrading?: (assignmentId: string) => void }) {
   const [assignments, setAssignments] = useState<any[]>([]);
@@ -43,6 +49,18 @@ export default function AssignmentsTab({ onGoToGrading }: { onGoToGrading?: (ass
   const [maxScore, setMaxScore] = useState("10");
   const [dueDate, setDueDate] = useState("");
   const [isActive, setIsActive] = useState(true);
+
+  // Attachment & Media states
+  const [imageUrl, setImageUrl] = useState("");
+  const [attachmentUrl, setAttachmentUrl] = useState("");
+  const [attachmentName, setAttachmentName] = useState("");
+  const [attachmentSize, setAttachmentSize] = useState("");
+  const [attachmentType, setAttachmentType] = useState("");
+  const [externalLink, setExternalLink] = useState("");
+  const [isCompressingImage, setIsCompressingImage] = useState(false);
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // List Filter State
   const [filterGrade, setFilterGrade] = useState<string>("all");
@@ -140,6 +158,12 @@ export default function AssignmentsTab({ onGoToGrading }: { onGoToGrading?: (ass
     setMaxScore("10");
     setDueDate("");
     setIsActive(true);
+    setImageUrl("");
+    setAttachmentUrl("");
+    setAttachmentName("");
+    setAttachmentSize("");
+    setAttachmentType("");
+    setExternalLink("");
     setEditingId(null);
     setIsFormOpen(false);
   };
@@ -166,7 +190,74 @@ export default function AssignmentsTab({ onGoToGrading }: { onGoToGrading?: (ass
     setMaxScore(String(item.maxScore || 10));
     setDueDate(item.dueDate || "");
     setIsActive(Boolean(item.isActive));
+    setImageUrl(item.imageUrl || "");
+    setAttachmentUrl(item.attachmentUrl || "");
+    setAttachmentName(item.attachmentName || "");
+    setAttachmentSize(item.attachmentSize || "");
+    setAttachmentType(item.attachmentType || "");
+    setExternalLink(item.externalLink || "");
     setIsFormOpen(true);
+  };
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      alert("กรุณาเลือกไฟล์รูปภาพ (JPG, PNG, WebP)");
+      return;
+    }
+    setIsCompressingImage(true);
+    try {
+      const compressed = await compressImage(file, { maxWidth: 1920, maxHeight: 1920, quality: 0.82 });
+      const reader = new FileReader();
+      reader.onload = () => {
+        setImageUrl(reader.result as string);
+        setIsCompressingImage(false);
+      };
+      reader.readAsDataURL(compressed);
+    } catch (err) {
+      console.error(err);
+      const reader = new FileReader();
+      reader.onload = () => {
+        setImageUrl(reader.result as string);
+        setIsCompressingImage(false);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingFile(true);
+    try {
+      let uploadFile = file;
+      if (file.type.startsWith("image/")) {
+        uploadFile = await compressImage(file, { maxWidth: 1920, maxHeight: 1920, quality: 0.82 });
+      }
+      const sizeMb = (uploadFile.size / (1024 * 1024)).toFixed(1);
+      const sizeDisplay = uploadFile.size >= 1024 * 1024 ? `${sizeMb} MB` : `${Math.round(uploadFile.size / 1024)} KB`;
+
+      let type = "file";
+      if (file.type.includes("pdf") || file.name.toLowerCase().endsWith(".pdf")) type = "pdf";
+      else if (file.type.includes("word") || file.name.toLowerCase().endsWith(".doc") || file.name.toLowerCase().endsWith(".docx")) type = "doc";
+      else if (file.type.includes("presentation") || file.name.toLowerCase().endsWith(".ppt") || file.name.toLowerCase().endsWith(".pptx")) type = "ppt";
+      else if (file.type.startsWith("image/")) type = "image";
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        setAttachmentUrl(reader.result as string);
+        setAttachmentName(file.name);
+        setAttachmentSize(sizeDisplay);
+        setAttachmentType(type);
+        setIsUploadingFile(false);
+      };
+      reader.readAsDataURL(uploadFile);
+    } catch (err) {
+      console.error("File upload failed:", err);
+      setIsUploadingFile(false);
+    }
   };
 
   const handleToggleRoom = (roomName: string) => {
@@ -241,6 +332,12 @@ export default function AssignmentsTab({ onGoToGrading }: { onGoToGrading?: (ass
         maxScore: Number(maxScore) || 10,
         dueDate: dueDate || null,
         isActive,
+        imageUrl: imageUrl || null,
+        attachmentUrl: attachmentUrl || null,
+        attachmentName: attachmentName || null,
+        attachmentSize: attachmentSize || null,
+        attachmentType: attachmentType || null,
+        externalLink: externalLink || null,
       };
 
       const res = await fetch("/api/assignments", {
@@ -454,6 +551,158 @@ export default function AssignmentsTab({ onGoToGrading }: { onGoToGrading?: (ass
                 placeholder="ระบุข้อกำหนด เช่น วาดลงกระดาษร้อยปอนด์ขนาด A4 ใช้เทคนิคสีน้ำ..."
                 className="w-full p-4 rounded-xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:border-orange-500 outline-none text-sm leading-relaxed"
               />
+            </div>
+
+            {/* ── แนบรูปภาพตัวอย่าง, ใบงาน, และลิงก์ภายนอก ── */}
+            <div className="bg-slate-50/80 rounded-2xl p-4 sm:p-5 border border-slate-200/90 space-y-4">
+              <div>
+                <h4 className="text-xs font-bold text-gray-900 flex items-center gap-1.5 font-kanit">
+                  <Paperclip className="w-4 h-4 text-orange-500" />
+                  <span>ไฟล์แนบและสื่อประกอบภาระงาน (Worksheet & References)</span>
+                </h4>
+                <p className="text-[11px] text-gray-500 mt-0.5">
+                  แนบรูปภาพตัวอย่างโจทย์, ไฟล์เอกสารใบงานสำหรับให้นักเรียนดาวน์โหลด หรือลิงก์สื่อภายนอก
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* 1. รูปภาพตัวอย่างภาระงาน (Artwork Reference Image) */}
+                <div className="bg-white p-3.5 rounded-xl border border-gray-200/80 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                      <ImageIcon className="w-3.5 h-3.5 text-orange-600" />
+                      <span>รูปภาพตัวอย่างโจทย์ / ผลงาน</span>
+                    </label>
+                    {imageUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setImageUrl("")}
+                        className="text-[11px] text-red-500 hover:text-red-700 flex items-center gap-1 cursor-pointer"
+                      >
+                        <Trash2 className="w-3 h-3" /> ลบรูป
+                      </button>
+                    )}
+                  </div>
+
+                  {imageUrl ? (
+                    <div className="relative rounded-xl overflow-hidden border border-gray-200 bg-slate-900/5 h-36 flex items-center justify-center group">
+                      <img
+                        src={imageUrl}
+                        alt="Reference preview"
+                        className="max-h-36 w-auto object-contain rounded-lg"
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      onClick={() => !isCompressingImage && imageInputRef.current?.click()}
+                      className="border-2 border-dashed border-gray-200 hover:border-orange-400 rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer bg-gray-50/50 hover:bg-orange-50/20 transition-all"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center mb-1.5">
+                        {isCompressingImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                      </div>
+                      <span className="text-xs font-semibold text-gray-700">
+                        {isCompressingImage ? "กำลังบีบอัดรูปภาพ..." : "คลิกเพื่อแนบรูปภาพตัวอย่าง"}
+                      </span>
+                      <span className="text-[10px] text-gray-400 mt-0.5">
+                        JPG, PNG, WebP (ระบบบีบอัดอัตโนมัติ)
+                      </span>
+                    </div>
+                  )}
+                  <input
+                    ref={imageInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden"
+                  />
+                </div>
+
+                {/* 2. ไฟล์ใบงาน (Worksheet / Handout Attachment) */}
+                <div className="bg-white p-3.5 rounded-xl border border-gray-200/80 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                      <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>ไฟล์เอกสารใบงาน (PDF, Word, PPT)</span>
+                    </label>
+                    {attachmentUrl && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAttachmentUrl("");
+                          setAttachmentName("");
+                          setAttachmentSize("");
+                          setAttachmentType("");
+                        }}
+                        className="text-[11px] text-red-500 hover:text-red-700 flex items-center gap-1 cursor-pointer"
+                      >
+                        <Trash2 className="w-3 h-3" /> ลบไฟล์
+                      </button>
+                    )}
+                  </div>
+
+                  {attachmentUrl ? (
+                    <div className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-200 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0 text-xs font-bold uppercase">
+                          {attachmentType || "FILE"}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-gray-900 truncate">
+                            {attachmentName || "ไฟล์ใบงาน"}
+                          </p>
+                          <p className="text-[10px] text-emerald-700 font-medium">
+                            {attachmentSize || "พร้อมดาวน์โหลด"}
+                          </p>
+                        </div>
+                      </div>
+                      <a
+                        href={attachmentUrl}
+                        download={attachmentName || "ใบงาน"}
+                        className="px-2.5 py-1 rounded-lg bg-white border border-emerald-300 text-emerald-800 text-xs font-semibold hover:bg-emerald-100 shrink-0 transition-colors"
+                      >
+                        ทดสอบโหลด
+                      </a>
+                    </div>
+                  ) : (
+                    <div
+                      onClick={() => !isUploadingFile && fileInputRef.current?.click()}
+                      className="border-2 border-dashed border-gray-200 hover:border-emerald-400 rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer bg-gray-50/50 hover:bg-emerald-50/20 transition-all"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center mb-1.5">
+                        {isUploadingFile ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                      </div>
+                      <span className="text-xs font-semibold text-gray-700">
+                        {isUploadingFile ? "กำลังอัปโหลดไฟล์..." : "คลิกเพื่อแนบไฟล์ใบงาน"}
+                      </span>
+                      <span className="text-[10px] text-gray-400 mt-0.5">
+                        รองรับ PDF, DOC, DOCX, PPT, PPTX
+                      </span>
+                    </div>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf,.doc,.docx,.ppt,.pptx,image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                </div>
+              </div>
+
+              {/* 3. ลิงก์สื่อภายนอก (External Link) */}
+              <div>
+                <label className="text-xs font-bold text-gray-700 flex items-center gap-1.5 mb-1.5">
+                  <LinkIcon className="w-3.5 h-3.5 text-blue-600" />
+                  <span>ลิงก์สื่อภายนอกเพิ่มเติม (Canva, Google Drive, YouTube)</span>
+                </label>
+                <input
+                  type="url"
+                  value={externalLink}
+                  onChange={(e) => setExternalLink(e.target.value)}
+                  placeholder="https://www.canva.com/design/... หรือ ลิงก์ Google Drive / YouTube"
+                  className="w-full h-10 px-3.5 rounded-xl border border-gray-200 bg-white focus:border-blue-500 outline-none text-xs font-medium"
+                />
+              </div>
             </div>
 
             {/* Max Score & Due Date */}
@@ -991,6 +1240,35 @@ export default function AssignmentsTab({ onGoToGrading }: { onGoToGrading?: (ass
                       <p className="text-sm text-gray-600 leading-relaxed font-normal line-clamp-3">
                         {item.description}
                       </p>
+                    )}
+
+                    {/* Attachments preview strip in Admin Card */}
+                    {(item.imageUrl || item.attachmentUrl || item.externalLink) && (
+                      <div className="flex flex-wrap items-center gap-2 pt-2 pb-1">
+                        {item.imageUrl && (
+                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-orange-50 border border-orange-200 text-orange-800 text-xs font-medium">
+                            <ImageIcon className="w-3.5 h-3.5 text-orange-600" />
+                            <span>มีภาพตัวอย่างภาระงาน</span>
+                          </div>
+                        )}
+                        {item.attachmentUrl && (
+                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium">
+                            <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>ไฟล์ใบงาน: {item.attachmentName || "เอกสารแนบ"} {item.attachmentSize ? `(${item.attachmentSize})` : ""}</span>
+                          </div>
+                        )}
+                        {item.externalLink && (
+                          <a
+                            href={item.externalLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 text-xs font-medium transition-colors"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                            <span>ลิงก์สื่อภายนอก</span>
+                          </a>
+                        )}
+                      </div>
                     )}
                   </div>
 

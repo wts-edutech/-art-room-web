@@ -3,8 +3,32 @@ export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { assignments, subjects } from '@/db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, sql } from 'drizzle-orm';
 import { checkIsAdmin } from '@/lib/api-auth';
+
+let migrationDone = false;
+async function ensureAssignmentColumns(db: any) {
+  if (migrationDone) return;
+  try {
+    await db.run(sql`ALTER TABLE assignments ADD COLUMN image_url TEXT`);
+  } catch {}
+  try {
+    await db.run(sql`ALTER TABLE assignments ADD COLUMN attachment_url TEXT`);
+  } catch {}
+  try {
+    await db.run(sql`ALTER TABLE assignments ADD COLUMN attachment_name TEXT`);
+  } catch {}
+  try {
+    await db.run(sql`ALTER TABLE assignments ADD COLUMN attachment_size TEXT`);
+  } catch {}
+  try {
+    await db.run(sql`ALTER TABLE assignments ADD COLUMN attachment_type TEXT`);
+  } catch {}
+  try {
+    await db.run(sql`ALTER TABLE assignments ADD COLUMN external_link TEXT`);
+  } catch {}
+  migrationDone = true;
+}
 
 // Robust helper to safely parse JSON arrays whether single-stringified, double-stringified, or comma-separated
 function parseJsonArray(val: any): string[] {
@@ -41,6 +65,7 @@ export async function GET(request: Request) {
     const activeOnly = searchParams.get('activeOnly') === 'true';
 
     const db = getDb();
+    await ensureAssignmentColumns(db);
     const all = await db.select().from(assignments).orderBy(desc(assignments.createdAt));
     let list = all || [];
 
@@ -103,13 +128,29 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json().catch(() => ({}));
-    const { title, description, subjectId, classrooms: targetRooms, targetStudents, maxScore, dueDate, isActive } = body;
+    const {
+      title,
+      description,
+      subjectId,
+      classrooms: targetRooms,
+      targetStudents,
+      maxScore,
+      dueDate,
+      isActive,
+      imageUrl,
+      attachmentUrl,
+      attachmentName,
+      attachmentSize,
+      attachmentType,
+      externalLink,
+    } = body;
 
     if (!title || !subjectId) {
       return NextResponse.json({ error: 'กรุณาระบุชื่องานและวิชาที่มอบหมาย' }, { status: 400 });
     }
 
     const db = getDb();
+    await ensureAssignmentColumns(db);
     const id = `assign_${Date.now()}`;
 
     const roomsArray = parseJsonArray(targetRooms);
@@ -124,6 +165,12 @@ export async function POST(request: Request) {
       targetStudents: studentsArray.length > 0 ? JSON.stringify(studentsArray) : null,
       maxScore: Number(maxScore) || 10,
       dueDate: dueDate ? String(dueDate) : null,
+      imageUrl: imageUrl ? String(imageUrl).trim() : null,
+      attachmentUrl: attachmentUrl ? String(attachmentUrl).trim() : null,
+      attachmentName: attachmentName ? String(attachmentName).trim() : null,
+      attachmentSize: attachmentSize ? String(attachmentSize).trim() : null,
+      attachmentType: attachmentType ? String(attachmentType).trim() : null,
+      externalLink: externalLink ? String(externalLink).trim() : null,
       isActive: isActive !== undefined ? Boolean(isActive) : true,
     };
 
@@ -142,13 +189,30 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json().catch(() => ({}));
-    const { id, title, description, subjectId, classrooms: targetRooms, targetStudents, maxScore, dueDate, isActive } = body;
+    const {
+      id,
+      title,
+      description,
+      subjectId,
+      classrooms: targetRooms,
+      targetStudents,
+      maxScore,
+      dueDate,
+      isActive,
+      imageUrl,
+      attachmentUrl,
+      attachmentName,
+      attachmentSize,
+      attachmentType,
+      externalLink,
+    } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
     }
 
     const db = getDb();
+    await ensureAssignmentColumns(db);
     const updateData: any = {};
     if (title) updateData.title = title.trim();
     if (description !== undefined) updateData.description = description ? String(description).trim() : null;
@@ -163,6 +227,12 @@ export async function PUT(request: Request) {
     }
     if (maxScore !== undefined) updateData.maxScore = Number(maxScore) || 10;
     if (dueDate !== undefined) updateData.dueDate = dueDate ? String(dueDate) : null;
+    if (imageUrl !== undefined) updateData.imageUrl = imageUrl ? String(imageUrl).trim() : null;
+    if (attachmentUrl !== undefined) updateData.attachmentUrl = attachmentUrl ? String(attachmentUrl).trim() : null;
+    if (attachmentName !== undefined) updateData.attachmentName = attachmentName ? String(attachmentName).trim() : null;
+    if (attachmentSize !== undefined) updateData.attachmentSize = attachmentSize ? String(attachmentSize).trim() : null;
+    if (attachmentType !== undefined) updateData.attachmentType = attachmentType ? String(attachmentType).trim() : null;
+    if (externalLink !== undefined) updateData.externalLink = externalLink ? String(externalLink).trim() : null;
     if (isActive !== undefined) updateData.isActive = Boolean(isActive);
 
     await db.update(assignments).set(updateData).where(eq(assignments.id, id));

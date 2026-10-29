@@ -184,6 +184,12 @@ export const assignments = sqliteTable('assignments', {
   targetStudents: text('target_students', { mode: 'json' }), // array of student IDs e.g. ["12345", "12346"]
   maxScore: integer('max_score').default(10),
   dueDate: text('due_date'), // YYYY-MM-DDTHH:mm
+  imageUrl: text('image_url'), // ภาพตัวอย่างโจทย์ / ผลงานตัวอย่าง
+  attachmentUrl: text('attachment_url'), // ไฟล์แนบใบงาน (PDF, Word, PPT, Image)
+  attachmentName: text('attachment_name'), // ชื่อไฟล์ใบงาน e.g. "ใบงานที่ 1 ทัศนธาตุ.pdf"
+  attachmentSize: text('attachment_size'), // ขนาดไฟล์ e.g. "1.2 MB"
+  attachmentType: text('attachment_type'), // e.g. "pdf", "image", "doc"
+  externalLink: text('external_link'), // Canva, Google Drive, YouTube link
   isActive: integer('is_active', { mode: 'boolean' }).default(true),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });

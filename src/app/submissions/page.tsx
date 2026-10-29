@@ -1107,6 +1107,125 @@ export default function SubmissionsPage() {
                             </p>
                           )}
 
+                          {/* ── Teacher Attachments & Learning Materials ── */}
+                          {(assignment.imageUrl || assignment.attachmentUrl || assignment.externalLink) && (
+                            <div className="mb-4 p-3.5 sm:p-4 rounded-2xl bg-gradient-to-br from-amber-50/70 via-orange-50/50 to-yellow-50/60 border border-amber-200/90 shadow-xs space-y-3">
+                              <div className="flex items-center justify-between">
+                                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-900 font-kanit">
+                                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                                  <span>สื่อการเรียนรู้และเอกสารแนบจากคุณครู</span>
+                                </span>
+                                <span className="text-[10px] text-amber-700/80 font-medium">คลิกดูภาพหรือดาวน์โหลด</span>
+                              </div>
+
+                              {/* Reference Artwork Image Thumbnail */}
+                              {assignment.imageUrl && (
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-2.5 bg-white/95 rounded-xl border border-amber-200/70 shadow-2xs">
+                                  <div 
+                                    onClick={() => setStandaloneLightboxUrl(assignment.imageUrl)}
+                                    className="relative group cursor-pointer overflow-hidden rounded-lg w-full sm:w-28 h-28 sm:h-20 bg-slate-900/5 shrink-0 border border-gray-200"
+                                    title="คลิกเพื่อดูภาพขนาดเต็ม"
+                                  >
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img 
+                                      src={assignment.imageUrl} 
+                                      alt="ตัวอย่างผลงานศิลปะ" 
+                                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                                    />
+                                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                                      <ZoomIn className="w-5 h-5 drop-shadow" />
+                                    </div>
+                                    <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-black/60 text-white text-[9px] font-bold">
+                                      ภาพตัวอย่าง
+                                    </span>
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-bold text-gray-900 font-kanit">
+                                      🖼️ ตัวอย่างชิ้นงาน / ภาพโจทย์กิจกรรม
+                                    </p>
+                                    <p className="text-[11px] text-gray-500 font-light mt-0.5 line-clamp-2">
+                                      ครูได้แนบภาพต้นแบบผลงานเพื่อเป็นแนวทางการทำงานศิลปะชิ้นนี้ สามารถกดเพื่อดูภาพขยายใหญ่ได้
+                                    </p>
+                                    <div className="mt-2 flex items-center gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => setStandaloneLightboxUrl(assignment.imageUrl)}
+                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold text-amber-800 bg-amber-100/80 hover:bg-amber-200 transition-colors cursor-pointer"
+                                      >
+                                        <Eye className="w-3.5 h-3.5" />
+                                        <span>ดูภาพตัวอย่างขนาดเต็ม</span>
+                                      </button>
+                                      <a
+                                        href={assignment.imageUrl}
+                                        download="artwork_reference.webp"
+                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
+                                      >
+                                        <Download className="w-3.5 h-3.5" />
+                                        <span>บันทึกภาพ</span>
+                                      </a>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Download Worksheet Button */}
+                              {assignment.attachmentUrl && (
+                                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 p-3 bg-white/95 rounded-xl border border-amber-200/80 shadow-2xs">
+                                  <div className="flex items-center gap-2.5 min-w-0">
+                                    <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0 border border-orange-200 shadow-2xs">
+                                      <FileText className="w-5 h-5" />
+                                    </div>
+                                    <div className="min-w-0">
+                                      <div className="flex items-center gap-1.5 flex-wrap">
+                                        <span className="font-bold text-xs text-gray-900 truncate">
+                                          {assignment.attachmentName || "ใบงานศิลปะ (Worksheet)"}
+                                        </span>
+                                        {assignment.attachmentSize && (
+                                          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-600 border border-gray-200">
+                                            {assignment.attachmentSize}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <p className="text-[11px] text-gray-500 font-light mt-0.5">
+                                        เอกสารประกอบการสอน / ใบงานสำหรับพิมพ์หรือทำแบบฝึกหัด
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  <a
+                                    href={assignment.attachmentUrl}
+                                    download={assignment.attachmentName || "ใบงานศิลปะ"}
+                                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs text-white bg-gradient-to-r from-orange-500 via-amber-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 shadow-sm shadow-orange-500/25 active:scale-95 transition-all cursor-pointer shrink-0"
+                                  >
+                                    <Download className="w-4 h-4" />
+                                    <span>ดาวน์โหลดใบงาน</span>
+                                  </a>
+                                </div>
+                              )}
+
+                              {/* External Link (Canva, Drive, YouTube) */}
+                              {assignment.externalLink && (
+                                <div className="flex items-center justify-between gap-2 p-2.5 bg-white/90 rounded-xl border border-amber-200/60">
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <ExternalLink className="w-4 h-4 text-blue-600 shrink-0" />
+                                    <span className="text-xs font-semibold text-gray-800 truncate">
+                                      {assignment.externalLink}
+                                    </span>
+                                  </div>
+                                  <a
+                                    href={assignment.externalLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors shrink-0"
+                                  >
+                                    <span>เปิดลิงก์สื่อการสอน</span>
+                                    <ExternalLink className="w-3 h-3" />
+                                  </a>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
                           {/* ── Due Date Countdown (prominent) ── */}
                           {dueDateInfo && (
                             <div className={`flex items-center gap-2 rounded-xl px-3 py-2 mb-4 ${

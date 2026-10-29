@@ -21,7 +21,11 @@ import {
   RotateCw,
   Lock,
   Camera,
-  Loader2
+  Loader2,
+  Download,
+  ZoomIn,
+  Eye,
+  ExternalLink
 } from "lucide-react";
 import ImageEditorModal from "@/components/common/ImageEditorModal";
 import { compressImage } from "@/lib/image-compressor";
@@ -718,7 +722,7 @@ export default function SubmitWorkModal({
         </div>
 
         {/* Student Badge Info */}
-        <div className="bg-gray-50 p-3.5 rounded-2xl mb-5 flex items-center justify-between text-xs text-gray-700 font-medium">
+        <div className="bg-gray-50 p-3.5 rounded-2xl mb-4 flex items-center justify-between text-xs text-gray-700 font-medium">
           <span>
             ผู้ส่ง: <strong className="text-gray-900">{student.name}</strong> ({student.id !== 'STU' ? `รหัส ${student.id}` : 'นักเรียน'})
           </span>
@@ -726,6 +730,107 @@ export default function SubmitWorkModal({
             ห้อง {student.classroom || selectedRoom}
           </span>
         </div>
+
+        {/* Teacher Instructions & Attachments in Submit Modal */}
+        {(assignment.description || assignment.imageUrl || assignment.attachmentUrl || assignment.externalLink) && (
+          <div className="mb-5 p-4 rounded-2xl bg-amber-50/70 border border-amber-200/90 space-y-3 text-xs">
+            {assignment.description && (
+              <div>
+                <span className="font-bold text-amber-950 block mb-1 font-kanit">
+                  📋 รายละเอียดภาระงาน / คำสั่งจากคุณครู:
+                </span>
+                <p className="text-amber-900 leading-relaxed font-light whitespace-pre-wrap">
+                  {assignment.description}
+                </p>
+              </div>
+            )}
+
+            {/* Reference Image Thumbnail */}
+            {assignment.imageUrl && (
+              <div className="flex items-center gap-3 p-2.5 bg-white rounded-xl border border-amber-200 shadow-2xs">
+                <a
+                  href={assignment.imageUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="relative group block w-16 h-16 rounded-lg overflow-hidden bg-slate-900/5 shrink-0 border border-gray-200 cursor-pointer"
+                  title="คลิกดูภาพตัวอย่างขนาดเต็ม"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={assignment.imageUrl}
+                    alt="ภาพตัวอย่าง"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                  />
+                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                    <ZoomIn className="w-4 h-4" />
+                  </div>
+                </a>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-gray-900 font-kanit">🎨 ภาพตัวอย่าง / โจทย์งานศิลปะ</p>
+                  <p className="text-[11px] text-gray-500 font-light mt-0.5 truncate">
+                    ดูภาพต้นแบบผลงานเพื่อเป็นแนวทางการส่งงาน
+                  </p>
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <a
+                      href={assignment.imageUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-800 bg-amber-100/80 hover:bg-amber-200 px-2 py-0.5 rounded transition-colors"
+                    >
+                      <Eye className="w-3 h-3" />
+                      <span>เปิดดูภาพเต็ม</span>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Download Worksheet Button */}
+            {assignment.attachmentUrl && (
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 p-2.5 bg-white rounded-xl border border-amber-200 shadow-2xs">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center shrink-0 border border-orange-200">
+                    <FileText className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-bold text-gray-900 truncate">
+                      {assignment.attachmentName || "ใบงานศิลปะ (Worksheet)"}
+                    </p>
+                    {assignment.attachmentSize && (
+                      <p className="text-[10px] text-gray-500 font-light">
+                        ขนาด: {assignment.attachmentSize}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <a
+                  href={assignment.attachmentUrl}
+                  download={assignment.attachmentName || "ใบงานศิลปะ"}
+                  className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 shadow-xs active:scale-95 transition-all shrink-0 cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>ดาวน์โหลดใบงาน</span>
+                </a>
+              </div>
+            )}
+
+            {/* External Link */}
+            {assignment.externalLink && (
+              <div className="flex items-center justify-between gap-2 p-2 bg-white rounded-xl border border-amber-200">
+                <span className="text-blue-700 font-medium text-[11px] truncate">🔗 {assignment.externalLink}</span>
+                <a
+                  href={assignment.externalLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 shrink-0"
+                >
+                  <span>เปิดลิงก์</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Late Warning Notice */}
         {isExpired && (
