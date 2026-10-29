@@ -3,7 +3,7 @@ export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { submissions, assignments, students, quizzes, quizAttempts } from '@/db/schema';
-import { desc, inArray } from 'drizzle-orm';
+import { desc, inArray, sql } from 'drizzle-orm';
 import { checkIsAdmin } from '@/lib/api-auth';
 
 export async function GET(request: Request) {
@@ -20,9 +20,28 @@ export async function GET(request: Request) {
 
     const db = getDb();
 
-    // 1. Fetch raw datasets in parallel (select light columns for students)
+    const subSelectFields = {
+      id: submissions.id,
+      assignmentId: submissions.assignmentId,
+      studentId: submissions.studentId,
+      studentName: submissions.studentName,
+      classroom: submissions.classroom,
+      hasImage: sql<number>`CASE WHEN ${submissions.imageUrl} IS NOT NULL AND length(${submissions.imageUrl}) > 0 THEN 1 ELSE 0 END`,
+      hasFile: sql<number>`CASE WHEN ${submissions.fileUrl} IS NOT NULL AND length(${submissions.fileUrl}) > 0 THEN 1 ELSE 0 END`,
+      fileName: submissions.fileName,
+      externalLink: submissions.externalLink,
+      concept: submissions.concept,
+      score: submissions.score,
+      feedback: submissions.feedback,
+      status: submissions.status,
+      isLate: submissions.isLate,
+      submittedAt: submissions.submittedAt,
+      updatedAt: submissions.updatedAt,
+    };
+
+    // 1. Fetch raw datasets in parallel (select light columns for students & submissions)
     const [subList, assList, studList, quizList, attemptList] = await Promise.all([
-      db.select().from(submissions).orderBy(desc(submissions.submittedAt)),
+      db.select(subSelectFields).from(submissions).orderBy(desc(submissions.submittedAt)),
       db.select().from(assignments),
       db.select({ id: students.id, studentNumber: students.studentNumber, classroom: students.classroom }).from(students),
       db.select().from(quizzes),
@@ -77,8 +96,8 @@ export async function GET(request: Request) {
         maxScore: ass?.maxScore ?? 10,
         status: sub.status || 'pending', // 'pending' | 'graded' | 'resubmit'
         isLate: Boolean(sub.isLate),
-        imageUrl: sub.imageUrl || null,
-        fileUrl: sub.fileUrl || null,
+        imageUrl: sub.hasImage ? `/api/submissions/image?id=${encodeURIComponent(sub.id)}` : null,
+        fileUrl: sub.hasFile ? `/api/submissions/image?id=${encodeURIComponent(sub.id)}` : null,
         fileName: sub.fileName || null,
         externalLink: sub.externalLink || null,
         concept: sub.concept || null,

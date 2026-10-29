@@ -3,7 +3,7 @@ export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { submissions, assignments, students } from '@/db/schema';
-import { eq, and, or, desc, inArray } from 'drizzle-orm';
+import { eq, and, or, desc, inArray, sql } from 'drizzle-orm';
 import { checkIsAdmin } from '@/lib/api-auth';
 import { sendSubmissionNotification } from '@/lib/email-notifier';
 
@@ -32,9 +32,28 @@ export async function GET(request: Request) {
       conditions.push(eq(submissions.classroom, classroom));
     }
 
+    const selectFields = {
+      id: submissions.id,
+      assignmentId: submissions.assignmentId,
+      studentId: submissions.studentId,
+      studentName: submissions.studentName,
+      classroom: submissions.classroom,
+      hasImage: sql<number>`CASE WHEN ${submissions.imageUrl} IS NOT NULL AND length(${submissions.imageUrl}) > 0 THEN 1 ELSE 0 END`,
+      hasFile: sql<number>`CASE WHEN ${submissions.fileUrl} IS NOT NULL AND length(${submissions.fileUrl}) > 0 THEN 1 ELSE 0 END`,
+      fileName: submissions.fileName,
+      externalLink: submissions.externalLink,
+      concept: submissions.concept,
+      score: submissions.score,
+      feedback: submissions.feedback,
+      status: submissions.status,
+      isLate: submissions.isLate,
+      submittedAt: submissions.submittedAt,
+      updatedAt: submissions.updatedAt,
+    };
+
     const list = conditions.length > 0
-      ? await db.select().from(submissions).where(and(...conditions)).orderBy(desc(submissions.submittedAt))
-      : await db.select().from(submissions).orderBy(desc(submissions.submittedAt)).limit(200);
+      ? await db.select(selectFields).from(submissions).where(and(...conditions)).orderBy(desc(submissions.submittedAt))
+      : await db.select(selectFields).from(submissions).orderBy(desc(submissions.submittedAt)).limit(200);
 
     if (!list || list.length === 0) {
       return NextResponse.json([]);
@@ -72,6 +91,8 @@ export async function GET(request: Request) {
 
     const enriched = list.map(item => ({
       ...item,
+      imageUrl: item.hasImage ? `/api/submissions/image?id=${encodeURIComponent(item.id)}` : null,
+      fileUrl: item.hasFile ? `/api/submissions/image?id=${encodeURIComponent(item.id)}` : null,
       assignment: assignmentMap.get(item.assignmentId) || null,
       studentAvatar: studentAvatarMap.get(item.studentId) || null,
     }));
