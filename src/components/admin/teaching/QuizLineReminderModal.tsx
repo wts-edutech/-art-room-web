@@ -110,15 +110,13 @@ export default function QuizLineReminderModal({
     return quiz;
   }, [quizzes, activeQuizId, quiz]);
 
-  if (!isOpen || !currentQuiz) return null;
-
   // Available target rooms for this quiz
   const targetRooms = useMemo(() => {
-    if (currentQuiz.targetClassrooms && currentQuiz.targetClassrooms.length > 0) {
+    if (currentQuiz?.targetClassrooms && currentQuiz.targetClassrooms.length > 0) {
       return currentQuiz.targetClassrooms;
     }
     // Default 14 rooms for the grade
-    const grade = currentQuiz.gradeLevel || "ม.4";
+    const grade = currentQuiz?.gradeLevel || "ม.4";
     return Array.from({ length: 14 }, (_, i) => `${grade}/${i + 1}`);
   }, [currentQuiz]);
 
@@ -133,7 +131,7 @@ export default function QuizLineReminderModal({
     if (selectedRoom !== "all" && !targetRooms.some((r) => isRoomMatch(r, selectedRoom))) {
       setSelectedRoom("all");
     }
-  }, [currentQuiz.id, targetRooms, selectedRoom]);
+  }, [currentQuiz?.id, targetRooms, selectedRoom]);
 
   const [customDeadline, setCustomDeadline] = useState<string>("ภายในวันนี้ เวลา 20:00 น.");
   const [customNote, setCustomNote] = useState<string>("กรุณาเข้าทำแบบทดสอบให้เรียบร้อยเพื่อบันทึกคะแนนเก็บและประเมินผลการเรียนรู้");
@@ -367,6 +365,8 @@ ${customNote ? `💬 ข้อความจากครูผู้สอน: 
     const roomSlug = selectedRoom === "all" ? "รวมทุกห้อง" : selectedRoom.replace("/", "_");
     XLSX.writeFile(workbook, `นักเรียนค้างทำแบบทดสอบ_${currentQuiz.code}_${roomSlug}_${new Date().toISOString().split("T")[0]}.xlsx`);
   };
+
+  if (!isOpen || !currentQuiz) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">

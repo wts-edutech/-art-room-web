@@ -2070,16 +2070,18 @@ export default function QuizzesTab() {
       )}
 
       {/* 5. LINE Auto Reminder Modal for Unsubmitted Students */}
-      <QuizLineReminderModal
-        isOpen={isLineReminderOpen}
-        onClose={() => setIsLineReminderOpen(false)}
-        quiz={lineReminderQuiz}
-        quizzes={quizzesList}
-        attempts={attempts}
-        students={studentsList}
-        initialRoom={lineReminderRoom}
-        onSelectQuiz={(q) => setLineReminderQuiz(q)}
-      />
+      {isLineReminderOpen && lineReminderQuiz && (
+        <QuizLineReminderModal
+          isOpen={isLineReminderOpen}
+          onClose={() => setIsLineReminderOpen(false)}
+          quiz={lineReminderQuiz}
+          quizzes={quizzesList}
+          attempts={attempts}
+          students={studentsList}
+          initialRoom={lineReminderRoom}
+          onSelectQuiz={(q) => setLineReminderQuiz(q)}
+        />
+      )}
     </div>
   );
 }
