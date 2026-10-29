@@ -10,6 +10,7 @@ import VisitorTracker from "@/components/VisitorTracker";
 import BottomNavbar from "@/components/layout/BottomNavbar";
 import BackToTop from "@/components/ui/BackToTop";
 import { LogoProvider } from "@/context/LogoContext";
+import SiteBackgroundCanvas from "@/components/layout/SiteBackgroundCanvas";
 
 const sarabun = Sarabun({
   variable: "--font-sarabun",
@@ -197,12 +198,8 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col overflow-x-hidden has-bottom-nav relative">
-        {/* Site-wide Art Studio Background Canvas */}
-        <div 
-          aria-hidden="true" 
-          className="fixed inset-0 z-[-10] pointer-events-none bg-fixed bg-center bg-cover bg-no-repeat"
-          style={{ backgroundImage: "url('/bg-art.jpg')" }}
-        />
+        {/* Site-wide Art Studio Background Canvas & Mascots */}
+        <SiteBackgroundCanvas />
         <SessionProvider>
           <LogoProvider>
             <SecuritySessionWatcher />
