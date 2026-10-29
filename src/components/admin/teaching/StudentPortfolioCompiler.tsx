@@ -55,15 +55,10 @@ export default function StudentPortfolioCompiler({ initialClassroom }: StudentPo
   useEffect(() => {
     const loadMeta = async () => {
       try {
-        const [resRooms, resStudents, resAss] = await Promise.all([
-          fetch("/api/classrooms"),
-          fetch("/api/students"),
-          fetch("/api/assignments"),
-        ]);
         const [dataRooms, dataStudents, dataAss] = await Promise.all([
-          resRooms.json(),
-          resStudents.json(),
-          resAss.json(),
+          fetch("/api/classrooms").then((r) => (r.ok ? r.json() : [])).catch(() => []),
+          fetch("/api/students").then((r) => (r.ok ? r.json() : [])).catch(() => []),
+          fetch("/api/assignments").then((r) => (r.ok ? r.json() : [])).catch(() => []),
         ]);
 
         const rList = Array.isArray(dataRooms) ? dataRooms : [];

@@ -106,18 +106,11 @@ export default function AssignmentsTab({ onGoToGrading }: { onGoToGrading?: (ass
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [resAss, resSub, resRooms, resStud] = await Promise.all([
-        fetch("/api/assignments"),
-        fetch("/api/subjects"),
-        fetch("/api/classrooms"),
-        fetch("/api/students"),
-      ]);
-
       const [dataAss, dataSub, dataRooms, dataStud] = await Promise.all([
-        resAss.json(),
-        resSub.json(),
-        resRooms.json(),
-        resStud.json(),
+        fetch("/api/assignments").then((r) => (r.ok ? r.json() : [])).catch(() => []),
+        fetch("/api/subjects").then((r) => (r.ok ? r.json() : [])).catch(() => []),
+        fetch("/api/classrooms").then((r) => (r.ok ? r.json() : [])).catch(() => []),
+        fetch("/api/students").then((r) => (r.ok ? r.json() : [])).catch(() => []),
       ]);
 
       setAssignments(Array.isArray(dataAss) ? dataAss : []);

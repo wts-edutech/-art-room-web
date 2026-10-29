@@ -184,24 +184,15 @@ export default function QuizzesTab() {
   const fetchData = async () => {
     try {
       setIsLoading(true);
-      const [qRes, aRes, sRes] = await Promise.all([
-        fetch("/api/quizzes"),
-        fetch("/api/quizzes/attempts"),
-        fetch("/api/students"),
+      const [qData, aData, sData] = await Promise.all([
+        fetch("/api/quizzes").then((r) => (r.ok ? r.json() : [])).catch(() => []),
+        fetch("/api/quizzes/attempts").then((r) => (r.ok ? r.json() : [])).catch(() => []),
+        fetch("/api/students").then((r) => (r.ok ? r.json() : [])).catch(() => []),
       ]);
 
-      if (qRes.ok) {
-        const qData = await qRes.json();
-        setQuizzesList(qData);
-      }
-      if (aRes.ok) {
-        const aData = await aRes.json();
-        setAttempts(aData);
-      }
-      if (sRes.ok) {
-        const sData = await sRes.json();
-        setStudentsList(Array.isArray(sData) ? sData : []);
-      }
+      setQuizzesList(Array.isArray(qData) ? qData : []);
+      setAttempts(Array.isArray(aData) ? aData : []);
+      setStudentsList(Array.isArray(sData) ? sData : []);
     } catch (err) {
       console.error("Failed to load quiz admin data:", err);
     } finally {

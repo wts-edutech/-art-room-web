@@ -57,16 +57,10 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
   const fetchInitialData = async () => {
     setIsLoading(true);
     try {
-      const [resAss, resRooms, resStudents] = await Promise.all([
-        fetch("/api/assignments"),
-        fetch("/api/classrooms"),
-        fetch("/api/students"),
-      ]);
-
       const [dataAss, dataRooms, dataStudents] = await Promise.all([
-        resAss.json(),
-        resRooms.json(),
-        resStudents.json(),
+        fetch("/api/assignments").then((r) => (r.ok ? r.json() : [])).catch(() => []),
+        fetch("/api/classrooms").then((r) => (r.ok ? r.json() : [])).catch(() => []),
+        fetch("/api/students").then((r) => (r.ok ? r.json() : [])).catch(() => []),
       ]);
 
       const assList = Array.isArray(dataAss) ? dataAss : [];

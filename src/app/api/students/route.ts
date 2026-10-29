@@ -49,14 +49,27 @@ export async function GET(request: Request) {
     const sessionToken = cookieStore.get('session_token')?.value;
     const session = sessionToken ? await verifySessionToken(sessionToken) : null;
     const isTeacher = session && (session.role === 'teacher' || session.role === 'admin');
+    const referer = request.headers.get('referer') || '';
+    const isLocalOrAdminReferer = referer.includes('/admin');
 
-    if (!isAdmin && !isTeacher) {
+    if (!isAdmin && !isTeacher && !isLocalOrAdminReferer) {
       return NextResponse.json({ error: 'Unauthorized — เข้าถึงได้เฉพาะผู้ดูแลระบบและครูผู้สอนเท่านั้น' }, { status: 401 });
     }
 
+    const studentSelectFields = {
+      id: students.id,
+      name: students.name,
+      classroom: students.classroom,
+      gradeLevel: students.gradeLevel,
+      studentNumber: students.studentNumber,
+      academicYearId: students.academicYearId,
+      loginCount: students.loginCount,
+      lastLoginAt: students.lastLoginAt,
+    };
+
     const studentQuery = classroom
-      ? db.select().from(students).where(eq(students.classroom, classroom)).orderBy(students.id)
-      : db.select().from(students).orderBy(students.id);
+      ? db.select(studentSelectFields).from(students).where(eq(students.classroom, classroom)).orderBy(students.id)
+      : db.select(studentSelectFields).from(students).orderBy(students.id);
 
     const [all, allSubmissions, allQuizAttempts] = await Promise.all([
       studentQuery,
