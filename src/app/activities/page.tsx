@@ -115,10 +115,10 @@ export default function ActivitiesPage() {
   return (
     <>
       <Navbar />
-      <main className="flex-1 flex flex-col pt-24 pb-24 min-h-screen bg-[#FDFBF7]">
+      <main className="flex-1 flex flex-col pt-24 pb-24 min-h-screen bg-transparent">
         
         {/* Hero Header Section */}
-        <section className="relative overflow-hidden bg-gradient-to-b from-orange-50/70 via-red-50/30 to-transparent pt-12 pb-10 border-b border-orange-100/40">
+        <section className="relative overflow-hidden bg-transparent pt-12 pb-10 border-b border-orange-100/40">
           <div className="container mx-auto px-4 sm:px-6 max-w-7xl text-center">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-orange-100/80 border border-orange-200 text-orange-800 text-xs sm:text-sm font-semibold mb-4 shadow-2xs">
               <Images className="w-4 h-4 text-orange-600" />

@@ -93,7 +93,7 @@ export default function ProfilePageClient() {
     return (
       <>
         <Navbar />
-        <main className="min-h-screen bg-gray-50 pt-28 pb-16 flex items-center justify-center px-4">
+        <main className="min-h-screen bg-transparent pt-28 pb-16 flex items-center justify-center px-4">
           <div className="max-w-md w-full bg-white rounded-3xl p-8 border border-gray-200 text-center shadow-lg space-y-5">
             <div className="w-16 h-16 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center mx-auto shadow-xs">
               <User className="w-8 h-8" />
@@ -121,7 +121,7 @@ export default function ProfilePageClient() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen bg-[#fafaf9] pt-28 pb-20 px-4 sm:px-6">
+      <main className="min-h-screen bg-transparent pt-28 pb-20 px-4 sm:px-6">
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Breadcrumb Navigation */}
           <div className="flex items-center gap-2 text-xs text-gray-400 font-normal">

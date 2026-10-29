@@ -13,11 +13,6 @@ export default function Home() {
     <>
       <Navbar />
       <main className="flex-1 flex flex-col relative min-h-screen bg-transparent pb-6">
-        {/* Artistic Faded Watercolor Background Layer for Mobile & Desktop */}
-        <div 
-          className="absolute inset-0 z-[-1] pointer-events-none opacity-30 md:opacity-40 bg-fixed bg-center bg-cover"
-          style={{ backgroundImage: "url('/bg-art.jpg')" }}
-        />
         
         {/* 1. Hero Banner — Unified responsive layout matching desktop aesthetic */}
         <HeroSection />

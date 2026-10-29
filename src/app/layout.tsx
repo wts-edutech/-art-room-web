@@ -196,7 +196,13 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
         />
       </head>
-      <body className="min-h-full flex flex-col overflow-x-hidden has-bottom-nav">
+      <body className="min-h-full flex flex-col overflow-x-hidden has-bottom-nav relative">
+        {/* Site-wide Art Studio Background Canvas */}
+        <div 
+          aria-hidden="true" 
+          className="fixed inset-0 z-[-10] pointer-events-none bg-fixed bg-center bg-cover bg-no-repeat"
+          style={{ backgroundImage: "url('/bg-art.jpg')" }}
+        />
         <SessionProvider>
           <LogoProvider>
             <SecuritySessionWatcher />

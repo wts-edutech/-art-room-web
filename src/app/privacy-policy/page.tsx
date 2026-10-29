@@ -98,7 +98,7 @@ export default function PrivacyPolicyPage() {
   return (
     <>
       <Navbar />
-      <main className="flex-1 flex flex-col pt-24 min-h-screen bg-gradient-to-b from-gray-50 to-white">
+      <main className="flex-1 flex flex-col pt-24 min-h-screen bg-transparent">
         {/* Hero Header */}
         <section className="relative overflow-hidden pt-10 pb-14 sm:pt-16 sm:pb-20">
           {/* Decorative circles */}

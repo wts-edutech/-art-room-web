@@ -26,7 +26,7 @@ export default function NewsPage() {
   return (
     <>
       <Navbar />
-      <main className="flex-1 flex flex-col pt-24 min-h-screen bg-[#FDF9F1]">
+      <main className="flex-1 flex flex-col pt-24 min-h-screen bg-transparent">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-24 gap-3">
             <Loader2 className="w-8 h-8 text-red-500 animate-spin" />

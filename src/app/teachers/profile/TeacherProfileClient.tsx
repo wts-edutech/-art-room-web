@@ -78,7 +78,7 @@ export default function TeacherProfileClient() {
   }, [nameParam]);
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] flex flex-col font-sans text-gray-800 selection:bg-orange-100 selection:text-orange-900">
+    <div className="min-h-screen bg-transparent flex flex-col font-sans text-gray-800 selection:bg-orange-100 selection:text-orange-900">
       <Navbar />
 
       {/* Top Profile Header (White Background matching Reference Image 2 100%) */}
@@ -142,8 +142,8 @@ export default function TeacherProfileClient() {
         </div>
       </section>
 
-      {/* Main Content Area (Exact Warm Cream Background #FBF8EF matching Reference 100%) */}
-      <main className="flex-1 py-8 px-4 sm:px-8 pr-14 sm:pr-20 bg-[#FBF8EF]">
+      {/* Main Content Area */}
+      <main className="flex-1 py-8 px-4 sm:px-8 pr-14 sm:pr-20 bg-transparent">
         <div className="max-w-6xl mx-auto">
           {activeTab === "profile" && (
             <div className="profile-grid-layout">

@@ -50,7 +50,7 @@ export default function M3MaterialsPage() {
     return (
       <>
         <Navbar />
-        <main className="flex-1 flex items-center justify-center min-h-screen bg-[#FDF9F1] pt-24">
+        <main className="flex-1 flex items-center justify-center min-h-screen bg-transparent pt-24">
           <div className="w-8 h-8 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
         </main>
         <Footer />
@@ -63,7 +63,7 @@ export default function M3MaterialsPage() {
     return (
       <>
         <Navbar />
-        <main className="flex-1 flex flex-col items-center justify-center min-h-screen bg-[#FDF9F1] pt-28 pb-16 px-4 text-center">
+        <main className="flex-1 flex flex-col items-center justify-center min-h-screen bg-transparent pt-28 pb-16 px-4 text-center">
           <div className="max-w-md w-full bg-white rounded-3xl p-8 sm:p-10 border border-gray-100 shadow-xl shadow-gray-200/50">
             <div className="w-16 h-16 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto mb-5 shadow-inner">
               <EyeOff className="w-8 h-8" />
@@ -110,7 +110,7 @@ export default function M3MaterialsPage() {
       )}
 
       <ProtectedRoute studentOnly={true}>
-        <main className="flex-1 flex flex-col pt-32 pb-24 bg-white">
+        <main className="flex-1 flex flex-col pt-32 pb-24 bg-transparent">
           <div className="container mx-auto px-4 sm:px-6 max-w-7xl">
             <div className="text-center mb-16">
               <h1 className="text-4xl md:text-5xl font-bold font-heading text-gray-900 mb-6 tracking-tight">

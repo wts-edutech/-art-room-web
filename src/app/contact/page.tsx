@@ -6,7 +6,7 @@ export default function ContactPage() {
   return (
     <>
       <Navbar />
-      <main className="flex-1 flex flex-col pt-24 min-h-screen bg-gray-50/50">
+      <main className="flex-1 flex flex-col pt-24 min-h-screen bg-transparent">
         <div className="container mx-auto px-4 sm:px-6 max-w-4xl py-12 md:py-20 flex-1 flex flex-col items-center justify-center">
           
           <div className="text-center mb-10">

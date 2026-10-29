@@ -363,12 +363,7 @@ export default function SubmissionsPage() {
     <>
       <Navbar />
 
-      <main className="flex-1 min-h-screen bg-gray-50/50 pt-28 pb-20 relative">
-        {/* Background art graphic */}
-        <div
-          className="absolute inset-0 z-0 opacity-25 pointer-events-none bg-fixed bg-center bg-cover mix-blend-multiply"
-          style={{ backgroundImage: "url('/bg-art.jpg')" }}
-        />
+      <main className="flex-1 min-h-screen bg-transparent pt-28 pb-20 relative">
 
         <div className="container mx-auto px-4 sm:px-6 relative z-10 max-w-5xl">
           {/* Header Title */}

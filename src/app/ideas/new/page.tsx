@@ -395,7 +395,7 @@ export default function NewIdeaPage() {
     <>
       <Navbar />
       <ProtectedRoute>
-        <main className="flex-1 flex flex-col pt-32 pb-24 min-h-screen bg-[#FCFBF8]">
+        <main className="flex-1 flex flex-col pt-32 pb-24 min-h-screen bg-transparent">
           <div className="container mx-auto px-4 max-w-3xl">
             <Link 
               href="/ideas" 

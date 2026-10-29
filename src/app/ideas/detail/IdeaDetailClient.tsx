@@ -406,7 +406,7 @@ export default function IdeaDetailClient() {
     return (
       <>
         <Navbar />
-        <main className="min-h-screen flex flex-col items-center justify-center bg-[#FCFBF8]">
+        <main className="min-h-screen flex flex-col items-center justify-center bg-transparent">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-orange-200 border-t-orange-500 mb-4"></div>
           <p className="text-gray-500 text-sm">กำลังโหลดเนื้อหาไอเดีย...</p>
         </main>
@@ -420,7 +420,7 @@ export default function IdeaDetailClient() {
   return (
     <>
       <Navbar />
-      <main className="flex-1 flex flex-col pt-28 pb-24 min-h-screen bg-white">
+      <main className="flex-1 flex flex-col pt-28 pb-24 min-h-screen bg-transparent">
         <div className="container mx-auto px-4 sm:px-6 max-w-4xl">
           {/* Top Bar Navigation */}
           <div className="mb-5">
