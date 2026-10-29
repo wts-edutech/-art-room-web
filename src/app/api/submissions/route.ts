@@ -59,9 +59,8 @@ export async function GET(request: Request) {
       return NextResponse.json([]);
     }
 
-    // Extract unique IDs for batch fetching
+    // Extract unique assignment IDs for batch fetching
     const assignmentIds = Array.from(new Set(list.map(s => s.assignmentId).filter(Boolean)));
-    const studentIds = Array.from(new Set(list.map(s => s.studentId).filter(Boolean)));
 
     // Fetch assignments only for matched submissions
     let assignmentsList: any[] = [];
@@ -69,32 +68,13 @@ export async function GET(request: Request) {
       assignmentsList = await db.select().from(assignments).where(inArray(assignments.id, assignmentIds));
     }
 
-    // Fetch student avatars only for matched submissions (chunked up to 100)
-    let studentsList: any[] = [];
-    if (studentIds.length > 0) {
-      const chunks = [];
-      for (let i = 0; i < studentIds.length; i += 100) {
-        chunks.push(studentIds.slice(i, i + 100));
-      }
-      const results = await Promise.all(
-        chunks.map(chunk =>
-          db.select({ id: students.id, avatar: students.avatar })
-            .from(students)
-            .where(inArray(students.id, chunk))
-        )
-      );
-      studentsList = results.flat();
-    }
-
     const assignmentMap = new Map(assignmentsList.map(a => [a.id, a]));
-    const studentAvatarMap = new Map(studentsList.map(s => [s.id, s.avatar]));
 
     const enriched = list.map(item => ({
       ...item,
       imageUrl: item.hasImage ? `/api/submissions/image?id=${encodeURIComponent(item.id)}` : null,
       fileUrl: item.hasFile ? `/api/submissions/image?id=${encodeURIComponent(item.id)}` : null,
       assignment: assignmentMap.get(item.assignmentId) || null,
-      studentAvatar: studentAvatarMap.get(item.studentId) || null,
     }));
 
     return NextResponse.json(enriched);

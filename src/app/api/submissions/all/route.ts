@@ -48,33 +48,8 @@ export async function GET(request: Request) {
       db.select().from(quizAttempts).orderBy(desc(quizAttempts.submittedAt)),
     ]);
 
-    // Fetch avatars only for students who have submissions or quiz attempts
-    const neededAvatarIds = Array.from(new Set([
-      ...(subList || []).map(s => s.studentId),
-      ...(attemptList || []).map(a => a.studentId),
-    ].filter(Boolean)));
-
-    let avatarMap = new Map<string, string | null>();
-    if (neededAvatarIds.length > 0) {
-      const chunks = [];
-      for (let i = 0; i < neededAvatarIds.length; i += 100) {
-        chunks.push(neededAvatarIds.slice(i, i + 100));
-      }
-      const avatarResults = await Promise.all(
-        chunks.map(chunk =>
-          db.select({ id: students.id, avatar: students.avatar })
-            .from(students)
-            .where(inArray(students.id, chunk))
-        )
-      );
-      avatarMap = new Map(avatarResults.flat().map(s => [s.id, s.avatar]));
-    }
-
     const assignmentMap = new Map(assList.map(a => [a.id, a]));
-    const studentMap = new Map(studList.map(s => [s.id, {
-      ...s,
-      avatar: avatarMap.get(s.id) || null,
-    }]));
+    const studentMap = new Map(studList.map(s => [s.id, s]));
     const quizMap = new Map(quizList.map(q => [q.id, q]));
 
     // 2. Normalize assignment submissions into unified schema
