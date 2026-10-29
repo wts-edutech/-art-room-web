@@ -36,8 +36,8 @@ const req = https.request(options, (res) => {
       if (json.success && json.result && json.result.length > 0) {
         console.log(`Found ${json.result.length} deployments:`);
         const latest = json.result[0];
-        json.result.slice(0, 3).forEach((d, idx) => {
-          console.log(`[${idx + 1}] ID: ${d.id} | Stage: ${d.latest_stage?.name} (${d.latest_stage?.status}) | URL: ${d.url} | Created: ${d.created_on}`);
+        json.result.slice(0, 10).forEach((d, idx) => {
+          console.log(`[${idx + 1}] ID: ${d.id} | Stage: ${d.latest_stage?.name} (${d.latest_stage?.status}) | Commit: ${d.deployment_trigger?.metadata?.commit_hash?.slice(0, 7) || 'N/A'} - ${d.deployment_trigger?.metadata?.commit_message?.slice(0, 40) || ''} | Created: ${d.created_on}`);
           if (d.stages) {
             console.log('    Stages:', d.stages.map(s => `${s.name}: ${s.status}`).join(', '));
           }
