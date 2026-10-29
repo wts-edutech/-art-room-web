@@ -63,10 +63,6 @@ export default function AdminLoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center relative p-4 bg-orange-50/30">
-      <div 
-        className="absolute inset-0 z-[-1] pointer-events-none opacity-40 bg-fixed bg-center bg-cover mix-blend-multiply"
-        style={{ backgroundImage: "url('/bg-art.jpg')" }}
-      />
       <div className="w-full max-w-md bg-white/95 backdrop-blur-md rounded-3xl shadow-xl p-8 md:p-10 border border-white">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-orange-500 rounded-2xl text-white font-bold text-3xl shadow-sm mb-6">
