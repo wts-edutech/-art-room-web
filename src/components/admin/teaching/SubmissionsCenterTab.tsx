@@ -543,17 +543,29 @@ export default function SubmissionsCenterTab() {
         <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-3 pt-3 border-t border-slate-100">
           {/* Search Box */}
           <form onSubmit={handleSearchSubmit} className="relative sm:col-span-2 lg:col-span-2">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="ค้นหาชื่อนักเรียน, รหัส 5 หลัก หรือชื่องาน..."
-              className="w-full pl-10 pr-20 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:border-orange-500 outline-none transition-all"
+              className="w-full h-10 pl-10 pr-24 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:border-orange-500 outline-none transition-all placeholder:text-slate-400"
             />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery("");
+                }}
+                className="no-min-h !min-h-0 absolute right-18 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs p-1 cursor-pointer"
+                title="ล้างคำค้นหา"
+              >
+                ✕
+              </button>
+            )}
             <button
               type="submit"
-              className="absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1 bg-orange-500 text-white rounded-lg text-[11px] font-bold hover:bg-orange-600 transition-colors"
+              className="no-min-h !min-h-0 h-7.5 px-3 bg-orange-500 text-white rounded-lg text-xs font-bold hover:bg-orange-600 transition-colors absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center justify-center cursor-pointer shadow-xs active:scale-95"
             >
               ค้นหา
             </button>
@@ -564,7 +576,7 @@ export default function SubmissionsCenterTab() {
             <select
               value={classroomFilter}
               onChange={(e) => setClassroomFilter(e.target.value)}
-              className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:border-orange-500 outline-none font-medium cursor-pointer"
+              className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:border-orange-500 outline-none font-medium cursor-pointer transition-all"
             >
               <option value="all">ทุกห้องเรียน (ทั้งหมด)</option>
               {classrooms.map((room) => (
@@ -580,7 +592,7 @@ export default function SubmissionsCenterTab() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:border-orange-500 outline-none font-medium cursor-pointer"
+              className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:border-orange-500 outline-none font-medium cursor-pointer transition-all"
             >
               <option value="all">ทุกสถานะผลการตรวจ</option>
               <option value="pending">รอตรวจให้คะแนน</option>

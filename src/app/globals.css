@@ -79,13 +79,13 @@
   }
 
   /* Buttons must meet 44px touch target (except switches and compact controls) */
-  button:not([role="switch"]):not([data-switch]):not(.no-min-h),
-  [role="button"]:not([role="switch"]):not([data-switch]):not(.no-min-h),
+  button:not([role="switch"]):not([data-switch]):not(.no-min-h):not([data-compact]),
+  [role="button"]:not([role="switch"]):not([data-switch]):not(.no-min-h):not([data-compact]),
   a.btn {
     min-height: 2.75rem; /* 44px */
   }
 
-  [role="switch"], [data-switch] {
+  [role="switch"], [data-switch], .no-min-h, [data-compact] {
     min-height: unset;
   }
 
