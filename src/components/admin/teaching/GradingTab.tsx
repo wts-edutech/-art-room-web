@@ -23,9 +23,11 @@ import {
   Check,
   Share2,
   ListOrdered,
-  Palette
+  Palette,
+  MessageCircle
 } from "lucide-react";
 import StudentPortfolioCompiler from "./StudentPortfolioCompiler";
+import AssignmentLineReminderModal from "./AssignmentLineReminderModal";
 
 export default function GradingTab({ preselectedAssignmentId }: { preselectedAssignmentId?: string }) {
   const [gradingMode, setGradingMode] = useState<"assignment" | "individual">("assignment");
@@ -42,6 +44,7 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
   const [statusFilter, setStatusFilter] = useState<"all" | "missing" | "pending" | "graded">("all");
   const [isCopied, setIsCopied] = useState(false);
   const [showDetailedMissing, setShowDetailedMissing] = useState(false);
+  const [isLineReminderOpen, setIsLineReminderOpen] = useState(false);
 
   // Inspection & Grading Modal State
   const [selectedSubmission, setSelectedSubmission] = useState<any | null>(null);
@@ -89,7 +92,6 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
     if (!selectedAssignmentId) return;
     try {
       let url = `/api/submissions?assignmentId=${selectedAssignmentId}`;
-      if (selectedClassroom) url += `&classroom=${encodeURIComponent(selectedClassroom)}`;
       const res = await fetch(url);
       const data = await res.json();
       setSubmissions(Array.isArray(data) ? data : []);
@@ -104,7 +106,7 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
 
   useEffect(() => {
     fetchSubmissions();
-  }, [selectedAssignmentId, selectedClassroom]);
+  }, [selectedAssignmentId]);
 
   const currentAssignment = assignments.find((a) => a.id === selectedAssignmentId);
 
@@ -405,8 +407,18 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
           </div>
         </div>
 
-        {/* Export Excel Button */}
-        <div className="shrink-0 self-end md:self-center">
+        {/* Export Excel & LINE Reminder Buttons */}
+        <div className="shrink-0 self-end md:self-center flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setIsLineReminderOpen(true)}
+            className="inline-flex items-center gap-1.5 h-10 px-4 rounded-lg bg-[#06C755] hover:bg-[#05b34c] text-white font-bold text-sm shadow-xs hover:shadow-md hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
+            title="เปิดระบบแจ้งเตือนทาง LINE สำหรับนักเรียนที่ยังไม่ส่งงาน"
+          >
+            <MessageCircle className="w-4 h-4 fill-white text-white" />
+            <span>แจ้งเตือน LINE (คนค้างส่ง)</span>
+          </button>
+
           <button
             type="button"
             onClick={handleExportExcel}
@@ -507,15 +519,27 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={handleCopyMissingList}
-              className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-medium text-xs shrink-0 self-end sm:self-auto transition-all cursor-pointer shadow-xs active:scale-95"
-              title="คัดลอกรายชื่อส่งกลุ่ม LINE"
-            >
-              {isCopied ? <Check className="w-3.5 h-3.5 text-white" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{isCopied ? "คัดลอกแล้ว" : "คัดลอกส่ง LINE"}</span>
-            </button>
+            <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+              <button
+                type="button"
+                onClick={() => setIsLineReminderOpen(true)}
+                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[#06C755] hover:bg-[#05b34c] text-white font-bold text-xs shrink-0 transition-all cursor-pointer shadow-xs active:scale-95"
+                title="เปิดระบบแจ้งเตือนทาง LINE สำหรับนักเรียนที่ยังไม่ส่งงาน"
+              >
+                <MessageCircle className="w-3.5 h-3.5 fill-white text-white" />
+                <span>แจ้งเตือนทาง LINE</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleCopyMissingList}
+                className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-white hover:bg-gray-100 text-gray-700 border border-gray-200 font-medium text-xs shrink-0 transition-all cursor-pointer shadow-2xs active:scale-95"
+                title="คัดลอกรายชื่อส่งกลุ่ม LINE แบบย่อ"
+              >
+                {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{isCopied ? "คัดลอกแล้ว" : "คัดลอกด่วน"}</span>
+              </button>
+            </div>
           </div>
         ) : (
           <div className="bg-gray-50 border border-gray-200/90 rounded-xl p-3 flex items-center gap-2 text-xs font-semibold text-emerald-700">
@@ -910,6 +934,21 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
             onClick={(e) => e.stopPropagation()}
           />
         </div>
+      )}
+
+      {/* LINE Auto Reminder Modal for Unsubmitted Students */}
+      {isLineReminderOpen && currentAssignment && (
+        <AssignmentLineReminderModal
+          isOpen={isLineReminderOpen}
+          onClose={() => setIsLineReminderOpen(false)}
+          assignment={currentAssignment}
+          assignments={assignments}
+          classrooms={classrooms}
+          students={students}
+          submissions={submissions}
+          initialClassroom={selectedClassroom || "all"}
+          onSelectAssignment={(a) => setSelectedAssignmentId(a.id)}
+        />
       )}
         </>
       )}
