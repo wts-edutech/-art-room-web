@@ -17,7 +17,7 @@ import {
   BOOKMARKS_EVENT 
 } from "@/lib/bookmarks";
 import LiteYouTube from "@/components/ui/LiteYouTube";
-import { optimizeImageUrl, formatDocumentPreviewUrl } from "@/lib/image-utils";
+import { optimizeImageUrl, formatDocumentPreviewUrl, extractYouTubeId } from "@/lib/image-utils";
 
 export default function LessonDetailPage() {
   const searchParams = useSearchParams();
@@ -59,21 +59,54 @@ export default function LessonDetailPage() {
         let foundLesson = Array.isArray(lessonsData) ? lessonsData.find((l: any) => l.id === id) : null;
         
         if (!foundLesson) {
+          try {
+            const dlRes = await fetch("/api/downloads");
+            const dlData = await dlRes.json();
+            const list = Array.isArray(dlData.downloads) ? dlData.downloads : Array.isArray(dlData) ? dlData : [];
+            const dlItem = list.find((d: any) => d.id === id || `dl-${d.id}` === id || `v-${d.id}` === id || String(d.id) === String(id));
+            if (dlItem) {
+              const detectedYtId = extractYouTubeId(dlItem.videoId) || extractYouTubeId(dlItem.fileUrl) || extractYouTubeId(dlItem.imageUrl);
+              const isVideo = Boolean(detectedYtId) || dlItem.mediaType === "video" || dlItem.category === "สื่อวิดีทัศน์";
+              const isPdfItem = !isVideo && (dlItem.mediaType === "pdf" || dlItem.category === "ใบงาน" || dlItem.category === "สื่อเอกสาร PDF" || dlItem.category === "แบบฝึกหัด");
+              foundLesson = {
+                id: dlItem.id,
+                title: dlItem.title,
+                description: dlItem.description,
+                category: dlItem.category,
+                mediaType: isVideo ? "video" : isPdfItem ? "pdf" : (dlItem.mediaType || "pdf"),
+                videoId: detectedYtId || dlItem.videoId || (isVideo ? "AB1QIlCEDDU" : undefined),
+                views: dlItem.downloadsCount || 342,
+                type: dlItem.grade || "general",
+                fileUrl: dlItem.fileUrl,
+                pdfUrl: dlItem.fileUrl,
+                imageUrl: dlItem.imageUrl || (detectedYtId ? `https://img.youtube.com/vi/${detectedYtId}/hqdefault.jpg` : undefined),
+                attachmentName: dlItem.fileName,
+                createdAt: dlItem.createdAt || new Date().toISOString(),
+                ratingSum: 137,
+                ratingCount: 28,
+              };
+            }
+          } catch {}
+        }
+
+        if (!foundLesson) {
           const dlItem = DEFAULT_DOWNLOADS.find((d: any) => d.id === id || `dl-${d.id}` === id || `v-${d.id}` === id);
           if (dlItem) {
-            const isPdfItem = dlItem.mediaType === "pdf" || dlItem.category === "ใบงาน" || dlItem.category === "สื่อเอกสาร PDF";
+            const detectedYtId = extractYouTubeId(dlItem.videoId) || extractYouTubeId(dlItem.fileUrl);
+            const isVideo = Boolean(detectedYtId) || dlItem.mediaType === "video" || dlItem.category === "สื่อวิดีทัศน์";
+            const isPdfItem = !isVideo && (dlItem.mediaType === "pdf" || dlItem.category === "ใบงาน" || dlItem.category === "สื่อเอกสาร PDF");
             foundLesson = {
               id: dlItem.id,
               title: dlItem.title,
               description: dlItem.description,
               category: dlItem.category,
-              mediaType: dlItem.mediaType || (isPdfItem ? "pdf" : "video"),
-              videoId: dlItem.videoId || (isPdfItem ? undefined : "AB1QIlCEDDU"),
+              mediaType: isVideo ? "video" : isPdfItem ? "pdf" : (dlItem.mediaType || "pdf"),
+              videoId: detectedYtId || dlItem.videoId || (isVideo ? "AB1QIlCEDDU" : undefined),
               views: dlItem.downloadsCount || 342,
               type: dlItem.grade || "general",
               fileUrl: dlItem.fileUrl,
               pdfUrl: dlItem.fileUrl,
-              imageUrl: dlItem.imageUrl,
+              imageUrl: dlItem.imageUrl || (detectedYtId ? `https://img.youtube.com/vi/${detectedYtId}/hqdefault.jpg` : undefined),
               attachmentName: dlItem.fileName,
               createdAt: new Date().toISOString(),
               ratingSum: 137,
@@ -274,7 +307,7 @@ export default function LessonDetailPage() {
                       </iframe>
                     ) : (
                       <LiteYouTube 
-                        videoId={lesson.videoId || "AB1QIlCEDDU"} 
+                        videoId={extractYouTubeId(lesson.videoId) || extractYouTubeId(lesson.fileUrl) || "AB1QIlCEDDU"} 
                         title={lesson.title}
                         className="w-full aspect-video"
                       />
