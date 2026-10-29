@@ -20,9 +20,11 @@ import {
   Crop,
   RotateCw,
   Lock,
-  Camera
+  Camera,
+  Loader2
 } from "lucide-react";
 import ImageEditorModal from "@/components/common/ImageEditorModal";
+import { compressImage } from "@/lib/image-compressor";
 
 interface SubmitWorkModalProps {
   assignment: any;
@@ -53,6 +55,7 @@ export default function SubmitWorkModal({
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editorFile, setEditorFile] = useState<File | null>(null);
   const [isAiProcessing, setIsAiProcessing] = useState(false);
+  const [isCompressing, setIsCompressing] = useState(false);
   const [submissionResult, setSubmissionResult] = useState<{
     isLate: boolean;
     isEdit: boolean;
@@ -233,19 +236,42 @@ export default function SubmitWorkModal({
     }
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (!file.type.startsWith("image/")) {
-        setErrorMsg("กรุณาเลือกไฟล์รูปภาพที่ถูกต้อง (JPG, PNG, WebP)");
-        return;
-      }
+  const processAndSetImage = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      setErrorMsg("กรุณาเลือกไฟล์รูปภาพที่ถูกต้อง (JPG, PNG, WebP)");
+      return;
+    }
+    setErrorMsg("");
+    setIsCompressing(true);
+    try {
+      // Auto-compress high-res mobile photos to lightweight WebP (~150-250KB) while keeping high fidelity
+      const compressed = await compressImage(file, {
+        maxWidth: 1920,
+        maxHeight: 1920,
+        quality: 0.82,
+        outputFormat: "image/webp",
+      });
+      setImageFile(compressed);
+      setIsImageRemoved(false);
+      const reader = new FileReader();
+      reader.onload = () => setImagePreview(reader.result as string);
+      reader.readAsDataURL(compressed);
+    } catch (err) {
+      console.warn("Compression fallback to raw file:", err);
       setImageFile(file);
       setIsImageRemoved(false);
-      setErrorMsg("");
       const reader = new FileReader();
       reader.onload = () => setImagePreview(reader.result as string);
       reader.readAsDataURL(file);
+    } finally {
+      setIsCompressing(false);
+    }
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      processAndSetImage(file);
     }
   };
 
@@ -873,17 +899,31 @@ export default function SubmitWorkModal({
 
                 {/* Dropzone area for Desktop drag-and-drop / click */}
                 <div 
-                  onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-gray-300 hover:border-orange-500 rounded-2xl p-5 flex flex-col items-center justify-center text-center cursor-pointer bg-gray-50/50 hover:bg-orange-50/20 transition-all group"
+                  onClick={() => !isCompressing && fileInputRef.current?.click()}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const file = e.dataTransfer.files?.[0];
+                    if (file) processAndSetImage(file);
+                  }}
+                  className={`border-2 border-dashed rounded-2xl p-5 flex flex-col items-center justify-center text-center cursor-pointer transition-all group ${
+                    isCompressing
+                      ? "border-orange-400 bg-orange-50/40 cursor-wait"
+                      : "border-gray-300 hover:border-orange-500 bg-gray-50/50 hover:bg-orange-50/20"
+                  }`}
                 >
-                  <div className="w-9 h-9 rounded-xl bg-gray-100 group-hover:bg-orange-100 text-gray-600 group-hover:text-orange-600 flex items-center justify-center mb-2 transition-colors">
-                    <Upload className="w-4 h-4" />
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-2 transition-colors ${
+                    isCompressing
+                      ? "bg-orange-500 text-white animate-spin"
+                      : "bg-gray-100 group-hover:bg-orange-100 text-gray-600 group-hover:text-orange-600"
+                  }`}>
+                    {isCompressing ? <Loader2 className="w-5 h-5" /> : <Upload className="w-4 h-4" />}
                   </div>
                   <span className="text-xs font-semibold text-gray-800">
-                    หรือคลิกเพื่อเลือกไฟล์ / ลากไฟล์มาวางที่นี่
+                    {isCompressing ? "⚡ กำลังประมวลผลและบีบอัดรูปภาพให้อัตโนมัติ..." : "หรือคลิกเพื่อเลือกไฟล์ / ลากไฟล์มาวางที่นี่"}
                   </span>
                   <span className="text-[11px] text-gray-500 mt-0.5">
-                    รองรับไฟล์ JPG, PNG, WebP (แก้ไขได้ก่อนคุณครูประเมินผล)
+                    รองรับ JPG, PNG, WebP • ระบบบีบอัดภาพให้อัตโนมัติ คมชัด ส่งงานได้รวดเร็ว
                   </span>
                 </div>
               </div>

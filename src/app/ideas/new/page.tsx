@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import ImageEditorModal from "@/components/common/ImageEditorModal";
+import { compressImage } from "@/lib/image-compressor";
 
 const MAX_COVER_SIZE = 10 * 1024 * 1024; // 10 MB
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
@@ -289,19 +290,20 @@ export default function NewIdeaPage() {
     setEditingTarget(null);
   };
 
-  const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCoverChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setErrorMsg("");
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > MAX_COVER_SIZE) {
-        setErrorMsg("รูปภาพหน้าปกต้องมีขนาดไม่เกิน 10 MB");
-        return;
+      try {
+        const compressed = await compressImage(file, { maxWidth: 1920, maxHeight: 1920, quality: 0.82 });
+        setCoverImage(compressed);
+      } catch {
+        setCoverImage(file);
       }
-      setCoverImage(file);
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setErrorMsg("");
     if (e.target.files) {
       const selectedFiles = Array.from(e.target.files);
@@ -309,12 +311,19 @@ export default function NewIdeaPage() {
         setErrorMsg("อัปโหลดไฟล์แนบได้สูงสุดไม่เกิน 5 ไฟล์");
         return;
       }
-      const oversized = selectedFiles.find(f => f.size > MAX_FILE_SIZE);
-      if (oversized) {
-        setErrorMsg(`ไฟล์ "${oversized.name}" มีขนาดเกิน 10 MB กรุณาเลือกไฟล์ที่เล็กลง`);
-        return;
+      try {
+        const processedFiles = await Promise.all(
+          selectedFiles.map(async (f) => {
+            if (f.type.startsWith("image/")) {
+              return await compressImage(f, { maxWidth: 1600, maxHeight: 1600, quality: 0.80 });
+            }
+            return f;
+          })
+        );
+        setFiles([...files, ...processedFiles]);
+      } catch {
+        setFiles([...files, ...selectedFiles]);
       }
-      setFiles([...files, ...selectedFiles]);
     }
   };
 

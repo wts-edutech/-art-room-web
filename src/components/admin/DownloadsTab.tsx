@@ -27,6 +27,7 @@ import {
   Presentation,
   Image as ImageIcon
 } from "lucide-react";
+import { compressImage } from "@/lib/image-compressor";
 
 import AiMaterialStudioModal from "./materials/AiMaterialStudioModal";
 import MaterialLivePreviewModal from "./materials/MaterialLivePreviewModal";
@@ -406,12 +407,21 @@ export default function DownloadsTab() {
 
     setIsUploading(true);
     try {
+      let uploadFile = file;
+      if (file.type.startsWith("image/")) {
+        try {
+          uploadFile = await compressImage(file, { maxWidth: 1920, maxHeight: 1920, quality: 0.82 });
+        } catch {
+          uploadFile = file;
+        }
+      }
+
       // 1. Read file client-side instantly via FileReader (0-latency, 100% reliable)
       const dataUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result as string);
         reader.onerror = () => reject(new Error("อ่านไฟล์ล้มเหลว"));
-        reader.readAsDataURL(file);
+        reader.readAsDataURL(uploadFile);
       });
 
       if (!dataUrl) {
