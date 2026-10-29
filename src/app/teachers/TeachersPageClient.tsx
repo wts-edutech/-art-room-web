@@ -31,7 +31,11 @@ import {
   FileText,
   Download,
   ExternalLink,
-  Sparkles
+  Sparkles,
+  Quote,
+  CheckCircle2,
+  Layers,
+  Compass
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -134,7 +138,7 @@ function AwardPhotoCarousel({
     return (
       <div 
         onClick={() => onOpenLightbox(images, 0, award.title, subtitle)}
-        className="relative w-full min-h-[220px] max-h-[380px] sm:min-h-[260px] sm:max-h-[420px] rounded-xl overflow-hidden mb-3.5 bg-gray-950 flex items-center justify-center cursor-pointer group/img border border-gray-100 shadow-xs select-none"
+        className="relative w-full min-h-[220px] max-h-[380px] sm:min-h-[260px] sm:max-h-[420px] rounded-2xl overflow-hidden mb-3.5 bg-gray-950 flex items-center justify-center cursor-pointer group/img border border-gray-100 shadow-sm select-none"
         title="คลิกเพื่อดูรูปภาพขนาดเต็ม"
       >
         {/* Ambient blurred backdrop so any proportions look seamless */}
@@ -149,104 +153,92 @@ function AwardPhotoCarousel({
         <img
           src={images[0]}
           alt={award.title}
-          className="relative z-10 max-h-[360px] sm:max-h-[400px] w-auto max-w-full object-contain mx-auto rounded-lg shadow-sm transition-transform duration-300 group-hover/img:scale-[1.02]"
+          className="relative z-10 max-h-[360px] sm:max-h-[400px] w-auto max-w-full object-contain mx-auto rounded-xl shadow-xs transition-transform duration-300 group-hover/img:scale-[1.02]"
         />
-        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover/img:opacity-100 flex items-center justify-center gap-1.5 text-white text-xs font-bold transition-opacity z-20">
+        <div className="absolute inset-0 bg-black/25 opacity-0 group-hover/img:opacity-100 flex items-center justify-center gap-1.5 text-white text-xs font-bold transition-opacity z-20">
           <Maximize2 className="w-4 h-4" />
-          <span>แตะดูรูปขนาดเต็ม</span>
+          <span>แตะเพื่อดูรูปภาพขนาดเต็ม</span>
         </div>
       </div>
     );
   }
 
-  // Multi-Image Flowing Carousel Mode ("ทำแบบไหลๆๆ")
-  const handlePrev = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
-  };
-
-  const handleNext = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setCurrentIndex((prev) => (prev + 1) % images.length);
-  };
-
+  // Multi-Image Carousel Mode
   return (
-    <div className="relative mb-3.5 rounded-xl overflow-hidden bg-gray-950 border border-gray-100 shadow-xs group/carousel select-none">
-      {/* Active Photo Frame with True Uncropped Proportions */}
-      <div 
-        onClick={() => onOpenLightbox(images, currentIndex, award.title, subtitle)}
-        className="relative w-full min-h-[220px] max-h-[380px] sm:min-h-[260px] sm:max-h-[420px] flex items-center justify-center overflow-hidden cursor-pointer"
-        title="คลิกเพื่อดูรูปภาพขนาดเต็ม"
-      >
+    <div className="mb-3.5 select-none">
+      {/* Carousel Main Frame */}
+      <div className="relative w-full min-h-[230px] max-h-[390px] sm:min-h-[270px] sm:max-h-[430px] rounded-2xl overflow-hidden bg-gray-950 flex items-center justify-center group/caro border border-gray-100 shadow-sm">
         {/* Ambient blurred backdrop */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          key={`bg-${currentIndex}`}
           src={images[currentIndex]}
           alt=""
-          className="absolute inset-0 w-full h-full object-cover blur-md opacity-30 scale-110 pointer-events-none animate-in fade-in duration-300"
+          className="absolute inset-0 w-full h-full object-cover blur-md opacity-30 scale-110 pointer-events-none transition-all duration-500"
         />
 
-        {/* Foreground Full Real-Size Uncropped Photo */}
+        {/* Current Image (Uncropped full view) */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           key={currentIndex}
           src={images[currentIndex]}
-          alt={`${award.title} - ภาพที่ ${currentIndex + 1}`}
-          className="relative z-10 max-h-[360px] sm:max-h-[400px] w-auto max-w-full object-contain mx-auto rounded-lg shadow-sm animate-in fade-in duration-300 group-hover/carousel:scale-[1.02] transition-transform"
+          alt={`${award.title} - ${currentIndex + 1}`}
+          onClick={() => onOpenLightbox(images, currentIndex, award.title, subtitle)}
+          className="relative z-10 max-h-[370px] sm:max-h-[410px] w-auto max-w-full object-contain mx-auto rounded-xl shadow-xs cursor-pointer animate-in fade-in duration-300"
+          title="คลิกเพื่อดูรูปภาพขนาดเต็ม"
         />
 
-        {/* Top Badges: Cover Tag & Image Counter */}
-        <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 z-20 pointer-events-none">
-          {currentIndex === 0 && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500 text-white text-[10px] font-bold shadow-xs">
-              <Star className="w-3 h-3 fill-white" />
-              <span>รูปหน้าปก</span>
-            </span>
-          )}
-          <span className="px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-xs text-white text-[10px] font-mono font-bold border border-white/10">
-            {currentIndex + 1} / {images.length}
-          </span>
+        {/* Previous Button */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
+          }}
+          className="absolute left-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition-all cursor-pointer opacity-90 sm:opacity-0 sm:group-hover/caro:opacity-100 hover:scale-105 active:scale-95 border border-white/20 z-20"
+          aria-label="รูปภาพก่อนหน้า"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+
+        {/* Next Button */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setCurrentIndex((prev) => (prev + 1) % images.length);
+          }}
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition-all cursor-pointer opacity-90 sm:opacity-0 sm:group-hover/caro:opacity-100 hover:scale-105 active:scale-95 border border-white/20 z-20"
+          aria-label="รูปภาพถัดไป"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+
+        {/* Counter Badge */}
+        <div className="absolute bottom-2.5 right-2.5 z-20 px-2.5 py-0.5 rounded-full bg-black/70 backdrop-blur-md text-white text-[10px] font-mono font-bold border border-white/20 flex items-center gap-1">
+          <ImageIcon className="w-3 h-3 text-amber-400" />
+          <span>{currentIndex + 1} / {images.length}</span>
         </div>
 
-        {/* Expand Hint */}
-        <div className="absolute bottom-2.5 right-2.5 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-xs text-white text-[10px] font-medium flex items-center gap-1 pointer-events-none z-20">
+        {/* Tap to expand hint */}
+        <div 
+          onClick={() => onOpenLightbox(images, currentIndex, award.title, subtitle)}
+          className="absolute top-2.5 right-2.5 z-20 px-2 py-0.5 rounded-full bg-black/60 hover:bg-black/85 text-white text-[10px] font-medium backdrop-blur-md border border-white/20 flex items-center gap-1 cursor-pointer"
+        >
           <Maximize2 className="w-3 h-3" />
-          <span>แตะดูรูปใหญ่</span>
+          <span className="hidden sm:inline">ขยาย</span>
         </div>
       </div>
 
-      {/* Prev / Next Flow Arrows */}
-      <button
-        type="button"
-        onClick={handlePrev}
-        className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-md border border-white/20 z-20"
-        aria-label="ภาพก่อนหน้า"
-      >
-        <ChevronLeft className="w-4 h-4" />
-      </button>
-      <button
-        type="button"
-        onClick={handleNext}
-        className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-md border border-white/20 z-20"
-        aria-label="ภาพถัดไป"
-      >
-        <ChevronRight className="w-4 h-4" />
-      </button>
-
-      {/* Flowing Filmstrip Thumbnails ("ทำแบบไหลๆๆ") */}
-      <div className="flex items-center gap-1.5 p-2 bg-gray-900/90 overflow-x-auto scrollbar-none scroll-smooth snap-x snap-mandatory">
+      {/* Flowing Thumbnail Strip */}
+      <div className="flex items-center gap-1.5 mt-2 overflow-x-auto pb-1 scrollbar-thin">
         {images.map((img, idx) => (
           <button
             key={idx}
             type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setCurrentIndex(idx);
-            }}
-            className={`relative w-12 h-8 sm:w-14 sm:h-9 shrink-0 rounded-lg overflow-hidden border-2 transition-all cursor-pointer snap-center bg-gray-950 flex items-center justify-center ${
+            onClick={() => setCurrentIndex(idx)}
+            className={`relative shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 bg-gray-900 transition-all cursor-pointer ${
               currentIndex === idx
-                ? "border-amber-400 ring-2 ring-amber-400/40 scale-105 shadow-sm"
+                ? "border-red-500 scale-105 shadow-xs opacity-100 ring-2 ring-red-400/40"
                 : "border-transparent opacity-60 hover:opacity-100"
             }`}
           >
@@ -313,7 +305,7 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
       .catch((err) => console.error("Failed to load teacher dynamically:", err));
   }, []);
 
-  // Keyboard navigation for Lightbox (Esc to close, ArrowLeft/Right to slide)
+  // Keyboard navigation for Lightbox
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -348,7 +340,7 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
     setActiveSection(id);
     const element = document.getElementById(id);
     if (element) {
-      const yOffset = -100;
+      const yOffset = -110;
       const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
       window.scrollTo({ top: y, behavior: "smooth" });
     }
@@ -359,19 +351,19 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
     return (
       <>
         <Navbar />
-        <main className="flex-1 flex flex-col items-center justify-center min-h-screen bg-white pt-28 pb-16 px-4 text-center">
-          <div className="max-w-md w-full bg-white rounded-2xl p-8 border border-gray-200">
-            <div className="w-14 h-14 bg-red-50 text-red-600 rounded-xl flex items-center justify-center mx-auto mb-4 border border-red-100">
-              <EyeOff className="w-7 h-7" />
+        <main className="flex-1 flex flex-col items-center justify-center min-h-screen bg-[#FCFBF8] pt-32 pb-16 px-4 text-center">
+          <div className="max-w-md w-full bg-white rounded-3xl p-8 border border-gray-100 shadow-xl shadow-red-950/5">
+            <div className="w-16 h-16 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-red-100 shadow-sm">
+              <EyeOff className="w-8 h-8" />
             </div>
-            <h1 className="text-xl font-bold font-kanit text-gray-900 mb-2">
+            <h1 className="text-xl font-bold font-heading text-gray-900 mb-2">
               ส่วนนี้ยังไม่เปิดให้บริการ
             </h1>
             <p className="text-sm text-gray-600 leading-relaxed mb-6 font-light">
               หน้า Teacher Profile &amp; Awards อยู่ระหว่างการปรับปรุงข้อมูลโดยผู้ดูแลระบบ
             </p>
             <Link href="/" className="inline-block w-full">
-              <Button className="w-full bg-red-600 hover:bg-red-700 text-white rounded-xl py-2.5 font-medium transition-colors border-0">
+              <Button className="w-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white rounded-xl py-3 font-medium transition-all shadow-md shadow-red-500/20 border-0">
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 <span>กลับสู่หน้าแรก</span>
               </Button>
@@ -398,24 +390,29 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
   return (
     <>
       <Navbar />
-      <main className="flex-1 flex flex-col pt-24 min-h-screen bg-white text-gray-800">
+      <main className="flex-1 flex flex-col pt-24 sm:pt-28 min-h-screen bg-[#FCFBF8] text-gray-800 relative selection:bg-red-500 selection:text-white">
         
+        {/* Subtle Ambient Studio Lighting Blobs */}
+        <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-gradient-to-b from-red-100/40 via-orange-100/20 to-transparent rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-40 right-[-10%] w-[400px] h-[400px] bg-amber-100/30 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-60 left-[-10%] w-[450px] h-[450px] bg-rose-100/30 rounded-full blur-3xl pointer-events-none" />
+
         {/* Admin Preview Notice Bar */}
         {!isTeachersEnabled && isAdmin && (
-          <div className="bg-amber-50 border-b border-amber-200 py-2.5 px-4 text-amber-900 sticky top-20 z-30">
+          <div className="bg-amber-500/10 backdrop-blur-md border-b border-amber-300 py-2.5 px-4 text-amber-950 sticky top-20 z-30 shadow-2xs">
             <div className="container mx-auto max-w-5xl flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
               <div className="flex items-center gap-2 font-medium">
                 <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0" />
                 <span>
                   <strong>โหมดพรีวิวสำหรับผู้ดูแลระบบ:</strong> หน้านี้ยังถูกซ่อนอยู่สำหรับบุคคลทั่วไป สามารถเปิดแสดงผลได้ที่{" "}
-                  <Link href="/admin" className="underline font-bold hover:text-amber-950">
+                  <Link href="/admin" className="underline font-bold hover:text-amber-900">
                     ระบบหลังบ้าน
                   </Link>
                 </span>
               </div>
               <Link 
                 href="/admin" 
-                className="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg transition-colors whitespace-nowrap"
+                className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg transition-all shadow-xs whitespace-nowrap"
               >
                 ไปที่หน้าหลังบ้าน (Admin)
               </Link>
@@ -423,120 +420,153 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
           </div>
         )}
 
-        {/* HERO HEADER: Clean ART ROOM Red & Ink Minimal Style */}
-        <section className="pt-10 pb-8 border-b border-gray-100 bg-white">
+        {/* MODERN HERO HEADER */}
+        <section className="pt-8 sm:pt-12 pb-6 sm:pb-8 relative z-10">
           <div className="container mx-auto px-4 sm:px-6 max-w-5xl text-center">
             
             {/* Top School Pill Badge */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-red-50 border border-red-100 text-red-600 text-xs font-semibold mb-3">
-              <span className="w-2 h-2 rounded-full bg-red-600"></span>
-              <span>กลุ่มสาระการเรียนรู้ศิลปะ โรงเรียนวชิรธรรมสาธิต</span>
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/90 backdrop-blur-md border border-red-100 shadow-xs text-red-700 text-xs sm:text-sm font-semibold mb-3 sm:mb-4">
+              <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>
+              <span>กลุ่มสาระการเรียนรู้ศิลปะ • โรงเรียนวชิรธรรมสาธิต</span>
             </div>
 
             {/* Main Page Title: Teacher Profile & Awards */}
-            <h1 className="text-3xl sm:text-5xl font-black font-heading text-[#03071C] tracking-tight mb-2">
-              Teacher Profile <span className="text-red-600">&amp; Awards</span>
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black font-heading text-gray-900 tracking-tight leading-tight mb-2 sm:mb-3">
+              Teacher Profile{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 via-rose-500 to-amber-500">
+                &amp; Awards
+              </span>
             </h1>
 
             {/* Subtitle */}
-            <p className="text-sm sm:text-base text-gray-500 max-w-xl mx-auto font-light leading-relaxed">
-              ประวัติ ผลงานทางวิชาการ และรางวัลเกียรติยศ <strong className="font-semibold text-gray-800">{teacher.name || "นางสาวสีวลี ยืนยาว (ครูเก๋)"}</strong>
+            <p className="text-xs sm:text-base text-gray-600 max-w-2xl mx-auto font-light leading-relaxed mb-6 sm:mb-8">
+              ประวัติ ผลงานทางวิชาการ รางวัลเกียรติยศ และนวัตกรรมการสอนของ{" "}
+              <strong className="font-semibold text-gray-900">{teacher.name || "นางสาวสีวลี ยืนยาว (ครูเก๋)"}</strong>
             </p>
 
-            {/* Clean Quick Jump Navigation Pills */}
-            <div className="mt-6 flex items-center justify-center gap-2 sm:gap-2.5 flex-wrap">
+            {/* Modern Floating Capsule Navigation Pills */}
+            <div className="inline-flex items-center justify-center p-1.5 rounded-2xl sm:rounded-full bg-white/80 backdrop-blur-xl border border-gray-200/80 shadow-sm gap-1 sm:gap-1.5 flex-wrap max-w-full">
               <button
                 type="button"
                 onClick={() => scrollToSection("overview")}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors cursor-pointer border flex items-center gap-1.5 ${
+                className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl sm:rounded-full text-xs sm:text-sm font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
                   activeSection === "overview"
-                    ? "bg-red-600 text-white border-red-600 font-bold"
-                    : "bg-white text-gray-700 hover:bg-red-50 hover:text-red-600 border-gray-200"
+                    ? "bg-gradient-to-r from-red-600 to-rose-600 text-white font-bold shadow-md shadow-red-500/25 scale-[1.02]"
+                    : "text-gray-700 hover:text-red-600 hover:bg-red-50/70"
                 }`}
               >
-                <UserCheck className="w-3.5 h-3.5" />
+                <UserCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 <span>โปรไฟล์ครู</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => scrollToSection("education")}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors cursor-pointer border flex items-center gap-1.5 ${
+                className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl sm:rounded-full text-xs sm:text-sm font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
                   activeSection === "education"
-                    ? "bg-red-600 text-white border-red-600 font-bold"
-                    : "bg-white text-gray-700 hover:bg-red-50 hover:text-red-600 border-gray-200"
+                    ? "bg-gradient-to-r from-red-600 to-rose-600 text-white font-bold shadow-md shadow-red-500/25 scale-[1.02]"
+                    : "text-gray-700 hover:text-red-600 hover:bg-red-50/70"
                 }`}
               >
-                <GraduationCap className="w-3.5 h-3.5" />
-                <span>การศึกษา ({education.length})</span>
+                <GraduationCap className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span>การศึกษา</span>
+                <span className={`text-[10px] sm:text-xs px-1.5 py-0.2 rounded-full font-mono ${
+                  activeSection === "education" ? "bg-white/25 text-white" : "bg-gray-100 text-gray-600"
+                }`}>
+                  {education.length}
+                </span>
               </button>
 
               <button
                 type="button"
                 onClick={() => scrollToSection("experience")}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors cursor-pointer border flex items-center gap-1.5 ${
+                className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl sm:rounded-full text-xs sm:text-sm font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
                   activeSection === "experience"
-                    ? "bg-red-600 text-white border-red-600 font-bold"
-                    : "bg-white text-gray-700 hover:bg-red-50 hover:text-red-600 border-gray-200"
+                    ? "bg-gradient-to-r from-red-600 to-rose-600 text-white font-bold shadow-md shadow-red-500/25 scale-[1.02]"
+                    : "text-gray-700 hover:text-red-600 hover:bg-red-50/70"
                 }`}
               >
-                <Briefcase className="w-3.5 h-3.5" />
-                <span>ประสบการณ์ ({experience.length})</span>
+                <Briefcase className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span>ประสบการณ์</span>
+                <span className={`text-[10px] sm:text-xs px-1.5 py-0.2 rounded-full font-mono ${
+                  activeSection === "experience" ? "bg-white/25 text-white" : "bg-gray-100 text-gray-600"
+                }`}>
+                  {experience.length}
+                </span>
               </button>
 
               <button
                 type="button"
                 onClick={() => scrollToSection("awards")}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors cursor-pointer border flex items-center gap-1.5 ${
+                className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl sm:rounded-full text-xs sm:text-sm font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
                   activeSection === "awards"
-                    ? "bg-red-600 text-white border-red-600 font-bold"
-                    : "bg-white text-gray-700 hover:bg-red-50 hover:text-red-600 border-gray-200"
+                    ? "bg-gradient-to-r from-red-600 to-rose-600 text-white font-bold shadow-md shadow-red-500/25 scale-[1.02]"
+                    : "text-gray-700 hover:text-red-600 hover:bg-red-50/70"
                 }`}
               >
-                <Trophy className="w-3.5 h-3.5" />
-                <span>รางวัล &amp; เกียรติยศ ({awards.length})</span>
+                <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span>รางวัล &amp; เกียรติยศ</span>
+                <span className={`text-[10px] sm:text-xs px-1.5 py-0.2 rounded-full font-mono ${
+                  activeSection === "awards" ? "bg-white/25 text-white" : "bg-gray-100 text-gray-600"
+                }`}>
+                  {awards.length}
+                </span>
               </button>
 
               <button
                 type="button"
                 onClick={() => scrollToSection("innovations")}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors cursor-pointer border flex items-center gap-1.5 ${
+                className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl sm:rounded-full text-xs sm:text-sm font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
                   activeSection === "innovations"
-                    ? "bg-red-600 text-white border-red-600 font-bold"
-                    : "bg-white text-gray-700 hover:bg-red-50 hover:text-red-600 border-gray-200"
+                    ? "bg-gradient-to-r from-red-600 to-rose-600 text-white font-bold shadow-md shadow-red-500/25 scale-[1.02]"
+                    : "text-gray-700 hover:text-red-600 hover:bg-red-50/70"
                 }`}
               >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>สื่อนวัตกรรม ({displayedInnovations.length})</span>
+                <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span>สื่อนวัตกรรม</span>
+                <span className={`text-[10px] sm:text-xs px-1.5 py-0.2 rounded-full font-mono ${
+                  activeSection === "innovations" ? "bg-white/25 text-white" : "bg-gray-100 text-gray-600"
+                }`}>
+                  {displayedInnovations.length}
+                </span>
               </button>
 
               <button
                 type="button"
                 onClick={() => scrollToSection("gallery")}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors cursor-pointer border flex items-center gap-1.5 ${
+                className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl sm:rounded-full text-xs sm:text-sm font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
                   activeSection === "gallery"
-                    ? "bg-red-600 text-white border-red-600 font-bold"
-                    : "bg-white text-gray-700 hover:bg-red-50 hover:text-red-600 border-gray-200"
+                    ? "bg-gradient-to-r from-red-600 to-rose-600 text-white font-bold shadow-md shadow-red-500/25 scale-[1.02]"
+                    : "text-gray-700 hover:text-red-600 hover:bg-red-50/70"
                 }`}
               >
-                <ImageIcon className="w-3.5 h-3.5" />
-                <span>ภาพกิจกรรม ({activityImages.length})</span>
+                <ImageIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span>ภาพกิจกรรม</span>
+                <span className={`text-[10px] sm:text-xs px-1.5 py-0.2 rounded-full font-mono ${
+                  activeSection === "gallery" ? "bg-white/25 text-white" : "bg-gray-100 text-gray-600"
+                }`}>
+                  {activityImages.length}
+                </span>
               </button>
             </div>
           </div>
         </section>
 
-        {/* MAIN PROFILE CARD: Clean & Focused */}
-        <section id="overview" className="py-10">
+        {/* MAIN PROFILE CARD: Luxury Studio Glass Card */}
+        <section id="overview" className="py-4 sm:py-8 relative z-10">
           <div className="container mx-auto px-4 sm:px-6 max-w-5xl">
-            <div className="bg-white rounded-2xl p-6 sm:p-8 border border-gray-200">
-              <div className="flex flex-col lg:flex-row gap-8 lg:gap-10 items-center lg:items-start">
+            <div className="relative bg-white/95 backdrop-blur-xl rounded-3xl p-6 sm:p-10 border border-gray-200/80 shadow-xl shadow-red-950/5 overflow-hidden">
+              
+              {/* Decorative Subtle Corner Aura */}
+              <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl from-red-100/50 via-orange-100/20 to-transparent rounded-full blur-2xl pointer-events-none" />
+
+              <div className="relative z-10 flex flex-col lg:flex-row gap-8 lg:gap-12 items-center lg:items-start">
                 
-                {/* Left: Portrait Showcase */}
+                {/* Left: Portrait Showcase with Modern Studio Frame */}
                 <div className="w-full sm:w-72 shrink-0 flex flex-col items-center text-center">
                   
-                  {/* Clean Portrait Box: Standard 3:4 Frame with Ambient Blur (Uncropped Real Size) */}
-                  <div className="relative w-64 sm:w-72 aspect-[3/4] rounded-2xl overflow-hidden border border-gray-200 bg-gray-950 shadow-xs flex items-center justify-center">
+                  {/* Portrait Box with Double Ring Frame */}
+                  <div className="relative w-64 sm:w-72 aspect-[3/4] rounded-2xl overflow-hidden border border-gray-200/80 bg-gradient-to-b from-gray-900 to-gray-950 shadow-md ring-4 ring-red-50/80 flex items-center justify-center group/portrait">
                     {teacher.imageUrl ? (
                       <>
                         {/* Ambient blurred backdrop for seamless fill */}
@@ -544,14 +574,14 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
                         <img
                           src={teacher.imageUrl}
                           alt=""
-                          className="absolute inset-0 w-full h-full object-cover blur-md opacity-30 scale-110 pointer-events-none"
+                          className="absolute inset-0 w-full h-full object-cover blur-lg opacity-40 scale-110 pointer-events-none"
                         />
                         {/* Uncropped True-Size Portrait Image */}
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={teacher.imageUrl}
                           alt={teacher.name}
-                          className="relative z-10 max-h-full max-w-full object-contain mx-auto rounded-xl shadow-xs"
+                          className="relative z-10 max-h-full max-w-full object-contain mx-auto rounded-xl shadow-xs transition-transform duration-500 group-hover/portrait:scale-[1.02]"
                         />
                       </>
                     ) : (
@@ -561,121 +591,161 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
                       </div>
                     )}
 
-                    {/* Position Pill */}
+                    {/* Modern Shimmering Position Badge */}
                     <div className="absolute top-3 left-3 z-20">
-                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-red-600 text-white shadow-xs">
-                        {teacher.position || "ครูชำนาญการพิเศษ"}
+                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-md shadow-red-900/30 border border-white/20">
+                        <Star className="w-3 h-3 text-amber-300 fill-amber-300" />
+                        <span>{teacher.position || "ครูชำนาญการ"}</span>
                       </span>
+                    </div>
+
+                    {/* Official Verified Emblem Accent */}
+                    <div className="absolute bottom-3 right-3 z-20">
+                      <div className="w-7 h-7 rounded-full bg-white/90 backdrop-blur-md text-red-600 flex items-center justify-center shadow-xs border border-red-100" title="ครูผู้สอนสังกัด สพฐ.">
+                        <CheckCircle2 className="w-4 h-4 text-red-600" />
+                      </div>
                     </div>
                   </div>
 
-                  {/* Clean Contact Action Button */}
-                  {teacher.email && (
-                    <button
-                      type="button"
-                      onClick={handleCopyEmail}
-                      className={`mt-3.5 w-64 sm:w-72 py-2.5 px-3 rounded-xl border text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
-                        copiedEmail
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-300"
-                          : "bg-gray-50 hover:bg-red-50 text-gray-700 hover:text-red-600 border-gray-200"
-                      }`}
-                      title="คลิกเพื่อคัดลอกอีเมล"
-                    >
-                      {copiedEmail ? (
-                        <>
-                          <Check className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>คัดลอกอีเมลสำเร็จ!</span>
-                        </>
-                      ) : (
-                        <>
-                          <Mail className="w-3.5 h-3.5 text-red-500" />
+                  {/* Interactive Contact & Location Buttons */}
+                  <div className="w-64 sm:w-72 mt-3.5 space-y-2">
+                    {teacher.email && (
+                      <button
+                        type="button"
+                        onClick={handleCopyEmail}
+                        className={`w-full py-2.5 px-3.5 rounded-xl border text-xs font-semibold transition-all flex items-center justify-between cursor-pointer ${
+                          copiedEmail
+                            ? "bg-emerald-50 text-emerald-800 border-emerald-300 shadow-2xs"
+                            : "bg-white hover:bg-red-50/80 text-gray-700 hover:text-red-700 border-gray-200/90 shadow-2xs hover:border-red-200"
+                        }`}
+                        title="คลิกเพื่อคัดลอกอีเมล"
+                      >
+                        <div className="flex items-center gap-2 truncate">
+                          <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${copiedEmail ? "bg-emerald-100 text-emerald-700" : "bg-red-50 text-red-600"}`}>
+                            {copiedEmail ? <Check className="w-3.5 h-3.5" /> : <Mail className="w-3.5 h-3.5" />}
+                          </div>
                           <span className="truncate">{teacher.email}</span>
-                          <Copy className="w-3 h-3 text-gray-400 ml-auto" />
-                        </>
-                      )}
-                    </button>
-                  )}
+                        </div>
+                        <span className="text-[10px] text-gray-400 font-normal shrink-0 ml-1">
+                          {copiedEmail ? "คัดลอกแล้ว" : <Copy className="w-3 h-3" />}
+                        </span>
+                      </button>
+                    )}
 
-                  {/* Room Location */}
-                  {teacher.roomLocation && (
-                    <div className="mt-2 text-xs text-gray-500 flex items-center justify-center gap-1 max-w-[280px]">
-                      <MapPin className="w-3.5 h-3.5 text-red-500 shrink-0" />
-                      <span>{teacher.roomLocation}</span>
-                    </div>
-                  )}
+                    {teacher.roomLocation && (
+                      <div className="w-full py-2 px-3 rounded-xl bg-gray-50/80 border border-gray-200/60 text-xs text-gray-600 flex items-center justify-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                        <span className="truncate">{teacher.roomLocation}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                {/* Right: Biography & Key Facts */}
+                {/* Right: Educator Biography & Interactive Bento Stats */}
                 <div className="flex-1 w-full space-y-5 text-left">
                   
                   {/* Department & Role Badge */}
                   <div>
-                    <div className="flex items-center gap-2 mb-2 flex-wrap">
-                      <span className="px-3 py-0.5 rounded-full text-xs font-bold bg-red-50 text-red-700 border border-red-100">
-                        {teacher.role || "หัวหน้ากลุ่มสาระการเรียนรู้ศิลปะ"}
+                    <div className="flex items-center gap-2 mb-2.5 flex-wrap">
+                      <span className="px-3.5 py-1 rounded-full text-xs font-bold bg-red-50 text-red-700 border border-red-200/80 shadow-2xs inline-flex items-center gap-1.5">
+                        <Palette className="w-3.5 h-3.5 text-red-500" />
+                        <span>{teacher.role || "กลุ่มสาระการเรียนรู้ศิลปะ"}</span>
                       </span>
 
                       {teacher.grades && (
-                        <span className="text-xs text-gray-500 font-medium inline-flex items-center gap-1">
-                          <BookOpen className="w-3.5 h-3.5 text-gray-400" />
-                          <span>ระดับชั้นที่สอน: {teacher.grades}</span>
+                        <span className="text-xs text-gray-600 font-medium inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50 border border-slate-200/80">
+                          <BookOpen className="w-3.5 h-3.5 text-slate-500" />
+                          <span>ระดับชั้น: {teacher.grades}</span>
                         </span>
                       )}
                     </div>
 
                     {/* Teacher Name */}
-                    <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black font-kanit text-[#03071C] leading-tight">
+                    <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black font-heading text-gray-900 tracking-tight leading-tight">
                       {teacher.name}
                     </h2>
                   </div>
 
-                  {/* 4 Clean Metric Cards (Flat & Compact) */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                    <div className="p-3 rounded-xl bg-gray-50 border border-gray-100">
-                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">วุฒิการศึกษา</span>
-                      <span className="text-sm font-bold font-kanit text-gray-900 block mt-0.5">
-                        {education.length > 0 ? education[education.length - 1].degree.split(" ")[0] || "ปริญญาโท" : "ปริญญาโท"}
+                  {/* 4 Rich Bento Metric Cards */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+                    
+                    {/* Bento 1: Education */}
+                    <div className="p-3.5 rounded-2xl bg-gradient-to-br from-violet-50/80 to-purple-50/40 border border-violet-100/90 shadow-2xs hover:border-violet-300 transition-all group">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] font-bold text-violet-700 uppercase tracking-wider">วุฒิการศึกษา</span>
+                        <div className="w-6 h-6 rounded-lg bg-violet-100 text-violet-700 flex items-center justify-center shrink-0">
+                          <GraduationCap className="w-3.5 h-3.5" />
+                        </div>
+                      </div>
+                      <span className="text-xs sm:text-sm font-black font-heading text-gray-900 block leading-tight">
+                        {education.length > 0 ? education[education.length - 1].degree.replace("ศึกษาศาสตรมหาบัณฑิต", "ศษ.ม.") : "ศษ.ม."}
                       </span>
-                      <span className="text-[10px] text-gray-500 truncate block">
-                        {education.length > 0 ? education[education.length - 1].institution : "จุฬาฯ"}
+                      <span className="text-[10px] text-gray-500 truncate block mt-0.5">
+                        {education.length > 0 ? education[education.length - 1].institution : "ม.รามคำแหง"}
                       </span>
                     </div>
 
-                    <div className="p-3 rounded-xl bg-gray-50 border border-gray-100">
-                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">ประสบการณ์สอน</span>
-                      <span className="text-sm font-bold font-kanit text-gray-900 block mt-0.5">10+ ปี</span>
-                      <span className="text-[10px] text-gray-500 truncate block">2557 - ปัจจุบัน</span>
+                    {/* Bento 2: Experience */}
+                    <div className="p-3.5 rounded-2xl bg-gradient-to-br from-amber-50/80 to-orange-50/40 border border-amber-100/90 shadow-2xs hover:border-amber-300 transition-all group">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">ประสบการณ์</span>
+                        <div className="w-6 h-6 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                          <Briefcase className="w-3.5 h-3.5" />
+                        </div>
+                      </div>
+                      <span className="text-xs sm:text-sm font-black font-heading text-gray-900 block leading-tight">
+                        10+ ปีการสอน
+                      </span>
+                      <span className="text-[10px] text-gray-500 truncate block mt-0.5">
+                        วชิรธรรมสาธิต &amp; วัดธาตุทอง
+                      </span>
                     </div>
 
-                    <div className="p-3 rounded-xl bg-gray-50 border border-gray-100">
-                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">รางวัลที่ได้รับ</span>
-                      <span className="text-sm font-bold font-kanit text-gray-900 block mt-0.5">
-                        {awards.length > 0 ? `${awards.length} รางวัล` : "ระดับเหรียญทอง"}
+                    {/* Bento 3: Awards */}
+                    <div className="p-3.5 rounded-2xl bg-gradient-to-br from-rose-50/80 to-red-50/40 border border-rose-100/90 shadow-2xs hover:border-rose-300 transition-all group">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] font-bold text-rose-700 uppercase tracking-wider">รางวัลเกียรติยศ</span>
+                        <div className="w-6 h-6 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">
+                          <Trophy className="w-3.5 h-3.5" />
+                        </div>
+                      </div>
+                      <span className="text-xs sm:text-sm font-black font-heading text-gray-900 block leading-tight">
+                        {awards.length > 0 ? `${awards.length} รางวัลเชิดชู` : "2 รางวัลเชิดชู"}
                       </span>
-                      <span className="text-[10px] text-gray-500 truncate block">ระดับชาติ &amp; สพม.</span>
+                      <span className="text-[10px] text-gray-500 truncate block mt-0.5">
+                        ระดับชาติ สพฐ. &amp; สพม.
+                      </span>
                     </div>
 
-                    <div className="p-3 rounded-xl bg-gray-50 border border-gray-100">
-                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">กิจกรรมศิลปะ</span>
-                      <span className="text-sm font-bold font-kanit text-gray-900 block mt-0.5">
-                        {activityImages.length > 0 ? `${activityImages.length} กิจกรรม` : "Workshop & งานสอน"}
+                    {/* Bento 4: Creative Activities */}
+                    <div className="p-3.5 rounded-2xl bg-gradient-to-br from-teal-50/80 to-emerald-50/40 border border-teal-100/90 shadow-2xs hover:border-teal-300 transition-all group">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] font-bold text-teal-700 uppercase tracking-wider">วิชาที่รับผิดชอบ</span>
+                        <div className="w-6 h-6 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center shrink-0">
+                          <Palette className="w-3.5 h-3.5" />
+                        </div>
+                      </div>
+                      <span className="text-xs sm:text-sm font-black font-heading text-gray-900 block leading-tight">
+                        สาระทัศนศิลป์
                       </span>
-                      <span className="text-[10px] text-gray-500 truncate block">ภาพบรรยากาศ</span>
+                      <span className="text-[10px] text-gray-500 truncate block mt-0.5">
+                        จิตรกรรม &amp; สื่อผสม
+                      </span>
                     </div>
                   </div>
 
                   {/* Specialties Tags */}
                   {specialtiesList.length > 0 && (
-                    <div>
-                      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                        <Palette className="w-3.5 h-3.5 text-red-500" />
-                        <span>ความเชี่ยวชาญและวิชาที่สอน</span>
+                    <div className="pt-1">
+                      <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                        <Compass className="w-3.5 h-3.5 text-red-500" />
+                        <span>ความเชี่ยวชาญเฉพาะทาง (Specialties)</span>
                       </h3>
                       <div className="flex flex-wrap gap-1.5">
                         {specialtiesList.map((skill, i) => (
                           <span
                             key={i}
-                            className="px-2.5 py-1 rounded-lg bg-gray-50 hover:bg-red-50 text-gray-700 hover:text-red-600 border border-gray-200 text-xs font-medium transition-colors"
+                            className="px-3 py-1 rounded-full bg-white hover:bg-red-50 text-gray-700 hover:text-red-700 border border-gray-200/90 text-xs font-medium transition-all shadow-2xs hover:scale-105"
                           >
                             #{skill}
                           </span>
@@ -684,14 +754,16 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
                     </div>
                   )}
 
-                  {/* Clean Quote Box */}
+                  {/* Teaching Philosophy & Vision Quote Block */}
                   {teacher.bio && (
-                    <div className="bg-gray-50/70 rounded-xl p-4 sm:p-5 border-l-4 border-red-500 border-y border-r border-gray-100">
-                      <p className="text-sm sm:text-base text-gray-700 leading-relaxed font-normal italic">
+                    <div className="relative overflow-hidden bg-gradient-to-br from-red-50/80 via-orange-50/40 to-amber-50/20 rounded-2xl p-5 sm:p-6 border border-red-100/90 shadow-xs">
+                      <Quote className="absolute top-3 right-3 w-10 h-10 text-red-200/60 pointer-events-none" />
+                      <p className="relative z-10 text-xs sm:text-sm md:text-base text-gray-800 leading-relaxed font-normal italic">
                         &ldquo;{teacher.bio}&rdquo;
                       </p>
-                      <div className="mt-2 text-xs font-semibold text-gray-500">
-                        วิสัยทัศน์การจัดการเรียนการสอนศิลปะ • {teacher.name}
+                      <div className="relative z-10 mt-3 pt-2.5 border-t border-red-200/60 flex items-center gap-2 text-xs font-semibold text-gray-600">
+                        <span className="w-2 h-2 rounded-full bg-red-600"></span>
+                        <span>วิสัยทัศน์การจัดการเรียนการสอนศิลปะ • {teacher.name}</span>
                       </div>
                     </div>
                   )}
@@ -702,68 +774,68 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
           </div>
         </section>
 
-        {/* CONTAINER FOR SECTIONS: Education, Experience, Awards, Gallery */}
-        <div className="container mx-auto px-4 sm:px-6 max-w-5xl pb-20 space-y-12">
+        {/* CONTAINER FOR SECTIONS: Education, Experience, Awards, Innovations, Gallery */}
+        <div className="container mx-auto px-4 sm:px-6 max-w-5xl pb-24 space-y-14 relative z-10">
           
           {/* SECTION 1: ประวัติการศึกษา (Education History) */}
-          <section id="education" className="scroll-mt-24 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-gray-200">
+          <section id="education" className="scroll-mt-28 space-y-5">
+            <div className="flex items-center justify-between pb-3.5 border-b border-gray-200/80">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-red-50 text-red-600 flex items-center justify-center border border-red-100 shrink-0">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white flex items-center justify-center shadow-md shadow-violet-500/20 shrink-0">
                   <GraduationCap className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-lg sm:text-xl font-bold font-kanit text-gray-900 leading-tight">
-                    ประวัติการศึกษา (Education)
+                  <h3 className="text-xl sm:text-2xl font-black font-heading text-gray-900 leading-tight">
+                    ประวัติการศึกษา <span className="text-sm sm:text-base font-normal text-gray-500 font-sans">(Education)</span>
                   </h3>
-                  <p className="text-xs text-gray-500 font-light">
+                  <p className="text-xs sm:text-sm text-gray-500 font-light">
                     คุณวุฒิทางการศึกษา สาขาวิชา สถาบัน และปีที่สำเร็จการศึกษา
                   </p>
                 </div>
               </div>
-              <span className="text-xs font-medium text-gray-400">
-                {education.length} รายการ
+              <span className="text-xs font-bold text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                {education.length} วุฒิ
               </span>
             </div>
 
             {education.length === 0 ? (
-              <div className="py-8 text-center text-gray-400 text-sm bg-gray-50 rounded-xl border border-dashed border-gray-200">
+              <div className="py-12 text-center text-gray-400 text-sm bg-white rounded-3xl border border-dashed border-gray-200">
                 ยังไม่มีข้อมูลประวัติการศึกษา
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
                 {education.map((edu, idx) => (
                   <div
                     key={edu.id || idx}
-                    className="p-5 rounded-2xl bg-white border border-gray-200 hover:border-red-400 transition-colors flex flex-col justify-between"
+                    className="p-6 rounded-3xl bg-white border border-gray-200/80 hover:border-violet-300 hover:shadow-lg hover:shadow-violet-950/5 transition-all flex flex-col justify-between group"
                   >
                     <div>
-                      <div className="flex items-center justify-between gap-2 mb-2">
-                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-50 text-red-700 border border-red-100">
+                      <div className="flex items-center justify-between gap-2 mb-3">
+                        <span className="px-3 py-1 rounded-full text-xs font-bold bg-violet-50 text-violet-700 border border-violet-100">
                           {edu.level || "วุฒิการศึกษา"}
                         </span>
 
                         {edu.graduationYear && (
-                          <span className="text-xs font-mono font-bold text-gray-600 bg-gray-100 px-2.5 py-0.5 rounded-md">
-                            จบปี พ.ศ. {edu.graduationYear}
+                          <span className="text-xs font-mono font-bold text-gray-700 bg-gray-100 px-3 py-1 rounded-full">
+                            สำเร็จการศึกษา พ.ศ. {edu.graduationYear}
                           </span>
                         )}
                       </div>
 
-                      <h4 className="text-base sm:text-lg font-bold font-kanit text-gray-900 mb-1">
+                      <h4 className="text-lg font-bold font-heading text-gray-900 mb-1 group-hover:text-violet-900 transition-colors">
                         {edu.degree || edu.level}
                       </h4>
 
                       {edu.major && (
-                        <p className="text-sm font-medium text-gray-600 mb-3">
+                        <p className="text-sm font-medium text-gray-600 mb-4">
                           {edu.major}
                         </p>
                       )}
                     </div>
 
-                    <div className="pt-3 border-t border-gray-100 flex items-center gap-2 text-xs text-gray-500">
-                      <School className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                      <span className="truncate">{edu.institution || "ไม่ระบุสถาบัน"}</span>
+                    <div className="pt-3.5 border-t border-gray-100 flex items-center gap-2 text-xs text-gray-600">
+                      <School className="w-4 h-4 text-violet-500 shrink-0" />
+                      <span className="truncate font-semibold text-gray-700">{edu.institution || "ไม่ระบุสถาบัน"}</span>
                     </div>
                   </div>
                 ))}
@@ -772,65 +844,69 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
           </section>
 
           {/* SECTION 2: ประวัติการทำงานและประสบการณ์สอน (Teaching Experience) */}
-          <section id="experience" className="scroll-mt-24 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-gray-200">
+          <section id="experience" className="scroll-mt-28 space-y-5">
+            <div className="flex items-center justify-between pb-3.5 border-b border-gray-200/80">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-red-50 text-red-600 flex items-center justify-center border border-red-100 shrink-0">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center shadow-md shadow-amber-500/20 shrink-0">
                   <Briefcase className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-lg sm:text-xl font-bold font-kanit text-gray-900 leading-tight">
-                    ประวัติการทำงานและประสบการณ์สอน (Experience)
+                  <h3 className="text-xl sm:text-2xl font-black font-heading text-gray-900 leading-tight">
+                    ประวัติการทำงานและประสบการณ์สอน <span className="text-sm sm:text-base font-normal text-gray-500 font-sans">(Experience)</span>
                   </h3>
-                  <p className="text-xs text-gray-500 font-light">
+                  <p className="text-xs sm:text-sm text-gray-500 font-light">
                     เส้นทางการปฏิบัติงานวิชาชีพครู และการจัดการเรียนรู้ศิลปะ
                   </p>
                 </div>
               </div>
-              <span className="text-xs font-medium text-gray-400">
-                {experience.length} รายการ
+              <span className="text-xs font-bold text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                {experience.length} ช่วงเวลา
               </span>
             </div>
 
             {experience.length === 0 ? (
-              <div className="py-8 text-center text-gray-400 text-sm bg-gray-50 rounded-xl border border-dashed border-gray-200">
+              <div className="py-12 text-center text-gray-400 text-sm bg-white rounded-3xl border border-dashed border-gray-200">
                 ยังไม่มีข้อมูลประวัติการทำงาน
               </div>
             ) : (
-              <div className="relative pl-6 border-l-2 border-red-200 space-y-6 ml-2 sm:ml-3">
+              <div className="relative pl-6 sm:pl-8 border-l-2 border-red-200/80 space-y-6 ml-3 sm:ml-4">
                 {experience.map((exp, idx) => {
                   const isCurrent = exp.period?.includes("ปัจจุบัน");
                   return (
                     <div key={exp.id || idx} className="relative">
                       {/* Node Marker */}
-                      <div className="absolute -left-[31px] top-1.5 w-4 h-4 rounded-full bg-red-600 border-2 border-white" />
+                      <div className={`absolute -left-[31px] sm:-left-[39px] top-2 w-4 h-4 rounded-full border-2 border-white shadow-xs ${
+                        isCurrent ? "bg-red-600 ring-4 ring-red-100" : "bg-gray-400"
+                      }`} />
 
-                      <div className="bg-white rounded-2xl p-5 border border-gray-200 hover:border-red-300 transition-colors">
-                        <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+                      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-gray-200/80 hover:border-red-300 hover:shadow-lg hover:shadow-red-950/5 transition-all">
+                        <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                           <div className="flex items-center gap-2">
-                            <h4 className="text-base font-bold font-kanit text-gray-900">
+                            <h4 className="text-base sm:text-lg font-bold font-heading text-gray-900">
                               {exp.role}
                             </h4>
                             {isCurrent && (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                ปัจจุบัน
+                              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                <span>ปัจจุบัน</span>
                               </span>
                             )}
                           </div>
 
                           {exp.period && (
-                            <span className="text-xs font-mono font-bold text-red-700 bg-red-50 px-2.5 py-0.5 rounded-full border border-red-100">
+                            <span className="text-xs font-mono font-bold text-red-700 bg-red-50 px-3 py-1 rounded-full border border-red-100">
                               {exp.period}
                             </span>
                           )}
                         </div>
 
-                        <p className="text-sm font-semibold text-gray-600 mb-1.5">
-                          {exp.workplace}
+                        <p className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1.5">
+                          <School className="w-4 h-4 text-gray-400" />
+                          <span>{exp.workplace}</span>
                         </p>
 
                         {exp.details && (
-                          <p className="text-xs sm:text-sm text-gray-500 font-light leading-relaxed pt-1.5 border-t border-gray-100">
+                          <p className="text-xs sm:text-sm text-gray-600 font-light leading-relaxed pt-2.5 border-t border-gray-100">
                             {exp.details}
                           </p>
                         )}
@@ -843,62 +919,62 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
           </section>
 
           {/* SECTION 3: รางวัลและเกียรติประวัติ (Awards & Honors) */}
-          <section id="awards" className="scroll-mt-24 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-gray-200">
+          <section id="awards" className="scroll-mt-28 space-y-5">
+            <div className="flex items-center justify-between pb-3.5 border-b border-gray-200/80">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-red-50 text-red-600 flex items-center justify-center border border-red-100 shrink-0">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-rose-500 to-red-600 text-white flex items-center justify-center shadow-md shadow-rose-500/20 shrink-0">
                   <Trophy className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-lg sm:text-xl font-bold font-kanit text-gray-900 leading-tight">
-                    รางวัลและเกียรติประวัติ (Awards &amp; Honors)
+                  <h3 className="text-xl sm:text-2xl font-black font-heading text-gray-900 leading-tight">
+                    รางวัลและเกียรติประวัติ <span className="text-sm sm:text-base font-normal text-gray-500 font-sans">(Awards &amp; Honors)</span>
                   </h3>
-                  <p className="text-xs text-gray-500 font-light">
+                  <p className="text-xs sm:text-sm text-gray-500 font-light">
                     ผลงานดีเด่นและรางวัลเกียรติยศ พร้อมภาพถ่ายพิธีรับรางวัล
                   </p>
                 </div>
               </div>
-              <span className="text-xs font-medium text-gray-400">
+              <span className="text-xs font-bold text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
                 {awards.length} รางวัล
               </span>
             </div>
 
             {awards.length === 0 ? (
-              <div className="py-8 text-center text-gray-400 text-sm bg-gray-50 rounded-xl border border-dashed border-gray-200">
+              <div className="py-12 text-center text-gray-400 text-sm bg-white rounded-3xl border border-dashed border-gray-200">
                 ยังไม่มีข้อมูลรางวัลที่ได้รับ
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
                 {awards.map((award, idx) => (
                   <div
                     key={award.id || idx}
-                    className="p-5 rounded-2xl bg-white border border-gray-200 hover:border-red-400 transition-colors flex flex-col justify-between"
+                    className="p-6 rounded-3xl bg-white border border-gray-200/80 hover:border-red-400 hover:shadow-lg hover:shadow-red-950/5 transition-all flex flex-col justify-between group"
                   >
                     <div>
                       {/* Photo Flowing Carousel ("ทำแบบไหลๆๆ") */}
                       <AwardPhotoCarousel award={award} onOpenLightbox={handleOpenLightbox} />
 
-                      <div className="flex items-center justify-between gap-2 mb-2">
-                        <span className="w-6 h-6 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0">
-                          <Award className="w-3.5 h-3.5" />
+                      <div className="flex items-center justify-between gap-2 mb-2.5">
+                        <span className="w-7 h-7 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 border border-amber-100 shadow-2xs">
+                          <Award className="w-4 h-4" />
                         </span>
 
                         {award.year && (
-                          <span className="text-xs font-mono font-bold text-red-700 bg-red-50 px-2.5 py-0.5 rounded-md border border-red-100">
+                          <span className="text-xs font-mono font-bold text-red-700 bg-red-50 px-3 py-1 rounded-full border border-red-100">
                             ปี พ.ศ. {award.year}
                           </span>
                         )}
                       </div>
 
-                      <h4 className="text-base font-bold font-kanit text-gray-900 mb-2 leading-snug">
+                      <h4 className="text-base sm:text-lg font-bold font-heading text-gray-900 mb-2 leading-snug group-hover:text-red-700 transition-colors">
                         {award.title}
                       </h4>
                     </div>
 
                     {award.issuer && (
-                      <div className="pt-3 border-t border-gray-100 mt-2 flex items-center justify-between text-xs text-gray-500">
-                        <span>หน่วยงานที่มอบ: <strong className="text-gray-700 font-medium">{award.issuer}</strong></span>
-                        <Check className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                      <div className="pt-3.5 border-t border-gray-100 mt-3 flex items-center justify-between text-xs text-gray-600">
+                        <span>หน่วยงานที่มอบ: <strong className="text-gray-900 font-semibold">{award.issuer}</strong></span>
+                        <Check className="w-4 h-4 text-red-500 shrink-0" />
                       </div>
                     )}
                   </div>
@@ -907,29 +983,29 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
             )}
           </section>
 
-          {/* SECTION 4: ผลงานนวัตกรรมการจัดการเรียนรู้และสื่อการสอน (Educational Innovations & Teaching Media) */}
-          <section id="innovations" className="scroll-mt-24 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-gray-200">
+          {/* SECTION 4: ผลงานนวัตกรรมการจัดการเรียนรู้และสื่อการสอน (Educational Innovations) */}
+          <section id="innovations" className="scroll-mt-28 space-y-5">
+            <div className="flex items-center justify-between pb-3.5 border-b border-gray-200/80">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-red-50 text-red-600 flex items-center justify-center border border-red-100 shrink-0">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500 to-rose-600 text-white flex items-center justify-center shadow-md shadow-amber-500/20 shrink-0">
                   <Sparkles className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-lg sm:text-xl font-bold font-kanit text-gray-900 leading-tight">
-                    นวัตกรรมทางการศึกษาและสื่อการสอน (Educational Innovations)
+                  <h3 className="text-xl sm:text-2xl font-black font-heading text-gray-900 leading-tight">
+                    นวัตกรรมทางการศึกษาและสื่อการสอน <span className="text-sm sm:text-base font-normal text-gray-500 font-sans">(Innovations)</span>
                   </h3>
-                  <p className="text-xs text-gray-500 font-light">
+                  <p className="text-xs sm:text-sm text-gray-500 font-light">
                     ผลงานนวัตกรรมการจัดการเรียนรู้ สื่อดิจิทัล แหล่งเรียนรู้ออนไลน์ และรูปเล่มรายงานฉบับเต็ม
                   </p>
                 </div>
               </div>
-              <span className="text-xs font-medium text-gray-400">
+              <span className="text-xs font-bold text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
                 {displayedInnovations.length} รายการ
               </span>
             </div>
 
             {displayedInnovations.length === 0 ? (
-              <div className="py-8 text-center text-gray-400 text-sm bg-gray-50 rounded-xl border border-dashed border-gray-200">
+              <div className="py-12 text-center text-gray-400 text-sm bg-white rounded-3xl border border-dashed border-gray-200">
                 ยังไม่มีข้อมูลนวัตกรรมทางการศึกษาที่เผยแพร่
               </div>
             ) : (
@@ -939,19 +1015,19 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
                   return (
                     <div
                       key={item.id || idx}
-                      className={`bg-white rounded-2xl border p-5 sm:p-6 flex flex-col justify-between transition-all hover:shadow-md relative ${
-                        isDraft ? "border-amber-300 bg-amber-50/20" : "border-gray-200 hover:border-red-300"
+                      className={`bg-white rounded-3xl border p-6 flex flex-col justify-between transition-all hover:shadow-xl hover:shadow-red-950/5 relative ${
+                        isDraft ? "border-amber-300 bg-amber-50/20" : "border-gray-200/80 hover:border-red-300"
                       }`}
                     >
                       <div>
                         {/* Top Category Badge & Draft Label */}
                         <div className="flex items-center justify-between gap-2 mb-3.5 flex-wrap">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-50 text-red-700 border border-red-100">
+                            <span className="px-3 py-1 rounded-full text-xs font-bold bg-red-50 text-red-700 border border-red-100">
                               {item.category || "นวัตกรรมการศึกษา"}
                             </span>
                             {item.year && (
-                              <span className="text-xs font-mono font-bold text-gray-600 bg-gray-100 px-2 py-0.5 rounded-md">
+                              <span className="text-xs font-mono font-bold text-gray-700 bg-gray-100 px-2.5 py-0.5 rounded-full">
                                 พ.ศ. {item.year}
                               </span>
                             )}
@@ -974,7 +1050,7 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
                                 item.category ? `หมวดหมู่: ${item.category}` : undefined
                               )
                             }
-                            className="relative w-full min-h-[220px] max-h-[380px] sm:min-h-[260px] sm:max-h-[420px] rounded-xl overflow-hidden mb-4 bg-gray-950 flex items-center justify-center cursor-pointer group/img border border-gray-100 shadow-xs select-none"
+                            className="relative w-full min-h-[220px] max-h-[380px] sm:min-h-[260px] sm:max-h-[420px] rounded-2xl overflow-hidden mb-4 bg-gray-950 flex items-center justify-center cursor-pointer group/img border border-gray-100 shadow-sm select-none"
                             title="คลิกเพื่อดูรูปเล่มหน้าปกขนาดเต็ม"
                           >
                             {/* Ambient blurred backdrop so any proportions look seamless */}
@@ -999,7 +1075,7 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
                         )}
 
                         {/* Title */}
-                        <h4 className="text-base sm:text-lg font-bold font-kanit text-gray-900 mb-2 leading-snug">
+                        <h4 className="text-lg font-bold font-heading text-gray-900 mb-2 leading-snug">
                           {item.title}
                         </h4>
 
@@ -1019,7 +1095,7 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
                               href={item.websiteUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex-1 inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-all shadow-xs group"
+                              className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white text-xs font-bold transition-all shadow-md shadow-red-500/20 group"
                             >
                               <Globe className="w-3.5 h-3.5 group-hover:rotate-12 transition-transform" />
                               <span>เข้าชมเว็บไซต์นวัตกรรม</span>
@@ -1033,7 +1109,7 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
                               download={item.pdfFileName || `${item.title}.pdf`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex-1 inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-gray-900 hover:bg-black text-white text-xs font-bold transition-all shadow-xs group"
+                              className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-gray-900 hover:bg-black text-white text-xs font-bold transition-all shadow-sm group"
                             >
                               <Download className="w-3.5 h-3.5 group-hover:translate-y-0.5 transition-transform text-red-400" />
                               <div className="flex flex-col text-left leading-tight truncate">
@@ -1055,38 +1131,38 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
             )}
           </section>
 
-          {/* SECTION 5: ภาพครูกับกิจกรรมและผลงาน (Activities & Gallery) */}
-          <section id="gallery" className="scroll-mt-24 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-gray-200">
+          {/* SECTION 5: ภาพกิจกรรมและบรรยากาศ (Activities & Gallery) */}
+          <section id="gallery" className="scroll-mt-28 space-y-5">
+            <div className="flex items-center justify-between pb-3.5 border-b border-gray-200/80">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-red-50 text-red-600 flex items-center justify-center border border-red-100 shrink-0">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-md shadow-emerald-500/20 shrink-0">
                   <ImageIcon className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-lg sm:text-xl font-bold font-kanit text-gray-900 leading-tight">
-                    ภาพครูกับกิจกรรมและผลงานศิลปะ (Activities &amp; Gallery)
+                  <h3 className="text-xl sm:text-2xl font-black font-heading text-gray-900 leading-tight">
+                    ภาพกิจกรรมและบรรยากาศการเรียนรู้ <span className="text-sm sm:text-base font-normal text-gray-500 font-sans">(Gallery)</span>
                   </h3>
-                  <p className="text-xs text-gray-500 font-light">
-                    ประมวลภาพบรรยากาศการจัดการเรียนการสอน เวิร์กช็อป และกิจกรรมศิลปะ
+                  <p className="text-xs sm:text-sm text-gray-500 font-light">
+                    ประมวลภาพบรรยากาศการจัดการเรียนการสอน เวิร์กช็อป และกิจกรรมสร้างสรรค์ผลงานศิลปะ
                   </p>
                 </div>
               </div>
-              <span className="text-xs font-medium text-gray-400">
+              <span className="text-xs font-bold text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
                 {activityImages.length} รูปภาพ
               </span>
             </div>
 
             {activityImages.length === 0 ? (
-              <div className="py-8 text-center text-gray-400 text-sm bg-gray-50 rounded-xl border border-dashed border-gray-200">
+              <div className="py-12 text-center text-gray-400 text-sm bg-white rounded-3xl border border-dashed border-gray-200">
                 ยังไม่มีรูปภาพกิจกรรม
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {activityImages.map((act, idx) => (
                   <div
                     key={act.id || idx}
                     onClick={() => handleOpenLightbox([act.imageUrl], 0, act.title, act.date ? `วันที่: ${act.date}` : undefined)}
-                    className="group rounded-2xl overflow-hidden bg-gray-900 relative aspect-4/3 border border-gray-200 hover:border-red-500 transition-colors cursor-pointer flex flex-col justify-end"
+                    className="group rounded-3xl overflow-hidden bg-gray-900 relative aspect-4/3 border border-gray-200/80 hover:border-red-500 transition-all cursor-pointer flex flex-col justify-end shadow-sm hover:shadow-xl hover:shadow-red-950/10"
                   >
                     {/* Background Image */}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1100,14 +1176,14 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
                     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
 
                     {/* Caption */}
-                    <div className="relative z-10 p-4 w-full">
+                    <div className="relative z-10 p-5 w-full">
                       {act.date && (
-                        <span className="px-2 py-0.5 rounded-md bg-white/20 backdrop-blur-md text-white text-[10px] font-medium border border-white/20 inline-flex items-center gap-1 mb-1.5">
+                        <span className="px-2.5 py-0.5 rounded-full bg-white/20 backdrop-blur-md text-white text-[10px] font-medium border border-white/20 inline-flex items-center gap-1 mb-2">
                           <Calendar className="w-3 h-3" />
                           <span>{act.date}</span>
                         </span>
                       )}
-                      <h4 className="text-sm font-bold font-kanit text-white leading-snug group-hover:text-red-300 transition-colors line-clamp-2">
+                      <h4 className="text-sm font-bold font-heading text-white leading-snug group-hover:text-red-300 transition-colors line-clamp-2">
                         {act.title}
                       </h4>
                     </div>
@@ -1122,20 +1198,20 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
         {/* LIGHTBOX MODAL WITH MULTI-IMAGE GLIDE SUPPORT */}
         {lightboxData && (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200"
             onClick={() => setLightboxData(null)}
           >
             <div
-              className="relative max-w-4xl w-full bg-gray-950 rounded-2xl overflow-hidden flex flex-col border border-gray-800"
+              className="relative max-w-4xl w-full bg-gray-950 rounded-3xl overflow-hidden flex flex-col border border-gray-800 shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Modal Header */}
-              <div className="flex items-center justify-between p-4 bg-gray-900 text-white border-b border-gray-800">
+              <div className="flex items-center justify-between p-4 sm:p-5 bg-gray-900 text-white border-b border-gray-800">
                 <div className="min-w-0 pr-4">
                   <div className="flex items-center gap-2">
-                    <h4 className="text-sm font-bold font-kanit truncate text-white">{lightboxData.title}</h4>
+                    <h4 className="text-sm sm:text-base font-bold font-heading truncate text-white">{lightboxData.title}</h4>
                     {lightboxData.images.length > 1 && (
-                      <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-mono font-bold border border-amber-500/30">
+                      <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-mono font-bold border border-amber-500/30">
                         {lightboxData.currentIndex + 1} / {lightboxData.images.length}
                       </span>
                     )}
@@ -1147,21 +1223,21 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
                 <button
                   type="button"
                   onClick={() => setLightboxData(null)}
-                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors cursor-pointer shrink-0"
+                  className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all cursor-pointer shrink-0"
                   aria-label="ปิดหน้าต่าง"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-5 h-5" />
                 </button>
               </div>
 
               {/* Modal Image with Navigation Arrows */}
-              <div className="relative p-3 flex items-center justify-center min-h-[50vh] max-h-[75vh] overflow-hidden bg-black select-none">
+              <div className="relative p-4 flex items-center justify-center min-h-[50vh] max-h-[75vh] overflow-hidden bg-black select-none">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   key={lightboxData.currentIndex}
                   src={lightboxData.images[lightboxData.currentIndex]}
                   alt={`${lightboxData.title} - ${lightboxData.currentIndex + 1}`}
-                  className="max-h-[70vh] max-w-full object-contain rounded-lg animate-in fade-in duration-200"
+                  className="max-h-[70vh] max-w-full object-contain rounded-xl animate-in fade-in duration-200"
                 />
 
                 {/* Left Arrow */}
@@ -1175,7 +1251,7 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
                         currentIndex: (prev.currentIndex - 1 + prev.images.length) % prev.images.length
                       } : null);
                     }}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95 border border-white/20 z-10"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95 border border-white/20 z-10"
                     aria-label="รูปก่อนหน้า"
                   >
                     <ChevronLeft className="w-5 h-5" />
@@ -1193,7 +1269,7 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
                         currentIndex: (prev.currentIndex + 1) % prev.images.length
                       } : null);
                     }}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95 border border-white/20 z-10"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95 border border-white/20 z-10"
                     aria-label="รูปถัดไป"
                   >
                     <ChevronRight className="w-5 h-5" />
