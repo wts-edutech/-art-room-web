@@ -68,7 +68,7 @@ export default function MaterialsPage() {
   return (
     <>
       <Navbar />
-      <main className="flex-1 flex flex-col pt-20 sm:pt-28 pb-20 sm:pb-24 bg-transparent">
+      <main className="flex-1 flex flex-col pt-20 sm:pt-28 pb-20 sm:pb-24 bg-white">
         {/* Modern Studio Showcase Hero Banner */}
         <section className="relative bg-transparent pt-6 pb-7 sm:pt-12 sm:pb-14 border-b border-gray-100/60">
           <div className="container mx-auto px-4 sm:px-6 max-w-7xl relative z-10">

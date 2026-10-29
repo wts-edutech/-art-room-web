@@ -12,7 +12,7 @@ export default function Home() {
   return (
     <>
       <Navbar />
-      <main className="flex-1 flex flex-col relative min-h-screen bg-transparent pb-6">
+      <main className="flex-1 flex flex-col relative min-h-screen bg-white pb-6">
         
         {/* 1. Hero Banner — Unified responsive layout matching desktop aesthetic */}
         <HeroSection />

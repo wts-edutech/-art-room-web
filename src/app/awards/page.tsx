@@ -28,7 +28,7 @@ export default function AwardsPage() {
   return (
     <>
       <Navbar />
-      <main className="flex-1 flex flex-col pt-24 min-h-screen bg-transparent">
+      <main className="flex-1 flex flex-col pt-24 min-h-screen bg-white">
         
         {/* Page Title */}
         <div className="text-center pt-10 pb-4">

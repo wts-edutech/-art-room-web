@@ -245,7 +245,7 @@ export default function LessonDetailPage() {
     <>
       <Navbar />
       <ProtectedRoute studentOnly={true}>
-        <main className="flex-1 flex flex-col pt-24 pb-24 bg-transparent min-h-screen relative">
+        <main className="flex-1 flex flex-col pt-24 pb-24 bg-white min-h-screen relative">
           {/* Toast Notification */}
           {toast && (
             <div className="fixed bottom-6 right-6 z-50 bg-gray-900 text-white px-5 py-3.5 rounded-2xl shadow-xl border border-gray-800 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-5 duration-200">

@@ -78,7 +78,7 @@ export default function TeacherProfileClient() {
   }, [nameParam]);
 
   return (
-    <div className="min-h-screen bg-transparent flex flex-col font-sans text-gray-800 selection:bg-orange-100 selection:text-orange-900">
+    <div className="min-h-screen bg-white flex flex-col font-sans text-gray-800 selection:bg-orange-100 selection:text-orange-900">
       <Navbar />
 
       {/* Top Profile Header (White Background matching Reference Image 2 100%) */}
@@ -143,7 +143,7 @@ export default function TeacherProfileClient() {
       </section>
 
       {/* Main Content Area */}
-      <main className="flex-1 py-8 px-4 sm:px-8 pr-14 sm:pr-20 bg-transparent">
+      <main className="flex-1 py-8 px-4 sm:px-8 pr-14 sm:pr-20 bg-white">
         <div className="max-w-6xl mx-auto">
           {activeTab === "profile" && (
             <div className="profile-grid-layout">

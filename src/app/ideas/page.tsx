@@ -139,7 +139,7 @@ export default function IdeasPage() {
   return (
     <>
       <Navbar />
-      <main className="flex-1 flex flex-col pt-20 sm:pt-28 pb-20 sm:pb-24 min-h-screen bg-transparent">
+      <main className="flex-1 flex flex-col pt-20 sm:pt-28 pb-20 sm:pb-24 min-h-screen bg-white">
         {/* Header Section */}
         <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
           <div className="text-center mb-6 sm:mb-10">

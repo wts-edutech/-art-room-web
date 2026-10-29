@@ -61,17 +61,11 @@ export default function HeroSection() {
       <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:3rem_3rem] sm:bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none" />
 
       <div className="container mx-auto px-4 sm:px-6 relative z-10 flex flex-col items-center text-center max-w-5xl">
-        {/* 1. Mascot & School Name Capsule Badge */}
-        <div className="animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100 fill-mode-both mb-5 sm:mb-8 md:mb-10 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img 
-            src="/images/mascot-bottom-left.png" 
-            alt="Art Room Mascot" 
-            className="w-14 h-14 sm:w-20 sm:h-20 object-contain drop-shadow-md select-none animate-float-slow shrink-0" 
-          />
-          <span className="inline-flex items-center gap-2 py-2 px-5 sm:px-6 rounded-full bg-white/90 text-red-600 font-medium text-xs sm:text-sm border border-red-200/80 shadow-xs backdrop-blur-xs select-none">
+        {/* 1. School Name Capsule Badge */}
+        <div className="animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100 fill-mode-both mb-5 sm:mb-8 md:mb-10">
+          <span className="inline-flex items-center gap-2 py-2 px-5 sm:px-6 rounded-full bg-red-50/90 text-red-600 font-medium text-xs sm:text-sm border border-red-200/80 shadow-xs backdrop-blur-xs select-none">
             <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse" />
-            โรงเรียนวชิรธรรมสาธิต | ART ROOM
+            โรงเรียนวชิรธรรมสาธิต
           </span>
         </div>
         

@@ -115,7 +115,7 @@ export default function ActivitiesPage() {
   return (
     <>
       <Navbar />
-      <main className="flex-1 flex flex-col pt-24 pb-24 min-h-screen bg-transparent">
+      <main className="flex-1 flex flex-col pt-24 pb-24 min-h-screen bg-white">
         
         {/* Hero Header Section */}
         <section className="relative overflow-hidden bg-transparent pt-12 pb-10 border-b border-orange-100/40">

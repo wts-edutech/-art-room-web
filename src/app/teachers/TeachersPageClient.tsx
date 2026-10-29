@@ -351,7 +351,7 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
     return (
       <>
         <Navbar />
-        <main className="flex-1 flex flex-col items-center justify-center min-h-screen bg-transparent pt-32 pb-16 px-4 text-center">
+        <main className="flex-1 flex flex-col items-center justify-center min-h-screen bg-white pt-32 pb-16 px-4 text-center">
           <div className="max-w-md w-full bg-white rounded-3xl p-8 border border-gray-100 shadow-xl shadow-red-950/5">
             <div className="w-16 h-16 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-red-100 shadow-sm">
               <EyeOff className="w-8 h-8" />
@@ -390,7 +390,7 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
   return (
     <>
       <Navbar />
-      <main className="flex-1 flex flex-col pt-24 sm:pt-28 min-h-screen bg-transparent text-gray-800 relative selection:bg-red-500 selection:text-white">
+      <main className="flex-1 flex flex-col pt-24 sm:pt-28 min-h-screen bg-white text-gray-800 relative selection:bg-red-500 selection:text-white">
         
         {/* Subtle Ambient Studio Lighting Blobs */}
         <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-gradient-to-b from-red-100/40 via-orange-100/20 to-transparent rounded-full blur-3xl pointer-events-none" />

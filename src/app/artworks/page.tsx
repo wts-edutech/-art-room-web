@@ -7,7 +7,7 @@ export default function ArtworksPage() {
   return (
     <>
       <Navbar />
-      <main className="flex-1 flex flex-col min-h-screen bg-transparent">
+      <main className="flex-1 flex flex-col min-h-screen bg-white">
         {/* Hero Section */}
         <section className="relative pt-32 pb-20 overflow-hidden">
           {/* Abstract Background Elements */}

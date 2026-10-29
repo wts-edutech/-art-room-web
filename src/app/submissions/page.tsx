@@ -363,7 +363,7 @@ export default function SubmissionsPage() {
     <>
       <Navbar />
 
-      <main className="flex-1 min-h-screen bg-transparent pt-28 pb-20 relative">
+      <main className="flex-1 min-h-screen bg-white pt-28 pb-20 relative">
 
         <div className="container mx-auto px-4 sm:px-6 relative z-10 max-w-5xl">
           {/* Header Title */}
