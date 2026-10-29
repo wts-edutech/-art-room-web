@@ -3,38 +3,70 @@ export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { submissions, assignments, students } from '@/db/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, or, desc, inArray } from 'drizzle-orm';
 import { checkIsAdmin } from '@/lib/api-auth';
 import { sendSubmissionNotification } from '@/lib/email-notifier';
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const studentId = searchParams.get('studentId');
-    const assignmentId = searchParams.get('assignmentId');
-    const classroom = searchParams.get('classroom');
+    const studentId = searchParams.get('studentId')?.trim();
+    const studentName = searchParams.get('studentName')?.trim();
+    const assignmentId = searchParams.get('assignmentId')?.trim();
+    const classroom = searchParams.get('classroom')?.trim();
 
     const db = getDb();
-    let query = db.select().from(submissions);
+    const conditions = [];
 
-    const all = await query.orderBy(desc(submissions.submittedAt));
-    let list = all || [];
-
-    if (studentId) {
-      list = list.filter(s => s.studentId === studentId);
+    if (studentId && studentName) {
+      conditions.push(or(eq(submissions.studentId, studentId), eq(submissions.studentName, studentName)));
+    } else if (studentId) {
+      conditions.push(eq(submissions.studentId, studentId));
+    } else if (studentName) {
+      conditions.push(eq(submissions.studentName, studentName));
     }
     if (assignmentId) {
-      list = list.filter(s => s.assignmentId === assignmentId);
+      conditions.push(eq(submissions.assignmentId, assignmentId));
     }
     if (classroom) {
-      list = list.filter(s => s.classroom === classroom);
+      conditions.push(eq(submissions.classroom, classroom));
     }
 
-    // Attach assignment and student avatar details
-    const [assignmentsList, studentsList] = await Promise.all([
-      db.select().from(assignments),
-      db.select({ id: students.id, avatar: students.avatar }).from(students),
-    ]);
+    const list = conditions.length > 0
+      ? await db.select().from(submissions).where(and(...conditions)).orderBy(desc(submissions.submittedAt))
+      : await db.select().from(submissions).orderBy(desc(submissions.submittedAt)).limit(200);
+
+    if (!list || list.length === 0) {
+      return NextResponse.json([]);
+    }
+
+    // Extract unique IDs for batch fetching
+    const assignmentIds = Array.from(new Set(list.map(s => s.assignmentId).filter(Boolean)));
+    const studentIds = Array.from(new Set(list.map(s => s.studentId).filter(Boolean)));
+
+    // Fetch assignments only for matched submissions
+    let assignmentsList: any[] = [];
+    if (assignmentIds.length > 0) {
+      assignmentsList = await db.select().from(assignments).where(inArray(assignments.id, assignmentIds));
+    }
+
+    // Fetch student avatars only for matched submissions (chunked up to 100)
+    let studentsList: any[] = [];
+    if (studentIds.length > 0) {
+      const chunks = [];
+      for (let i = 0; i < studentIds.length; i += 100) {
+        chunks.push(studentIds.slice(i, i + 100));
+      }
+      const results = await Promise.all(
+        chunks.map(chunk =>
+          db.select({ id: students.id, avatar: students.avatar })
+            .from(students)
+            .where(inArray(students.id, chunk))
+        )
+      );
+      studentsList = results.flat();
+    }
+
     const assignmentMap = new Map(assignmentsList.map(a => [a.id, a]));
     const studentAvatarMap = new Map(studentsList.map(s => [s.id, s.avatar]));
 

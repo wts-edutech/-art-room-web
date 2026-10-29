@@ -3,7 +3,7 @@ export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { ideas, comments, students } from '@/db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, inArray } from 'drizzle-orm';
 import { checkIsAdmin } from '@/lib/api-auth';
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> | { id: string } }) {
@@ -69,8 +69,19 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const studentMapById = new Map<string, string>();
     const studentMapByName = new Map<string, string>();
     try {
-      const allStuds = await db.select({ id: students.id, name: students.name, avatar: students.avatar }).from(students);
-      for (const s of allStuds) {
+      const targetIds = Array.from(new Set(ideaComments.map((c: any) => (c.authorEmail || '').replace(/@.*$/, '').trim()).filter(Boolean)));
+      const targetNames = Array.from(new Set(ideaComments.map((c: any) => (c.author || '').trim()).filter(Boolean)));
+      
+      const studPromises = [];
+      if (targetIds.length > 0) {
+        studPromises.push(db.select({ id: students.id, name: students.name, avatar: students.avatar }).from(students).where(inArray(students.id, targetIds)));
+      }
+      if (targetNames.length > 0) {
+        studPromises.push(db.select({ id: students.id, name: students.name, avatar: students.avatar }).from(students).where(inArray(students.name, targetNames)));
+      }
+      
+      const studResults = await Promise.all(studPromises);
+      for (const s of studResults.flat()) {
         if (s.avatar) {
           studentMapById.set(s.id, s.avatar);
           studentMapByName.set(s.name.trim(), s.avatar);

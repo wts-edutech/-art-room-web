@@ -29,16 +29,24 @@ export async function GET(request: Request) {
     const subject = await db.select().from(subjects).where(eq(subjects.id, assignment.subjectId)).get();
 
     // Get all students for this classroom (or all classrooms assigned)
-    let allStudents = await db.select().from(students).orderBy(students.id);
-    if (classroom) {
-      allStudents = allStudents.filter(s => s.classroom === classroom);
-    }
+    let allStudents = classroom
+      ? await db.select({
+          id: students.id,
+          name: students.name,
+          classroom: students.classroom,
+          studentNumber: students.studentNumber,
+        }).from(students).where(eq(students.classroom, classroom)).orderBy(students.id)
+      : await db.select({
+          id: students.id,
+          name: students.name,
+          classroom: students.classroom,
+          studentNumber: students.studentNumber,
+        }).from(students).orderBy(students.id);
 
     // Get all submissions for this assignment
-    let allSubs = await db.select().from(submissions).where(eq(submissions.assignmentId, assignmentId));
-    if (classroom) {
-      allSubs = allSubs.filter(s => s.classroom === classroom);
-    }
+    let allSubs = classroom
+      ? await db.select().from(submissions).where(and(eq(submissions.assignmentId, assignmentId), eq(submissions.classroom, classroom)))
+      : await db.select().from(submissions).where(eq(submissions.assignmentId, assignmentId));
 
     const subMap = new Map(allSubs.map(s => [s.studentId, s]));
 

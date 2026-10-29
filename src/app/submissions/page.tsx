@@ -247,9 +247,10 @@ export default function SubmissionsPage() {
         quizUrl += `&gradeLevel=${encodeURIComponent(studentGrade)}`;
       }
 
+      const studentNameParam = student?.name ? `&studentName=${encodeURIComponent(student.name.trim())}` : '';
       const [resAss, resSub, resQuiz] = await Promise.all([
         fetch(assUrl),
-        fetch(`/api/submissions?studentId=${encodeURIComponent(studentId)}`),
+        fetch(`/api/submissions?studentId=${encodeURIComponent(studentId)}${studentNameParam}`),
         fetch(quizUrl),
       ]);
 

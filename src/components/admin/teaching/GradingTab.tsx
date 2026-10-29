@@ -134,11 +134,25 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
       return (a.id || "").localeCompare(b.id || "", "th", { numeric: true });
     });
 
-  const subMap = new Map(submissions.map((s) => [s.studentId, s]));
+  // Fast lookup by studentId, with trimmed ID and normalized name fallback
+  const subMap = new Map<string, any>();
+  const subNameMap = new Map<string, any>();
+  for (const s of submissions) {
+    if (s.studentId) subMap.set(String(s.studentId).trim(), s);
+    if (s.studentName) subNameMap.set(String(s.studentName).trim().replace(/\s+/g, " "), s);
+  }
+
+  const getSubmissionForStudent = (st: any) => {
+    if (!st) return null;
+    const byId = subMap.get(String(st.id).trim());
+    if (byId) return byId;
+    const cleanName = String(st.name || "").trim().replace(/\s+/g, " ");
+    return subNameMap.get(cleanName) || null;
+  };
 
   // Missing and submitted student lists
-  const missingStudents = currentClassStudents.filter((st) => !subMap.has(st.id));
-  const submittedStudents = currentClassStudents.filter((st) => subMap.has(st.id));
+  const missingStudents = currentClassStudents.filter((st) => !getSubmissionForStudent(st));
+  const submittedStudents = currentClassStudents.filter((st) => !!getSubmissionForStudent(st));
 
   // Format roll numbers cleanly into ranges (e.g. "เลขที่ 1 - 35 (ทุกคน)" or "เลขที่ 1-3, 5, 8")
   const formatRollRanges = (missing: any[], total: number) => {
@@ -293,9 +307,12 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
   // Stats calculation
   const totalStudents = currentClassStudents.length;
   const submittedCount = submittedStudents.length;
-  const gradedCount = currentClassStudents.filter((st) => subMap.get(st.id)?.status === "graded").length;
+  const gradedCount = currentClassStudents.filter((st) => getSubmissionForStudent(st)?.status === "graded").length;
   const pendingCount = currentClassStudents.filter(
-    (st) => subMap.has(st.id) && subMap.get(st.id)?.status !== "graded"
+    (st) => {
+      const sub = getSubmissionForStudent(st);
+      return !!sub && sub.status !== "graded";
+    }
   ).length;
   const missingCount = missingStudents.length;
 
@@ -598,14 +615,14 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
                       st.name.toLowerCase().includes(q) ||
                       (st.studentNumber && String(st.studentNumber).includes(q));
 
-                    const sub = subMap.get(st.id);
+                    const sub = getSubmissionForStudent(st);
                     if (statusFilter === "missing") return matchSearch && !sub;
                     if (statusFilter === "pending") return matchSearch && sub && sub.status !== "graded";
                     if (statusFilter === "graded") return matchSearch && sub && sub.status === "graded";
                     return matchSearch;
                   })
                   .map((student, idx) => {
-                    const sub = subMap.get(student.id);
+                    const sub = getSubmissionForStudent(student);
                     const seatNumber = student.studentNumber || (idx + 1);
 
                     return (

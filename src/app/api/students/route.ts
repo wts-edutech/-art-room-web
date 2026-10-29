@@ -54,8 +54,12 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized — เข้าถึงได้เฉพาะผู้ดูแลระบบและครูผู้สอนเท่านั้น' }, { status: 401 });
     }
 
+    const studentQuery = classroom
+      ? db.select().from(students).where(eq(students.classroom, classroom)).orderBy(students.id)
+      : db.select().from(students).orderBy(students.id);
+
     const [all, allSubmissions, allQuizAttempts] = await Promise.all([
-      db.select().from(students).orderBy(students.id),
+      studentQuery,
       db.select({ studentId: submissions.studentId, submittedAt: submissions.submittedAt }).from(submissions),
       db.select({ studentId: quizAttempts.studentId, submittedAt: quizAttempts.submittedAt }).from(quizAttempts),
     ]);
@@ -78,9 +82,6 @@ export async function GET(request: Request) {
     }
 
     let list = all || [];
-    if (classroom) {
-      list = list.filter(s => s.classroom === classroom);
-    }
 
     const result = list.map(s => {
       const subInfo = subMap.get(s.id);
