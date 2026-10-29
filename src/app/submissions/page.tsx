@@ -85,7 +85,7 @@ export default function SubmissionsPage() {
   const [assignments, setAssignments] = useState<any[]>([]);
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<"all" | "missing" | "pending" | "graded" | "resubmit">("all");
-  const [toDoFilter, setToDoFilter] = useState<"missing" | "all">("missing");
+  const [toDoFilter, setToDoFilter] = useState<"all" | "missing">("all");
   const [isLoadingData, setIsLoadingData] = useState(false);
 
   // Modal State
@@ -270,12 +270,8 @@ export default function SubmissionsPage() {
       setSubmissions(subList);
       setActiveQuizzes(Array.isArray(dataQuiz) ? dataQuiz : []);
 
-      // Smart landing: if student has missing work -> To-Do tab, if all done -> Album tab
-      if (missingCount > 0) {
-        setPortalView("assignments");
-      } else if (subList.length > 0) {
-        setPortalView("album");
-      }
+      // Keep student on assignments view so they always see all assignments and online exams clearly
+      setPortalView("assignments");
     } catch (e) {
       console.error(e);
     } finally {
@@ -728,74 +724,9 @@ export default function SubmissionsPage() {
                 </div>
               )}
 
-              {/* 2. Primary 2-Tab Switcher: งานที่ต้องส่ง vs คลังผลงานของฉัน */}
-              <div className="grid grid-cols-2 gap-1.5 sm:gap-2 bg-slate-100 p-1 sm:p-1.5 rounded-2xl border border-slate-200/80 shadow-inner">
-                <button
-                  type="button"
-                  onClick={() => setPortalView("assignments")}
-                  className={`py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl text-xs sm:text-sm md:text-base font-bold flex items-center justify-center gap-1.5 sm:gap-2 transition-all cursor-pointer ${
-                    portalView === "assignments"
-                      ? "bg-white text-orange-600 shadow-sm"
-                      : "text-slate-600 hover:text-slate-900"
-                  }`}
-                >
-                  <ClipboardList className="w-4 h-4 sm:w-5 sm:h-5 text-orange-500 shrink-0" />
-                  <span className="truncate">
-                    <span>งานที่ต้องส่ง</span>
-                    <span className="hidden sm:inline font-normal text-xs text-slate-400 ml-1">(To-Do)</span>
-                  </span>
-                  {actionNeededCount > 0 ? (
-                    <span className="px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-mono font-bold bg-rose-500 text-white shadow-2xs shrink-0">
-                      {actionNeededCount}
-                    </span>
-                  ) : (
-                    <span className="px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-mono font-bold bg-emerald-100 text-emerald-700 shrink-0">
-                      ครบ
-                    </span>
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setPortalView("album")}
-                  className={`py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl text-xs sm:text-sm md:text-base font-bold flex items-center justify-center gap-1.5 sm:gap-2 transition-all cursor-pointer ${
-                    portalView === "album"
-                      ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md shadow-orange-500/20"
-                      : "text-slate-600 hover:text-orange-600"
-                  }`}
-                >
-                  <Palette className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                  <span className="truncate">
-                    <span>คลังผลงาน</span>
-                    <span className="hidden sm:inline font-normal text-xs opacity-80 ml-1">(Portfolio)</span>
-                  </span>
-                  {submittedWorksCount > 0 && (
-                    <span
-                      className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-mono font-bold shrink-0 ${
-                        portalView === "album" ? "bg-white text-orange-600" : "bg-orange-100 text-orange-700"
-                      }`}
-                    >
-                      {submittedWorksCount}
-                    </span>
-                  )}
-                </button>
-              </div>
-
-              {/* Conditional Content based on portalView */}
-              {portalView === "album" ? (
-                <StudentArtworkAlbum
-                  student={student}
-                  assignments={assignments}
-                  subMap={subMap}
-                  onViewFullscreen={(url) => setStandaloneLightboxUrl(url)}
-                  onOpenSubmitModal={(ass) => setModalAssignment(ass)}
-                  onSwitchToAssignments={() => setPortalView("assignments")}
-                />
-              ) : (
-                <>
-                  {/* ACTIVE PRE-TESTS SECTION (WHEN RELEASED BY TEACHER) */}
+              {/* ACTIVE PRE-TESTS SECTION (WHEN RELEASED BY TEACHER) */}
               {activeQuizzes.length > 0 && (
-                <div className="space-y-3">
+                <div className="space-y-3 mb-6">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="inline-flex items-center justify-center p-1.5 rounded-lg bg-indigo-100 text-indigo-700">
@@ -952,6 +883,72 @@ export default function SubmissionsPage() {
                 </div>
               )}
 
+              {/* 2. Primary 2-Tab Switcher: งานที่ต้องส่ง vs คลังผลงานของฉัน */}
+              <div className="grid grid-cols-2 gap-1.5 sm:gap-2 bg-slate-100 p-1 sm:p-1.5 rounded-2xl border border-slate-200/80 shadow-inner">
+                <button
+                  type="button"
+                  onClick={() => setPortalView("assignments")}
+                  className={`py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl text-xs sm:text-sm md:text-base font-bold flex items-center justify-center gap-1.5 sm:gap-2 transition-all cursor-pointer ${
+                    portalView === "assignments"
+                      ? "bg-white text-orange-600 shadow-sm"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <ClipboardList className="w-4 h-4 sm:w-5 sm:h-5 text-orange-500 shrink-0" />
+                  <span className="truncate">
+                    <span>งานที่ต้องส่ง</span>
+                    <span className="hidden sm:inline font-normal text-xs text-slate-400 ml-1">(To-Do)</span>
+                  </span>
+                  {actionNeededCount > 0 ? (
+                    <span className="px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-mono font-bold bg-rose-500 text-white shadow-2xs shrink-0">
+                      {actionNeededCount}
+                    </span>
+                  ) : (
+                    <span className="px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-mono font-bold bg-emerald-100 text-emerald-700 shrink-0">
+                      ครบ
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPortalView("album")}
+                  className={`py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl text-xs sm:text-sm md:text-base font-bold flex items-center justify-center gap-1.5 sm:gap-2 transition-all cursor-pointer ${
+                    portalView === "album"
+                      ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md shadow-orange-500/20"
+                      : "text-slate-600 hover:text-orange-600"
+                  }`}
+                >
+                  <Palette className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+                  <span className="truncate">
+                    <span>คลังผลงาน</span>
+                    <span className="hidden sm:inline font-normal text-xs opacity-80 ml-1">(Portfolio)</span>
+                  </span>
+                  {submittedWorksCount > 0 && (
+                    <span
+                      className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-mono font-bold shrink-0 ${
+                        portalView === "album" ? "bg-white text-orange-600" : "bg-orange-100 text-orange-700"
+                      }`}
+                    >
+                      {submittedWorksCount}
+                    </span>
+                  )}
+                </button>
+              </div>
+
+              {/* Conditional Content based on portalView */}
+              {portalView === "album" ? (
+                <StudentArtworkAlbum
+                  student={student}
+                  assignments={assignments}
+                  subMap={subMap}
+                  onViewFullscreen={(url) => setStandaloneLightboxUrl(url)}
+                  onOpenSubmitModal={(ass) => setModalAssignment(ass)}
+                  onSwitchToAssignments={() => setPortalView("assignments")}
+                />
+              ) : (
+                <>
+
               {/* To-Do Assignments Header */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
                 <div className="flex items-center gap-2">
@@ -967,17 +964,6 @@ export default function SubmissionsPage() {
                 <div className="flex items-center gap-1.5 text-xs bg-gray-100 p-1 rounded-xl self-start sm:self-center">
                   <button
                     type="button"
-                    onClick={() => setToDoFilter("missing")}
-                    className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
-                      toDoFilter === "missing"
-                        ? "bg-white text-rose-600 shadow-xs"
-                        : "text-gray-500 hover:text-gray-800"
-                    }`}
-                  >
-                    เฉพาะงานค้างส่ง ({actionNeededCount})
-                  </button>
-                  <button
-                    type="button"
                     onClick={() => setToDoFilter("all")}
                     className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
                       toDoFilter === "all"
@@ -986,6 +972,17 @@ export default function SubmissionsPage() {
                     }`}
                   >
                     ดูงานทั้งหมด ({totalCount})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setToDoFilter("missing")}
+                    className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                      toDoFilter === "missing"
+                        ? "bg-white text-rose-600 shadow-xs"
+                        : "text-gray-500 hover:text-gray-800"
+                    }`}
+                  >
+                    เฉพาะงานค้างส่ง ({actionNeededCount})
                   </button>
                 </div>
               </div>
@@ -1077,6 +1074,11 @@ export default function SubmissionsPage() {
                             </span>
 
                             {/* Status badge */}
+                            {!isSubmitted && (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                                <AlertCircle className="w-3 h-3 text-rose-600" /> ยังไม่ได้ส่ง
+                              </span>
+                            )}
                             {isNeedsResubmit && (
                               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-700 border border-rose-200">
                                 <AlertCircle className="w-3 h-3" /> ส่งแก้ไขใหม่
@@ -1084,12 +1086,12 @@ export default function SubmissionsPage() {
                             )}
                             {!isNeedsResubmit && isGraded && (
                               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">
-                                <CheckCircle2 className="w-3 h-3" /> ตรวจแล้ว
+                                <CheckCircle2 className="w-3 h-3 text-emerald-600" /> ส่งแล้ว (ตรวจแล้ว)
                               </span>
                             )}
                             {!isNeedsResubmit && isSubmitted && !isGraded && (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200">
-                                <Clock className="w-3 h-3" /> รอตรวจ
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                <Clock className="w-3 h-3 text-amber-600" /> ส่งแล้ว (รอตรวจ)
                               </span>
                             )}
                           </div>
