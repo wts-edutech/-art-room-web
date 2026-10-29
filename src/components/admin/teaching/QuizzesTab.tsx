@@ -29,9 +29,11 @@ import {
   Plus,
   Trash2,
   BookOpen,
-  FileText
+  FileText,
+  MessageCircle
 } from "lucide-react";
 import * as XLSX from "xlsx";
+import QuizLineReminderModal, { StudentRecord } from "./QuizLineReminderModal";
 
 interface QuizAttempt {
   id: string;
@@ -81,6 +83,20 @@ export default function QuizzesTab() {
   const [selectedQuizFilter, setSelectedQuizFilter] = useState<string>("all");
   const [selectedRoomFilter, setSelectedRoomFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
+
+  // Students Directory for tracking missing submissions
+  const [studentsList, setStudentsList] = useState<StudentRecord[]>([]);
+
+  // LINE Reminder Modal State
+  const [lineReminderQuiz, setLineReminderQuiz] = useState<QuizItem | null>(null);
+  const [lineReminderRoom, setLineReminderRoom] = useState<string>("all");
+  const [isLineReminderOpen, setIsLineReminderOpen] = useState<boolean>(false);
+
+  const handleOpenLineReminder = (quiz: QuizItem, room?: string) => {
+    setLineReminderQuiz(quiz);
+    setLineReminderRoom(room || selectedRoomFilter || "all");
+    setIsLineReminderOpen(true);
+  };
 
   // Target Classrooms Modal State
   const [targetRoomsModalQuiz, setTargetRoomsModalQuiz] = useState<QuizItem | null>(null);
@@ -164,13 +180,14 @@ export default function QuizzesTab() {
     return Array.from({ length: 14 }, (_, i) => `${cleanGrade}/${i + 1}`);
   };
 
-  // Fetch quizzes and attempts
+  // Fetch quizzes, attempts, and students directory
   const fetchData = async () => {
     try {
       setIsLoading(true);
-      const [qRes, aRes] = await Promise.all([
+      const [qRes, aRes, sRes] = await Promise.all([
         fetch("/api/quizzes"),
         fetch("/api/quizzes/attempts"),
+        fetch("/api/students"),
       ]);
 
       if (qRes.ok) {
@@ -180,6 +197,10 @@ export default function QuizzesTab() {
       if (aRes.ok) {
         const aData = await aRes.json();
         setAttempts(aData);
+      }
+      if (sRes.ok) {
+        const sData = await sRes.json();
+        setStudentsList(Array.isArray(sData) ? sData : []);
       }
     } catch (err) {
       console.error("Failed to load quiz admin data:", err);
@@ -883,15 +904,25 @@ export default function QuizzesTab() {
                   </div>
                 </div>
 
-                {/* Actions: Question Edit & Delete Quiz */}
-                <div className="mt-3.5 pt-3 border-t border-gray-200/60 flex items-center justify-between text-xs text-gray-600">
+                {/* Actions: Question Edit, LINE Reminder & Delete Quiz */}
+                <div className="mt-3.5 pt-3 border-t border-gray-200/60 flex items-center justify-between text-xs text-gray-600 flex-wrap gap-2">
                   <span>ส่งแล้ว: <strong>{quizAttemptsCount}</strong> คน</span>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenLineReminder(quiz)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold transition-all shadow-2xs hover:scale-105 active:scale-95 cursor-pointer"
+                      title="เปิดระบบแจ้งเตือนทาง LINE สำหรับนักเรียนที่ยังไม่ทำแบบทดสอบ"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5 text-[#06C755] fill-[#06C755]" />
+                      <span>ไลน์แจ้งเตือนคนค้างสอบ</span>
+                    </button>
+
                     <button
                       type="button"
                       disabled={isLoadingQuizDetails}
                       onClick={() => handleOpenPreviewAndEdit(quiz)}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-orange-50 text-orange-700 hover:bg-orange-100 font-bold border border-orange-200 cursor-pointer transition-colors shadow-2xs"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-orange-50 text-orange-700 hover:bg-orange-100 font-bold border border-orange-200 cursor-pointer transition-colors shadow-2xs"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
                       <span>ดูข้อสอบ & จัดการโจทย์ ({quiz.totalQuestions} ข้อ)</span>
@@ -985,10 +1016,28 @@ export default function QuizzesTab() {
             </select>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500 font-medium">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs text-gray-500 font-medium hidden sm:inline-block">
               แสดง {filteredAttempts.length} จาก {attempts.length} คน
             </span>
+
+            <button
+              type="button"
+              onClick={() => {
+                const targetQuiz = currentSelectedQuiz || quizzesList[0];
+                if (targetQuiz) {
+                  handleOpenLineReminder(targetQuiz, selectedRoomFilter);
+                } else {
+                  alert("กรุณาเลือกแบบทดสอบที่ต้องการแจ้งเตือน");
+                }
+              }}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#06C755] hover:bg-[#05b34c] text-white font-bold text-xs shadow-xs hover:shadow-md hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
+              title="เปิดระบบแจ้งเตือนทาง LINE สำหรับนักเรียนที่ยังไม่ทำแบบทดสอบ"
+            >
+              <MessageCircle className="w-4 h-4 fill-white text-white" />
+              <span>แจ้งเตือน LINE (คนค้างสอบ)</span>
+            </button>
+
             <button
               type="button"
               onClick={handleExportExcel}
@@ -2003,6 +2052,16 @@ export default function QuizzesTab() {
           </div>
         </div>
       )}
+
+      {/* 5. LINE Auto Reminder Modal for Unsubmitted Students */}
+      <QuizLineReminderModal
+        isOpen={isLineReminderOpen}
+        onClose={() => setIsLineReminderOpen(false)}
+        quiz={lineReminderQuiz}
+        attempts={attempts}
+        students={studentsList}
+        initialRoom={lineReminderRoom}
+      />
     </div>
   );
 }
