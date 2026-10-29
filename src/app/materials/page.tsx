@@ -1,15 +1,10 @@
-export const runtime = 'edge';
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+"use client";
 
+import { useState, useEffect, Suspense } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import MaterialsList from "@/components/sections/MaterialsList";
-import { getDb } from "@/db";
-import { lessons, downloads as downloadsTable } from "@/db/schema";
-import { desc, asc } from "drizzle-orm";
 import { DEFAULT_DOWNLOADS, DownloadItem } from "@/data/default-downloads";
-import { Suspense } from "react";
 import { Sparkles, BookOpen, FileText } from "lucide-react";
 
 const DEFAULT_LESSONS = [
@@ -39,49 +34,33 @@ const DEFAULT_LESSONS = [
   }
 ];
 
-// Helper to fetch lessons from database
-async function getLessons() {
-  try {
-    const db = getDb();
-    const list = await db.select().from(lessons).orderBy(desc(lessons.createdAt));
-    return list && list.length > 0 ? list : DEFAULT_LESSONS;
-  } catch (error) {
-    return DEFAULT_LESSONS;
-  }
-}
+export default function MaterialsPage() {
+  const [allLessons, setAllLessons] = useState<any[]>(DEFAULT_LESSONS);
+  const [allDownloads, setAllDownloads] = useState<DownloadItem[]>(DEFAULT_DOWNLOADS);
 
-// Helper to fetch downloads from database
-async function getDownloads(): Promise<DownloadItem[]> {
-  try {
-    const db = getDb();
-    const list = await db.select().from(downloadsTable).orderBy(asc(downloadsTable.orderIndex), desc(downloadsTable.createdAt));
-    if (list && list.length > 0) {
-      return list.map((item: any) => ({
-        id: item.id,
-        title: item.title,
-        description: item.description || '',
-        category: item.category || 'แบบฝึกหัด',
-        grade: item.grade || 'all',
-        fileName: item.fileName || `${item.title}.pdf`,
-        fileSize: item.fileSize || '1.5 MB',
-        fileUrl: item.fileUrl,
-        imageUrl: item.imageUrl || undefined,
-        topic: item.topic || undefined,
-        mediaType: item.mediaType || 'pdf',
-        content: item.content || undefined,
-        downloadsCount: item.downloadsCount || 0,
-        orderIndex: item.orderIndex || 0,
-      }));
-    }
-    return DEFAULT_DOWNLOADS;
-  } catch (error) {
-    return DEFAULT_DOWNLOADS;
-  }
-}
+  useEffect(() => {
+    // Fetch lessons from database
+    fetch("/api/lessons?type=all")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setAllLessons(data);
+        }
+      })
+      .catch(() => {});
 
-export default async function MaterialsPage() {
-  const allLessons = await getLessons();
-  const allDownloads = await getDownloads();
+    // Fetch downloads from database
+    fetch("/api/downloads")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && Array.isArray(data.downloads) && data.downloads.length > 0) {
+          setAllDownloads(data.downloads);
+        } else if (Array.isArray(data) && data.length > 0) {
+          setAllDownloads(data);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const totalLessons = allLessons.length;
   const totalDownloads = allDownloads.length;
