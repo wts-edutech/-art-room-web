@@ -3,7 +3,7 @@ export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { students } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { checkIsAdmin } from '@/lib/api-auth';
 import { cookies } from 'next/headers';
 import { verifySessionToken } from '@/lib/auth-utils';
@@ -35,6 +35,7 @@ export async function GET(request: Request) {
 
       return NextResponse.json({
         ...student,
+        password: (student.password && String(student.password).length > 0) ? 'CUSTOM_SET' : null,
         loginCount: student.loginCount || 0,
         lastLoginAt: student.lastLoginAt || null,
         submissionsCount: userSubs.length,
@@ -65,6 +66,7 @@ export async function GET(request: Request) {
       academicYearId: students.academicYearId,
       loginCount: students.loginCount,
       lastLoginAt: students.lastLoginAt,
+      password: sql<string | null>`CASE WHEN ${students.password} IS NOT NULL AND length(${students.password}) > 0 THEN 'CUSTOM_SET' ELSE NULL END`,
     };
 
     const studentQuery = classroom

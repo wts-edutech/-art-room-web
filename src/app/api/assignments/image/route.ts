@@ -52,3 +52,4 @@ export async function GET(request: Request) {
     return new Response('Failed to load image', { status: 500 });
   }
 }
+

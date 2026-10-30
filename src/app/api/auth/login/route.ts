@@ -62,9 +62,9 @@ export async function POST(request: Request) {
 
     if (student) {
       if (student.password) {
-        // Student has set a custom password
+        // Student has set a custom password: only accept custom password (lock out default password for security)
         const inputHash = await hashPassword(password);
-        isPasswordCorrect = (inputHash === student.password) || (password === student.password) || (password === expectedDefaultPassword);
+        isPasswordCorrect = (inputHash === student.password) || (password === student.password);
       } else {
         // Initial default password
         isPasswordCorrect = password === expectedDefaultPassword;

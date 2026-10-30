@@ -34,6 +34,7 @@ export async function GET(request: Request) {
         gradeLevel: studentData?.gradeLevel || '',
         studentNumber: studentData?.studentNumber || null,
         avatar: studentData?.avatar || null,
+        hasCustomPassword: Boolean(studentData?.password && String(studentData.password).length > 0),
       } : null,
     });
 

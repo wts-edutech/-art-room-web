@@ -44,6 +44,7 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
   const [showNewPassword, setShowNewPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
   const [isChangingPassword, setIsChangingPassword] = useState<boolean>(false);
+  const [hasCustomPassword, setHasCustomPassword] = useState<boolean>(false);
 
   // Avatar Management State
   const [avatarValue, setAvatarValue] = useState<string>("");
@@ -158,6 +159,9 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
             setRole("student");
             setUserRoleTitle("นักเรียน WTS");
             if (data.user.id) setStudentId(data.user.id);
+            if (typeof data.user.hasCustomPassword === "boolean") {
+              setHasCustomPassword(data.user.hasCustomPassword);
+            }
             if (data.user.classroom && data.user.classroom.includes("/")) {
               const [rawG, r] = data.user.classroom.split("/");
               let g = rawG.trim();
@@ -322,6 +326,13 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
         setIsSaving(false);
         setErrorMessage(resData.error || "เกิดข้อผิดพลาดในการบันทึกข้อมูล");
         return;
+      }
+
+      if (resData.passwordChanged) {
+        setHasCustomPassword(true);
+        setIsChangingPassword(false);
+        setNewPassword("");
+        setConfirmPassword("");
       }
 
       // 3. Dispatch global update event so Navbar & other components re-render immediately
@@ -767,17 +778,28 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
                   </div>
 
                   {!isChangingPassword ? (
-                    <div className="p-3 rounded-xl bg-gray-50 border border-gray-200 text-xs text-gray-600 flex items-center justify-between">
+                    <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200 text-xs text-gray-600 flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                        <span>สถานะ: สามารถเข้าสู่ระบบด้วยรหัสผ่านส่วนตัวหรือรหัสเริ่มต้น</span>
+                        {hasCustomPassword ? (
+                          <>
+                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-xs" />
+                            <span className="font-semibold text-emerald-800">สถานะ: ใช้งานรหัสผ่านส่วนตัว (ปลอดภัย)</span>
+                          </>
+                        ) : (
+                          <>
+                            <div className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-xs" />
+                            <span className="font-medium text-amber-800">
+                              สถานะ: ใช้งานรหัสเริ่มต้น ({studentId ? `${studentId}@wts` : "รหัสประจำตัว@wts"})
+                            </span>
+                          </>
+                        )}
                       </div>
                       <button
                         type="button"
                         onClick={() => setIsChangingPassword(true)}
-                        className="text-xs text-orange-600 font-semibold hover:underline cursor-pointer"
+                        className="text-xs text-orange-600 hover:text-orange-700 font-bold hover:underline cursor-pointer shrink-0"
                       >
-                        เปลี่ยนรหัสผ่าน
+                        {hasCustomPassword ? "เปลี่ยนรหัสผ่าน" : "ตั้งรหัสผ่านส่วนตัว"}
                       </button>
                     </div>
                   ) : (
