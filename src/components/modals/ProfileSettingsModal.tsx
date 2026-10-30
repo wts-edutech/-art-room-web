@@ -151,7 +151,7 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
     // Sync session data if available to complement localStorage
     fetch("/api/auth/profile")
       .then((res) => res.json())
-      .then((data) => {
+      .then((data: any) => {
         if (data?.authenticated && data?.user) {
           if (!savedName && data.user.name) setFullName(data.user.name);
           if (data.user.role === "student") {
@@ -317,7 +317,7 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
         }),
       });
 
-      const resData = await res.json().catch(() => ({}));
+      const resData: any = await res.json().catch(() => ({}));
       if (!res.ok) {
         setIsSaving(false);
         setErrorMessage(resData.error || "เกิดข้อผิดพลาดในการบันทึกข้อมูล");

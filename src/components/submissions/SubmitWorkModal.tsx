@@ -345,7 +345,7 @@ export default function SubmitWorkModal({
         body: formData,
       });
 
-      const data = await res.json();
+      const data: any = await res.json();
 
       if (res.ok) {
         setSubmissionResult({

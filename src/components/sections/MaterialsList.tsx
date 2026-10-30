@@ -16,6 +16,7 @@ import {
   BOOKMARKS_EVENT 
 } from "@/lib/bookmarks";
 import { optimizeImageUrl, formatDocumentPreviewUrl, extractYouTubeId } from "@/lib/image-utils";
+import type { DownloadItem } from "@/data/default-downloads";
 
 interface MaterialsListProps {
   initialLessons: any[];

@@ -29,7 +29,7 @@ export default function HeroSection() {
         if (res.ok) return res.json();
         throw new Error("Failed to fetch settings");
       })
-      .then((data) => {
+      .then((data: any) => {
         setSettings({
           title: data.title || DEFAULT_SETTINGS.title,
           url: data.url || DEFAULT_SETTINGS.url,

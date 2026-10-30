@@ -173,7 +173,7 @@ export async function syncAuthWithServer(): Promise<{
       return { authenticated: false, user: null, isAdmin: false };
     }
 
-    const data = await res.json();
+    const data: any = await res.json();
 
     if (data.authenticated && data.user) {
       if (data.user.role === "student") {

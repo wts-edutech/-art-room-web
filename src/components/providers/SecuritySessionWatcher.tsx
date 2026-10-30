@@ -31,7 +31,7 @@ export default function SecuritySessionWatcher() {
         });
 
         if (res.status === 401) {
-          const data = await res.json().catch(() => ({}));
+          const data: any = await res.json().catch(() => ({}));
           if (data.reason === "kicked" || isAdminArea) {
             isKickingRef.current = true;
 

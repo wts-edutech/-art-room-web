@@ -82,7 +82,7 @@ export default function ExamLockModal({
       try {
         setIsLoadingQuestions(true);
         const res = await fetch(`/api/quizzes/${quiz.id}/questions`);
-        const data = await res.json();
+        const data: any = await res.json();
         if (data.questions && Array.isArray(data.questions)) {
           setQuestions(data.questions);
         }
@@ -256,7 +256,7 @@ export default function ExamLockModal({
         }),
       });
 
-      const data = await res.json();
+      const data: any = await res.json();
       if (res.ok) {
         setExamResult({
           score: data.score,

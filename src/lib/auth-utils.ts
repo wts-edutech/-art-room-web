@@ -3,8 +3,8 @@ const SESSION_SECRET = process.env.AUTH_SECRET || 'fallback-session-secret';
 
 // ===== Web Crypto Base64URL & HMAC Helpers (Edge Runtime Native) =====
 
-function base64urlEncode(buf: ArrayBuffer): string {
-  const bytes = new Uint8Array(buf);
+function base64urlEncode(buf: ArrayBuffer | Uint8Array): string {
+  const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
   let binary = '';
   for (const b of bytes) binary += String.fromCharCode(b);
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');

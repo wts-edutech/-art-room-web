@@ -1,4 +1,5 @@
 import LiteYouTube from "@/components/ui/LiteYouTube";
+import { PlayCircle } from "lucide-react";
 
 export default function VideoGallerySection() {
   const videos = [

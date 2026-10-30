@@ -276,7 +276,7 @@ export default function CalendarView({
         const method = editingEventId ? "PUT" : "POST";
         const res = await fetch("/api/activities", { method, body: formData });
         if (res.ok) {
-          const saved = await res.json();
+          const saved: any = await res.json();
           if (editingEventId) {
             setActivities(prev => prev.map(a => a.id === editingEventId ? { ...a, ...saved } : a));
             onActivityUpdated?.(saved);
@@ -312,7 +312,7 @@ export default function CalendarView({
           body: JSON.stringify(payload)
         });
         if (res.ok) {
-          const updated = await res.json();
+          const updated: any = await res.json();
           setActivities(prev => prev.map(a => a.id === editingEventId ? { ...a, ...payload } : a));
           onActivityUpdated?.(payload);
           onRefresh?.();
@@ -328,7 +328,7 @@ export default function CalendarView({
           body: JSON.stringify(payload)
         });
         if (res.ok) {
-          const created = await res.json();
+          const created: any = await res.json();
           setActivities(prev => [created, ...prev]);
           onActivityAdded?.(created);
           onRefresh?.();
