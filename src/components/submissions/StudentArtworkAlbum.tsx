@@ -257,6 +257,12 @@ export default function StudentArtworkAlbum({
                     <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold shadow-xs bg-white/95 backdrop-blur-md text-gray-800 border border-gray-200">
                       {assignment.subject ? assignment.subject.name : "วิชาศิลปะ"}
                     </span>
+                    {Array.isArray(submission.images) && submission.images.length > 1 && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-600/95 backdrop-blur-md text-white shadow-xs flex items-center gap-1">
+                        <span>📷</span>
+                        <span>{submission.images.length} ภาพ</span>
+                      </span>
+                    )}
                     {submission.technique && (
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/90 backdrop-blur-md text-white shadow-xs">
                         {submission.technique}

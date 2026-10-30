@@ -4,10 +4,10 @@ import { NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { quizAttempts, quizzes } from '@/db/schema';
 import { eq, and, desc } from 'drizzle-orm';
-import { checkIsAdmin } from '@/lib/api-auth';
+import { checkIsAdmin, getAdminSession, getSession } from '@/lib/api-auth';
 
 // GET /api/quizzes/attempts
-// Teacher fetches all student scores and attempt reports
+// Teacher fetches all student scores and attempt reports; Students only fetch their own attempts
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -15,18 +15,31 @@ export async function GET(request: Request) {
     const classroom = searchParams.get('classroom');
     const studentId = searchParams.get('studentId');
 
-    const db = getDb();
-    let attempts = await db.select().from(quizAttempts).orderBy(desc(quizAttempts.submittedAt));
+    const adminSession = await getAdminSession();
+    const session = await getSession();
 
-    if (quizId) {
-      attempts = attempts.filter(a => a.quizId === quizId);
+    const db = getDb();
+    const conditions = [];
+
+    if (!adminSession.isAdmin) {
+      if (!session || session.role !== 'student') {
+        return NextResponse.json({ error: 'กรุณาเข้าสู่ระบบเพื่อดูประวัติการทำแบบทดสอบ' }, { status: 401 });
+      }
+      // Strict student isolation: only see own attempts
+      conditions.push(eq(quizAttempts.studentId, session.userId));
+      if (quizId) {
+        conditions.push(eq(quizAttempts.quizId, quizId));
+      }
+    } else {
+      // Teacher/Admin filtering
+      if (quizId) conditions.push(eq(quizAttempts.quizId, quizId));
+      if (classroom) conditions.push(eq(quizAttempts.classroom, classroom));
+      if (studentId) conditions.push(eq(quizAttempts.studentId, studentId));
     }
-    if (classroom) {
-      attempts = attempts.filter(a => a.classroom === classroom);
-    }
-    if (studentId) {
-      attempts = attempts.filter(a => a.studentId === studentId);
-    }
+
+    const attempts = conditions.length > 0
+      ? await db.select().from(quizAttempts).where(and(...conditions)).orderBy(desc(quizAttempts.submittedAt))
+      : await db.select().from(quizAttempts).orderBy(desc(quizAttempts.submittedAt)).limit(300);
 
     return NextResponse.json(attempts);
   } catch (error: any) {

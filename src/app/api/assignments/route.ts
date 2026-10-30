@@ -104,6 +104,7 @@ export async function GET(request: Request) {
 
     const enriched = list.map(item => ({
       ...item,
+      imageUrl: item.imageUrl ? (item.imageUrl.startsWith('data:') ? `/api/assignments/image?id=${encodeURIComponent(item.id)}` : item.imageUrl) : null,
       classroomsList: parseJsonArray(item.classrooms),
       targetStudentsList: parseJsonArray(item.targetStudents),
       subject: subjectMap.get(item.subjectId) || {

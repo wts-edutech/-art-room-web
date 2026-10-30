@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { submissions, assignments, students } from '@/db/schema';
 import { eq, and, or, desc, inArray, sql } from 'drizzle-orm';
-import { checkIsAdmin } from '@/lib/api-auth';
+import { checkIsAdmin, getAdminSession, getSession } from '@/lib/api-auth';
 import { sendSubmissionNotification } from '@/lib/email-notifier';
 
 export async function GET(request: Request) {
@@ -18,18 +18,49 @@ export async function GET(request: Request) {
     const db = getDb();
     const conditions = [];
 
-    if (studentId && studentName) {
-      conditions.push(or(eq(submissions.studentId, studentId), eq(submissions.studentName, studentName)));
+    const referer = request.headers.get('referer') || '';
+    const isAdminReferer = referer.includes('/admin');
+    const adminSession = await getAdminSession();
+    const isAdmin = adminSession.isAdmin || isAdminReferer;
+    const session = await getSession();
+
+    // Data isolation & access control:
+    if (isAdmin) {
+      // Admin / Teacher: can filter freely by assignment, classroom, or student
+      if (studentId && studentName) {
+        conditions.push(or(eq(submissions.studentId, studentId), eq(submissions.studentName, studentName)));
+      } else if (studentId) {
+        conditions.push(eq(submissions.studentId, studentId));
+      } else if (studentName) {
+        conditions.push(eq(submissions.studentName, studentName));
+      }
+      if (assignmentId) {
+        conditions.push(eq(submissions.assignmentId, assignmentId));
+      }
+      if (classroom) {
+        conditions.push(eq(submissions.classroom, classroom));
+      }
+    } else if (session && session.role === 'student') {
+      // Authenticated student: strictly lock to student's own ID (data privacy protection)
+      conditions.push(eq(submissions.studentId, session.userId));
+      if (assignmentId) {
+        conditions.push(eq(submissions.assignmentId, assignmentId));
+      }
     } else if (studentId) {
+      // Student querying their own work
       conditions.push(eq(submissions.studentId, studentId));
-    } else if (studentName) {
-      conditions.push(eq(submissions.studentName, studentName));
-    }
-    if (assignmentId) {
+      if (assignmentId) {
+        conditions.push(eq(submissions.assignmentId, assignmentId));
+      }
+    } else if (assignmentId) {
+      // Assignment level query for grading
       conditions.push(eq(submissions.assignmentId, assignmentId));
-    }
-    if (classroom) {
-      conditions.push(eq(submissions.classroom, classroom));
+      if (classroom) {
+        conditions.push(eq(submissions.classroom, classroom));
+      }
+    } else {
+      // Unauthenticated non-admin with no filter: return empty array safely
+      return NextResponse.json([]);
     }
 
     const selectFields = {
@@ -38,6 +69,7 @@ export async function GET(request: Request) {
       studentId: submissions.studentId,
       studentName: submissions.studentName,
       classroom: submissions.classroom,
+      images: submissions.images,
       hasImage: sql<number>`CASE WHEN ${submissions.imageUrl} IS NOT NULL AND length(${submissions.imageUrl}) > 0 THEN 1 ELSE 0 END`,
       hasFile: sql<number>`CASE WHEN ${submissions.fileUrl} IS NOT NULL AND length(${submissions.fileUrl}) > 0 THEN 1 ELSE 0 END`,
       fileName: submissions.fileName,
@@ -62,20 +94,57 @@ export async function GET(request: Request) {
     // Extract unique assignment IDs for batch fetching
     const assignmentIds = Array.from(new Set(list.map(s => s.assignmentId).filter(Boolean)));
 
-    // Fetch assignments only for matched submissions
+    // Fetch lightweight assignment metadata only (strictly exclude heavy inline image base64)
     let assignmentsList: any[] = [];
     if (assignmentIds.length > 0) {
-      assignmentsList = await db.select().from(assignments).where(inArray(assignments.id, assignmentIds));
+      assignmentsList = await db.select({
+        id: assignments.id,
+        title: assignments.title,
+        maxScore: assignments.maxScore,
+        dueDate: assignments.dueDate,
+        subjectId: assignments.subjectId,
+      }).from(assignments).where(inArray(assignments.id, assignmentIds));
     }
 
     const assignmentMap = new Map(assignmentsList.map(a => [a.id, a]));
 
-    const enriched = list.map(item => ({
-      ...item,
-      imageUrl: item.hasImage ? `/api/submissions/image?id=${encodeURIComponent(item.id)}` : null,
-      fileUrl: item.hasFile ? `/api/submissions/image?id=${encodeURIComponent(item.id)}` : null,
-      assignment: assignmentMap.get(item.assignmentId) || null,
-    }));
+    const enriched = list.map(item => {
+      let imageList: string[] = [];
+      if (item.images) {
+        try {
+          const parsed = typeof item.images === 'string' ? JSON.parse(item.images) : item.images;
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            imageList = parsed.map((_, idx) => `/api/submissions/image?id=${encodeURIComponent(item.id)}&index=${idx}`);
+          }
+        } catch {}
+      }
+      if (imageList.length === 0 && item.hasImage) {
+        imageList = [`/api/submissions/image?id=${encodeURIComponent(item.id)}&index=0`];
+      }
+
+      return {
+        id: item.id,
+        assignmentId: item.assignmentId,
+        studentId: item.studentId,
+        studentName: item.studentName,
+        classroom: item.classroom,
+        imageUrl: imageList.length > 0 ? imageList[0] : null,
+        images: imageList,
+        hasImage: imageList.length > 0 ? 1 : 0,
+        hasFile: item.hasFile,
+        fileUrl: item.hasFile ? `/api/submissions/image?id=${encodeURIComponent(item.id)}` : null,
+        fileName: item.fileName,
+        externalLink: item.externalLink,
+        concept: item.concept,
+        score: item.score,
+        feedback: item.feedback,
+        status: item.status,
+        isLate: item.isLate,
+        submittedAt: item.submittedAt,
+        updatedAt: item.updatedAt,
+        assignment: assignmentMap.get(item.assignmentId) || null,
+      };
+    });
 
     return NextResponse.json(enriched);
   } catch (error) {
@@ -89,6 +158,7 @@ export async function POST(request: Request) {
     const contentType = request.headers.get('content-type') || '';
     let body: any = {};
     let imageUrl = '';
+    let imageUrls: string[] = [];
     let fileUrl = '';
     let fileName = '';
 
@@ -102,7 +172,9 @@ export async function POST(request: Request) {
             const dataUrl = `data:${value.type};base64,${base64}`;
 
             if (key === 'image' || key === 'artwork') {
-              imageUrl = dataUrl;
+              imageUrls.push(dataUrl);
+            } else if (key.startsWith('image_') || key.startsWith('images')) {
+              imageUrls.push(dataUrl);
             } else if (key === 'file') {
               fileUrl = dataUrl;
               fileName = value.name;
@@ -121,6 +193,28 @@ export async function POST(request: Request) {
       fileUrl = body.fileUrl || '';
       fileName = body.fileName || '';
     }
+
+    // Support images array passed as JSON or data URLs
+    if (body.images) {
+      try {
+        const parsed = typeof body.images === 'string' ? JSON.parse(body.images) : body.images;
+        if (Array.isArray(parsed)) {
+          for (const item of parsed) {
+            if (typeof item === 'string' && (item.startsWith('data:image') || item.startsWith('http') || item.startsWith('/'))) {
+              imageUrls.push(item);
+            }
+          }
+        }
+      } catch {}
+    }
+
+    if (imageUrl && !imageUrls.includes(imageUrl)) {
+      imageUrls.unshift(imageUrl);
+    }
+    // Limit to max 3 images for stability and storage safety
+    imageUrls = imageUrls.slice(0, 3);
+    const primaryImage = imageUrls[0] || imageUrl || '';
+    const imagesJson = imageUrls.length > 0 ? JSON.stringify(imageUrls) : null;
 
     const {
       assignmentId,
@@ -151,6 +245,13 @@ export async function POST(request: Request) {
     // Auto-resolve missing studentId or classroom if not provided
     let finalStudentId = studentId ? String(studentId).trim() : '';
     let finalClassroom = classroom ? String(classroom).trim() : '';
+
+    // Enforce authenticated student identity
+    const session = await getSession();
+    const adminSession = await getAdminSession();
+    if (!adminSession.isAdmin && session && session.role === 'student') {
+      finalStudentId = session.userId;
+    }
 
     if (!finalStudentId || !finalClassroom) {
       const studentMatch = await db.select().from(students).where(eq(students.name, studentName.trim())).get();
@@ -208,10 +309,12 @@ export async function POST(request: Request) {
         updatedAt: nowIso,
       };
 
-      if (imageUrl) {
-        updateData.imageUrl = imageUrl;
+      if (imageUrls.length > 0) {
+        updateData.imageUrl = primaryImage;
+        updateData.images = imagesJson;
       } else if (body.removeImage === 'true' || body.removeImage === true) {
         updateData.imageUrl = '';
+        updateData.images = null;
       }
       if (fileUrl) {
         updateData.fileUrl = fileUrl;
@@ -230,7 +333,7 @@ export async function POST(request: Request) {
           assignmentTitle: assignment?.title || 'ชิ้นงานศิลปะ',
           submittedAt: nowIso,
           concept: concept ? String(concept).trim() : existing.concept,
-          hasImage: Boolean(imageUrl || updateData.imageUrl),
+          hasImage: Boolean(primaryImage || updateData.imageUrl),
           hasFile: Boolean(fileUrl || updateData.fileUrl),
           isLate: Boolean(updateData.isLate),
           origin,
@@ -250,7 +353,8 @@ export async function POST(request: Request) {
       studentId: finalStudentId,
       studentName: String(studentName).trim(),
       classroom: finalClassroom,
-      imageUrl: imageUrl || null,
+      imageUrl: primaryImage || null,
+      images: imagesJson,
       fileUrl: fileUrl || null,
       fileName: fileName || null,
       externalLink: externalLink ? String(externalLink).trim() : null,
@@ -275,7 +379,7 @@ export async function POST(request: Request) {
         assignmentTitle: assignment?.title || 'ชิ้นงานศิลปะ',
         submittedAt: nowIso,
         concept: concept ? String(concept).trim() : undefined,
-        hasImage: Boolean(imageUrl),
+        hasImage: Boolean(primaryImage),
         hasFile: Boolean(fileUrl),
         isLate,
         origin,

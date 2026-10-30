@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { 
   X, 
@@ -45,9 +45,23 @@ export default function SubmitWorkModal({
   onClose,
   onSuccess,
 }: SubmitWorkModalProps) {
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string>(existingSubmission?.imageUrl || "");
-  const [isImageRemoved, setIsImageRemoved] = useState<boolean>(false);
+  // Multi-image state: up to 3 images (0: ผลงานหลัก, 1: รายละเอียด, 2: ขั้นตอนการทำ)
+  const initialPreviews: string[] = (() => {
+    if (existingSubmission?.images && Array.isArray(existingSubmission.images) && existingSubmission.images.length > 0) {
+      return [
+        existingSubmission.images[0] || existingSubmission.imageUrl || "",
+        existingSubmission.images[1] || "",
+        existingSubmission.images[2] || ""
+      ];
+    }
+    return [existingSubmission?.imageUrl || "", "", ""];
+  })();
+
+  const [imageFiles, setImageFiles] = useState<(File | null)[]>([null, null, null]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>(initialPreviews);
+  const [activeSlot, setActiveSlot] = useState<number>(0);
+  const [draftRestored, setDraftRestored] = useState<boolean>(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const [docFile, setDocFile] = useState<File | null>(null);
@@ -66,6 +80,7 @@ export default function SubmitWorkModal({
     submittedAt: string;
     room: string;
     imagePreview?: string;
+    imagePreviews?: string[];
     externalLink?: string;
     concept?: string;
     docFileName?: string;
@@ -82,19 +97,75 @@ export default function SubmitWorkModal({
     existingSubmission.status !== "resubmit"
   );
 
+  const draftKey = `artroom_sub_draft_${assignment.id}_${student.id}`;
+
+  // Auto-restore draft from localStorage on mount (Data Loss Prevention)
+  useEffect(() => {
+    if (existingSubmission || isGraded) return;
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (raw) {
+        const draft = JSON.parse(raw);
+        let restoredAny = false;
+        if (draft.concept) { setConcept(draft.concept); restoredAny = true; }
+        if (draft.externalLink) { setExternalLink(draft.externalLink); restoredAny = true; }
+        if (draft.selectedRoom) setSelectedRoom(draft.selectedRoom);
+        if (Array.isArray(draft.previews) && draft.previews.some(Boolean)) {
+          setImagePreviews([
+            draft.previews[0] || "",
+            draft.previews[1] || "",
+            draft.previews[2] || "",
+          ]);
+          restoredAny = true;
+        }
+        if (restoredAny) {
+          setDraftRestored(true);
+          setTimeout(() => setDraftRestored(false), 5000);
+        }
+      }
+    } catch (e) {
+      console.warn("Could not load submission draft:", e);
+    }
+  }, [assignment.id, student.id, existingSubmission, isGraded, draftKey]);
+
+  // Auto-save draft to localStorage whenever inputs change (Data Loss Prevention)
+  useEffect(() => {
+    if (isGraded || submissionResult) return;
+    const timer = setTimeout(() => {
+      try {
+        const hasContent = concept.trim() || externalLink.trim() || imagePreviews.some(Boolean);
+        if (hasContent) {
+          localStorage.setItem(draftKey, JSON.stringify({
+            concept,
+            externalLink,
+            selectedRoom,
+            previews: imagePreviews,
+            savedAt: Date.now(),
+          }));
+        }
+      } catch (e) {
+        console.warn("Could not save submission draft:", e);
+      }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [concept, externalLink, selectedRoom, imagePreviews, isGraded, submissionResult, draftKey]);
+
+  const currentPreview = imagePreviews[activeSlot] || "";
+  const currentFile = imageFiles[activeSlot] || null;
+
   // Convert current preview to File for ImageEditorModal if needed
   const getFileFromCurrentPreview = async (): Promise<File | null> => {
-    if (imageFile) return imageFile;
-    if (!imagePreview) return null;
+    if (currentFile) return currentFile;
+    if (!currentPreview) return null;
     try {
-      const res = await fetch(imagePreview);
+      const res = await fetch(currentPreview);
       const blob = await res.blob();
-      return new File([blob], "artwork.jpg", { type: blob.type || "image/jpeg" });
+      return new File([blob], `artwork_slot_${activeSlot + 1}.jpg`, { type: blob.type || "image/jpeg" });
     } catch {
       return new Promise((resolve) => {
         const img = new Image();
         img.crossOrigin = "anonymous";
-        img.src = imagePreview;
+        img.src = currentPreview;
         img.onload = () => {
           const c = document.createElement("canvas");
           c.width = img.naturalWidth || img.width;
@@ -104,11 +175,11 @@ export default function SubmitWorkModal({
             ctx.drawImage(img, 0, 0);
             c.toBlob((b) => {
               if (b) {
-                resolve(new File([b], "artwork.jpg", { type: "image/jpeg" }));
+                resolve(new File([b], `artwork_slot_${activeSlot + 1}.jpg`, { type: "image/jpeg" }));
               } else {
                 resolve(null);
               }
-            }, "image/jpeg", 0.92);
+            }, "image/jpeg", 0.90);
           } else {
             resolve(null);
           }
@@ -119,10 +190,10 @@ export default function SubmitWorkModal({
   };
 
   const handleOpenEditor = async () => {
-    if (imageFile) {
-      setEditorFile(imageFile);
+    if (currentFile) {
+      setEditorFile(currentFile);
       setIsEditorOpen(true);
-    } else if (imagePreview) {
+    } else if (currentPreview) {
       setIsAiProcessing(true);
       const f = await getFileFromCurrentPreview();
       setIsAiProcessing(false);
@@ -134,22 +205,34 @@ export default function SubmitWorkModal({
   };
 
   const handleEditorSave = (editedFile: File) => {
-    setImageFile(editedFile);
-    setImagePreview(URL.createObjectURL(editedFile));
-    setIsImageRemoved(false);
-    setIsEditorOpen(false);
-    setAiSuccessMessage("✂️ ครอปและปรับสัดส่วนภาพเรียบร้อยแล้ว!");
-    setTimeout(() => setAiSuccessMessage(""), 4000);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      setImageFiles(prev => {
+        const next = [...prev];
+        next[activeSlot] = editedFile;
+        return next;
+      });
+      setImagePreviews(prev => {
+        const next = [...prev];
+        next[activeSlot] = dataUrl;
+        return next;
+      });
+      setIsEditorOpen(false);
+      setAiSuccessMessage(`✂️ ปรับแต่งรูปภาพช่องที่ ${activeSlot + 1} เรียบร้อยแล้ว!`);
+      setTimeout(() => setAiSuccessMessage(""), 4000);
+    };
+    reader.readAsDataURL(editedFile);
   };
 
   // 1-Click AI Auto Enhance: balances contrast, vibrance, brightness, and details
   const handleAiAutoEnhance = async () => {
-    if (!imagePreview || isAiProcessing) return;
+    if (!currentPreview || isAiProcessing) return;
     setIsAiProcessing(true);
     try {
       const img = new Image();
       img.crossOrigin = "anonymous";
-      img.src = imagePreview;
+      img.src = currentPreview;
       await new Promise((resolve, reject) => {
         img.onload = resolve;
         img.onerror = reject;
@@ -160,28 +243,39 @@ export default function SubmitWorkModal({
       canvas.height = img.naturalHeight || img.height;
       const ctx = canvas.getContext("2d");
       if (ctx) {
-        // Tuned for artwork: boost contrast, pop vibrance, slight brightness for dim classroom photos
         ctx.filter = "contrast(115%) saturate(118%) brightness(103%)";
         ctx.drawImage(img, 0, 0);
 
         canvas.toBlob(
           (blob) => {
             if (blob) {
-              const fileName = imageFile ? imageFile.name.replace(/\.[^/.]+$/, "") : "artwork";
+              const fileName = currentFile ? currentFile.name.replace(/\.[^/.]+$/, "") : `artwork_slot_${activeSlot + 1}`;
               const enhancedFile = new File([blob], `${fileName}-ai-enhanced.jpg`, {
                 type: "image/jpeg",
                 lastModified: Date.now(),
               });
-              setImageFile(enhancedFile);
-              setImagePreview(URL.createObjectURL(enhancedFile));
-              setIsImageRemoved(false);
-              setAiSuccessMessage("✨ AI ปรับแสง สีสัน และความคมชัดของผลงานให้สวยงามขึ้นแล้ว!");
-              setTimeout(() => setAiSuccessMessage(""), 4000);
+              const reader = new FileReader();
+              reader.onload = () => {
+                const dataUrl = reader.result as string;
+                setImageFiles(prev => {
+                  const next = [...prev];
+                  next[activeSlot] = enhancedFile;
+                  return next;
+                });
+                setImagePreviews(prev => {
+                  const next = [...prev];
+                  next[activeSlot] = dataUrl;
+                  return next;
+                });
+                setAiSuccessMessage(`✨ AI ปรับแสงและสีสันของภาพช่องที่ ${activeSlot + 1} สวยงามขึ้นแล้ว!`);
+                setTimeout(() => setAiSuccessMessage(""), 4000);
+              };
+              reader.readAsDataURL(enhancedFile);
             }
             setIsAiProcessing(false);
           },
           "image/jpeg",
-          0.92
+          0.88
         );
       } else {
         setIsAiProcessing(false);
@@ -194,12 +288,12 @@ export default function SubmitWorkModal({
 
   // 1-Click 90° Clockwise Rotation
   const handleQuickRotate = async () => {
-    if (!imagePreview || isAiProcessing) return;
+    if (!currentPreview || isAiProcessing) return;
     setIsAiProcessing(true);
     try {
       const img = new Image();
       img.crossOrigin = "anonymous";
-      img.src = imagePreview;
+      img.src = currentPreview;
       await new Promise((resolve, reject) => {
         img.onload = resolve;
         img.onerror = reject;
@@ -217,19 +311,31 @@ export default function SubmitWorkModal({
         canvas.toBlob(
           (blob) => {
             if (blob) {
-              const fileName = imageFile ? imageFile.name.replace(/\.[^/.]+$/, "") : "artwork";
+              const fileName = currentFile ? currentFile.name.replace(/\.[^/.]+$/, "") : `artwork_slot_${activeSlot + 1}`;
               const rotatedFile = new File([blob], `${fileName}-rotated.jpg`, {
                 type: "image/jpeg",
                 lastModified: Date.now(),
               });
-              setImageFile(rotatedFile);
-              setImagePreview(URL.createObjectURL(rotatedFile));
-              setIsImageRemoved(false);
+              const reader = new FileReader();
+              reader.onload = () => {
+                const dataUrl = reader.result as string;
+                setImageFiles(prev => {
+                  const next = [...prev];
+                  next[activeSlot] = rotatedFile;
+                  return next;
+                });
+                setImagePreviews(prev => {
+                  const next = [...prev];
+                  next[activeSlot] = dataUrl;
+                  return next;
+                });
+              };
+              reader.readAsDataURL(rotatedFile);
             }
             setIsAiProcessing(false);
           },
           "image/jpeg",
-          0.92
+          0.88
         );
       } else {
         setIsAiProcessing(false);
@@ -248,24 +354,45 @@ export default function SubmitWorkModal({
     setErrorMsg("");
     setIsCompressing(true);
     try {
-      // Auto-compress high-res mobile photos to lightweight WebP (~150-250KB) while keeping high fidelity
+      // Auto-compress photos to WebP (~120-180KB) for fast network transfer and safe D1 storage
       const compressed = await compressImage(file, {
-        maxWidth: 1920,
-        maxHeight: 1920,
-        quality: 0.82,
+        maxWidth: 1600,
+        maxHeight: 1600,
+        quality: 0.80,
         outputFormat: "image/webp",
       });
-      setImageFile(compressed);
-      setIsImageRemoved(false);
+
       const reader = new FileReader();
-      reader.onload = () => setImagePreview(reader.result as string);
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        setImageFiles(prev => {
+          const next = [...prev];
+          next[activeSlot] = compressed;
+          return next;
+        });
+        setImagePreviews(prev => {
+          const next = [...prev];
+          next[activeSlot] = dataUrl;
+          return next;
+        });
+      };
       reader.readAsDataURL(compressed);
     } catch (err) {
       console.warn("Compression fallback to raw file:", err);
-      setImageFile(file);
-      setIsImageRemoved(false);
       const reader = new FileReader();
-      reader.onload = () => setImagePreview(reader.result as string);
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        setImageFiles(prev => {
+          const next = [...prev];
+          next[activeSlot] = file;
+          return next;
+        });
+        setImagePreviews(prev => {
+          const next = [...prev];
+          next[activeSlot] = dataUrl;
+          return next;
+        });
+      };
       reader.readAsDataURL(file);
     } finally {
       setIsCompressing(false);
@@ -279,13 +406,19 @@ export default function SubmitWorkModal({
     }
   };
 
-  const handleRemoveImage = () => {
-    setImagePreview("");
-    setImageFile(null);
-    setIsImageRemoved(true);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+  const handleRemoveImage = (slotIndex: number) => {
+    setImageFiles(prev => {
+      const next = [...prev];
+      next[slotIndex] = null;
+      return next;
+    });
+    setImagePreviews(prev => {
+      const next = [...prev];
+      next[slotIndex] = "";
+      return next;
+    });
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (cameraInputRef.current) cameraInputRef.current.value = "";
   };
 
   const handleDocChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -304,9 +437,10 @@ export default function SubmitWorkModal({
       return;
     }
 
-    // Validation: Require at least image, link, or document
-    const hasImage = (!isImageRemoved && Boolean(imagePreview)) || Boolean(imageFile);
-    if (!hasImage && !externalLink && !docFile) {
+    // Validation: Require at least one image, link, or document
+    const validImages = imagePreviews.filter(Boolean);
+    const hasAnyImage = validImages.length > 0;
+    if (!hasAnyImage && !externalLink.trim() && !docFile) {
       setErrorMsg("กรุณาแนบภาพผลงานศิลปะ หรือลิงก์ผลงาน (Canva/Drive) อย่างน้อย 1 อย่าง");
       return;
     }
@@ -327,11 +461,12 @@ export default function SubmitWorkModal({
       if (externalLink) formData.append("externalLink", externalLink.trim());
       if (concept) formData.append("concept", concept.trim());
 
-      if (imageFile) {
-        formData.append("image", imageFile);
-      } else if (imagePreview && !isImageRemoved) {
-        formData.append("imageUrl", imagePreview);
-      } else if (isImageRemoved) {
+      // Send primary image and multi-image JSON array
+      const primaryImage = validImages[0] || "";
+      if (primaryImage) {
+        formData.append("imageUrl", primaryImage);
+        formData.append("images", JSON.stringify(validImages));
+      } else {
         formData.append("removeImage", "true");
         formData.append("imageUrl", "");
       }
@@ -348,12 +483,18 @@ export default function SubmitWorkModal({
       const data: any = await res.json();
 
       if (res.ok) {
+        // Clean draft upon successful submission
+        try {
+          localStorage.removeItem(draftKey);
+        } catch {}
+
         setSubmissionResult({
           isLate: Boolean(data.isLate),
           isEdit: Boolean(existingSubmission),
           submittedAt: new Date().toISOString(),
           room: finalRoom,
-          imagePreview: (!isImageRemoved && imagePreview) ? imagePreview : undefined,
+          imagePreview: primaryImage || undefined,
+          imagePreviews: validImages,
           externalLink: externalLink ? externalLink.trim() : undefined,
           concept: concept ? concept.trim() : undefined,
           docFileName: docFile?.name || undefined,
@@ -363,7 +504,7 @@ export default function SubmitWorkModal({
       }
     } catch (err) {
       console.error(err);
-      setErrorMsg("เกิดข้อผิดพลาดในการเชื่อมต่อเครือข่าย");
+      setErrorMsg("เกิดข้อผิดพลาดในการเชื่อมต่อเครือข่าย กรุณากดปุ่มลองใหม่อีกครั้ง (ข้อมูลของคุณยังอยู่ครบ)");
     } finally {
       setIsSubmitting(false);
     }
@@ -454,17 +595,26 @@ export default function SubmitWorkModal({
               </span>
             </div>
 
-            {/* Artwork Thumbnail Preview */}
-            {submissionResult.imagePreview && (
+            {/* Artwork Thumbnail Previews */}
+            {submissionResult.imagePreviews && submissionResult.imagePreviews.length > 0 && (
               <div className="pt-1">
-                <span className="text-gray-500 font-medium block mb-1.5">ภาพถ่ายผลงานที่แนบส่ง:</span>
-                <div className="rounded-xl overflow-hidden border border-gray-200 bg-white p-1 max-h-52 flex items-center justify-center">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={submissionResult.imagePreview}
-                    alt="ผลงานที่ส่ง"
-                    className="max-h-48 w-auto object-contain rounded-lg"
-                  />
+                <span className="text-gray-500 font-medium block mb-1.5">
+                  ภาพถ่ายผลงานที่แนบส่ง ({submissionResult.imagePreviews.length} ภาพ):
+                </span>
+                <div className="grid grid-cols-3 gap-2">
+                  {submissionResult.imagePreviews.map((imgUrl, idx) => (
+                    <div key={idx} className="rounded-xl overflow-hidden border border-gray-200 bg-white p-1 max-h-36 flex flex-col items-center justify-center">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={imgUrl}
+                        alt={`ภาพที่ ${idx + 1}`}
+                        className="max-h-28 w-auto object-contain rounded-lg"
+                      />
+                      <span className="text-[10px] text-gray-500 font-bold mt-1">
+                        {idx === 0 ? "1. ผลงานหลัก" : idx === 1 ? "2. รายละเอียด" : "3. ขั้นตอน"}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -845,47 +995,104 @@ export default function SubmitWorkModal({
           </div>
         )}
 
-        {/* Error notification */}
+        {/* Draft Restored Banner */}
+        {draftRestored && (
+          <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-3 rounded-2xl mb-4 flex items-center gap-2 text-xs font-semibold animate-in fade-in">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>ระบบได้กู้คืนข้อมูลแบบร่างที่คุณพิมพ์ค้างไว้ให้อัตโนมัติเรียบร้อยแล้ว</span>
+          </div>
+        )}
+
+        {/* Error notification with Instant Retry */}
         {errorMsg && (
-          <div className="bg-red-50 border border-red-200 text-red-600 p-3 rounded-2xl mb-5 text-xs font-semibold">
-            {errorMsg}
+          <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-2xl mb-5 text-xs space-y-2">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+              <p className="font-semibold leading-relaxed">{errorMsg}</p>
+            </div>
+            <div className="flex items-center gap-2 pt-1">
+              <Button
+                type="button"
+                onClick={handleSubmit}
+                disabled={isSubmitting}
+                className="h-8 px-4 text-xs font-bold bg-red-600 hover:bg-red-700 text-white rounded-lg cursor-pointer"
+              >
+                {isSubmitting ? "กำลังส่งอีกครั้ง..." : "ลองส่งงานอีกครั้ง"}
+              </Button>
+              <span className="text-[11px] text-gray-500 font-light">ข้อมูลและรูปภาพทั้งหมดยังคงอยู่ครบ ไม่สูญหาย</span>
+            </div>
           </div>
         )}
 
         {/* Submission Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* 1. Artwork Image Upload with Preview */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
+          {/* 1. Artwork Multi-Image Upload (Up to 3 images) */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
                 <ImageIcon className="w-4 h-4 text-gray-600" />
-                <span>ภาพถ่ายผลงานศิลปะ (แนะนำอย่างยิ่ง)</span>
+                <span>ภาพถ่ายผลงานศิลปะ (แนบได้สูงสุด 3 รูป)</span>
               </label>
-              {imagePreview && (
-                <span className="text-[11px] text-emerald-700 font-medium bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> แนบไฟล์รูปภาพแล้ว
-                </span>
-              )}
+              <span className="text-[11px] text-gray-500 font-medium">
+                แนบแล้ว {imagePreviews.filter(Boolean).length} / 3 ภาพ
+              </span>
+            </div>
+
+            {/* 3 Image Slots Selector Bar */}
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { label: "1. ผลงานหลัก *", sub: "ภาพเต็มผลงาน" },
+                { label: "2. รายละเอียด", sub: "ซูม/เทคนิคใกล้ๆ" },
+                { label: "3. ขั้นตอน", sub: "ภาพขณะสร้างสรรค์" },
+              ].map((slot, idx) => {
+                const hasImg = Boolean(imagePreviews[idx]);
+                const isActive = activeSlot === idx;
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setActiveSlot(idx)}
+                    className={`p-2.5 rounded-2xl border text-left transition-all cursor-pointer relative overflow-hidden flex flex-col justify-between min-h-[64px] ${
+                      isActive
+                        ? "bg-orange-50 border-orange-500 ring-2 ring-orange-400/20 shadow-xs"
+                        : "bg-gray-50/80 hover:bg-gray-100 border-gray-200 text-gray-600"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span className={`text-xs font-bold font-kanit truncate ${isActive ? "text-orange-950" : "text-gray-800"}`}>
+                        {slot.label}
+                      </span>
+                      {hasImg ? (
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" title="มีรูปภาพแล้ว" />
+                      ) : (
+                        <span className="w-2 h-2 rounded-full bg-gray-300 shrink-0" />
+                      )}
+                    </div>
+                    <span className="text-[10px] text-gray-500 mt-1 truncate">
+                      {hasImg ? "✓ แนบภาพแล้ว" : slot.sub}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
 
             {aiSuccessMessage && (
-              <div className="mb-2.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-orange-50 via-amber-50 to-orange-50 border border-orange-200 text-orange-900 text-xs font-semibold flex items-center gap-2 shadow-2xs animate-in fade-in">
+              <div className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-orange-50 via-amber-50 to-orange-50 border border-orange-200 text-orange-900 text-xs font-semibold flex items-center gap-2 shadow-2xs animate-in fade-in">
                 <Sparkles className="w-4 h-4 text-orange-500 shrink-0" />
                 <span>{aiSuccessMessage}</span>
               </div>
             )}
 
-            {imagePreview ? (
+            {/* Active Slot Image Container */}
+            {currentPreview ? (
               <div className="space-y-3">
-                {/* Image Container with screen-fitting bounds and object-contain */}
                 <div 
                   className="relative rounded-2xl overflow-hidden border border-gray-200 bg-slate-900/5 min-h-[220px] max-h-80 flex items-center justify-center group shadow-2xs"
                 >
-                  {/* Subtle Ambient blur for non-standard aspect ratio artwork */}
                   <div 
                     className="absolute inset-0 scale-125 blur-2xl opacity-20 pointer-events-none"
                     style={{
-                      backgroundImage: `url(${imagePreview})`,
+                      backgroundImage: `url(${currentPreview})`,
                       backgroundPosition: "center",
                       backgroundSize: "cover",
                     }}
@@ -893,26 +1100,30 @@ export default function SubmitWorkModal({
 
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={imagePreview}
-                    alt="Artwork preview"
+                    src={currentPreview}
+                    alt={`Artwork preview slot ${activeSlot + 1}`}
                     className="relative max-h-80 w-auto max-w-full object-contain rounded-xl transition-all"
                   />
                   
+                  {/* Slot Indicator Tag */}
+                  <div className="absolute top-3 left-3 px-2.5 py-1 rounded-xl bg-black/60 backdrop-blur-md text-white text-[11px] font-bold">
+                    ช่องที่ {activeSlot + 1}: {activeSlot === 0 ? "ผลงานหลัก" : activeSlot === 1 ? "รายละเอียด" : "ขั้นตอน"}
+                  </div>
+
                   {/* Corner remove button */}
                   <button
                     type="button"
-                    onClick={handleRemoveImage}
+                    onClick={() => handleRemoveImage(activeSlot)}
                     className="absolute top-3 right-3 p-1.5 bg-black/60 hover:bg-red-600 text-white rounded-full transition-colors cursor-pointer z-10 shadow-xs"
-                    title="ลบรูปภาพนี้"
+                    title="ลบรูปภาพช่องนี้"
                   >
                     <X className="w-4 h-4" />
                   </button>
                 </div>
 
-                {/* Formal Action Bar for AI Enhance, Crop, Rotate, Change, and Delete */}
+                {/* Action Bar for AI Enhance, Crop, Rotate, Change, and Delete */}
                 <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-2xl bg-gray-50 border border-gray-200">
                   <div className="flex flex-wrap items-center gap-2">
-                    {/* 1-Click AI Auto-Enhance Button */}
                     <button
                       type="button"
                       disabled={isAiProcessing}
@@ -924,19 +1135,17 @@ export default function SubmitWorkModal({
                       <span>{isAiProcessing ? "กำลังปรับภาพ..." : "✨ AI ปรับภาพสวย"}</span>
                     </button>
 
-                    {/* Crop & Ratio Editor Button */}
                     <button
                       type="button"
                       disabled={isAiProcessing}
                       onClick={handleOpenEditor}
                       className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-orange-50 text-gray-800 hover:text-orange-600 font-semibold text-xs border border-gray-300 hover:border-orange-300 shadow-2xs transition-all cursor-pointer"
-                      title="ครอบตัดภาพให้พอดีกับหน้าจอ เช่น สัดส่วน 4:5, 3:4, 1:1 หรือ 16:9"
+                      title="ครอบตัดภาพให้พอดีกับหน้าจอ"
                     >
                       <Crop className="w-3.5 h-3.5 text-orange-500" />
                       <span>ครอปภาพ / ปรับแต่ง</span>
                     </button>
 
-                    {/* Rotate 90 deg */}
                     <button
                       type="button"
                       disabled={isAiProcessing}
@@ -953,7 +1162,7 @@ export default function SubmitWorkModal({
                     <button
                       type="button"
                       onClick={() => cameraInputRef.current?.click()}
-                      className="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-3 py-2 rounded-xl bg-white hover:bg-gray-100 text-gray-700 font-semibold text-xs border border-gray-200 shadow-2xs transition-all cursor-pointer"
+                      className="inline-flex items-center justify-center gap-1.5 min-h-[40px] px-3 py-1.5 rounded-xl bg-white hover:bg-gray-100 text-gray-700 font-semibold text-xs border border-gray-200 shadow-2xs transition-all cursor-pointer"
                       title="ถ่ายภาพใหม่ด้วยกล้องมือถือ"
                     >
                       <Camera className="w-3.5 h-3.5 text-red-500" />
@@ -962,7 +1171,7 @@ export default function SubmitWorkModal({
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-3 py-2 rounded-xl bg-white hover:bg-gray-100 text-gray-700 font-semibold text-xs border border-gray-200 shadow-2xs transition-all cursor-pointer"
+                      className="inline-flex items-center justify-center gap-1.5 min-h-[40px] px-3 py-1.5 rounded-xl bg-white hover:bg-gray-100 text-gray-700 font-semibold text-xs border border-gray-200 shadow-2xs transition-all cursor-pointer"
                       title="เลือกภาพใหม่จากคลังรูปภาพ"
                     >
                       <RefreshCw className="w-3.5 h-3.5 text-orange-500" />
@@ -970,9 +1179,9 @@ export default function SubmitWorkModal({
                     </button>
                     <button
                       type="button"
-                      onClick={handleRemoveImage}
-                      className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] p-2 rounded-xl text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
-                      title="ลบรูปภาพนี้"
+                      onClick={() => handleRemoveImage(activeSlot)}
+                      className="inline-flex items-center justify-center min-h-[40px] min-w-[40px] p-2 rounded-xl text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
+                      title="ลบรูปภาพช่องนี้"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -981,7 +1190,7 @@ export default function SubmitWorkModal({
               </div>
             ) : (
               <div className="space-y-3">
-                {/* Dual camera & gallery selection buttons (>=44px touch targets) */}
+                {/* Dual camera & gallery selection buttons */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <button
                     type="button"
@@ -989,7 +1198,7 @@ export default function SubmitWorkModal({
                     className="flex items-center justify-center gap-2 min-h-[48px] px-4 py-3 bg-gradient-to-r from-red-600 via-rose-600 to-pink-600 hover:opacity-95 text-white rounded-2xl font-bold text-xs sm:text-sm shadow-sm active:scale-95 transition-all cursor-pointer"
                   >
                     <Camera className="w-5 h-5 shrink-0" />
-                    <span>ถ่ายรูปจากกล้องมือถือ</span>
+                    <span>ถ่ายรูปสำหรับช่องที่ {activeSlot + 1}</span>
                   </button>
 
                   <button
@@ -1025,10 +1234,10 @@ export default function SubmitWorkModal({
                     {isCompressing ? <Loader2 className="w-5 h-5" /> : <Upload className="w-4 h-4" />}
                   </div>
                   <span className="text-xs font-semibold text-gray-800">
-                    {isCompressing ? "⚡ กำลังประมวลผลและบีบอัดรูปภาพให้อัตโนมัติ..." : "หรือคลิกเพื่อเลือกไฟล์ / ลากไฟล์มาวางที่นี่"}
+                    {isCompressing ? "⚡ กำลังประมวลผลและบีบอัดรูปภาพให้อัตโนมัติ..." : `คลิกเพื่อเลือกภาพสำหรับช่องที่ ${activeSlot + 1} หรือลากไฟล์มาวาง`}
                   </span>
                   <span className="text-[11px] text-gray-500 mt-0.5">
-                    รองรับ JPG, PNG, WebP • ระบบบีบอัดภาพให้อัตโนมัติ คมชัด ส่งงานได้รวดเร็ว
+                    บีบอัดเป็น WebP คมชัด อัตโนมัติ ปลอดภัย ไม่เปลืองอินเทอร์เน็ต
                   </span>
                 </div>
               </div>

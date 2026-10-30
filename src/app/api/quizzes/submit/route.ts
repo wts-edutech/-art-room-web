@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { quizzes, quizQuestions, quizAttempts, students } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
+import { checkIsAdmin, getAdminSession, getSession } from '@/lib/api-auth';
 import { sendQuizNotification } from '@/lib/email-notifier';
 
 // POST /api/quizzes/submit
@@ -24,10 +25,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
+    // Verify session identity
+    const session = await getSession();
+    const adminSession = await getAdminSession();
+    let finalStudentId = String(studentId).trim();
+    if (!adminSession.isAdmin && session && session.role === 'student') {
+      finalStudentId = session.userId;
+    }
+
     const db = getDb();
 
     // Verify student belongs to school
-    const validStudent = await db.select().from(students).where(eq(students.id, String(studentId).trim())).get();
+    const validStudent = await db.select().from(students).where(eq(students.id, finalStudentId)).get();
     if (!validStudent) {
       return NextResponse.json({ error: 'สงวนสิทธิ์เฉพาะนักเรียนโรงเรียนวชิรธรรมสาธิตเท่านั้น' }, { status: 403 });
     }
@@ -42,7 +51,7 @@ export async function POST(request: Request) {
     const existing = await db
       .select()
       .from(quizAttempts)
-      .where(and(eq(quizAttempts.quizId, quizId), eq(quizAttempts.studentId, studentId)));
+      .where(and(eq(quizAttempts.quizId, quizId), eq(quizAttempts.studentId, finalStudentId)));
 
     if (existing && existing.length > 0) {
       return NextResponse.json({
@@ -76,13 +85,13 @@ export async function POST(request: Request) {
     }
 
     // 5. Insert attempt record
-    const attemptId = `att_${Date.now()}_${studentId}`;
+    const attemptId = `att_${Date.now()}_${finalStudentId}`;
     const nowIso = new Date().toISOString();
 
     await db.insert(quizAttempts).values({
       id: attemptId,
       quizId,
-      studentId,
+      studentId: finalStudentId,
       studentName,
       classroom: classroom || 'ไม่ระบุห้อง',
       score,

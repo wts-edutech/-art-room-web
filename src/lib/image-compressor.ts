@@ -1,13 +1,13 @@
 /**
  * Client-Side Smart Image Compressor
  * Automatically resizes and compresses high-resolution camera photos (e.g. 5-10MB)
- * down to ~150-300KB WebP/JPEG before upload, maintaining excellent visual quality.
+ * down to ~120-180KB WebP before upload, maintaining excellent visual quality and safe D1 payloads.
  */
 
 export interface CompressionOptions {
   maxWidth?: number;
   maxHeight?: number;
-  quality?: number; // 0.1 to 1.0 (default 0.82)
+  quality?: number; // 0.1 to 1.0 (default 0.80)
   outputFormat?: 'image/webp' | 'image/jpeg';
 }
 
@@ -20,9 +20,9 @@ export async function compressImage(
     return file;
   }
 
-  const maxWidth = options.maxWidth || 1920;
-  const maxHeight = options.maxHeight || 1920;
-  const quality = options.quality ?? 0.82;
+  const maxWidth = options.maxWidth || 1600;
+  const maxHeight = options.maxHeight || 1600;
+  const quality = options.quality ?? 0.80;
   const outputFormat = options.outputFormat || 'image/webp';
 
   return new Promise((resolve) => {
@@ -64,22 +64,18 @@ export async function compressImage(
               return resolve(file);
             }
 
-            // Only use compressed if it's actually smaller
-            if (blob.size < file.size) {
-              const ext = outputFormat === 'image/webp' ? '.webp' : '.jpg';
-              const baseName = file.name.replace(/\.[^/.]+$/, '');
-              const compressedFile = new File([blob], `${baseName}${ext}`, {
-                type: outputFormat,
-                lastModified: Date.now(),
-              });
+            // Always prefer WebP if file was JPEG/PNG, or if size is smaller
+            const ext = outputFormat === 'image/webp' ? '.webp' : '.jpg';
+            const baseName = file.name.replace(/\.[^/.]+$/, '');
+            const compressedFile = new File([blob], `${baseName}${ext}`, {
+              type: outputFormat,
+              lastModified: Date.now(),
+            });
 
-              console.log(
-                `[ImageCompressor] ${file.name}: ${(file.size / 1024).toFixed(1)} KB -> ${(blob.size / 1024).toFixed(1)} KB (-${Math.round((1 - blob.size / file.size) * 100)}%)`
-              );
-              return resolve(compressedFile);
-            }
-
-            resolve(file);
+            console.log(
+              `[ImageCompressor] ${file.name}: ${(file.size / 1024).toFixed(1)} KB -> ${(blob.size / 1024).toFixed(1)} KB (-${Math.round((1 - blob.size / file.size) * 100)}%)`
+            );
+            return resolve(compressedFile);
           },
           outputFormat,
           quality
@@ -91,6 +87,15 @@ export async function compressImage(
     };
 
     reader.onerror = () => resolve(file);
+    reader.readAsDataURL(file);
+  });
+}
+
+export async function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
     reader.readAsDataURL(file);
   });
 }

@@ -76,6 +76,50 @@ export default function ExamLockModal({
     infractionsCount: number;
   } | null>(null);
 
+  const [hasRestoredDraft, setHasRestoredDraft] = useState<boolean>(false);
+  const quizDraftKey = `artroom_quiz_draft_${quiz.id}_${student.id}`;
+
+  // Restore draft answers & timer on mount (Data Loss Prevention)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(quizDraftKey);
+      if (raw) {
+        const draft = JSON.parse(raw);
+        if (draft.answers && typeof draft.answers === "object" && Object.keys(draft.answers).length > 0) {
+          setAnswers(draft.answers);
+          if (draft.currentIdx !== undefined) setCurrentIdx(draft.currentIdx);
+          if (draft.infractionsCount !== undefined) setInfractionsCount(draft.infractionsCount);
+          if (draft.secondsRemaining && draft.savedAt) {
+            const elapsed = Math.floor((Date.now() - draft.savedAt) / 1000);
+            const remaining = Math.max(15, draft.secondsRemaining - elapsed);
+            setSecondsRemaining(remaining);
+          }
+          setHasRestoredDraft(true);
+        }
+      }
+    } catch (e) {
+      console.warn("Could not load quiz draft:", e);
+    }
+  }, [quizDraftKey]);
+
+  // Real-time auto-save answers to localStorage on every change (Data Loss Prevention)
+  useEffect(() => {
+    if (phase !== "exam") return;
+    try {
+      if (Object.keys(answers).length > 0) {
+        localStorage.setItem(quizDraftKey, JSON.stringify({
+          answers,
+          secondsRemaining,
+          infractionsCount,
+          currentIdx,
+          savedAt: Date.now(),
+        }));
+      }
+    } catch (e) {
+      console.warn("Could not save quiz draft:", e);
+    }
+  }, [answers, secondsRemaining, infractionsCount, currentIdx, phase, quizDraftKey]);
+
   // Load questions when component mounts
   useEffect(() => {
     const fetchQuestions = async () => {
@@ -258,6 +302,10 @@ export default function ExamLockModal({
 
       const data: any = await res.json();
       if (res.ok) {
+        try {
+          localStorage.removeItem(quizDraftKey);
+        } catch {}
+
         setExamResult({
           score: data.score,
           totalQuestions: data.totalQuestions || questions.length || 20,
@@ -267,15 +315,15 @@ export default function ExamLockModal({
         exitFullscreen();
         onSuccess(data.score);
       } else {
-        alert(data.error || "เกิดข้อผิดพลาดในการส่งข้อสอบ");
+        alert(data.error || "เกิดข้อผิดพลาดในการส่งข้อสอบ คำตอบทั้งหมดยังคงบันทึกไว้ในเครื่องอย่างปลอดภัย กรุณากดส่งอีกครั้ง");
         setPhase("exam");
       }
     } catch (err) {
       console.error("Error submitting exam:", err);
-      alert("เกิดข้อผิดพลาดในการเชื่อมต่อเครือข่าย กรุณาลองใหม่อีกครั้ง");
+      alert("สัญญาณอินเทอร์เน็ตไม่เสถียร คำตอบทั้งหมดยังคงบันทึกไว้ในเครื่องอย่างปลอดภัย กรุณากดปุ่มส่งข้อสอบอีกครั้ง");
       setPhase("exam");
     }
-  }, [quiz.id, student, answers, infractionsCount, questions.length, onSuccess]);
+  }, [quiz.id, student, answers, infractionsCount, questions.length, onSuccess, quizDraftKey]);
 
   // Watch infractions limit
   useEffect(() => {
@@ -376,6 +424,14 @@ export default function ExamLockModal({
             <span>ผู้สอบ: <strong className="text-gray-900">{student.name}</strong></span>
             <span className="font-mono font-bold text-orange-600">รหัส {student.id} • ห้อง {student.classroom}</span>
           </div>
+
+          {/* Draft Restored Banner */}
+          {hasRestoredDraft && (
+            <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-3 rounded-xl sm:rounded-2xl flex items-center gap-2.5 text-xs font-semibold animate-in fade-in">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>ตรวจพบคำตอบที่คุณทำค้างไว้ ({Object.keys(answers).length} ข้อ) ระบบได้กู้คืนให้อัตโนมัติ สามารถกดทำต่อได้ทันที</span>
+            </div>
+          )}
 
           {/* Exam Rules & Anti-cheat conditions */}
           <div className="space-y-2 text-xs text-gray-700">

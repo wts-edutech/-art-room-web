@@ -26,6 +26,7 @@ export async function GET(request: Request) {
       studentId: submissions.studentId,
       studentName: submissions.studentName,
       classroom: submissions.classroom,
+      images: submissions.images,
       hasImage: sql<number>`CASE WHEN ${submissions.imageUrl} IS NOT NULL AND length(${submissions.imageUrl}) > 0 THEN 1 ELSE 0 END`,
       hasFile: sql<number>`CASE WHEN ${submissions.fileUrl} IS NOT NULL AND length(${submissions.fileUrl}) > 0 THEN 1 ELSE 0 END`,
       fileName: submissions.fileName,
@@ -56,6 +57,19 @@ export async function GET(request: Request) {
     const normalizedSubmissions = (subList || []).map(sub => {
       const ass = assignmentMap.get(sub.assignmentId);
       const student = studentMap.get(sub.studentId);
+      let imagesList: string[] = [];
+      if (sub.images) {
+        try {
+          const parsed = typeof sub.images === 'string' ? JSON.parse(sub.images) : sub.images;
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            imagesList = parsed.map((_, idx) => `/api/submissions/image?id=${encodeURIComponent(sub.id)}&index=${idx}`);
+          }
+        } catch {}
+      }
+      if (imagesList.length === 0 && sub.hasImage) {
+        imagesList = [`/api/submissions/image?id=${encodeURIComponent(sub.id)}&index=0`];
+      }
+
       return {
         id: sub.id,
         type: 'assignment' as const,
@@ -71,7 +85,8 @@ export async function GET(request: Request) {
         maxScore: ass?.maxScore ?? 10,
         status: sub.status || 'pending', // 'pending' | 'graded' | 'resubmit'
         isLate: Boolean(sub.isLate),
-        imageUrl: sub.hasImage ? `/api/submissions/image?id=${encodeURIComponent(sub.id)}` : null,
+        imageUrl: imagesList.length > 0 ? imagesList[0] : (sub.hasImage ? `/api/submissions/image?id=${encodeURIComponent(sub.id)}` : null),
+        images: imagesList,
         fileUrl: sub.hasFile ? `/api/submissions/image?id=${encodeURIComponent(sub.id)}` : null,
         fileName: sub.fileName || null,
         externalLink: sub.externalLink || null,

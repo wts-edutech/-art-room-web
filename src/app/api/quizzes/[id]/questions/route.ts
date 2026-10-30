@@ -16,7 +16,10 @@ export async function GET(
   try {
     const { id } = await params;
     const { searchParams } = new URL(request.url);
-    const withAnswers = searchParams.get('withAnswers') === 'true';
+    const wantsAnswers = searchParams.get('withAnswers') === 'true';
+    const isAdmin = await checkIsAdmin();
+    // Strict security: Only verified admin/teachers can view correct answers and explanations
+    const withAnswers = wantsAnswers && isAdmin;
     const db = getDb();
 
     // Verify quiz exists

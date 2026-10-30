@@ -92,6 +92,7 @@ export default function SubmissionsPage() {
   const [modalAssignment, setModalAssignment] = useState<any | null>(null);
   const [previewSubmission, setPreviewSubmission] = useState<{ submission: any; assignment: any } | null>(null);
   const [isFullscreenView, setIsFullscreenView] = useState<boolean>(false);
+  const [lightboxImageIndex, setLightboxImageIndex] = useState<number>(0);
   const [standaloneLightboxUrl, setStandaloneLightboxUrl] = useState<string | null>(null);
   const [portalView, setPortalView] = useState<"assignments" | "album">("assignments");
 
@@ -1504,42 +1505,86 @@ export default function SubmissionsPage() {
       {isFullscreenView && previewSubmission && (
         <div
           className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200 cursor-zoom-out"
-          onClick={() => setIsFullscreenView(false)}
+          onClick={() => {
+            setIsFullscreenView(false);
+            setLightboxImageIndex(0);
+          }}
         >
-          <div 
-            className="absolute top-4 inset-x-4 sm:inset-x-8 flex items-center justify-between z-10 pointer-events-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="bg-black/60 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10 text-white">
-              <p className="font-bold text-xs sm:text-sm font-kanit">{previewSubmission.assignment.title}</p>
-              <p className="text-[11px] text-gray-300">ผลงานต้นฉบับของนักเรียน</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <a
-                href={previewSubmission.submission.imageUrl}
-                download={`artwork_${previewSubmission.assignment.title}.jpg`}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-white/15 hover:bg-white/25 text-white font-bold text-xs border border-white/20 backdrop-blur-md transition-all cursor-pointer"
-              >
-                <Download className="w-4 h-4" />
-                <span className="hidden sm:inline">ดาวน์โหลดภาพ</span>
-              </a>
-              <button
-                type="button"
-                onClick={() => setIsFullscreenView(false)}
-                className="p-2 sm:px-4 sm:py-2 rounded-2xl bg-white/20 hover:bg-white/30 text-white font-bold text-xs border border-white/20 backdrop-blur-md transition-all cursor-pointer flex items-center gap-1"
-              >
-                <X className="w-5 h-5" />
-                <span className="hidden sm:inline">ปิด</span>
-              </button>
-            </div>
-          </div>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={previewSubmission.submission.imageUrl}
-            alt={previewSubmission.assignment.title}
-            className="max-w-[96vw] max-h-[88vh] object-contain rounded-xl shadow-2xl transition-all select-none"
-            onClick={(e) => e.stopPropagation()}
-          />
+          {(() => {
+            const allImgs: string[] = Array.isArray(previewSubmission.submission.images) && previewSubmission.submission.images.length > 0
+              ? previewSubmission.submission.images
+              : [previewSubmission.submission.imageUrl].filter(Boolean);
+            const currentImgUrl = allImgs[lightboxImageIndex] || previewSubmission.submission.imageUrl;
+
+            return (
+              <>
+                <div 
+                  className="absolute top-4 inset-x-4 sm:inset-x-8 flex items-center justify-between z-10 pointer-events-auto"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="bg-black/60 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10 text-white">
+                    <p className="font-bold text-xs sm:text-sm font-kanit">{previewSubmission.assignment.title}</p>
+                    <p className="text-[11px] text-gray-300">
+                      ผลงานของนักเรียน {allImgs.length > 1 ? `(ภาพที่ ${lightboxImageIndex + 1} จาก ${allImgs.length})` : ""}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={currentImgUrl}
+                      download={`artwork_${previewSubmission.assignment.title}_${lightboxImageIndex + 1}.jpg`}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-white/15 hover:bg-white/25 text-white font-bold text-xs border border-white/20 backdrop-blur-md transition-all cursor-pointer"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span className="hidden sm:inline">ดาวน์โหลดภาพ</span>
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsFullscreenView(false);
+                        setLightboxImageIndex(0);
+                      }}
+                      className="p-2 sm:px-4 sm:py-2 rounded-2xl bg-white/20 hover:bg-white/30 text-white font-bold text-xs border border-white/20 backdrop-blur-md transition-all cursor-pointer flex items-center gap-1"
+                    >
+                      <X className="w-5 h-5" />
+                      <span className="hidden sm:inline">ปิด</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={currentImgUrl}
+                  alt={previewSubmission.assignment.title}
+                  className="max-w-[96vw] max-h-[80vh] object-contain rounded-xl shadow-2xl transition-all select-none"
+                  onClick={(e) => e.stopPropagation()}
+                />
+
+                {/* Multi-image thumbnail strip */}
+                {allImgs.length > 1 && (
+                  <div 
+                    className="absolute bottom-5 inset-x-0 flex items-center justify-center gap-3 z-10 pointer-events-auto"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {allImgs.map((imgUrl, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setLightboxImageIndex(idx)}
+                        className={`w-14 h-14 rounded-xl overflow-hidden border-2 transition-all cursor-pointer bg-black/40 ${
+                          lightboxImageIndex === idx
+                            ? "border-orange-500 scale-110 shadow-lg ring-2 ring-orange-400/50"
+                            : "border-white/30 opacity-60 hover:opacity-100"
+                        }`}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={imgUrl} alt={`thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
       )}
 

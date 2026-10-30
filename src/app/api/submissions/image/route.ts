@@ -8,6 +8,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
+    const index = parseInt(searchParams.get('index') || '0', 10);
 
     if (!id) {
       return new Response('Missing submission id', { status: 400 });
@@ -15,18 +16,43 @@ export async function GET(request: Request) {
 
     const db = getDb();
     const sub = await db
-      .select({ imageUrl: submissions.imageUrl })
+      .select({ imageUrl: submissions.imageUrl, images: submissions.images })
       .from(submissions)
       .where(eq(submissions.id, id))
       .get();
 
-    if (!sub || !sub.imageUrl) {
+    if (!sub) {
+      return new Response('Submission not found', { status: 404 });
+    }
+
+    let targetImg: string | null = null;
+
+    // Check images array first if index specified or present
+    if (sub.images) {
+      try {
+        const parsed = typeof sub.images === 'string' ? JSON.parse(sub.images) : sub.images;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          if (index >= 0 && index < parsed.length && parsed[index]) {
+            targetImg = parsed[index];
+          } else if (parsed[0]) {
+            targetImg = parsed[0];
+          }
+        }
+      } catch {}
+    }
+
+    // Fall back to primary imageUrl if not resolved from images array
+    if (!targetImg) {
+      targetImg = sub.imageUrl;
+    }
+
+    if (!targetImg) {
       return new Response('Image not found', { status: 404 });
     }
 
-    // Handle data URL (e.g. data:image/jpeg;base64,...)
-    if (sub.imageUrl.startsWith('data:')) {
-      const match = sub.imageUrl.match(/^data:([^;]+);base64,(.+)$/s);
+    // Handle data URL (e.g. data:image/webp;base64,... or data:image/jpeg;base64,...)
+    if (targetImg.startsWith('data:')) {
+      const match = targetImg.match(/^data:([^;]+);base64,(.+)$/s);
       if (match) {
         const mimeType = match[1];
         const base64Data = match[2];
@@ -46,7 +72,7 @@ export async function GET(request: Request) {
     }
 
     // If it's an external HTTP URL, redirect
-    return Response.redirect(sub.imageUrl, 302);
+    return Response.redirect(targetImg, 302);
   } catch (error: any) {
     console.error('Error serving submission image:', error);
     return new Response('Failed to load image', { status: 500 });
