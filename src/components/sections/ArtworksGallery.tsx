@@ -186,8 +186,8 @@ export default function ArtworksGallery() {
         </div>
       </div>
 
-      {/* Artworks Masonry Grid (Mobile 1 column with smooth padding) */}
-      <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 sm:gap-6 space-y-4 sm:space-y-6">
+      {/* Artworks Grid: 2 columns on mobile, 3 on md, 4 on lg */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
         {filteredArtworks.map((artwork) => {
           const studentName = artwork.studentName || artwork.author || "ไม่ระบุชื่อ";
           const gradeDisplay = artwork.grade || artwork.year || "ทั่วไป";
@@ -197,16 +197,16 @@ export default function ArtworksGallery() {
             <div 
               key={artwork.id} 
               onClick={() => setSelectedArtwork(artwork)}
-              className="break-inside-avoid group cursor-pointer"
+              className="group cursor-pointer flex flex-col h-full"
             >
-              <div className="bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-[0_4px_24px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(236,72,153,0.16)] transition-all duration-500 group-hover:-translate-y-2 relative flex flex-col">
+              <div className="bg-white rounded-2xl sm:rounded-3xl overflow-hidden border border-gray-100 shadow-[0_4px_20px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(236,72,153,0.16)] transition-all duration-300 group-hover:-translate-y-1 relative flex flex-col h-full">
                 
                 {/* Artwork Image Container */}
-                <div className="w-full aspect-[4/5] max-h-[440px] bg-slate-900/5 relative overflow-hidden flex items-center justify-center">
+                <div className="w-full aspect-[4/5] bg-slate-900/5 relative overflow-hidden flex items-center justify-center shrink-0">
                   {/* Floating Classroom Badge */}
-                  <div className="absolute top-3.5 right-3.5 z-10 px-3 py-1.5 rounded-full bg-white/95 backdrop-blur-md shadow-sm border border-pink-100 text-pink-600 font-bold text-xs flex items-center gap-1.5 transition-transform duration-300 group-hover:scale-105">
-                    <GraduationCap className="w-3.5 h-3.5 text-pink-500" />
-                    <span>{classroomText}</span>
+                  <div className="absolute top-2 right-2 sm:top-3.5 sm:right-3.5 z-10 px-2 sm:px-3 py-0.5 sm:py-1.5 rounded-full bg-white/95 backdrop-blur-md shadow-xs border border-pink-100 text-pink-600 font-bold text-[10px] sm:text-xs flex items-center gap-1 transition-transform duration-300 group-hover:scale-105">
+                    <GraduationCap className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-pink-500 shrink-0" />
+                    <span className="truncate max-w-[70px] sm:max-w-none">{classroomText}</span>
                   </div>
 
                   {/* Artwork Image */}
@@ -222,30 +222,32 @@ export default function ArtworksGallery() {
 
                   {/* Hover Overlay with Preview CTA */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                    <div className="transform translate-y-3 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300 delay-75 bg-white/90 backdrop-blur-md text-slate-800 px-4 py-2 rounded-full flex items-center gap-2 text-xs font-semibold shadow-xl hover:bg-white">
-                      <Maximize2 className="w-3.5 h-3.5 text-pink-600" /> คลิกดูรูปภาพขนาดเต็ม
+                    <div className="transform translate-y-3 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300 delay-75 bg-white/90 backdrop-blur-md text-slate-800 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-semibold shadow-xl hover:bg-white">
+                      <Maximize2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-pink-600" />
+                      <span className="hidden sm:inline">คลิกดูรูปภาพขนาดเต็ม</span>
+                      <span className="sm:hidden">ดูภาพเต็ม</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Card Details */}
-                <div className="p-5 bg-white flex flex-col justify-between flex-1">
+                <div className="p-3 sm:p-5 bg-white flex flex-col justify-between flex-1">
                   <div>
-                    <h4 className="font-bold font-heading text-base sm:text-lg text-gray-900 mb-2 group-hover:text-pink-600 transition-colors line-clamp-2 leading-snug">
+                    <h4 className="font-bold font-heading text-xs sm:text-base text-gray-900 mb-1 sm:mb-2 group-hover:text-pink-600 transition-colors line-clamp-2 leading-snug">
                       {artwork.title}
                     </h4>
 
                     {/* Technique & Dimensions Tags */}
                     {(artwork.technique || artwork.dimensions) && (
-                      <div className="flex flex-wrap items-center gap-1.5 mb-3">
+                      <div className="flex flex-wrap items-center gap-1 mb-2 sm:mb-3">
                         {artwork.technique && (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-medium bg-orange-50 text-orange-700 border border-orange-100/90 px-2 py-0.5 rounded-lg">
-                            <Palette className="w-3 h-3 text-orange-500 shrink-0" />
-                            {artwork.technique}
+                          <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-medium bg-orange-50 text-orange-700 border border-orange-100/90 px-1.5 sm:px-2 py-0.5 rounded-md">
+                            <Palette className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-orange-500 shrink-0" />
+                            <span className="truncate max-w-[70px] sm:max-w-none">{artwork.technique}</span>
                           </span>
                         )}
                         {artwork.dimensions && (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-medium bg-slate-50 text-slate-600 border border-slate-200/80 px-2 py-0.5 rounded-lg">
+                          <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-medium bg-slate-50 text-slate-600 border border-slate-200/80 px-2 py-0.5 rounded-lg">
                             <Maximize2 className="w-3 h-3 text-slate-400 shrink-0" />
                             {artwork.dimensions}
                           </span>
@@ -255,21 +257,20 @@ export default function ArtworksGallery() {
                   </div>
                   
                   {/* Student & Classroom Information */}
-                  <div className="flex items-center gap-3 mt-1 pt-3.5 border-t border-gray-100">
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-pink-500 to-orange-400 text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0 ring-2 ring-pink-100">
+                  <div className="flex items-center gap-2 sm:gap-3 mt-auto pt-2.5 sm:pt-3.5 border-t border-gray-100">
+                    <div className="w-6 h-6 sm:w-9 sm:h-9 rounded-full bg-gradient-to-tr from-pink-500 to-orange-400 text-white flex items-center justify-center font-bold text-[10px] sm:text-xs shadow-xs shrink-0 ring-1 sm:ring-2 ring-pink-100">
                       {getStudentInitial(studentName)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-semibold text-gray-800 truncate group-hover:text-pink-600 transition-colors">
+                      <div className="text-xs sm:text-sm font-semibold text-gray-800 truncate group-hover:text-pink-600 transition-colors">
                         {studentName}
                       </div>
-                      <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-0.5 truncate">
-                        <span className="inline-flex items-center gap-1 text-pink-600 font-medium bg-pink-50 px-2 py-0.5 rounded-md text-[11px] border border-pink-100/60">
-                          <GraduationCap className="w-3 h-3 text-pink-500 shrink-0" />
+                      <div className="flex items-center gap-1 text-[10px] sm:text-xs text-gray-500 mt-0.5 truncate">
+                        <span className="text-pink-600 font-medium truncate">
                           {classroomText}
                         </span>
-                        <span className="text-gray-300">•</span>
-                        <span className="text-gray-400 text-[11px] truncate">ศิลปินนักเรียน</span>
+                        <span className="text-gray-300 hidden sm:inline">•</span>
+                        <span className="text-gray-400 text-[11px] truncate hidden sm:inline">ศิลปินนักเรียน</span>
                       </div>
                     </div>
                   </div>
