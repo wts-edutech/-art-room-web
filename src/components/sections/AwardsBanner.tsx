@@ -76,7 +76,7 @@ export default function AwardsBanner({ awards }: { awards: any[] }) {
               ขอแสดงความยินดีกับ
             </span>
             
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1 whitespace-pre-line leading-relaxed">
               {current.student}
             </h2>
             

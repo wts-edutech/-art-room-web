@@ -2,10 +2,48 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Trash2, Plus, Pencil, Award, Star, FileText, Loader2, Calendar, LayoutGrid, Grid2X2, Search, X } from "lucide-react";
+import { Trash2, Plus, Pencil, Award, Star, FileText, Loader2, Calendar, LayoutGrid, Grid2X2, Search, X, Users } from "lucide-react";
 import PRImageGuide from "./PRImageGuide";
 import { optimizeImageToFile } from "@/lib/image-optimizer";
 import { GRADE_GROUPS } from "@/lib/constants/grades";
+
+interface StudentItem {
+  name: string;
+  grade: string;
+}
+
+// Helper to parse single or multiple students from database text
+function parseStudentsFromAward(studentStr: string, defaultGrade: string): StudentItem[] {
+  if (!studentStr || !studentStr.trim()) {
+    return [{ name: "", grade: defaultGrade || "" }];
+  }
+
+  // 1. If contains newlines
+  if (studentStr.includes("\n")) {
+    const lines = studentStr.split("\n").map((l) => l.trim()).filter(Boolean);
+    const parsed = lines.map((line) => {
+      const gradeMatch = line.match(/\((ม\.\d+(?:\/\d+)?)\)/);
+      const grade = gradeMatch ? gradeMatch[1] : defaultGrade || "";
+      const name = line.replace(/^\d+[\.\)]\s*/, "").replace(/\s*\(ม\.\d+(?:\/\d+)?\)/, "").trim();
+      return { name, grade };
+    });
+    return parsed.length > 0 ? parsed : [{ name: studentStr.trim(), grade: defaultGrade || "" }];
+  }
+
+  // 2. If numbered on a single line like "1. นางสาวA 2. นายB"
+  const numberedMatches = studentStr.split(/(?=\d+[\.\)])/).map((p) => p.trim()).filter(Boolean);
+  if (numberedMatches.length > 1) {
+    const parsed = numberedMatches.map((part) => {
+      const gradeMatch = part.match(/\((ม\.\d+(?:\/\d+)?)\)/);
+      const grade = gradeMatch ? gradeMatch[1] : defaultGrade || "";
+      const name = part.replace(/^\d+[\.\)]\s*/, "").replace(/\s*\(ม\.\d+(?:\/\d+)?\)/, "").trim();
+      return { name, grade };
+    });
+    return parsed.length > 0 ? parsed : [{ name: studentStr.trim(), grade: defaultGrade || "" }];
+  }
+
+  return [{ name: studentStr.trim(), grade: defaultGrade || "" }];
+}
 
 // Helper to convert DD/MM/YYYY (BE) or YYYY-MM-DD to YYYY-MM-DD for HTML date input
 function toIsoDate(dateStr: string): string {
@@ -35,6 +73,7 @@ export default function AwardsTab() {
   const [awardTitle, setAwardTitle] = useState("");
   const [awardStudent, setAwardStudent] = useState("");
   const [awardGrade, setAwardGrade] = useState("");
+  const [students, setStudents] = useState<StudentItem[]>([{ name: "", grade: "" }]);
   const [awardDescription, setAwardDescription] = useState("");
   const [awardYear, setAwardYear] = useState("");
   const [awardDate, setAwardDate] = useState("");
@@ -51,6 +90,25 @@ export default function AwardsTab() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [cardSize, setCardSize] = useState<"compact" | "normal">("compact");
   const [searchQuery, setSearchQuery] = useState("");
+
+  const handleAddStudentRow = () => {
+    setStudents((prev) => [...prev, { name: "", grade: prev[prev.length - 1]?.grade || "" }]);
+  };
+
+  const handleRemoveStudentRow = (index: number) => {
+    setStudents((prev) => {
+      if (prev.length <= 1) return prev;
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  const handleStudentChange = (index: number, field: "name" | "grade", value: string) => {
+    setStudents((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+  };
 
   // Memoized Preview URLs with automatic revoking to prevent memory leaks and typing lag
   const [awardImagePreview, setAwardImagePreview] = useState<string>("");
@@ -100,15 +158,33 @@ export default function AwardsTab() {
 
   const handleAddAward = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!awardTitle || !awardStudent) return;
+    const validStudents = students.filter((s) => s.name.trim().length > 0);
+    if (!awardTitle || validStudents.length === 0) {
+      alert("กรุณาระบุชื่อกิจกรรมและชื่อนักเรียนอย่างน้อย 1 คน");
+      return;
+    }
     
     setIsSubmitting(true);
     try {
+      let finalStudent = "";
+      let finalGrade = "";
+
+      if (validStudents.length === 1) {
+        finalStudent = validStudents[0].name.trim();
+        finalGrade = validStudents[0].grade.trim();
+      } else {
+        finalStudent = validStudents
+          .map((s, idx) => `${idx + 1}. ${s.name.trim()}${s.grade ? ` (${s.grade})` : ""}`)
+          .join("\n");
+        const uniqueGrades = Array.from(new Set(validStudents.map((s) => s.grade.trim()).filter(Boolean)));
+        finalGrade = uniqueGrades.join(", ");
+      }
+
       const formData = new FormData();
       if (editingAwardId) formData.append("id", editingAwardId);
       formData.append("title", awardTitle);
-      formData.append("student", awardStudent);
-      formData.append("grade", awardGrade);
+      formData.append("student", finalStudent);
+      formData.append("grade", finalGrade);
       formData.append("description", awardDescription);
       formData.append("year", awardYear);
       formData.append("date", awardDate);
@@ -156,6 +232,7 @@ export default function AwardsTab() {
 
   const resetAwardForm = () => {
     setAwardTitle("");
+    setStudents([{ name: "", grade: "" }]);
     setAwardStudent("");
     setAwardGrade("");
     setAwardDescription("");
@@ -178,6 +255,8 @@ export default function AwardsTab() {
 
   const handleEditAward = (award: any) => {
     setAwardTitle(award.title || "");
+    const parsedStudents = parseStudentsFromAward(award.student || "", award.grade || "");
+    setStudents(parsedStudents);
     setAwardStudent(award.student || "");
     setAwardGrade(award.grade || "");
     setAwardDescription(award.description || "");
@@ -268,28 +347,82 @@ export default function AwardsTab() {
               <label className="text-sm font-medium text-gray-700 block mb-1">ชื่อกิจกรรม *</label>
               <input type="text" required value={awardTitle} onChange={(e) => setAwardTitle(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none text-sm" />
             </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700 block mb-1">ชื่อนักเรียน *</label>
-              <input type="text" required value={awardStudent} onChange={(e) => setAwardStudent(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none text-sm" />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700 block mb-1">ระดับชั้นเรียน (ม.1 - ม.6 รวม 14 ห้อง)</label>
-              <select 
-                value={awardGrade} 
-                onChange={(e) => setAwardGrade(e.target.value)}
-                className="w-full h-10 px-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none text-sm bg-white cursor-pointer"
-              >
-                <option value="">-- เลือกระดับชั้นเรียน (ม.1/1 - ม.6/14) --</option>
-                {GRADE_GROUPS.map((group) => (
-                  <optgroup key={group.level} label={group.label}>
-                    {group.rooms.map((room) => (
-                      <option key={room} value={room}>
-                        {room}
-                      </option>
-                    ))}
-                  </optgroup>
+            {/* รายชื่อนักเรียน (เดี่ยว / แข่งเป็นทีม) */}
+            <div className="pt-1">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-semibold text-gray-800 flex items-center gap-1.5">
+                  <Users className="w-4 h-4 text-orange-500" />
+                  รายชื่อนักเรียน {students.length > 1 ? `(ทีม ${students.length} คน)` : ""} *
+                </label>
+                <button
+                  type="button"
+                  onClick={handleAddStudentRow}
+                  className="inline-flex items-center gap-1 text-xs font-bold text-orange-600 bg-orange-50 hover:bg-orange-100 border border-orange-200/80 px-2.5 py-1 rounded-xl transition-all cursor-pointer active:scale-95 shadow-2xs"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  เพิ่มสมาชิกในทีม
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {students.map((st, index) => (
+                  <div 
+                    key={index} 
+                    className="p-3 rounded-2xl bg-slate-50/90 border border-slate-200/90 space-y-2 relative transition-all shadow-2xs"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                        <span className="w-5 h-5 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-white flex items-center justify-center text-[10px] font-extrabold shadow-2xs">
+                          {index + 1}
+                        </span>
+                        {students.length > 1 ? `สมาชิกคนที่ ${index + 1}` : "ข้อมูลนักเรียน"}
+                      </span>
+                      {students.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveStudentRow(index)}
+                          className="text-slate-400 hover:text-red-500 p-1 transition-colors cursor-pointer rounded-lg hover:bg-red-50"
+                          title="ลบนักเรียนคนนี้"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* ชื่อนักเรียน */}
+                    <div>
+                      <input
+                        type="text"
+                        required={index === 0}
+                        value={st.name}
+                        onChange={(e) => handleStudentChange(index, "name", e.target.value)}
+                        placeholder={index === 0 ? "คำนำหน้าและชื่อ-นามสกุล (เช่น น.ส.ขนิษฐา อดุลวุฒิกรชัย)" : "ชื่อ-นามสกุล สมาชิกในทีม"}
+                        className="w-full h-9 px-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none text-xs sm:text-sm bg-white"
+                      />
+                    </div>
+
+                    {/* ระดับชั้น */}
+                    <div>
+                      <select
+                        value={st.grade}
+                        onChange={(e) => handleStudentChange(index, "grade", e.target.value)}
+                        className="w-full h-8.5 px-2.5 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none text-xs bg-white cursor-pointer text-slate-700"
+                      >
+                        <option value="">-- เลือกระดับชั้นเรียน (ม.1/1 - ม.6/14) --</option>
+                        {GRADE_GROUPS.map((group) => (
+                          <optgroup key={group.level} label={group.label}>
+                            {group.rooms.map((room) => (
+                              <option key={room} value={room}>
+                                {room}
+                              </option>
+                            ))}
+                          </optgroup>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
                 ))}
-              </select>
+              </div>
             </div>
             <div>
               <label className="text-sm font-medium text-gray-700 block mb-1">ระดับรางวัล/ผลงาน</label>
@@ -633,9 +766,12 @@ export default function AwardsTab() {
                     >
                       {award.title}
                     </h3>
-                    <p className="text-xs text-slate-600 font-medium mb-2 truncate">
-                      นักเรียน: <span className="text-slate-900 font-semibold">{award.student}</span>
-                    </p>
+                    <div className="text-xs text-slate-600 font-medium mb-2">
+                      <span className="text-slate-400 text-[11px] block">นักเรียน:</span>
+                      <div className="text-slate-900 font-semibold whitespace-pre-line line-clamp-2 leading-relaxed">
+                        {award.student}
+                      </div>
+                    </div>
                     
                     <div className="text-[10px] sm:text-[11px] text-slate-500 mt-auto bg-slate-50/90 p-2 rounded-xl border border-slate-100 space-y-0.5">
                       <div className="truncate"><strong>รางวัล:</strong> {award.awardLevel || '-'}</div>

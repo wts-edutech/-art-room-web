@@ -205,9 +205,11 @@ export default function AwardsTable({ awards }: { awards: any[] }) {
                         </span>
                       )}
                     </div>
-                    <h4 className="font-bold text-gray-900 text-sm leading-snug">
+                    <h4 className="font-bold text-gray-900 text-sm leading-snug whitespace-pre-line">
                       {award.student}
-                      {award.grade && <span className="text-xs text-gray-500 font-normal ml-1.5">({award.grade})</span>}
+                      {award.grade && !award.student.includes("(") && (
+                        <span className="text-xs text-gray-500 font-normal ml-1.5">({award.grade})</span>
+                      )}
                     </h4>
                   </div>
                   <span className="text-[11px] font-mono text-gray-400 shrink-0">
@@ -267,7 +269,7 @@ export default function AwardsTable({ awards }: { awards: any[] }) {
             <thead>
               <tr className="bg-gray-50/90 text-gray-700 border-b border-gray-200 font-bold text-xs uppercase tracking-wider">
                 <th className="py-4 px-5 whitespace-nowrap w-[130px]">วันที่</th>
-                <th className="py-4 px-5 whitespace-nowrap w-[180px] min-w-[160px]">ผู้ได้รับรางวัล</th>
+                <th className="py-4 px-5 whitespace-nowrap w-[200px] min-w-[180px]">ผู้ได้รับรางวัล</th>
                 <th className="py-4 px-5 whitespace-nowrap w-[180px] min-w-[160px]">ระดับรางวัล</th>
                 <th className="py-4 px-5 whitespace-nowrap w-[180px] min-w-[160px]">ระดับการแข่งขัน</th>
                 <th className="py-4 px-5 min-w-[220px]">ชื่อกิจกรรม</th>
@@ -285,11 +287,13 @@ export default function AwardsTable({ awards }: { awards: any[] }) {
                     </td>
 
                     {/* ผู้ได้รับรางวัล */}
-                    <td className="py-4 px-5 align-middle">
-                      <div className="font-bold text-gray-900 text-sm whitespace-nowrap">{award.student}</div>
-                      <div className="text-[11px] text-gray-500 font-medium">
-                        {award.grade ? `นักเรียน (${award.grade})` : 'นักเรียน'}
-                      </div>
+                    <td className="py-4 px-5 align-middle min-w-[180px]">
+                      <div className="font-bold text-gray-900 text-sm whitespace-pre-line leading-relaxed">{award.student}</div>
+                      {award.grade && !award.student.includes("(") && (
+                        <div className="text-[11px] text-gray-500 font-medium mt-0.5">
+                          นักเรียน ({award.grade})
+                        </div>
+                      )}
                     </td>
 
                     {/* ระดับรางวัล */}
