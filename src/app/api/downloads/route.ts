@@ -197,23 +197,33 @@ export async function GET() {
       ORDER BY order_index ASC, created_at DESC
     `).all();
 
+    const noCacheHeaders = {
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+    };
+
     if (!result || !result.results || result.results.length === 0) {
       return NextResponse.json({
         downloads: DEFAULT_DOWNLOADS,
         gradeSettings
-      });
+      }, { headers: noCacheHeaders });
     }
 
     return NextResponse.json({
       downloads: result.results,
       gradeSettings
-    });
+    }, { headers: noCacheHeaders });
 
   } catch (error) {
     console.error("GET /api/downloads error:", error);
     return NextResponse.json({
       downloads: DEFAULT_DOWNLOADS,
       gradeSettings: memoryGradeSettings
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+      }
     });
   }
 }

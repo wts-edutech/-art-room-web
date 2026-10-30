@@ -23,10 +23,20 @@ export async function GET(request: Request) {
       ? await query.where(and(...conditions)).orderBy(desc(lessons.createdAt))
       : await query.orderBy(desc(lessons.createdAt));
 
-    return NextResponse.json(all || []);
+    return NextResponse.json(all || [], {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      }
+    });
   } catch (error) {
     console.error("GET /api/lessons error:", error);
-    return NextResponse.json([]);
+    return NextResponse.json([], {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+      }
+    });
   }
 }
 

@@ -4,62 +4,50 @@ import { useState, useEffect, Suspense } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import MaterialsList from "@/components/sections/MaterialsList";
-import { DEFAULT_DOWNLOADS, DownloadItem } from "@/data/default-downloads";
-import { Sparkles, BookOpen, FileText } from "lucide-react";
+import { DownloadItem } from "@/data/default-downloads";
+import { Sparkles, BookOpen, FileText, Loader2 } from "lucide-react";
 
-const DEFAULT_LESSONS = [
-  {
-    id: "1788253108830",
-    title: "เทคนิควาดเส้น ประเภทของเส้น",
-    description: "เรียนรู้ประเภทของเส้นและเทคนิคการวาดเส้นสร้างสรรค์เพื่อสื่ออารมณ์",
-    videoId: "AB1QIlCEDDU",
-    category: "สื่อวิดีทัศน์",
-    type: "general"
-  },
-  {
-    id: "1788253557873",
-    title: "สอนลงสีไม้รูปมังคุด",
-    description: "เทคนิคการระบายสีไม้และเกลี่ยน้ำหนักให้ผลงานดูมีมิติและสมจริง",
-    videoId: "Frj7Onjr4kg",
-    category: "สื่อวิดีทัศน์",
-    type: "general"
-  },
-  {
-    id: "1788253613400",
-    title: "เทคนิคสีไม้ รูปผีเสื้อ",
-    description: "การไล่เฉดสีไม้สร้างลวดลายปีกผีเสื้อที่สวยงามประณีต",
-    videoId: "71JjYfjynTM",
-    category: "สื่อวิดีทัศน์",
-    type: "general"
-  }
-];
+// In-memory cache for instant subsequent tab/page transitions (zero network lag)
+let cachedLessons: any[] | null = null;
+let cachedDownloads: DownloadItem[] | null = null;
 
 export default function MaterialsPage() {
-  const [allLessons, setAllLessons] = useState<any[]>(DEFAULT_LESSONS);
-  const [allDownloads, setAllDownloads] = useState<DownloadItem[]>(DEFAULT_DOWNLOADS);
+  const [allLessons, setAllLessons] = useState<any[]>(cachedLessons || []);
+  const [allDownloads, setAllDownloads] = useState<DownloadItem[]>(cachedDownloads || []);
+  const [isLoading, setIsLoading] = useState(!cachedLessons || !cachedDownloads);
 
   useEffect(() => {
-    // Fetch lessons from database
-    fetch("/api/lessons?type=all")
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
-          setAllLessons(data);
-        }
-      })
-      .catch(() => {});
+    let isMounted = true;
 
-    // Fetch downloads from database
-    fetch("/api/downloads")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && Array.isArray(data.downloads) && data.downloads.length > 0) {
-          setAllDownloads(data.downloads);
-        } else if (Array.isArray(data) && data.length > 0) {
-          setAllDownloads(data);
-        }
-      })
-      .catch(() => {});
+    // Fetch fresh database records with no-store to avoid stale data
+    Promise.all([
+      fetch("/api/lessons?type=all", { cache: "no-store" })
+        .then((res) => res.json())
+        .catch(() => []),
+      fetch("/api/downloads", { cache: "no-store" })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && Array.isArray(data.downloads)) return data.downloads;
+          if (Array.isArray(data)) return data;
+          return [];
+        })
+        .catch(() => []),
+    ]).then(([lessonsData, downloadsData]) => {
+      if (!isMounted) return;
+      const validLessons = Array.isArray(lessonsData) ? lessonsData : [];
+      const validDownloads = Array.isArray(downloadsData) ? downloadsData : [];
+
+      cachedLessons = validLessons;
+      cachedDownloads = validDownloads;
+
+      setAllLessons(validLessons);
+      setAllDownloads(validDownloads);
+      setIsLoading(false);
+    });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const totalLessons = allLessons.length;
@@ -101,8 +89,12 @@ export default function MaterialsPage() {
                     <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </div>
                   <span className="text-[11px] sm:text-sm font-bold text-gray-700 whitespace-nowrap">บทเรียน & วิดีโอ</span>
-                  <div className="flex items-center gap-1 bg-red-50 text-red-700 font-extrabold text-xs sm:text-base px-2 sm:px-2.5 py-0.5 rounded-full border border-red-100">
-                    <span>{totalLessons}</span>
+                  <div className="flex items-center gap-1 bg-red-50 text-red-700 font-extrabold text-xs sm:text-base px-2 sm:px-2.5 py-0.5 rounded-full border border-red-100 min-w-[28px] justify-center">
+                    {isLoading && totalLessons === 0 ? (
+                      <span className="animate-pulse">...</span>
+                    ) : (
+                      <span>{totalLessons}</span>
+                    )}
                     <span className="text-[10px] sm:text-[11px] font-normal text-red-500">รายการ</span>
                   </div>
                 </div>
@@ -113,8 +105,12 @@ export default function MaterialsPage() {
                     <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </div>
                   <span className="text-[11px] sm:text-sm font-bold text-gray-700 whitespace-nowrap">ใบงาน PDF ดาวน์โหลด</span>
-                  <div className="flex items-center gap-1 bg-emerald-50 text-emerald-700 font-extrabold text-xs sm:text-base px-2 sm:px-2.5 py-0.5 rounded-full border border-emerald-100">
-                    <span>{totalDownloads}</span>
+                  <div className="flex items-center gap-1 bg-emerald-50 text-emerald-700 font-extrabold text-xs sm:text-base px-2 sm:px-2.5 py-0.5 rounded-full border border-emerald-100 min-w-[28px] justify-center">
+                    {isLoading && totalDownloads === 0 ? (
+                      <span className="animate-pulse">...</span>
+                    ) : (
+                      <span>{totalDownloads}</span>
+                    )}
                     <span className="text-[10px] sm:text-[11px] font-normal text-emerald-500">รายการ</span>
                   </div>
                 </div>
@@ -125,18 +121,26 @@ export default function MaterialsPage() {
 
         {/* Unified Feed Section */}
         <section className="container mx-auto px-4 sm:px-6 max-w-7xl pt-4 sm:pt-10 pb-16">
-          <Suspense fallback={
-            <div className="py-20 text-center text-gray-400">
-              <div className="animate-spin rounded-full h-10 w-10 border-2 border-red-300 border-t-red-600 mx-auto mb-3"></div>
-              <p className="text-sm">กำลังโหลดคลังสื่อการสอน...</p>
+          {isLoading && totalLessons === 0 && totalDownloads === 0 ? (
+            <div className="py-24 text-center text-gray-400">
+              <Loader2 className="w-9 h-9 text-red-500 animate-spin mx-auto mb-3" />
+              <p className="text-sm font-semibold text-gray-700">กำลังโหลดคลังสื่อการสอนและใบงานล่าสุด...</p>
+              <p className="text-xs text-gray-400 mt-1">กำลังดึงข้อมูลสื่อจริงจากระบบ</p>
             </div>
-          }>
-            <MaterialsList 
-              initialLessons={allLessons} 
-              initialDownloads={allDownloads}
-              basePath="/materials"
-            />
-          </Suspense>
+          ) : (
+            <Suspense fallback={
+              <div className="py-20 text-center text-gray-400">
+                <Loader2 className="w-8 h-8 text-red-500 animate-spin mx-auto mb-3" />
+                <p className="text-sm font-medium">กำลังเตรียมการแสดงผล...</p>
+              </div>
+            }>
+              <MaterialsList 
+                initialLessons={allLessons} 
+                initialDownloads={allDownloads}
+                basePath="/materials"
+              />
+            </Suspense>
+          )}
         </section>
       </main>
       <Footer />

@@ -176,8 +176,22 @@ export default function MaterialsList({
     if (urlGrade) setSelectedGrade(urlGrade);
   }, [urlType, urlGrade]);
 
-  // Fetch dynamic downloads from API
+  // Sync with initialDownloads prop when passed from parent
   useEffect(() => {
+    if (initialDownloads && initialDownloads.length > 0) {
+      setDownloads(initialDownloads);
+      const map: Record<string, number> = {};
+      initialDownloads.forEach((dl: any) => {
+        map[`dl-${dl.id}`] = dl.downloadsCount ?? 0;
+        map[dl.id] = dl.downloadsCount ?? 0;
+      });
+      setDownloadCounts(prev => ({ ...map, ...prev }));
+    }
+  }, [initialDownloads]);
+
+  // Fetch dynamic downloads from API only as standalone fallback
+  useEffect(() => {
+    if (initialDownloads && initialDownloads.length > 0) return;
     fetch("/api/downloads", { cache: "no-store" })
       .then(res => res.json())
       .then((data: any) => {
@@ -192,7 +206,7 @@ export default function MaterialsList({
         }
       })
       .catch(() => {});
-  }, []);
+  }, [initialDownloads]);
 
   const grades = [
     { id: "all", label: "ทุกระดับชั้น" },
@@ -298,8 +312,13 @@ export default function MaterialsList({
       });
     });
 
-    // Sort items by orderIndex so dl-1, v-1, dl-2 display first matching Image 2
-    return items.sort((a, b) => (a.orderIndex ?? 999) - (b.orderIndex ?? 999));
+    // Sort items by orderIndex ASC, then newest createdAt first
+    return items.sort((a, b) => {
+      const orderA = a.orderIndex ?? 999;
+      const orderB = b.orderIndex ?? 999;
+      if (orderA !== orderB) return orderA - orderB;
+      return (b.createdAt || "").localeCompare(a.createdAt || "");
+    });
   }, [initialLessons, downloads]);
 
   // Filter logic
