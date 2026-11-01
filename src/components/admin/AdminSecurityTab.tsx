@@ -149,7 +149,7 @@ export default function AdminSecurityTab() {
   const fetchTeachingPassword = async () => {
     setLoadingTeachingPassword(true);
     try {
-      const res = await fetch(`/api/admin/teaching-password?_t=${Date.now()}`, {
+      const res = await fetch(`/api/admin/change-password?target=teaching&_t=${Date.now()}`, {
         cache: "no-store",
         headers: { "Cache-Control": "no-cache" },
       });
@@ -268,10 +268,11 @@ export default function AdminSecurityTab() {
     setIsTeachingPasswordSaving(true);
 
     try {
-      const res = await fetch("/api/admin/teaching-password", {
+      const res = await fetch("/api/admin/change-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          target: "teaching",
           newPassword: newTeachingPasswordInput.trim(),
         }),
       });

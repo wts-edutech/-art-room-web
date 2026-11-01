@@ -5,6 +5,36 @@ import { cookies } from 'next/headers';
 import { createAdminToken, verifyAdminTokenWithPayload } from '@/lib/auth-utils';
 import { verifyAdminPasswordWithRole } from '@/lib/admin-auth';
 import { registerLoginSession, revokeSessionById } from '@/lib/session-manager';
+import { getAdminSession } from '@/lib/api-auth';
+
+const NO_CACHE_HEADERS = {
+  'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+  'Pragma': 'no-cache',
+  'Expires': '0',
+};
+
+/**
+ * GET — Check current admin authentication status and role
+ */
+export async function GET() {
+  try {
+    const adminSession = await getAdminSession();
+    if (!adminSession.isAdmin) {
+      return NextResponse.json({ isAdmin: false }, { status: 401, headers: NO_CACHE_HEADERS });
+    }
+
+    return NextResponse.json({
+      isAdmin: true,
+      role: adminSession.role || 'super_admin',
+      sid: adminSession.sid,
+    }, {
+      headers: NO_CACHE_HEADERS,
+    });
+  } catch (error) {
+    console.error('GET /api/auth error:', error);
+    return NextResponse.json({ isAdmin: false }, { status: 500, headers: NO_CACHE_HEADERS });
+  }
+}
 
 export async function POST(request: Request) {
   try {
