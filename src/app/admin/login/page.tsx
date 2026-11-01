@@ -38,29 +38,6 @@ export default function AdminLoginPage() {
     }
   };
 
-  const [successMsg, setSuccessMsg] = useState("");
-  const [isResetting, setIsResetting] = useState(false);
-
-  const handleResetPassword = async () => {
-    setIsResetting(true);
-    setError("");
-    setSuccessMsg("");
-    try {
-      const res = await fetch("/api/auth/reset", { method: "POST" });
-      const data = await res.json();
-      if (res.ok) {
-        setPassword("admin1234");
-        setSuccessMsg("รีเซ็ตรหัสผ่านกลับเป็น admin1234 เรียบร้อยแล้ว (กดปุ่มเข้าสู่ระบบได้ทันที)");
-      } else {
-        setError(data.error || "เกิดข้อผิดพลาดในการรีเซ็ตรหัสผ่าน");
-      }
-    } catch {
-      setError("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้");
-    } finally {
-      setIsResetting(false);
-    }
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center relative p-4 bg-orange-50/30">
       <div className="w-full max-w-md bg-white/95 backdrop-blur-md rounded-3xl shadow-xl p-8 md:p-10 border border-white">
@@ -75,12 +52,6 @@ export default function AdminLoginPage() {
         {error && (
           <div className="mb-6 p-3 rounded-xl bg-red-50 border border-red-100 text-red-500 text-sm text-center font-prompt">
             {error}
-          </div>
-        )}
-
-        {successMsg && (
-          <div className="mb-6 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm text-center font-prompt">
-            {successMsg}
           </div>
         )}
 
@@ -118,17 +89,6 @@ export default function AdminLoginPage() {
           >
             {isLoading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
           </Button>
-
-          <div className="pt-2 text-center">
-            <button
-              type="button"
-              onClick={handleResetPassword}
-              disabled={isResetting || isLoading}
-              className="text-xs text-gray-500 hover:text-orange-600 transition-colors underline cursor-pointer disabled:opacity-50"
-            >
-              {isResetting ? "กำลังรีเซ็ตรหัสผ่าน..." : "ลืมรหัสผ่าน? รีเซ็ตเป็นรหัสเริ่มต้น (admin1234)"}
-            </button>
-          </div>
         </form>
       </div>
     </div>
