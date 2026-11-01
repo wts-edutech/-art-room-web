@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 import { NextResponse } from 'next/server';
-import { requireAdmin } from '@/lib/api-auth';
+import { requireSuperAdmin } from '@/lib/api-auth';
 import { getMasterPinPlain, verifyMasterPin, updateMasterPin } from '@/lib/admin-auth';
 
 const NO_CACHE_HEADERS = {
@@ -18,7 +18,7 @@ const NO_CACHE_HEADERS = {
  */
 export async function GET() {
   try {
-    await requireAdmin();
+    await requireSuperAdmin();
     const pin = await getMasterPinPlain();
     return NextResponse.json({ success: true, masterPin: pin }, { headers: NO_CACHE_HEADERS });
   } catch (error: any) {
@@ -34,7 +34,7 @@ export async function GET() {
  */
 export async function POST(request: Request) {
   try {
-    await requireAdmin();
+    await requireSuperAdmin();
     const body = await request.json().catch(() => ({}));
 
     // If just verifying PIN

@@ -46,6 +46,7 @@ async function hmacSign(secret: string, data: string): Promise<string> {
 
 export interface AdminTokenPayload {
   type: 'admin';
+  role?: 'super_admin' | 'teaching_admin';
   sid?: string; // Session ID for device tracking and revocation
   iat: number; // issued at (ms)
   exp: number; // expiry (ms)
@@ -54,9 +55,14 @@ export interface AdminTokenPayload {
 /**
  * Creates an HMAC-SHA256 signed admin token with expiry using Web Crypto API.
  */
-export async function createAdminToken(expiresInHours: number = 24, sid?: string): Promise<string> {
+export async function createAdminToken(
+  expiresInHours: number = 24, 
+  sid?: string,
+  role: 'super_admin' | 'teaching_admin' = 'super_admin'
+): Promise<string> {
   const payload: AdminTokenPayload = {
     type: 'admin',
+    role,
     sid,
     iat: Date.now(),
     exp: Date.now() + expiresInHours * 60 * 60 * 1000,

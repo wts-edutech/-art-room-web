@@ -77,6 +77,19 @@ export default function AdminSecurityTab() {
   const [loadingMasterPin, setLoadingMasterPin] = useState(true);
   const [copiedPin, setCopiedPin] = useState(false);
 
+  // Teaching Admin (แอดมินคนที่ 2 - ครูผู้ช่วยสอน/ตรวจงาน) state
+  const [teachingPassword, setTeachingPassword] = useState<string | null>(null);
+  const [showTeachingPassword, setShowTeachingPassword] = useState(false);
+  const [loadingTeachingPassword, setLoadingTeachingPassword] = useState(true);
+  const [copiedTeachingPassword, setCopiedTeachingPassword] = useState(false);
+  const [newTeachingPasswordInput, setNewTeachingPasswordInput] = useState("");
+  const [confirmTeachingPasswordInput, setConfirmTeachingPasswordInput] = useState("");
+  const [showNewTeachingPassword, setShowNewTeachingPassword] = useState(false);
+  const [showConfirmTeachingPassword, setShowConfirmTeachingPassword] = useState(false);
+  const [isTeachingPasswordSaving, setIsTeachingPasswordSaving] = useState(false);
+  const [teachingPasswordSuccess, setTeachingPasswordSuccess] = useState<string | null>(null);
+  const [teachingPasswordError, setTeachingPasswordError] = useState<string | null>(null);
+
   // Change Master PIN Form state
   const [currentPinInput, setCurrentPinInput] = useState("");
   const [newPinInput, setNewPinInput] = useState("");
@@ -112,6 +125,7 @@ export default function AdminSecurityTab() {
   // Fetch initial data and setup auto-refresh
   useEffect(() => {
     fetchCurrentPassword();
+    fetchTeachingPassword();
     fetchMasterPin();
     fetchSessions();
 
@@ -122,6 +136,7 @@ export default function AdminSecurityTab() {
     const onFocus = () => {
       fetchSessions();
       fetchMasterPin();
+      fetchTeachingPassword();
     };
 
     window.addEventListener("focus", onFocus);
@@ -130,6 +145,24 @@ export default function AdminSecurityTab() {
       window.removeEventListener("focus", onFocus);
     };
   }, []);
+
+  const fetchTeachingPassword = async () => {
+    setLoadingTeachingPassword(true);
+    try {
+      const res = await fetch(`/api/admin/teaching-password?_t=${Date.now()}`, {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setTeachingPassword(data.password || "teach1234");
+      }
+    } catch {
+      setTeachingPassword("teach1234");
+    } finally {
+      setLoadingTeachingPassword(false);
+    }
+  };
 
   const fetchCurrentPassword = async () => {
     setLoadingPassword(true);
@@ -201,6 +234,63 @@ export default function AdminSecurityTab() {
       setCopiedPin(true);
       setTimeout(() => setCopiedPin(false), 2000);
     } catch {}
+  };
+
+  const handleCopyTeachingPassword = async () => {
+    if (!teachingPassword) return;
+    try {
+      await navigator.clipboard.writeText(teachingPassword);
+      setCopiedTeachingPassword(true);
+      setTimeout(() => setCopiedTeachingPassword(false), 2000);
+    } catch {}
+  };
+
+  const handleChangeTeachingPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setTeachingPasswordError(null);
+    setTeachingPasswordSuccess(null);
+
+    if (!newTeachingPasswordInput.trim() || !confirmTeachingPasswordInput.trim()) {
+      setTeachingPasswordError("กรุณากรอกข้อมูลให้ครบทุกช่อง");
+      return;
+    }
+
+    if (newTeachingPasswordInput !== confirmTeachingPasswordInput) {
+      setTeachingPasswordError("รหัสผ่านใหม่และการยืนยันรหัสผ่านไม่ตรงกัน");
+      return;
+    }
+
+    if (newTeachingPasswordInput.length < 4) {
+      setTeachingPasswordError("รหัสผ่านต้องมีความยาวอย่างน้อย 4 ตัวอักษร");
+      return;
+    }
+
+    setIsTeachingPasswordSaving(true);
+
+    try {
+      const res = await fetch("/api/admin/teaching-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          newPassword: newTeachingPasswordInput.trim(),
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setTeachingPasswordError(data.error || "เกิดข้อผิดพลาดในการบันทึกรหัสผ่าน");
+      } else {
+        setTeachingPasswordSuccess("ตั้งรหัสผ่านสำหรับแอดมินคนที่ 2 (ครูผู้ช่วยสอน) สำเร็จแล้ว");
+        setTeachingPassword(newTeachingPasswordInput.trim());
+        setNewTeachingPasswordInput("");
+        setConfirmTeachingPasswordInput("");
+      }
+    } catch (err) {
+      setTeachingPasswordError("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      setIsTeachingPasswordSaving(false);
+    }
   };
 
   // Trigger inline kick confirmation on a single device
@@ -1325,6 +1415,162 @@ export default function AdminSecurityTab() {
                 <div className="flex items-center gap-1.5">
                   <Save className="w-4 h-4" />
                   <span>บันทึกรหัสผ่านใหม่</span>
+                </div>
+              )}
+            </Button>
+          </div>
+        </form>
+      </div>
+
+      {/* ============================================================ */}
+      {/* ===== SECTION 6: TEACHING ADMIN PASSWORD MANAGEMENT ===== */}
+      {/* ============================================================ */}
+      <div className="bg-gradient-to-br from-teal-50/70 via-cyan-50/30 to-white rounded-3xl p-6 sm:p-8 border border-teal-200 shadow-xs space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-teal-200/70">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-teal-600 text-white flex items-center justify-center font-bold shadow-md shadow-teal-600/20 shrink-0">
+              <Users className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold text-gray-950 font-kanit">
+                  แอดมินคนที่ 2: ครูผู้ช่วยสอน / ตรวจงาน (Teaching Admin)
+                </h3>
+                <span className="px-2 py-0.5 rounded-full bg-teal-200 text-teal-950 text-[10px] font-extrabold">
+                  จำกัด 4 เมนู
+                </span>
+              </div>
+              <p className="text-xs text-teal-900/80">
+                เข้าใช้งานผ่านหน้า /admin/login เดียวกัน โดยกรอกรหัสผ่านนี้ จะเห็นเฉพาะ: มอบหมายงาน, ตรวจงาน & ให้คะแนน, แบบทดสอบก่อนเรียน และศูนย์ส่งงาน
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Current Teaching Password Card */}
+        <div className="bg-white/95 backdrop-blur-xs rounded-2xl border border-teal-200/90 p-4 sm:p-5 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-teal-900 flex items-center gap-1.5">
+              <Lock className="w-3.5 h-3.5 text-teal-600" />
+              <span>รหัสผ่านปัจจุบันของแอดมินคนที่ 2 (ครูผู้ช่วยสอน)</span>
+            </span>
+            <span className="text-[10px] text-gray-400">
+              {loadingTeachingPassword ? "กำลังโหลด..." : "พร้อมใช้งาน"}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-teal-50/50 border border-teal-100 font-mono text-sm">
+            {loadingTeachingPassword ? (
+              <div className="h-6 w-32 bg-gray-200 animate-pulse rounded" />
+            ) : (
+              <>
+                <span className="flex-1 font-mono text-base font-bold text-teal-950 tracking-wider select-all">
+                  {showTeachingPassword ? teachingPassword || "teach1234" : "••••••••"}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowTeachingPassword(!showTeachingPassword)}
+                  className="p-1.5 rounded-lg text-gray-400 hover:text-teal-700 hover:bg-white transition-colors cursor-pointer"
+                  title={showTeachingPassword ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"}
+                >
+                  {showTeachingPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCopyTeachingPassword}
+                  className="p-1.5 rounded-lg text-gray-400 hover:text-teal-700 hover:bg-white transition-colors cursor-pointer"
+                  title="คัดลอกรหัสผ่าน"
+                >
+                  {copiedTeachingPassword ? <Check className="w-4 h-4 text-teal-600" /> : <Copy className="w-4 h-4" />}
+                </button>
+              </>
+            )}
+          </div>
+          <p className="text-[11px] text-teal-700">
+            * ส่งรหัสผ่านนี้ให้ครูผู้ช่วยสอน เพื่อใช้เข้าสู่ระบบที่หน้า <code className="bg-teal-100/70 px-1 py-0.5 rounded text-teal-900">/admin/login</code>
+          </p>
+        </div>
+
+        {/* Change Teaching Password Form */}
+        <form onSubmit={handleChangeTeachingPassword} className="space-y-4">
+          <h4 className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+            <KeyRound className="w-3.5 h-3.5 text-teal-600" />
+            <span>เปลี่ยนรหัสผ่านสำหรับแอดมินคนที่ 2</span>
+          </h4>
+
+          {teachingPasswordSuccess && (
+            <div className="p-3.5 rounded-xl bg-teal-50 border border-teal-200 text-teal-900 flex items-center gap-2 text-xs">
+              <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" />
+              <span>{teachingPasswordSuccess}</span>
+            </div>
+          )}
+
+          {teachingPasswordError && (
+            <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-900 flex items-center gap-2 text-xs">
+              <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+              <span>{teachingPasswordError}</span>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-gray-700">รหัสผ่านใหม่ (อย่างน้อย 4 ตัวอักษร)</label>
+              <div className="relative">
+                <input
+                  type={showNewTeachingPassword ? "text" : "password"}
+                  value={newTeachingPasswordInput}
+                  onChange={(e) => setNewTeachingPasswordInput(e.target.value)}
+                  placeholder="เช่น teach1234 หรือรหัสที่ต้องการ"
+                  className="w-full h-11 pl-4 pr-11 rounded-xl border border-gray-200 bg-white focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none text-sm font-medium"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewTeachingPassword(!showNewTeachingPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer"
+                  tabIndex={-1}
+                >
+                  {showNewTeachingPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-gray-700">ยืนยันรหัสผ่านใหม่อีกครั้ง</label>
+              <div className="relative">
+                <input
+                  type={showConfirmTeachingPassword ? "text" : "password"}
+                  value={confirmTeachingPasswordInput}
+                  onChange={(e) => setConfirmTeachingPasswordInput(e.target.value)}
+                  placeholder="กรอกรหัสผ่านใหม่อีกครั้ง..."
+                  className="w-full h-11 pl-4 pr-11 rounded-xl border border-gray-200 bg-white focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none text-sm font-medium"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmTeachingPassword(!showConfirmTeachingPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer"
+                  tabIndex={-1}
+                >
+                  {showConfirmTeachingPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-1">
+            <Button
+              type="submit"
+              disabled={isTeachingPasswordSaving || !newTeachingPasswordInput.trim() || !confirmTeachingPasswordInput.trim()}
+              className="rounded-xl text-xs font-bold px-6 h-11 bg-teal-600 hover:bg-teal-700 text-white shadow-md shadow-teal-600/20 cursor-pointer transition-all disabled:opacity-50"
+            >
+              {isTeachingPasswordSaving ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>กำลังบันทึก...</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  <Save className="w-4 h-4" />
+                  <span>บันทึกรหัสผ่านคนที่ 2</span>
                 </div>
               )}
             </Button>

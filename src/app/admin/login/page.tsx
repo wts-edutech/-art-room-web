@@ -104,6 +104,10 @@ export default function AdminLoginPage() {
               >
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
+              <p className="text-[11px] text-gray-500 mt-2 flex items-center gap-1.5">
+                <span>🔑</span>
+                <span>รองรับทั้งรหัสผู้ดูแลระบบสูงสุด (Super Admin) และรหัสครูผู้ช่วยสอน (Teaching Admin)</span>
+              </p>
             </div>
           </div>
 

@@ -1,39 +1,31 @@
 export const runtime = 'edge';
 
 import { NextResponse } from 'next/server';
-import { checkIsAdmin } from '@/lib/api-auth';
+import { requireSuperAdmin } from '@/lib/api-auth';
 import { verifyAdminPassword, updateAdminPassword, getAdminPasswordPlain } from '@/lib/admin-auth';
 
 /**
- * GET — ดึงรหัสผ่านปัจจุบัน (เฉพาะ admin ที่ล็อกอินแล้ว)
+ * GET — ดึงรหัสผ่านปัจจุบัน (เฉพาะ Super Admin ที่ล็อกอินแล้ว)
  */
 export async function GET() {
   try {
-    const isAdmin = await checkIsAdmin();
-    if (!isAdmin) {
-      return NextResponse.json({ error: 'ไม่ได้รับอนุญาต' }, { status: 401 });
-    }
+    await requireSuperAdmin();
 
     const currentPassword = await getAdminPasswordPlain();
     return NextResponse.json({ password: currentPassword });
-  } catch (error) {
+  } catch (error: any) {
+    if (error instanceof Response) return error;
     console.error('GET /api/admin/change-password error:', error);
     return NextResponse.json({ error: 'ไม่สามารถดึงรหัสผ่านได้' }, { status: 500 });
   }
 }
 
 /**
- * POST — เปลี่ยนรหัสผ่านผู้ดูแลระบบ
+ * POST — เปลี่ยนรหัสผ่านผู้ดูแลระบบ (เฉพาะ Super Admin)
  */
 export async function POST(request: Request) {
   try {
-    const isAdmin = await checkIsAdmin();
-    if (!isAdmin) {
-      return NextResponse.json(
-        { error: 'ไม่ได้รับอนุญาต — เฉพาะผู้ดูแลระบบเท่านั้นที่สามารถเปลี่ยนรหัสผ่านได้' },
-        { status: 401 }
-      );
-    }
+    await requireSuperAdmin();
 
     const body = await request.json().catch(() => ({}));
     const currentPassword = String(body.currentPassword ?? '').trim();

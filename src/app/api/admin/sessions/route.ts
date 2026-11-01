@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 import { NextResponse } from 'next/server';
-import { requireAdmin } from '@/lib/api-auth';
+import { requireSuperAdmin } from '@/lib/api-auth';
 import { createAdminToken } from '@/lib/auth-utils';
 import { 
   getAllActiveSessions, 
@@ -26,7 +26,7 @@ const NO_CACHE_HEADERS = {
  */
 export async function GET(request: Request) {
   try {
-    const adminSession = await requireAdmin();
+    const adminSession = await requireSuperAdmin();
 
     // Auto-register current device if not in DB
     const { sid: currentSid, wasCreated } = await ensureActiveSession({
@@ -76,7 +76,7 @@ export async function GET(request: Request) {
  */
 export async function DELETE(request: Request) {
   try {
-    const adminSession = await requireAdmin();
+    const adminSession = await requireSuperAdmin();
     const body = await request.json().catch(() => ({}));
 
     const masterPin = String(body.masterPin || '').trim();

@@ -3,25 +3,28 @@ export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createAdminToken, verifyAdminTokenWithPayload } from '@/lib/auth-utils';
-import { verifyAdminPassword } from '@/lib/admin-auth';
+import { verifyAdminPasswordWithRole } from '@/lib/admin-auth';
 import { registerLoginSession, revokeSessionById } from '@/lib/session-manager';
 
 export async function POST(request: Request) {
   try {
     const { password } = await request.json();
 
-    const isValid = await verifyAdminPassword(String(password || '').trim());
+    const authResult = await verifyAdminPasswordWithRole(String(password || '').trim());
 
-    if (isValid) {
-      // Register device session
+    if (authResult.isValid && authResult.role) {
+      const role = authResult.role;
+      const isTeaching = role === 'teaching_admin';
+
+      // Register device session with clear role identifier
       const { sessionId, deviceInfo } = await registerLoginSession({
-        userId: 'admin',
-        userName: 'ผู้ดูแลระบบ (Admin)',
+        userId: isTeaching ? 'teaching_admin' : 'admin',
+        userName: isTeaching ? 'ครูผู้ช่วยสอน (Teaching Admin)' : 'ผู้ดูแลระบบสูงสุด (Super Admin)',
         role: 'admin',
         request,
       });
 
-      const token = await createAdminToken(24, sessionId); // expires in 24 hours
+      const token = await createAdminToken(24, sessionId, role); // expires in 24 hours with role
 
       const cookieStore = await cookies();
       cookieStore.set('admin_token', token, {
@@ -34,6 +37,7 @@ export async function POST(request: Request) {
 
       return NextResponse.json({ 
         success: true,
+        role,
         sessionId,
         device: deviceInfo.summary,
       });

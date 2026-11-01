@@ -146,10 +146,19 @@ const ADMIN_CATEGORIES: AdminMenuCategory[] = [
   }
 ];
 
+const TEACHING_ALLOWED_KEYS: AdminTabKey[] = [
+  "submissionsCenter",
+  "assignments",
+  "grading",
+  "quizzes",
+];
+
 export default function AdminPage() {
   const router = useRouter();
   const { logoSettings } = useSiteLogo();
   const [activeTab, setActiveTab] = useState<AdminTabKey>("submissionsCenter");
+  const [adminRole, setAdminRole] = useState<'super_admin' | 'teaching_admin'>('super_admin');
+  const [isLoadingRole, setIsLoadingRole] = useState(true);
   const [gradingAssignmentId, setGradingAssignmentId] = useState<string | undefined>(undefined);
   const [visitorStats, setVisitorStats] = useState({ total: 0, today: 0 });
   const [isEditVisitorModalOpen, setIsEditVisitorModalOpen] = useState(false);
@@ -159,6 +168,28 @@ export default function AdminPage() {
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [selectedMobileCategory, setSelectedMobileCategory] = useState<string>("all");
   const [mobileSearch, setMobileSearch] = useState("");
+
+  // Fetch admin role
+  useEffect(() => {
+    async function checkRole() {
+      try {
+        const res = await fetch("/api/admin/me");
+        if (res.ok) {
+          const data = await res.json();
+          const role = data.role === "teaching_admin" ? "teaching_admin" : "super_admin";
+          setAdminRole(role);
+          if (role === "teaching_admin") {
+            setActiveTab((prev) => TEACHING_ALLOWED_KEYS.includes(prev) ? prev : "submissionsCenter");
+          }
+        }
+      } catch (err) {
+        console.error("Failed to check admin role:", err);
+      } finally {
+        setIsLoadingRole(false);
+      }
+    }
+    checkRole();
+  }, []);
 
   const fetchVisitors = useCallback(async () => {
     setIsRefreshingVisitor(true);
@@ -209,14 +240,27 @@ export default function AdminPage() {
   };
 
   const handleSelectTab = (key: AdminTabKey) => {
+    if (adminRole === "teaching_admin" && !TEACHING_ALLOWED_KEYS.includes(key)) {
+      return;
+    }
     setActiveTab(key);
     setIsMobileDrawerOpen(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   // Flat list of all items
+  const currentCategories = useMemo(() => {
+    if (adminRole !== "teaching_admin") {
+      return ADMIN_CATEGORIES;
+    }
+    return ADMIN_CATEGORIES.map((cat) => ({
+      ...cat,
+      items: cat.items.filter((item) => TEACHING_ALLOWED_KEYS.includes(item.key)),
+    })).filter((cat) => cat.items.length > 0);
+  }, [adminRole]);
+
   const allMenuItems = useMemo(() => {
-    return ADMIN_CATEGORIES.flatMap(cat => cat.items);
+    return currentCategories.flatMap(cat => cat.items);
   }, []);
 
   const activeItemInfo = useMemo(() => {
@@ -225,9 +269,9 @@ export default function AdminPage() {
 
   // Filtered items for mobile drawer search
   const filteredDrawerCategories = useMemo(() => {
-    if (!mobileSearch.trim()) return ADMIN_CATEGORIES;
+    if (!mobileSearch.trim()) return currentCategories;
     const term = mobileSearch.toLowerCase();
-    return ADMIN_CATEGORIES.map(cat => ({
+    return currentCategories.map(cat => ({
       ...cat,
       items: cat.items.filter(item => 
         item.label.toLowerCase().includes(term) || 
@@ -235,14 +279,14 @@ export default function AdminPage() {
         cat.title.toLowerCase().includes(term)
       )
     })).filter(cat => cat.items.length > 0);
-  }, [mobileSearch]);
+  }, [mobileSearch, currentCategories]);
 
   // Filtered items for horizontal mobile scrollbar
   const visibleMobilePills = useMemo(() => {
     if (selectedMobileCategory === "all") return allMenuItems;
-    const cat = ADMIN_CATEGORIES.find(c => c.id === selectedMobileCategory);
+    const cat = currentCategories.find(c => c.id === selectedMobileCategory);
     return cat ? cat.items : allMenuItems;
-  }, [selectedMobileCategory, allMenuItems]);
+  }, [selectedMobileCategory, allMenuItems, currentCategories]);
 
   return (
     <div className="flex h-screen bg-gray-50 font-prompt overflow-hidden">
@@ -267,13 +311,24 @@ export default function AdminPage() {
             </div>
             <div>
               <span className="font-bold text-base tracking-tight font-kanit block text-gray-900 leading-tight">Admin Art Room</span>
-              <span className="text-[10px] text-gray-400 font-medium">{logoSettings.schoolName || "โรงเรียนวชิรธรรมสาธิต"}</span>
+              <span className="text-[10px] text-gray-400 font-medium block truncate max-w-[140px]">{logoSettings.schoolName || "โรงเรียนวชิรธรรมสาธิต"}</span>
+              {adminRole === "teaching_admin" ? (
+                <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-teal-50 text-teal-700 border border-teal-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse"></span>
+                  ครูผู้ช่วยสอน
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-orange-50 text-orange-700 border border-orange-200">
+                  <Shield className="w-2.5 h-2.5 text-orange-500" />
+                  Super Admin
+                </span>
+              )}
             </div>
           </div>
         </div>
         
         <div className="p-3.5 flex-1 overflow-y-auto space-y-5">
-          {ADMIN_CATEGORIES.map((category) => {
+          {currentCategories.map((category) => {
             const CategoryIcon = category.icon;
             return (
               <div key={category.id} className="space-y-1">
@@ -362,7 +417,7 @@ export default function AdminPage() {
             </div>
             <div>
               <h2 className="font-bold text-sm font-kanit leading-tight">Admin System Art Room</h2>
-              <p className="text-[10px] text-white/80">ระบบจัดการสารสนเทศ (17 เมนู)</p>
+              <p className="text-[10px] text-white/80">{adminRole === "teaching_admin" ? "ครูผู้ช่วยสอน (4 เมนู)" : "ระบบจัดการสารสนเทศ (18 เมนู)"}</p>
             </div>
           </div>
           <button
@@ -517,10 +572,18 @@ export default function AdminPage() {
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[10px] sm:text-[11px] font-bold text-orange-700 bg-orange-50 px-2 py-0.5 rounded-full uppercase tracking-wider border border-orange-200/60">
-                    Art Room System
-                  </span>
-                  <span className="text-[11px] text-gray-400">• โรงเรียนวชิรธรรมสาธิต</span>
+                  {adminRole === "teaching_admin" ? (
+                    <span className="text-[10px] sm:text-[11px] font-bold text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-full uppercase tracking-wider border border-teal-200/80 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse"></span>
+                      ครูผู้ช่วยสอน (Teaching Admin)
+                    </span>
+                  ) : (
+                    <span className="text-[10px] sm:text-[11px] font-bold text-orange-700 bg-orange-50 px-2 py-0.5 rounded-full uppercase tracking-wider border border-orange-200/60 flex items-center gap-1.5">
+                      <Shield className="w-3 h-3 text-orange-500" />
+                      Super Admin
+                    </span>
+                  )}
+                  <span className="text-[11px] text-gray-400">• {logoSettings.schoolName || "โรงเรียนวชิรธรรมสาธิต"}</span>
                 </div>
                 <h1 className="text-lg sm:text-2xl font-bold text-gray-900 tracking-tight font-kanit mt-1 leading-snug">
                   {activeItemInfo ? activeItemInfo.label : "ระบบบริหารจัดการข้อมูล"}
@@ -561,6 +624,7 @@ export default function AdminPage() {
 
                 {/* Edit & Refresh Actions */}
                 <div className="flex items-center gap-0.5 pl-1.5 border-l border-emerald-200/60 ml-0.5">
+                  {adminRole === "super_admin" && (
                   <button
                     type="button"
                     onClick={() => {
@@ -572,6 +636,7 @@ export default function AdminPage() {
                   >
                     <Edit3 className="w-3.5 h-3.5" />
                   </button>
+                  )}
                   <button
                     type="button"
                     onClick={fetchVisitors}
@@ -608,13 +673,16 @@ export default function AdminPage() {
 
             {/* Category Quick Pills */}
             <div className="flex space-x-1.5 overflow-x-auto pb-1 scrollbar-none">
-              {[
-                { id: "all", label: "ทั้งหมด (18)" },
-                { id: "teaching", label: "🎓 ระบบสอน (6)" },
-                { id: "artworks", label: "🎨 ผลงาน (5)" },
-                { id: "users", label: "👥 ผู้ใช้ (5)" },
-                { id: "security", label: "🔐 ตั้งค่า & ปลอดภัย (3)" },
-              ].map((cat) => (
+              {(adminRole === "teaching_admin"
+                ? [{ id: "all", label: "การสอน & ตรวจงาน (4)" }]
+                : [
+                    { id: "all", label: "ทั้งหมด (18)" },
+                    { id: "teaching", label: "🎓 ระบบสอน (6)" },
+                    { id: "artworks", label: "🎨 ผลงาน (5)" },
+                    { id: "users", label: "👥 ผู้ใช้ (5)" },
+                    { id: "security", label: "🔐 ตั้งค่า & ปลอดภัย (3)" },
+                  ]
+              ).map((cat) => (
                 <button
                   key={cat.id}
                   type="button"
@@ -665,34 +733,55 @@ export default function AdminPage() {
           {/* ===== RENDER ACTIVE TAB COMPONENT ===== */}
           {/* ============================================================ */}
           <div className="transition-all duration-150">
-            {activeTab === "submissionsCenter" && <SubmissionsCenterTab />}
-            {activeTab === "teachingSetup" && <TeachingSetupTab />}
-            {activeTab === "assignments" && (
-              <AssignmentsTab
-                onGoToGrading={(id) => {
-                  setGradingAssignmentId(id);
-                  setActiveTab("grading");
-                }}
-              />
+            {adminRole === "teaching_admin" && !TEACHING_ALLOWED_KEYS.includes(activeTab) ? (
+              <div className="bg-white p-8 rounded-3xl border border-teal-200 text-center space-y-3 shadow-xs">
+                <div className="w-12 h-12 rounded-2xl bg-teal-100 text-teal-700 mx-auto flex items-center justify-center font-bold">
+                  <Shield className="w-6 h-6" />
+                </div>
+                <h3 className="font-bold text-gray-900 font-kanit text-lg">เข้าถึงเฉพาะเมนูการสอนและตรวจงาน</h3>
+                <p className="text-xs text-gray-500 max-w-md mx-auto">
+                  บัญชีแอดมินคนที่ 2 (ครูผู้ช่วยสอน) มีสิทธิ์เข้าถึงเฉพาะ 4 เมนู: มอบหมายงาน, ตรวจงาน/ให้คะแนน, แบบทดสอบก่อนเรียน และศูนย์ส่งงาน
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("submissionsCenter")}
+                  className="px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold shadow-md shadow-teal-600/20 cursor-pointer transition-all active:scale-95"
+                >
+                  กลับสู่ศูนย์ส่งงาน
+                </button>
+              </div>
+            ) : (
+              <>
+                {activeTab === "submissionsCenter" && <SubmissionsCenterTab />}
+                {activeTab === "teachingSetup" && <TeachingSetupTab />}
+                {activeTab === "assignments" && (
+                  <AssignmentsTab
+                    onGoToGrading={(id) => {
+                      setGradingAssignmentId(id);
+                      setActiveTab("grading");
+                    }}
+                  />
+                )}
+                {activeTab === "grading" && (
+                  <GradingTab preselectedAssignmentId={gradingAssignmentId} />
+                )}
+                {activeTab === "quizzes" && <QuizzesTab />}
+                {activeTab === "downloads" && <DownloadsTab />}
+                {activeTab === "awards" && <AwardsTab />}
+                {activeTab === "artworks" && <ArtworksTab />}
+                {activeTab === "news" && <NewsTab />}
+                {activeTab === "activities" && <ActivitiesTab />}
+                {activeTab === "students" && <StudentsTab />}
+                {activeTab === "guests" && <GuestsTab />}
+                {activeTab === "teachers" && <TeachersTab />}
+                {activeTab === "testimonials" && <TestimonialsTab />}
+                {activeTab === "ideas" && <IdeasTab />}
+                {activeTab === "comments" && <CommentsModerationTab />}
+                {activeTab === "siteLogo" && <SiteLogoSettingsSection />}
+                {activeTab === "heroButton" && <HeroButtonTab />}
+                {activeTab === "adminSecurity" && <AdminSecurityTab />}
+              </>
             )}
-            {activeTab === "grading" && (
-              <GradingTab preselectedAssignmentId={gradingAssignmentId} />
-            )}
-            {activeTab === "quizzes" && <QuizzesTab />}
-            {activeTab === "downloads" && <DownloadsTab />}
-            {activeTab === "awards" && <AwardsTab />}
-            {activeTab === "artworks" && <ArtworksTab />}
-            {activeTab === "news" && <NewsTab />}
-            {activeTab === "activities" && <ActivitiesTab />}
-            {activeTab === "students" && <StudentsTab />}
-            {activeTab === "guests" && <GuestsTab />}
-            {activeTab === "teachers" && <TeachersTab />}
-            {activeTab === "testimonials" && <TestimonialsTab />}
-            {activeTab === "ideas" && <IdeasTab />}
-            {activeTab === "comments" && <CommentsModerationTab />}
-            {activeTab === "siteLogo" && <SiteLogoSettingsSection />}
-            {activeTab === "heroButton" && <HeroButtonTab />}
-            {activeTab === "adminSecurity" && <AdminSecurityTab />}
           </div>
         </div>
 

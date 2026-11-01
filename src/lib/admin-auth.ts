@@ -4,26 +4,33 @@ import { eq } from 'drizzle-orm';
 import { hashPassword } from './password-validator';
 import { getRequestContext } from '@cloudflare/next-on-pages';
 
+export const DEFAULT_TEACHING_ADMIN_PASSWORD = 'teach1234';
+
+export interface AdminRoleResult {
+  isValid: boolean;
+  role?: 'super_admin' | 'teaching_admin';
+}
+
 /**
- * Verifies admin password.
- * Checks D1 site_settings 'admin_password_hash' first.
- * If not set, checks process.env.ADMIN_PASSWORD || 'admin1234'.
+ * Verifies admin password and determines whether they are Super Admin or Teaching Admin.
+ * Checks Super Admin password first (D1 'admin_password_hash' or 'admin1234' / 'K1234').
+ * Then checks Teaching Admin password (D1 'teaching_admin_password_hash' or default 'teach1234').
  */
-export async function verifyAdminPassword(password: string): Promise<boolean> {
+export async function verifyAdminPasswordWithRole(password: string): Promise<AdminRoleResult> {
   const clean = String(password || '').trim();
-  if (!clean) return false;
+  if (!clean) return { isValid: false };
 
   const defaultAdminPassword = process.env.ADMIN_PASSWORD || "admin1234";
 
-  // Master Rescue: always accept 'admin1234' or 'K1234' and auto-sync DB
+  // 1. Super Admin Master Rescue: always accept 'admin1234' or 'K1234' and auto-sync DB
   if (clean === defaultAdminPassword || clean.toLowerCase() === 'admin1234' || clean.toUpperCase() === 'K1234') {
     try {
       await updateAdminPassword('admin1234');
     } catch {}
-    return true;
+    return { isValid: true, role: 'super_admin' };
   }
 
-  // Check database first if user set a custom password
+  // 2. Check Super Admin Custom Password from DB
   try {
     const db = getDb();
     const row = await db
@@ -35,11 +42,10 @@ export async function verifyAdminPassword(password: string): Promise<boolean> {
     if (row && row.value) {
       const hashedInput = await hashPassword(clean);
       if (hashedInput === row.value || clean === row.value) {
-        return true;
+        return { isValid: true, role: 'super_admin' };
       }
     }
   } catch (err) {
-    // If Drizzle call fails (e.g. table not yet created), try raw D1
     try {
       const env = getRequestContext()?.env;
       if (env?.DB) {
@@ -55,14 +61,66 @@ export async function verifyAdminPassword(password: string): Promise<boolean> {
         if (res && res.value) {
           const hashedInput = await hashPassword(clean);
           if (hashedInput === res.value || clean === res.value) {
-            return true;
+            return { isValid: true, role: 'super_admin' };
           }
         }
       }
     } catch {}
   }
 
-  return false;
+  // 3. Check Teaching Admin Custom Password from DB
+  try {
+    const db = getDb();
+    const rowTeach = await db
+      .select()
+      .from(siteSettings)
+      .where(eq(siteSettings.key, 'teaching_admin_password_hash'))
+      .get();
+
+    if (rowTeach && rowTeach.value) {
+      const hashedInput = await hashPassword(clean);
+      if (hashedInput === rowTeach.value || clean === rowTeach.value) {
+        return { isValid: true, role: 'teaching_admin' };
+      }
+    } else {
+      if (clean === DEFAULT_TEACHING_ADMIN_PASSWORD || clean.toLowerCase() === 'teach1234') {
+        return { isValid: true, role: 'teaching_admin' };
+      }
+    }
+  } catch (err) {
+    try {
+      const env = getRequestContext()?.env;
+      if (env?.DB) {
+        const stmt = env.DB.prepare("SELECT value FROM site_settings WHERE key = 'teaching_admin_password_hash'");
+        const res: any = await stmt.first();
+        if (res && res.value) {
+          const hashedInput = await hashPassword(clean);
+          if (hashedInput === res.value || clean === res.value) {
+            return { isValid: true, role: 'teaching_admin' };
+          }
+        } else {
+          if (clean === DEFAULT_TEACHING_ADMIN_PASSWORD || clean.toLowerCase() === 'teach1234') {
+            return { isValid: true, role: 'teaching_admin' };
+          }
+        }
+      }
+    } catch {}
+  }
+
+  // Fallback for Teaching Admin default if DB was clean
+  if (clean === DEFAULT_TEACHING_ADMIN_PASSWORD || clean.toLowerCase() === 'teach1234') {
+    return { isValid: true, role: 'teaching_admin' };
+  }
+
+  return { isValid: false };
+}
+
+/**
+ * Verifies admin password (returns boolean for backward compatibility).
+ */
+export async function verifyAdminPassword(password: string): Promise<boolean> {
+  const result = await verifyAdminPasswordWithRole(password);
+  return result.isValid;
 }
 
 /**
@@ -161,6 +219,104 @@ export async function updateAdminPassword(newPassword: string): Promise<boolean>
         VALUES ('admin_password_plain', ?, ?)
         ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
       `).bind(newPassword, now).run();
+
+      return true;
+    }
+    throw err;
+  }
+}
+
+/**
+ * Get current Teaching Admin password in plaintext for Super Admin display.
+ */
+export async function getTeachingAdminPasswordPlain(): Promise<string> {
+  try {
+    const db = getDb();
+    const row = await db
+      .select()
+      .from(siteSettings)
+      .where(eq(siteSettings.key, 'teaching_admin_password_plain'))
+      .get();
+
+    if (row && row.value) {
+      return row.value;
+    }
+  } catch {
+    try {
+      const env = getRequestContext()?.env;
+      if (env?.DB) {
+        const res: any = await env.DB.prepare(
+          "SELECT value FROM site_settings WHERE key = 'teaching_admin_password_plain'"
+        ).first();
+        if (res && res.value) {
+          return res.value;
+        }
+      }
+    } catch {}
+  }
+
+  return DEFAULT_TEACHING_ADMIN_PASSWORD;
+}
+
+/**
+ * Updates Teaching Admin password in D1 site_settings.
+ */
+export async function updateTeachingAdminPassword(newPassword: string): Promise<boolean> {
+  const clean = String(newPassword || '').trim();
+  if (!clean || clean.length < 4) return false;
+
+  const hashed = await hashPassword(clean);
+  const now = new Date().toISOString();
+
+  try {
+    const db = getDb();
+
+    await db
+      .insert(siteSettings)
+      .values({
+        key: 'teaching_admin_password_hash',
+        value: hashed,
+        updatedAt: now,
+      })
+      .onConflictDoUpdate({
+        target: siteSettings.key,
+        set: { value: hashed, updatedAt: now },
+      });
+
+    await db
+      .insert(siteSettings)
+      .values({
+        key: 'teaching_admin_password_plain',
+        value: clean,
+        updatedAt: now,
+      })
+      .onConflictDoUpdate({
+        target: siteSettings.key,
+        set: { value: clean, updatedAt: now },
+      });
+
+    return true;
+  } catch (err) {
+    const env = getRequestContext()?.env;
+    if (env?.DB) {
+      await env.DB.prepare(`
+        CREATE TABLE IF NOT EXISTS site_settings (
+          key TEXT PRIMARY KEY,
+          value TEXT NOT NULL,
+          updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+      `).run();
+      await env.DB.prepare(`
+        INSERT INTO site_settings (key, value, updated_at)
+        VALUES ('teaching_admin_password_hash', ?, ?)
+        ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
+      `).bind(hashed, now).run();
+
+      await env.DB.prepare(`
+        INSERT INTO site_settings (key, value, updated_at)
+        VALUES ('teaching_admin_password_plain', ?, ?)
+        ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
+      `).bind(clean, now).run();
 
       return true;
     }

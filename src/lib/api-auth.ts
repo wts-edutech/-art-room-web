@@ -11,6 +11,7 @@ export interface SessionInfo {
 
 export interface AdminSessionInfo {
   isAdmin: boolean;
+  role?: 'super_admin' | 'teaching_admin';
   sid?: string;
 }
 
@@ -82,6 +83,8 @@ export async function getAdminSession(): Promise<AdminSessionInfo> {
   const payload = await verifyAdminTokenWithPayload(token);
   if (!payload) return { isAdmin: false };
 
+  const role = payload.role || 'super_admin';
+
   // If sid is present, strictly verify not revoked
   if (payload.sid) {
     const active = await isSessionActive(payload.sid);
@@ -89,11 +92,11 @@ export async function getAdminSession(): Promise<AdminSessionInfo> {
       return { isAdmin: false };
     }
     touchSession(payload.sid).catch(() => {});
-    return { isAdmin: true, sid: payload.sid };
+    return { isAdmin: true, role, sid: payload.sid };
   }
 
   // Token is valid admin
-  return { isAdmin: true };
+  return { isAdmin: true, role };
 }
 
 /**
@@ -111,6 +114,23 @@ export async function requireAdmin(): Promise<AdminSessionInfo> {
       status: 401,
       headers: { 'Content-Type': 'application/json' },
     });
+  }
+  return adminSession;
+}
+
+/**
+ * Requires Super Admin privileges (คนที่ 1). Throws 403 Forbidden for Teaching Admin.
+ */
+export async function requireSuperAdmin(): Promise<AdminSessionInfo> {
+  const adminSession = await requireAdmin();
+  if (adminSession.role !== 'super_admin') {
+    throw new Response(
+      JSON.stringify({ error: 'Forbidden — ต้องใช้สิทธิ์ผู้ดูแลระบบสูงสุด (Super Admin)' }),
+      {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
   }
   return adminSession;
 }
