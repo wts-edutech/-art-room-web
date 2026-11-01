@@ -30,3 +30,4 @@ export async function GET() {
     return NextResponse.json({ isAdmin: false }, { status: 500, headers: NO_CACHE_HEADERS });
   }
 }
+
