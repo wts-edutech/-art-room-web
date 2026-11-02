@@ -463,9 +463,20 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
                     <span className="w-2 h-2 rounded-full bg-[#a3e635] animate-ping" />
                     <span>WACHIRATHAMMASATIT SCHOOL</span>
                   </span>
-                  <span className="font-bold text-slate-300 tracking-widest">
-                    ART ROOM
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenLightbox(["/images/kru-kae-infographic.jpg"], 0, "โปสเตอร์ประวัติและผลงานครูผู้สอน", "นางสาวสีวลี ยืนยาว (ครูเก๋)")}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800/90 hover:bg-[#a3e635] hover:text-black text-slate-200 text-[10px] sm:text-[11px] font-sans font-bold transition-all cursor-pointer border border-slate-700 shadow-sm"
+                      title="คลิกเพื่อดูภาพโปสเตอร์ต้นฉบับขนาดเต็ม"
+                    >
+                      <Maximize2 className="w-3 h-3 text-[#a3e635]" />
+                      <span>ดูโปสเตอร์ต้นฉบับเต็มจอ</span>
+                    </button>
+                    <span className="font-bold text-slate-300 tracking-widest">
+                      ART ROOM
+                    </span>
+                  </div>
                 </div>
 
                 <div className="flex flex-col lg:flex-row items-center lg:items-start gap-6 lg:gap-8">
