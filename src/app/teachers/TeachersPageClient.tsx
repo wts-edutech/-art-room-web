@@ -634,40 +634,53 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
 
                   </div>
 
-                  {/* Right Column: Teacher Portrait Cutout */}
+                  {/* Right Column: Teacher Real Portrait Photo */}
                   <div className="w-full max-w-[320px] sm:w-80 lg:w-96 shrink-0 flex flex-col items-center justify-center relative mt-4 lg:mt-0">
                     
-                    {/* Portrait Container */}
-                    <div className="relative w-full aspect-[3/4] max-h-[460px] flex items-end justify-center select-none group">
+                    {/* Portrait Container with Ambient Glow and Cyber Rim */}
+                    <div className="relative w-full aspect-[3/4] max-h-[460px] rounded-3xl overflow-hidden border-2 border-slate-700/80 bg-gradient-to-b from-[#0f172a] via-[#070b10] to-black shadow-2xl flex items-center justify-center select-none group">
                       
-                      {/* Geometric Tech Slices Behind Portrait */}
-                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 rounded-full bg-gradient-to-tr from-[#a3e635]/20 via-[#f43f5e]/20 to-transparent blur-2xl pointer-events-none" />
+                      {/* Ambient Glow */}
+                      <div className="absolute inset-0 bg-gradient-to-tr from-[#a3e635]/20 via-[#f43f5e]/15 to-transparent pointer-events-none" />
 
-                      {/* Cutout Portrait Image */}
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src="/images/kru-kae-portrait.jpg"
-                        alt="นางสาวสีวลี ยืนยาว"
-                        className="relative z-10 w-full h-full object-contain object-bottom drop-shadow-[0_15px_30px_rgba(0,0,0,0.8)] filter contrast-105"
-                      />
+                      {teacher.imageUrl ? (
+                        <>
+                          {/* Ambient blurred backdrop for seamless fit */}
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={teacher.imageUrl}
+                            alt=""
+                            className="absolute inset-0 w-full h-full object-cover blur-md opacity-30 scale-110 pointer-events-none"
+                          />
+                          {/* Real Full Portrait Image */}
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={teacher.imageUrl}
+                            alt={teacher.name}
+                            className="relative z-10 max-h-full max-w-full object-contain mx-auto transition-transform duration-500 group-hover:scale-[1.03]"
+                          />
+                        </>
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center text-gray-500 bg-slate-900">
+                          <Palette className="w-12 h-12 mb-2 text-slate-400" />
+                          <span className="text-xs font-medium">ภาพถ่ายครูผู้สอน</span>
+                        </div>
+                      )}
 
-                      {/* Stylized Slider Arrows overlay (< and > as seen on original reference) */}
-                      <button 
-                        type="button"
-                        onClick={() => scrollToSection("gallery")}
-                        className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/60 hover:bg-[#a3e635] text-white hover:text-black flex items-center justify-center transition-all cursor-pointer backdrop-blur-md border border-white/20 shadow-md"
-                        title="ดูภาพกิจกรรม"
-                      >
-                        <ChevronLeft className="w-5 h-5" />
-                      </button>
-                      <button 
-                        type="button"
-                        onClick={() => scrollToSection("awards")}
-                        className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/60 hover:bg-[#a3e635] text-white hover:text-black flex items-center justify-center transition-all cursor-pointer backdrop-blur-md border border-white/20 shadow-md"
-                        title="ดูรางวัลเกียรติยศ"
-                      >
-                        <ChevronRight className="w-5 h-5" />
-                      </button>
+                      {/* Rank Chip */}
+                      <div className="absolute bottom-3 inset-x-3 z-20 flex justify-center">
+                        <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-black/85 backdrop-blur-md text-white text-xs font-bold shadow-lg border border-[#a3e635]/40">
+                          <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                          <span>{teacher.position || "ครูชำนาญการ"} (วิทยฐานะ)</span>
+                        </div>
+                      </div>
+
+                      {/* Verified Badge */}
+                      <div className="absolute top-3 right-3 z-20">
+                        <div className="w-8 h-8 rounded-full bg-black/80 backdrop-blur-md text-[#a3e635] flex items-center justify-center shadow-md border border-[#a3e635]/60" title="ครูผู้สอนสังกัด สพฐ.">
+                          <CheckCircle2 className="w-4 h-4 text-[#a3e635]" />
+                        </div>
+                      </div>
                     </div>
 
                   </div>
