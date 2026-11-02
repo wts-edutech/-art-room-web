@@ -35,12 +35,7 @@ import {
   Quote,
   CheckCircle2,
   Layers,
-  Compass,
-  Flame,
-  Zap,
-  Rocket,
-  Heart,
-  Smile
+  Compass
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -430,15 +425,11 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
         <section className="pt-4 sm:pt-8 pb-4 sm:pb-8 relative z-10">
           <div className="container mx-auto px-3.5 sm:px-6 max-w-5xl">
             
-            {/* Top Pill Badges Row */}
-            <div className="flex items-center justify-center gap-2 flex-wrap mb-3 sm:mb-4">
+            {/* Top School Pill Badge */}
+            <div className="flex items-center justify-center mb-3 sm:mb-4">
               <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/95 backdrop-blur-md border border-orange-200/80 shadow-xs text-orange-700 text-[11px] sm:text-xs font-bold">
                 <span className="w-2 h-2 rounded-full bg-orange-500 animate-ping"></span>
                 <span>กลุ่มสาระการเรียนรู้ศิลปะ • โรงเรียนวชิรธรรมสาธิต</span>
-              </div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-red-600 to-rose-600 text-white text-[11px] sm:text-xs font-black tracking-wide shadow-xs">
-                <Flame className="w-3.5 h-3.5 text-amber-300 fill-amber-300 animate-pulse" />
-                <span>LEVEL 99 ART CREATOR</span>
               </div>
             </div>
 
@@ -446,7 +437,7 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
             <h1 className="text-center text-3xl sm:text-5xl lg:text-6xl font-black font-heading text-gray-900 tracking-tight leading-tight mb-2 sm:mb-3">
               Teacher Profile{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 via-orange-500 to-amber-500">
-                &amp; Creative Master
+                &amp; Awards
               </span>
             </h1>
 
@@ -457,69 +448,6 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
                 {teacher.name || "นางสาวสีวลี ยืนยาว (ครูเก๋)"}
               </strong>
             </p>
-
-            {/* FEATURED: COOL 3D CHIBI CARTOON ART MASCOT BANNER */}
-            <div className="mb-8 relative overflow-hidden rounded-3xl bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-rose-500/10 border-2 border-orange-300/60 p-4 sm:p-6 backdrop-blur-xl shadow-lg shadow-orange-500/5 group hover:border-orange-400 transition-all">
-              
-              {/* Decorative Background Glow */}
-              <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-orange-400/20 rounded-full blur-2xl pointer-events-none" />
-              <div className="absolute -left-10 -top-10 w-48 h-48 bg-rose-400/20 rounded-full blur-2xl pointer-events-none" />
-
-              <div className="relative z-10 flex flex-col md:flex-row items-center gap-5 sm:gap-7">
-                
-                {/* 3D Chibi Mascot Character */}
-                <div className="relative shrink-0 flex items-center justify-center">
-                  <div className="relative w-32 h-32 sm:w-40 sm:h-40 rounded-3xl overflow-hidden bg-gradient-to-b from-white to-orange-50/80 p-1.5 border-2 border-white shadow-xl shadow-orange-500/15 group-hover:scale-105 transition-transform duration-300">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src="/images/cool-teacher-mascot.png"
-                      alt="Art Room Teacher Mascot"
-                      className="w-full h-full object-cover rounded-2xl"
-                    />
-                    <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-black/70 backdrop-blur-md text-amber-300 text-[9px] font-black border border-white/20 flex items-center gap-1 shadow-sm">
-                      <Sparkles className="w-2.5 h-2.5" />
-                      <span>MASCOT</span>
-                    </div>
-                  </div>
-
-                  {/* Little floating palette sticker */}
-                  <div className="absolute -bottom-2 -right-2 w-10 h-10 rounded-2xl bg-white border border-orange-200 shadow-md flex items-center justify-center text-lg rotate-12 group-hover:rotate-0 transition-transform">
-                    🎨
-                  </div>
-                </div>
-
-                {/* Mascot Speech Bubble & Content */}
-                <div className="flex-1 text-center md:text-left space-y-2.5">
-                  <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-orange-100 text-orange-800 text-[11px] font-bold border border-orange-200">
-                    <Smile className="w-3.5 h-3.5 text-orange-600" />
-                    <span>สวัสดีเด็กๆ และผู้เยี่ยมชมทุกท่าน!</span>
-                  </div>
-
-                  <div className="relative bg-white/90 backdrop-blur-md rounded-2xl p-3.5 sm:p-4 border border-orange-200/80 shadow-xs">
-                    <p className="text-xs sm:text-sm md:text-base font-bold text-gray-800 leading-relaxed font-kanit">
-                      &ldquo;ยินดีต้อนรับสู่ <span className="text-orange-600 font-black">ART ROOM สตูดิโอ!</span> ห้องเรียนศิลปะที่ทุกคนจะได้ปลดปล่อยพลังจินตนาการ ระเบิดไอเดียสร้างสรรค์ และสร้างผลงานสุดเจ๋งไปพร้อมกับครูเก๋นะคะ ✨&rdquo;
-                    </p>
-                  </div>
-
-                  {/* Cool Interactive Action Tags */}
-                  <div className="flex items-center justify-center md:justify-start gap-2 flex-wrap pt-1 text-[11px]">
-                    <span className="px-3 py-1 rounded-xl bg-white border border-gray-200/80 text-gray-700 font-semibold shadow-2xs flex items-center gap-1.5">
-                      <Palette className="w-3.5 h-3.5 text-orange-500" />
-                      <span>จิตรกรรม &amp; สื่อผสม</span>
-                    </span>
-                    <span className="px-3 py-1 rounded-xl bg-white border border-gray-200/80 text-gray-700 font-semibold shadow-2xs flex items-center gap-1.5">
-                      <Trophy className="w-3.5 h-3.5 text-amber-500" />
-                      <span>รางวัลระดับชาติ สพฐ.</span>
-                    </span>
-                    <span className="px-3 py-1 rounded-xl bg-white border border-gray-200/80 text-gray-700 font-semibold shadow-2xs flex items-center gap-1.5">
-                      <Rocket className="w-3.5 h-3.5 text-rose-500" />
-                      <span>นวัตกรรมการสอนออนไลน์</span>
-                    </span>
-                  </div>
-                </div>
-
-              </div>
-            </div>
 
             {/* Modern Floating Capsule Navigation Pills */}
             <div className="flex justify-center">
