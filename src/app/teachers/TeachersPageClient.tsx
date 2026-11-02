@@ -428,295 +428,280 @@ export default function TeachersPageClient({ initialTeacher }: TeachersPageClien
           </div>
         )}
 
-        {/* PROFESSIONAL FACULTY HERO SECTION (COOL & INSPIRING ART MENTOR) */}
-        <section id="overview" className="pt-4 sm:pt-8 pb-6 relative z-10">
+        {/* PROFESSIONAL FACULTY HERO SECTION (CLEAN & MODERN ART STUDIO) */}
+        <section id="overview" className="pt-6 sm:pt-10 pb-8 relative z-10">
           <div className="container mx-auto px-3.5 sm:px-6 max-w-5xl">
             
             {/* Main Creative Master Profile Card */}
-            <div className="relative bg-white rounded-3xl border border-slate-200/90 shadow-2xl shadow-slate-900/10 overflow-hidden transition-all">
+            <div className="relative bg-white/95 backdrop-blur-2xl rounded-3xl p-6 sm:p-10 border border-orange-200/90 shadow-xl shadow-orange-500/5 overflow-hidden group/card hover:border-orange-300 transition-all">
               
-              {/* Cool Artistic Studio Cover Banner */}
-              <div className="relative h-44 sm:h-56 w-full bg-gradient-to-r from-slate-950 via-slate-900 to-stone-900 overflow-hidden flex flex-col justify-between p-5 sm:p-7">
-                {/* Ambient artistic lights */}
-                <div className="absolute -top-10 -right-10 w-72 h-72 bg-orange-500/25 rounded-full blur-3xl pointer-events-none" />
-                <div className="absolute -bottom-10 left-1/3 w-80 h-80 bg-rose-500/20 rounded-full blur-3xl pointer-events-none" />
-                <div className="absolute top-0 left-0 w-60 h-60 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
+              {/* Top Accent Gradient Bar */}
+              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-orange-500 via-rose-500 to-amber-500 pointer-events-none" />
+
+              {/* Ambient Background Aura */}
+              <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl from-orange-100/40 via-amber-50/30 to-transparent rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute bottom-0 left-0 w-72 h-72 bg-gradient-to-tr from-rose-100/30 via-orange-50/20 to-transparent rounded-full blur-3xl pointer-events-none" />
+
+              <div className="relative z-10 flex flex-col lg:flex-row gap-8 lg:gap-12 items-center lg:items-start">
                 
-                {/* Top Badge Strip */}
-                <div className="relative z-10 flex items-center justify-between gap-2 flex-wrap">
-                  <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-white text-[11px] sm:text-xs font-semibold shadow-xs">
-                    <span className="w-2 h-2 rounded-full bg-orange-400 animate-ping"></span>
-                    <span>โรงเรียนวชิรธรรมสาธิต • กลุ่มสาระการเรียนรู้ศิลปะ</span>
-                  </div>
-
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-orange-500 to-rose-600 text-white text-[10px] sm:text-xs font-black tracking-wider uppercase shadow-md">
-                    <Sparkles className="w-3 h-3 text-amber-300 fill-amber-300" />
-                    <span>ART EDUCATOR &amp; CREATIVE MENTOR</span>
-                  </div>
-                </div>
-
-                {/* Cover Bottom Info Ribbon */}
-                <div className="relative z-10 flex items-center justify-between text-xs text-white/80">
-                  <span className="hidden sm:inline-flex items-center gap-1.5 text-slate-300 font-light">
-                    <span>Art Room Creative Studio • สตูดิโอทัศนศิลป์ ห้อง 126</span>
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[11px] font-bold">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span>พร้อมเปิดรับตรวจผลงาน &amp; ให้คำปรึกษา</span>
-                  </span>
-                </div>
-              </div>
-
-              {/* Profile Body with Overlapping Portrait */}
-              <div className="relative px-5 sm:px-8 pb-8 pt-0 z-10">
-                <div className="flex flex-col lg:flex-row gap-6 sm:gap-8 items-center lg:items-start">
+                {/* Left Column: Portrait Showcase & Quick Contact Info */}
+                <div className="w-full max-w-[280px] sm:w-72 lg:w-80 shrink-0 flex flex-col items-center">
                   
-                  {/* Left: Overlapping Character Portrait & Contact Details */}
-                  <div className="w-full max-w-[260px] sm:w-64 lg:w-72 shrink-0 -mt-20 sm:-mt-24 flex flex-col items-center">
-                    
-                    {/* Portrait Frame with Glow */}
-                    <div className="relative w-full aspect-[3/4] rounded-3xl overflow-hidden bg-slate-900 border-4 border-white shadow-2xl ring-2 ring-slate-200/80 flex items-center justify-center group/portrait">
-                      {teacher.imageUrl ? (
-                        <>
-                          {/* Ambient blurred backdrop */}
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={teacher.imageUrl}
-                            alt=""
-                            className="absolute inset-0 w-full h-full object-cover blur-md opacity-35 scale-110 pointer-events-none"
-                          />
-                          {/* Uncropped True Photo */}
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={teacher.imageUrl}
-                            alt={teacher.name}
-                            className="relative z-10 max-h-full max-w-full object-contain mx-auto rounded-2xl transition-transform duration-500 group-hover/portrait:scale-[1.03]"
-                          />
-                        </>
-                      ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gray-100">
-                          <Palette className="w-12 h-12 mb-2 text-gray-300" />
-                          <span className="text-xs font-medium">ภาพถ่ายครูผู้สอน</span>
-                        </div>
-                      )}
-
-                      {/* Rank Badge */}
-                      <div className="absolute bottom-3 inset-x-3 z-20 flex justify-center">
-                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900/90 backdrop-blur-md text-white text-xs font-bold shadow-lg border border-white/20">
-                          <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-                          <span>{teacher.position || "ครูชำนาญการ"} (วิทยฐานะ)</span>
-                        </div>
-                      </div>
-
-                      {/* Verified Badge */}
-                      <div className="absolute top-3 right-3 z-20">
-                        <div className="w-7 h-7 rounded-full bg-white/95 backdrop-blur-md text-orange-600 flex items-center justify-center shadow-md border border-orange-200" title="ครูผู้สอนสังกัด สพฐ.">
-                          <CheckCircle2 className="w-4 h-4 text-orange-600" />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Quick Contact & Action Pills */}
-                    <div className="w-full mt-3.5 space-y-2">
-                      {teacher.email && (
-                        <button
-                          type="button"
-                          onClick={handleCopyEmail}
-                          className={`w-full py-2 px-3 rounded-2xl border text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
-                            copiedEmail
-                              ? "bg-emerald-50 text-emerald-800 border-emerald-300 shadow-xs"
-                              : "bg-slate-50 hover:bg-orange-50 text-slate-700 hover:text-orange-700 border-slate-200 shadow-2xs hover:border-orange-300"
-                          }`}
-                          title="คลิกเพื่อคัดลอกอีเมล"
-                        >
-                          <div className="flex items-center gap-2 truncate">
-                            <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${copiedEmail ? "bg-emerald-100 text-emerald-700" : "bg-orange-100 text-orange-600"}`}>
-                              {copiedEmail ? <Check className="w-3.5 h-3.5" /> : <Mail className="w-3.5 h-3.5" />}
-                            </div>
-                            <span className="truncate">{teacher.email}</span>
-                          </div>
-                          <span className="text-[10px] text-gray-400 font-normal shrink-0 ml-1">
-                            {copiedEmail ? "คัดลอกแล้ว" : <Copy className="w-3 h-3" />}
-                          </span>
-                        </button>
-                      )}
-
-                      {teacher.roomLocation && (
-                        <div className="w-full py-2 px-3 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs font-medium text-slate-700 flex items-center justify-center gap-1.5 shadow-2xs">
-                          <MapPin className="w-3.5 h-3.5 text-orange-500 shrink-0" />
-                          <span className="truncate">{teacher.roomLocation}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Right: Identity, Cool Manifesto & Bento Power Grid */}
-                  <div className="flex-1 w-full space-y-4 pt-2 sm:pt-4 text-left">
-                    
-                    {/* Header Row: Name & Cool Nickname */}
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <span className="px-3 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-800 border border-orange-200 shadow-2xs">
-                          {teacher.role || "กลุ่มสาระการเรียนรู้ศิลปะ"}
-                        </span>
-                        {teacher.grades && (
-                          <span className="px-3 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
-                            ระดับชั้น {teacher.grades}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="flex items-center flex-wrap gap-2.5 mt-1.5">
-                        <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black font-heading text-slate-900 tracking-tight">
-                          {cleanFullName}
-                        </h1>
-                        <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-2xl bg-gradient-to-r from-orange-500 via-rose-500 to-red-600 text-white text-sm sm:text-base font-black shadow-md shadow-orange-500/20">
-                          <Palette className="w-3.5 h-3.5 text-amber-200" />
-                          <span>ครูเก๋</span>
-                        </span>
-                      </div>
-
-                      <p className="text-xs sm:text-sm text-slate-600 font-medium mt-1">
-                        ครูผู้สอนวิชาทัศนศิลป์ • ผู้ฝึกซ้อมผลงานศิลปะรางวัลชนะเลิศระดับชาติ
-                      </p>
-                    </div>
-
-                    {/* Inspiring Art Manifesto Quote Block */}
-                    <div className="relative overflow-hidden bg-gradient-to-r from-orange-50/90 via-amber-50/50 to-white rounded-2xl p-4 sm:p-5 border-l-4 border-orange-500 border-y border-r border-orange-200 shadow-xs">
-                      <Quote className="absolute top-2.5 right-2.5 w-8 h-8 text-orange-300/40 pointer-events-none" />
-                      <p className="relative z-10 text-xs sm:text-sm text-slate-800 leading-relaxed font-normal italic font-kanit">
-                        &ldquo;{teacher.bio || "มุ่งเน้นการจุดประกายความคิดสร้างสรรค์ ส่งเสริมให้นักเรียนค้นพบเอกลักษณ์ของตนเองผ่านงานศิลปะ พร้อมเปิดโอกาสสู่เวทีการประกวดระดับประเทศและระดับสากล"}&rdquo;
-                      </p>
-                      <div className="relative z-10 mt-2.5 pt-2 border-t border-orange-200/60 flex items-center justify-between gap-2 text-xs font-bold text-orange-900">
-                        <span className="flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-orange-600"></span>
-                          <span>วิสัยทัศน์การจัดการเรียนรู้ศิลปะ • ครูเก๋ (สีวลี ยืนยาว)</span>
-                        </span>
-                        <span className="text-[10px] text-orange-700/80 font-normal hidden sm:inline">
-                          Art Room Creative Space
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* 4 Bento Power Cards (Achieve, Experience, Education, Domain) */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
-                      
-                      {/* Card 1: National Gold Medal Mentor */}
-                      <div className="p-3.5 rounded-2xl bg-gradient-to-br from-rose-50 to-orange-50/60 border border-rose-200/90 shadow-2xs hover:border-rose-400 hover:shadow-md transition-all group">
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-[10px] font-black text-rose-700 tracking-wider">รางวัลเกียรติยศ</span>
-                          <div className="w-6 h-6 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                            <Trophy className="w-3.5 h-3.5" />
-                          </div>
-                        </div>
-                        <span className="text-xs sm:text-sm font-black font-heading text-slate-900 block leading-tight">
-                          {awards.length > 0 ? `${awards.length} รางวัลเชิดชู` : "2 รางวัลเชิดชู"}
-                        </span>
-                        <span className="text-[10px] text-rose-800/80 truncate block mt-0.5 font-bold">
-                          ระดับชาติ สพฐ. &amp; สพม.
-                        </span>
-                      </div>
-
-                      {/* Card 2: 10+ Years Experience */}
-                      <div className="p-3.5 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50/60 border border-amber-200/90 shadow-2xs hover:border-amber-400 hover:shadow-md transition-all group">
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-[10px] font-black text-amber-800 tracking-wider">ประสบการณ์</span>
-                          <div className="w-6 h-6 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                            <Briefcase className="w-3.5 h-3.5" />
-                          </div>
-                        </div>
-                        <span className="text-xs sm:text-sm font-black font-heading text-slate-900 block leading-tight">
-                          10+ ปีการสอน
-                        </span>
-                        <span className="text-[10px] text-amber-900/80 truncate block mt-0.5 font-bold">
-                          วชิรธรรมฯ &amp; วัดธาตุทอง
-                        </span>
-                      </div>
-
-                      {/* Card 3: Master of Education */}
-                      <div className="p-3.5 rounded-2xl bg-gradient-to-br from-violet-50 to-purple-50/60 border border-violet-200/90 shadow-2xs hover:border-violet-400 hover:shadow-md transition-all group">
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-[10px] font-black text-violet-700 tracking-wider">วุฒิการศึกษา</span>
-                          <div className="w-6 h-6 rounded-lg bg-violet-100 text-violet-700 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                            <GraduationCap className="w-3.5 h-3.5" />
-                          </div>
-                        </div>
-                        <span className="text-xs sm:text-sm font-black font-heading text-slate-900 block leading-tight">
-                          ศษ.ม. ศิลปศึกษา
-                        </span>
-                        <span className="text-[10px] text-violet-800/80 truncate block mt-0.5 font-bold">
-                          ม.รามคำแหง • ป.โท
-                        </span>
-                      </div>
-
-                      {/* Card 4: Subject Domain */}
-                      <div className="p-3.5 rounded-2xl bg-gradient-to-br from-teal-50 to-emerald-50/60 border border-teal-200/90 shadow-2xs hover:border-teal-400 hover:shadow-md transition-all group">
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-[10px] font-black text-teal-700 tracking-wider">วิชาที่รับผิดชอบ</span>
-                          <div className="w-6 h-6 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                            <Palette className="w-3.5 h-3.5" />
-                          </div>
-                        </div>
-                        <span className="text-xs sm:text-sm font-black font-heading text-slate-900 block leading-tight">
-                          สาระทัศนศิลป์
-                        </span>
-                        <span className="text-[10px] text-teal-800/80 truncate block mt-0.5 font-bold">
-                          จิตรกรรม &amp; สื่อผสม
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Specialties Tags */}
-                    {specialtiesList.length > 0 && (
-                      <div className="pt-0.5">
-                        <div className="flex flex-wrap gap-1.5">
-                          {specialtiesList.map((skill, i) => (
-                            <span
-                              key={i}
-                              className="px-3 py-1 rounded-xl bg-slate-50 hover:bg-orange-50 text-slate-700 hover:text-orange-700 border border-slate-200 hover:border-orange-300 text-xs font-semibold transition-all shadow-2xs hover:scale-105 cursor-default flex items-center gap-1"
-                            >
-                              <span className="text-orange-500 font-bold">#</span>
-                              <span>{skill}</span>
-                            </span>
-                          ))}
-                        </div>
+                  {/* Portrait Frame */}
+                  <div className="relative w-full aspect-[3/4] rounded-3xl overflow-hidden border border-slate-200 bg-gradient-to-b from-orange-50/40 via-slate-50 to-white shadow-xl shadow-orange-950/5 flex items-center justify-center group/portrait">
+                    {teacher.imageUrl ? (
+                      <>
+                        {/* Ambient blurred backdrop for seamless fit */}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={teacher.imageUrl}
+                          alt=""
+                          className="absolute inset-0 w-full h-full object-cover blur-md opacity-25 scale-110 pointer-events-none"
+                        />
+                        {/* Uncropped Portrait Photo */}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={teacher.imageUrl}
+                          alt={teacher.name}
+                          className="relative z-10 max-h-full max-w-full object-contain mx-auto rounded-2xl shadow-xs transition-transform duration-500 group-hover/portrait:scale-[1.02]"
+                        />
+                      </>
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gray-100">
+                        <Palette className="w-12 h-12 mb-2 text-gray-300" />
+                        <span className="text-xs font-medium">ภาพถ่ายครูผู้สอน</span>
                       </div>
                     )}
 
-                    {/* Quick CTA Actions */}
-                    <div className="pt-2 flex flex-wrap items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => scrollToSection("awards")}
-                        className="px-4 py-2 rounded-xl bg-gradient-to-r from-orange-500 via-rose-500 to-red-600 text-white text-xs font-bold shadow-md shadow-orange-500/25 hover:shadow-lg hover:scale-[1.02] transition-all flex items-center gap-2 cursor-pointer"
-                      >
-                        <Trophy className="w-4 h-4 text-amber-200" />
-                        <span>ชมผลงานและรางวัลเชิดชูเกียรติ</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => scrollToSection("gallery")}
-                        className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-xs hover:scale-[1.02] transition-all flex items-center gap-2 cursor-pointer"
-                      >
-                        <ImageIcon className="w-4 h-4 text-orange-400" />
-                        <span>ภาพกิจกรรมห้องศิลปะ</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => scrollToSection("education")}
-                        className="px-4 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-semibold shadow-2xs hover:border-slate-300 transition-all flex items-center gap-2 cursor-pointer"
-                      >
-                        <GraduationCap className="w-4 h-4 text-violet-600" />
-                        <span>ประวัติการศึกษา</span>
-                      </button>
+                    {/* Official Verified Emblem */}
+                    <div className="absolute top-3 right-3 z-20">
+                      <div className="w-8 h-8 rounded-full bg-white/95 backdrop-blur-md text-orange-600 flex items-center justify-center shadow-sm border border-orange-200/90" title="ครูผู้สอนสังกัด สพฐ.">
+                        <CheckCircle2 className="w-4 h-4 text-orange-600" />
+                      </div>
                     </div>
 
+                    {/* Position Rank Chip */}
+                    <div className="absolute bottom-3 inset-x-3 z-20 flex justify-center">
+                      <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/95 backdrop-blur-md text-xs font-bold text-gray-800 shadow-md border border-orange-200/90">
+                        <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
+                        <span>{teacher.position || "ครูชำนาญการ"} (วิทยฐานะ)</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Contact & Location Details */}
+                  <div className="w-full mt-4 space-y-2">
+                    {teacher.email && (
+                      <button
+                        type="button"
+                        onClick={handleCopyEmail}
+                        className={`w-full py-2.5 px-3.5 rounded-2xl border text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
+                          copiedEmail
+                            ? "bg-emerald-50 text-emerald-800 border-emerald-300 shadow-xs"
+                            : "bg-white hover:bg-orange-50 text-gray-700 hover:text-orange-700 border-gray-200 shadow-2xs hover:border-orange-300"
+                        }`}
+                        title="คลิกเพื่อคัดลอกอีเมล"
+                      >
+                        <div className="flex items-center gap-2 truncate">
+                          <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${copiedEmail ? "bg-emerald-100 text-emerald-700" : "bg-orange-100 text-orange-600"}`}>
+                            {copiedEmail ? <Check className="w-3.5 h-3.5" /> : <Mail className="w-3.5 h-3.5" />}
+                          </div>
+                          <span className="truncate">{teacher.email}</span>
+                        </div>
+                        <span className="text-[10px] text-gray-400 font-normal shrink-0 ml-1">
+                          {copiedEmail ? "คัดลอกแล้ว" : <Copy className="w-3 h-3" />}
+                        </span>
+                      </button>
+                    )}
+
+                    {teacher.roomLocation && (
+                      <div className="w-full py-2 px-3 rounded-2xl bg-gray-50/90 border border-gray-200/80 text-xs font-medium text-gray-600 flex items-center justify-center gap-1.5 shadow-2xs">
+                        <MapPin className="w-3.5 h-3.5 text-orange-500 shrink-0" />
+                        <span className="truncate">{teacher.roomLocation}</span>
+                      </div>
+                    )}
+
+                    <div className="w-full py-1.5 px-3 rounded-2xl bg-orange-50/60 border border-orange-100 text-[11px] font-semibold text-orange-800 flex items-center justify-center gap-1.5 text-center">
+                      <School className="w-3 h-3 text-orange-600 shrink-0" />
+                      <span>โรงเรียนวชิรธรรมสาธิต • สพม.กทม. เขต 2</span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
+                {/* Right Column: Editorial Bio, Bento Highlights & Action Buttons */}
+                <div className="flex-1 w-full space-y-5 text-left">
+                  
+                  {/* Department & Readiness Badges */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-800 border border-orange-200 shadow-2xs inline-flex items-center gap-1.5">
+                        <Palette className="w-3.5 h-3.5 text-orange-600" />
+                        <span>{teacher.role || "กลุ่มสาระการเรียนรู้ศิลปะ"}</span>
+                      </span>
+
+                      {teacher.grades && (
+                        <span className="text-xs text-gray-700 font-semibold inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 border border-slate-200/80">
+                          <BookOpen className="w-3.5 h-3.5 text-slate-600" />
+                          <span>ระดับชั้น: {teacher.grades}</span>
+                        </span>
+                      )}
+
+                      <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-emerald-50 text-emerald-800 text-[11px] font-bold border border-emerald-200">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span>พร้อมให้คำปรึกษาและตรวจผลงานสร้างสรรค์</span>
+                      </span>
+                    </div>
+
+                    {/* Teacher Full Name & Nickname Callout */}
+                    <div className="pt-1">
+                      <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black font-heading text-slate-900 tracking-tight leading-tight flex items-center flex-wrap gap-2.5">
+                        <span>{cleanFullName}</span>
+                        <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-2xl bg-gradient-to-r from-orange-500 to-rose-500 text-white text-sm sm:text-lg font-bold shadow-xs">
+                          <Sparkles className="w-4 h-4 text-amber-200 fill-amber-200" />
+                          <span>({nickname})</span>
+                        </span>
+                      </h1>
+                      <p className="text-xs sm:text-sm text-gray-500 font-light mt-1">
+                        ครูผู้สอนวิชาทัศนศิลป์ • ผู้ฝึกซ้อมผลงานศิลปะรางวัลชนะเลิศระดับชาติ
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Teaching Philosophy & Vision Quote Callout */}
+                  {teacher.bio && (
+                    <div className="relative overflow-hidden bg-gradient-to-r from-orange-50/80 via-amber-50/40 to-white rounded-2xl p-4 sm:p-5 border-l-4 border-orange-500 border-y border-r border-orange-200/70 shadow-2xs">
+                      <Quote className="absolute top-2.5 right-2.5 w-8 h-8 text-orange-200/50 pointer-events-none" />
+                      <p className="relative z-10 text-xs sm:text-sm text-gray-800 leading-relaxed font-normal italic">
+                        &ldquo;{teacher.bio}&rdquo;
+                      </p>
+                      <div className="relative z-10 mt-2.5 pt-2 border-t border-orange-200/50 flex items-center gap-2 text-xs font-semibold text-orange-900">
+                        <span className="w-2 h-2 rounded-full bg-orange-600"></span>
+                        <span>วิสัยทัศน์การจัดการเรียนรู้ศิลปะ • {cleanFullName} ({nickname})</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 4 Rich Bento Metric Cards */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+                    
+                    {/* Bento 1: Awards */}
+                    <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-br from-rose-50/80 to-red-50/40 border border-rose-200/80 shadow-2xs hover:border-rose-400 hover:shadow-md transition-all group">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[10px] font-bold text-rose-700 uppercase tracking-wider">รางวัลเกียรติยศ</span>
+                        <div className="w-7 h-7 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center shrink-0 shadow-2xs group-hover:rotate-6 transition-transform">
+                          <Trophy className="w-4 h-4" />
+                        </div>
+                      </div>
+                      <span className="text-xs sm:text-sm font-black font-heading text-gray-900 block leading-tight">
+                        {awards.length > 0 ? `${awards.length} รางวัลเชิดชู` : "2 รางวัลเชิดชู"}
+                      </span>
+                      <span className="text-[10px] text-gray-500 truncate block mt-1 font-medium">
+                        ระดับชาติ สพฐ. &amp; สพม.
+                      </span>
+                    </div>
+
+                    {/* Bento 2: Experience */}
+                    <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-br from-amber-50/80 to-orange-50/40 border border-amber-200/80 shadow-2xs hover:border-amber-400 hover:shadow-md transition-all group">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider">ประสบการณ์</span>
+                        <div className="w-7 h-7 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 shadow-2xs group-hover:rotate-6 transition-transform">
+                          <Briefcase className="w-4 h-4" />
+                        </div>
+                      </div>
+                      <span className="text-xs sm:text-sm font-black font-heading text-gray-900 block leading-tight">
+                        10+ ปีการสอน
+                      </span>
+                      <span className="text-[10px] text-gray-500 truncate block mt-1 font-medium">
+                        วชิรธรรมสาธิต &amp; วัดธาตุทอง
+                      </span>
+                    </div>
+
+                    {/* Bento 3: Education */}
+                    <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-br from-violet-50/80 to-purple-50/40 border border-violet-200/80 shadow-2xs hover:border-violet-400 hover:shadow-md transition-all group">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[10px] font-bold text-violet-700 uppercase tracking-wider">วุฒิการศึกษา</span>
+                        <div className="w-7 h-7 rounded-xl bg-violet-100 text-violet-700 flex items-center justify-center shrink-0 shadow-2xs group-hover:rotate-6 transition-transform">
+                          <GraduationCap className="w-4 h-4" />
+                        </div>
+                      </div>
+                      <span className="text-xs sm:text-sm font-black font-heading text-gray-900 block leading-tight">
+                        {education.length > 0 ? education[education.length - 1].degree.replace("ศึกษาศาสตรมหาบัณฑิต", "ศษ.ม. (ศิลปศึกษา)") : "ศษ.ม. (ศิลปศึกษา)"}
+                      </span>
+                      <span className="text-[10px] text-gray-500 truncate block mt-1 font-medium">
+                        {education.length > 0 ? education[education.length - 1].institution : "ม.รามคำแหง"}
+                      </span>
+                    </div>
+
+                    {/* Bento 4: Creative Domain */}
+                    <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-br from-teal-50/80 to-emerald-50/40 border border-teal-200/80 shadow-2xs hover:border-teal-400 hover:shadow-md transition-all group">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[10px] font-bold text-teal-700 uppercase tracking-wider">วิชาที่รับผิดชอบ</span>
+                        <div className="w-7 h-7 rounded-xl bg-teal-100 text-teal-700 flex items-center justify-center shrink-0 shadow-2xs group-hover:rotate-6 transition-transform">
+                          <Palette className="w-4 h-4" />
+                        </div>
+                      </div>
+                      <span className="text-xs sm:text-sm font-black font-heading text-gray-900 block leading-tight">
+                        สาระทัศนศิลป์
+                      </span>
+                      <span className="text-[10px] text-gray-500 truncate block mt-1 font-medium">
+                        จิตรกรรม &amp; สื่อผสม
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Specialties Hashtag Pills */}
+                  {specialtiesList.length > 0 && (
+                    <div className="pt-1">
+                      <h3 className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                        <Compass className="w-3.5 h-3.5 text-orange-500" />
+                        <span>ความเชี่ยวชาญเฉพาะทาง (Specialties &amp; Skills)</span>
+                      </h3>
+                      <div className="flex flex-wrap gap-2">
+                        {specialtiesList.map((skill, i) => (
+                          <span
+                            key={i}
+                            className="px-3 py-1 rounded-xl bg-white hover:bg-orange-50 text-gray-800 hover:text-orange-700 border border-orange-200 text-xs font-semibold transition-all shadow-2xs hover:scale-105 cursor-default flex items-center gap-1"
+                          >
+                            <span className="text-orange-500 font-bold">#</span>
+                            <span>{skill}</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Quick Action Navigation Buttons */}
+                  <div className="pt-2 flex flex-wrap items-center gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => scrollToSection("awards")}
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-orange-500 via-rose-500 to-red-600 text-white text-xs font-bold shadow-md shadow-orange-500/20 hover:shadow-lg hover:scale-[1.02] transition-all flex items-center gap-2 cursor-pointer"
+                    >
+                      <Trophy className="w-4 h-4" />
+                      <span>ดูผลงานและรางวัลเชิดชูเกียรติ</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => scrollToSection("education")}
+                      className="px-4 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-semibold shadow-2xs hover:border-slate-300 transition-all flex items-center gap-2 cursor-pointer"
+                    >
+                      <GraduationCap className="w-4 h-4 text-violet-600" />
+                      <span>ประวัติการศึกษา</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => scrollToSection("gallery")}
+                      className="px-4 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-semibold shadow-2xs hover:border-slate-300 transition-all flex items-center gap-2 cursor-pointer"
+                    >
+                      <ImageIcon className="w-4 h-4 text-rose-500" />
+                      <span>ภาพกิจกรรมการสอน</span>
+                    </button>
+                  </div>
+
+                </div>
+              </div>
             </div>
           </div>
         </section>
