@@ -12,7 +12,7 @@ export const DEFAULT_KRU_KAE = {
   grades: "มัธยมศึกษาปีที่ 3 และ มัธยมศึกษาปีที่ 6",
   specialties: "ทัศนศิลป์, จิตรกรรมสีน้ำและสีน้ำมัน, การสร้างสรรค์สื่อผสม, การสอนศิลปะเพื่อพัฒนาทักษะชีวิต",
   bio: "มุ่งเน้นการจุดประกายความคิดสร้างสรรค์ ส่งเสริมให้นักเรียนค้นพบเอกลักษณ์ของตนเองผ่านงานศิลปะ พร้อมเปิดโอกาสสู่เวทีการประกวดระดับประเทศและระดับสากล",
-  imageUrl: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=800",
+  imageUrl: "/images/kru-kae-photo.jpg",
   email: "krusiwalee@gmail.com",
   roomLocation: "ห้องปฏิบัติการศิลปะ 126 (อาคาร 1 ชั้น 2)",
   orderIndex: 1,
