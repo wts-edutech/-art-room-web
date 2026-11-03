@@ -214,16 +214,27 @@ export default function AssignmentLineReminderModal({
     const names = new Set<string>();
     if (!currentAssignment) return { submittedIds: ids, submittedNames: names };
 
+    const roomStudentIds = new Set(roomStudents.map((s) => s.id.trim()));
+    const roomStudentNames = new Set(roomStudents.map((s) => cleanName(s.name)));
+
     submissions.forEach((sub) => {
       if (sub.assignmentId === currentAssignment.id) {
-        if (selectedRoom === "all" || isRoomMatch(sub.classroom || "", selectedRoom)) {
-          if (sub.studentId) ids.add(sub.studentId.trim());
-          if (sub.studentName) names.add(cleanName(sub.studentName));
+        const subId = sub.studentId ? sub.studentId.trim() : "";
+        const subName = sub.studentName ? cleanName(sub.studentName) : "";
+        const isBelongsToRoom =
+          selectedRoom === "all" ||
+          isRoomMatch(sub.classroom || "", selectedRoom) ||
+          (subId && roomStudentIds.has(subId)) ||
+          (subName && roomStudentNames.has(subName));
+
+        if (isBelongsToRoom) {
+          if (subId) ids.add(subId);
+          if (subName) names.add(subName);
         }
       }
     });
     return { submittedIds: ids, submittedNames: names };
-  }, [submissions, currentAssignment, selectedRoom]);
+  }, [submissions, currentAssignment, selectedRoom, roomStudents]);
 
   // Unsubmitted students list
   const unsubmittedStudents = useMemo(() => {
@@ -299,10 +310,22 @@ export default function AssignmentLineReminderModal({
 
       const roomSubIds = new Set<string>();
       const roomSubNames = new Set<string>();
+      const enrolledIds = new Set(enrolled.map((s) => s.id.trim()));
+      const enrolledNames = new Set(enrolled.map((s) => cleanName(s.name)));
+
       submissions.forEach((sub) => {
-        if (sub.assignmentId === currentAssignment.id && isRoomMatch(sub.classroom || "", room)) {
-          if (sub.studentId) roomSubIds.add(sub.studentId.trim());
-          if (sub.studentName) roomSubNames.add(cleanName(sub.studentName));
+        if (sub.assignmentId === currentAssignment.id) {
+          const subId = sub.studentId ? sub.studentId.trim() : "";
+          const subName = sub.studentName ? cleanName(sub.studentName) : "";
+          const isBelongsToRoom =
+            isRoomMatch(sub.classroom || "", room) ||
+            (subId && enrolledIds.has(subId)) ||
+            (subName && enrolledNames.has(subName));
+
+          if (isBelongsToRoom) {
+            if (subId) roomSubIds.add(subId);
+            if (subName) roomSubNames.add(subName);
+          }
         }
       });
 

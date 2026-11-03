@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -219,7 +219,7 @@ export default function SubmissionsPage() {
   }, []);
 
   // Fetch student's classroom assignments & submissions
-  const loadStudentData = async (studentId: string, classroom: string) => {
+  const loadStudentData = async (studentId: string, classroom: string, studentName?: string) => {
     setIsLoadingData(true);
     try {
       let studentGrade = "";
@@ -248,11 +248,13 @@ export default function SubmissionsPage() {
         quizUrl += `&gradeLevel=${encodeURIComponent(studentGrade)}`;
       }
 
-      const studentNameParam = student?.name ? `&studentName=${encodeURIComponent(student.name.trim())}` : '';
+      const nameToUse = (studentName || student?.name || "").trim();
+      const studentNameParam = nameToUse ? `&studentName=${encodeURIComponent(nameToUse)}` : '';
+      const cacheBuster = `&_t=${Date.now()}`;
       const [resAss, resSub, resQuiz] = await Promise.all([
-        fetch(assUrl),
-        fetch(`/api/submissions?studentId=${encodeURIComponent(studentId)}${studentNameParam}`),
-        fetch(quizUrl),
+        fetch(assUrl, { cache: 'no-store' }),
+        fetch(`/api/submissions?studentId=${encodeURIComponent(studentId)}${studentNameParam}${cacheBuster}`, { cache: 'no-store' }),
+        fetch(quizUrl, { cache: 'no-store' }),
       ]);
 
       const [dataAss, dataSub, dataQuiz] = await Promise.all([
@@ -264,7 +266,13 @@ export default function SubmissionsPage() {
       let assList = Array.isArray(dataAss) ? dataAss : [];
 
       const subList = Array.isArray(dataSub) ? dataSub : [];
-      const tempSubMap = new Map(subList.map((s: any) => [s.assignmentId, s]));
+      // Always keep the NEWEST submission per assignment
+      const tempSubMap = new Map<string, any>();
+      for (const s of subList) {
+        if (s && s.assignmentId && !tempSubMap.has(s.assignmentId)) {
+          tempSubMap.set(s.assignmentId, s);
+        }
+      }
       const missingCount = assList.filter((a: any) => !tempSubMap.has(a.id) || tempSubMap.get(a.id)?.status === "resubmit").length;
 
       setAssignments(assList);
@@ -282,7 +290,7 @@ export default function SubmissionsPage() {
 
   useEffect(() => {
     if (student) {
-      loadStudentData(student.id, student.classroom);
+      loadStudentData(student.id, student.classroom, student.name);
     }
   }, [student]);
 
@@ -314,7 +322,16 @@ export default function SubmissionsPage() {
     await performGlobalLogout("/submissions");
   };
 
-  const subMap = new Map(submissions.map((s) => [s.assignmentId, s]));
+  // Map of newest submission per assignment (prevents stale/older submissions from overwriting newer ones)
+  const subMap = useMemo(() => {
+    const map = new Map<string, any>();
+    for (const s of submissions) {
+      if (s && s.assignmentId && !map.has(s.assignmentId)) {
+        map.set(s.assignmentId, s);
+      }
+    }
+    return map;
+  }, [submissions]);
 
   const isSubmissionGraded = (s: any) =>
     Boolean(s && (s.status === "graded" || (s.score !== null && s.score !== undefined && s.status !== "resubmit")));
@@ -1352,9 +1369,15 @@ export default function SubmissionsPage() {
           student={student}
           existingSubmission={subMap.get(modalAssignment.id)}
           onClose={() => setModalAssignment(null)}
-          onSuccess={() => {
+          onSuccess={(newSub?: any) => {
             setModalAssignment(null);
-            loadStudentData(student.id, student.classroom);
+            if (newSub && newSub.assignmentId) {
+              setSubmissions((prev) => [
+                newSub,
+                ...prev.filter((item) => item.assignmentId !== newSub.assignmentId),
+              ]);
+            }
+            loadStudentData(student.id, student.classroom, student.name);
           }}
         />
       )}

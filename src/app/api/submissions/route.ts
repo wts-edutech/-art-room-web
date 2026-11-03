@@ -41,14 +41,25 @@ export async function GET(request: Request) {
         conditions.push(eq(submissions.classroom, classroom));
       }
     } else if (session && session.role === 'student') {
-      // Authenticated student: strictly lock to student's own ID (data privacy protection)
-      conditions.push(eq(submissions.studentId, session.userId));
+      // Authenticated student: query by student's own ID or Name for resilient lookup
+      const sId = session.userId.trim();
+      const sName = studentName ? studentName.trim() : (session.name ? session.name.trim() : '');
+      if (sName) {
+        conditions.push(or(eq(submissions.studentId, sId), eq(submissions.studentName, sName)));
+      } else {
+        conditions.push(eq(submissions.studentId, sId));
+      }
       if (assignmentId) {
         conditions.push(eq(submissions.assignmentId, assignmentId));
       }
     } else if (studentId) {
-      // Student querying their own work
-      conditions.push(eq(submissions.studentId, studentId));
+      // Student querying their own work by ID or Name
+      const sId = studentId.trim();
+      if (studentName) {
+        conditions.push(or(eq(submissions.studentId, sId), eq(submissions.studentName, studentName.trim())));
+      } else {
+        conditions.push(eq(submissions.studentId, sId));
+      }
       if (assignmentId) {
         conditions.push(eq(submissions.assignmentId, assignmentId));
       }
@@ -146,7 +157,13 @@ export async function GET(request: Request) {
       };
     });
 
-    return NextResponse.json(enriched);
+    return NextResponse.json(enriched, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      },
+    });
   } catch (error) {
     console.error("GET /api/submissions error:", error);
     return NextResponse.json([]);
@@ -270,9 +287,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'ไม่พบข้อมูลนักเรียนในระบบ กรุณาเข้าสู่ระบบด้วยรหัสนักเรียน 5 หลักที่ถูกต้อง' }, { status: 403 });
     }
 
-    if (!finalClassroom) {
-      finalClassroom = validStudent.classroom || '';
-      if (!finalClassroom && assignment?.classrooms) {
+    if (validStudent && validStudent.classroom) {
+      finalClassroom = validStudent.classroom;
+    } else if (!finalClassroom) {
+      if (assignment?.classrooms) {
         try {
           const rooms = JSON.parse(assignment.classrooms);
           if (Array.isArray(rooms) && rooms.length > 0) finalClassroom = rooms[0];
@@ -281,11 +299,17 @@ export async function POST(request: Request) {
       if (!finalClassroom) finalClassroom = 'ม.1/1';
     }
 
-    // Check if student already submitted this assignment
+    // Check if student already submitted this assignment (by studentId OR studentName)
     const existing = await db
       .select()
       .from(submissions)
-      .where(and(eq(submissions.assignmentId, assignmentId), eq(submissions.studentId, finalStudentId)))
+      .where(and(
+        eq(submissions.assignmentId, assignmentId),
+        or(
+          eq(submissions.studentId, finalStudentId),
+          eq(submissions.studentName, String(studentName).trim())
+        )
+      ))
       .get();
 
     const nowIso = new Date().toISOString();

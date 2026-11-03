@@ -35,7 +35,7 @@ interface SubmitWorkModalProps {
   student: { id: string; name: string; classroom: string };
   existingSubmission?: any;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (newSub?: any) => void;
 }
 
 export default function SubmitWorkModal({
@@ -133,13 +133,12 @@ export default function SubmitWorkModal({
     if (isGraded || submissionResult) return;
     const timer = setTimeout(() => {
       try {
-        const hasContent = concept.trim() || externalLink.trim() || imagePreviews.some(Boolean);
+        const hasContent = concept.trim() || externalLink.trim();
         if (hasContent) {
           localStorage.setItem(draftKey, JSON.stringify({
             concept,
             externalLink,
             selectedRoom,
-            previews: imagePreviews,
             savedAt: Date.now(),
           }));
         }
@@ -148,7 +147,7 @@ export default function SubmitWorkModal({
       }
     }, 400);
     return () => clearTimeout(timer);
-  }, [concept, externalLink, selectedRoom, imagePreviews, isGraded, submissionResult, draftKey]);
+  }, [concept, externalLink, selectedRoom, isGraded, submissionResult, draftKey]);
 
   const currentPreview = imagePreviews[activeSlot] || "";
   const currentFile = imageFiles[activeSlot] || null;
@@ -353,12 +352,21 @@ export default function SubmitWorkModal({
     }
     setErrorMsg("");
     setIsCompressing(true);
+
+    // 1. Instant preview using ObjectURL (0 ms perceived lag for user)
+    const instantUrl = URL.createObjectURL(file);
+    setImagePreviews(prev => {
+      const next = [...prev];
+      next[activeSlot] = instantUrl;
+      return next;
+    });
+
     try {
-      // Auto-compress photos to WebP (~120-180KB) for fast network transfer and safe D1 storage
+      // 2. High-performance compression down to ~60-120KB WebP (1200x1200px)
       const compressed = await compressImage(file, {
-        maxWidth: 1600,
-        maxHeight: 1600,
-        quality: 0.80,
+        maxWidth: 1200,
+        maxHeight: 1200,
+        quality: 0.78,
         outputFormat: "image/webp",
       });
 
@@ -461,12 +469,21 @@ export default function SubmitWorkModal({
       if (externalLink) formData.append("externalLink", externalLink.trim());
       if (concept) formData.append("concept", concept.trim());
 
-      // Send primary image and multi-image JSON array
+      // Send compressed files as binary File parts (much faster upload & smaller payload)
+      let hasImageFiles = false;
+      imageFiles.forEach((f, idx) => {
+        if (f) {
+          formData.append(`image_${idx}`, f);
+          hasImageFiles = true;
+        }
+      });
+
+      // Send primary image preview / data url if present
       const primaryImage = validImages[0] || "";
       if (primaryImage) {
         formData.append("imageUrl", primaryImage);
         formData.append("images", JSON.stringify(validImages));
-      } else {
+      } else if (!hasImageFiles) {
         formData.append("removeImage", "true");
         formData.append("imageUrl", "");
       }
@@ -487,6 +504,25 @@ export default function SubmitWorkModal({
         try {
           localStorage.removeItem(draftKey);
         } catch {}
+
+        // Notify parent immediately with optimistic submission record so dashboard reflects submitted status right away
+        const optimisticSub = {
+          id: data.id || `sub_${Date.now()}`,
+          assignmentId: assignment.id,
+          studentId: student.id || "38888",
+          studentName: student.name,
+          classroom: finalRoom,
+          imageUrl: primaryImage || (validImages[0] || null),
+          images: validImages,
+          hasImage: validImages.length > 0 ? 1 : 0,
+          hasFile: docFile ? 1 : 0,
+          externalLink: externalLink ? externalLink.trim() : null,
+          concept: concept ? concept.trim() : null,
+          status: 'pending',
+          isLate: Boolean(data.isLate),
+          submittedAt: new Date().toISOString(),
+        };
+        onSuccess(optimisticSub);
 
         setSubmissionResult({
           isLate: Boolean(data.isLate),
