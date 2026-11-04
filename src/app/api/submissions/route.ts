@@ -334,7 +334,7 @@ export async function POST(request: Request) {
       };
 
       if (imageUrls.length > 0) {
-        updateData.imageUrl = primaryImage;
+        updateData.imageUrl = `/api/submissions/image?id=${encodeURIComponent(existing.id)}&index=0`;
         updateData.images = imagesJson;
       } else if (body.removeImage === 'true' || body.removeImage === true) {
         updateData.imageUrl = '';
@@ -377,7 +377,7 @@ export async function POST(request: Request) {
       studentId: finalStudentId,
       studentName: String(studentName).trim(),
       classroom: finalClassroom,
-      imageUrl: primaryImage || null,
+      imageUrl: imageUrls.length > 0 ? `/api/submissions/image?id=${encodeURIComponent(id)}&index=0` : (primaryImage || null),
       images: imagesJson,
       fileUrl: fileUrl || null,
       fileName: fileName || null,
