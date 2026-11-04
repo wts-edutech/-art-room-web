@@ -1,5 +1,6 @@
 "use client";
 
+import { swalConfirm, swalSuccess, swalError, swalToast } from "@/lib/swal";
 import { useState, useEffect } from "react";
 import { 
   Sparkles, 
@@ -84,31 +85,38 @@ export default function HeroButtonTab() {
       const data = await res.json();
 
       if (res.ok) {
+        const okMsg = data.message || "บันทึกการตั้งค่าปุ่มเรียบร้อยแล้ว!";
         setStatusMessage({
           type: "success",
-          text: data.message || "บันทึกการตั้งค่าปุ่มเรียบร้อยแล้ว!",
+          text: okMsg,
         });
+        swalSuccess("บันทึกสำเร็จ!", okMsg, 1800);
         setSettings(prev => ({ ...prev, updatedAt: data.settings?.updatedAt }));
         setTimeout(() => setStatusMessage(null), 5000);
       } else {
+        const errMsg = data.error || "เกิดข้อผิดพลาดในการบันทึก";
         setStatusMessage({
           type: "error",
-          text: data.error || "เกิดข้อผิดพลาดในการบันทึก",
+          text: errMsg,
         });
+        swalError("บันทึกไม่สำเร็จ", errMsg);
       }
     } catch {
+      const netErr = "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง";
       setStatusMessage({
         type: "error",
-        text: "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง",
+        text: netErr,
       });
+      swalError("เชื่อมต่อไม่สำเร็จ", netErr);
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleResetToDefault = () => {
-    if (confirm("คุณต้องการคืนค่าปุ่มเป็นค่าเริ่มต้นที่พอดีกับตัวอักษรหรือไม่?")) {
+  const handleResetToDefault = async () => {
+    if (await swalConfirm("คุณต้องการคืนค่าปุ่มเป็นค่าเริ่มต้นที่พอดีกับตัวอักษรหรือไม่?")) {
       setSettings(DEFAULT_SETTINGS);
+      swalToast("คืนค่าปุ่มเป็นค่าเริ่มต้นแล้ว", "info");
     }
   };
 

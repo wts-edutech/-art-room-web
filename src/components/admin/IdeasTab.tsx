@@ -1,5 +1,6 @@
 "use client";
 
+import { swalAlert, swalConfirm } from "@/lib/swal";
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -82,7 +83,7 @@ export default function IdeasTab() {
           setPreviewIdea({ ...previewIdea, status });
         }
       } else {
-        alert("ไม่สามารถอัปเดตสถานะได้");
+        swalAlert("ไม่สามารถอัปเดตสถานะได้");
       }
     } catch (error) {
       console.error("Failed to update idea status", error);
@@ -90,7 +91,7 @@ export default function IdeasTab() {
   };
 
   const handleDeleteIdea = async (id: string) => {
-    if (!confirm("คุณแน่ใจหรือไม่ที่จะลบไอเดียนี้? ข้อมูลและคอมเมนต์ทั้งหมดจะถูกลบถาวร")) return;
+    if (!await swalConfirm("คุณแน่ใจหรือไม่ที่จะลบไอเดียนี้? ข้อมูลและคอมเมนต์ทั้งหมดจะถูกลบถาวร")) return;
     try {
       const res = await fetch(`/api/ideas/${id}`, { method: "DELETE" });
       if (res.ok) {
@@ -99,7 +100,7 @@ export default function IdeasTab() {
           setPreviewIdea(null);
         }
       } else {
-        alert("ไม่สามารถลบไอเดียได้");
+        swalAlert("ไม่สามารถลบไอเดียได้");
       }
     } catch (error) {
       console.error("Failed to delete idea", error);
@@ -108,7 +109,7 @@ export default function IdeasTab() {
 
   const handleDeleteCommentInPreview = async (commentId: string) => {
     if (!previewIdea) return;
-    if (!confirm("ต้องการลบความคิดเห็นนี้ใช่หรือไม่?")) return;
+    if (!await swalConfirm("ต้องการลบความคิดเห็นนี้ใช่หรือไม่?")) return;
 
     try {
       const res = await fetch(`/api/ideas/${previewIdea.id}/comment?commentId=${commentId}`, {
@@ -120,10 +121,10 @@ export default function IdeasTab() {
           comments: (previewIdea.comments || []).filter((c: any) => c.id !== commentId)
         });
       } else {
-        alert("ไม่สามารถลบความคิดเห็นได้");
+        swalAlert("ไม่สามารถลบความคิดเห็นได้");
       }
     } catch (e) {
-      alert("เกิดข้อผิดพลาดในการลบความคิดเห็น");
+      swalAlert("เกิดข้อผิดพลาดในการลบความคิดเห็น");
     }
   };
 
@@ -141,7 +142,7 @@ export default function IdeasTab() {
           setPreviewIdea({ ...previewIdea, isFeatured: newFeatured ? 1 : 0 });
         }
       } else {
-        alert("ไม่สามารถเปลี่ยนสถานะแนะนำได้");
+        swalAlert("ไม่สามารถเปลี่ยนสถานะแนะนำได้");
       }
     } catch (error) {
       console.error("Failed to toggle featured status", error);

@@ -1,5 +1,6 @@
 "use client";
 
+import { swalAlert, swalConfirm } from "@/lib/swal";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -222,7 +223,7 @@ export default function TeachersTab() {
 
     // Support modern smartphone high-res images up to 35MB
     if (file.size > 35 * 1024 * 1024) {
-      alert("ขนาดไฟล์รูปภาพเกินกำหนด (สูงสุด 35MB) กรุณาเลือกไฟล์รูปภาพที่มีขนาดไม่เกิน 35MB ครับ");
+      swalAlert("ขนาดไฟล์รูปภาพเกินกำหนด (สูงสุด 35MB) กรุณาเลือกไฟล์รูปภาพที่มีขนาดไม่เกิน 35MB ครับ");
       return;
     }
 
@@ -239,7 +240,7 @@ export default function TeachersTab() {
       setImageUrl(optimized);
     } catch (err) {
       console.error("Failed to optimize image:", err);
-      alert("ไม่สามารถประมวลผลไฟล์รูปภาพได้ กรุณาลองใหม่อีกครั้ง");
+      swalAlert("ไม่สามารถประมวลผลไฟล์รูปภาพได้ กรุณาลองใหม่อีกครั้ง");
     } finally {
       setIsUploadingAvatar(false);
     }
@@ -252,10 +253,10 @@ export default function TeachersTab() {
     try {
       const trimmed = await trimBlackBordersFromDataUrl(imageUrl, 0.88);
       setImageUrl(trimmed);
-      alert("ตัดแถบขอบดำและปรับขนาดภาพเรียบร้อยแล้ว!");
+      swalAlert("ตัดแถบขอบดำและปรับขนาดภาพเรียบร้อยแล้ว!");
     } catch (err) {
       console.error("Failed to trim black borders:", err);
-      alert("ไม่สามารถตัดขอบภาพได้ กรุณาลองใหม่อีกครั้ง");
+      swalAlert("ไม่สามารถตัดขอบภาพได้ กรุณาลองใหม่อีกครั้ง");
     } finally {
       setIsTrimming(false);
     }
@@ -326,7 +327,7 @@ export default function TeachersTab() {
 
     for (const f of fileArr) {
       if (f.size > 35 * 1024 * 1024) {
-        alert(`ไฟล์ ${f.name} ขนาดเกิน 35MB กรุณาเลือกไฟล์ขนาดไม่เกิน 35MB ครับ`);
+        swalAlert(`ไฟล์ ${f.name} ขนาดเกิน 35MB กรุณาเลือกไฟล์ขนาดไม่เกิน 35MB ครับ`);
         return;
       }
     }
@@ -352,7 +353,7 @@ export default function TeachersTab() {
       }));
     } catch (err) {
       console.error("Failed to upload award images:", err);
-      alert("ไม่สามารถอัปโหลดรูปภาพได้ กรุณาลองใหม่อีกครั้ง");
+      swalAlert("ไม่สามารถอัปโหลดรูปภาพได้ กรุณาลองใหม่อีกครั้ง");
     }
   };
 
@@ -406,7 +407,7 @@ export default function TeachersTab() {
 
   const handleActivityImageFileUpload = async (id: string, file: File) => {
     if (file.size > 10 * 1024 * 1024) {
-      alert("ขนาดไฟล์รูปภาพเกินกำหนด (สูงสุด 10MB) กรุณาเลือกไฟล์รูปภาพที่มีขนาดไม่เกิน 10MB ครับ");
+      swalAlert("ขนาดไฟล์รูปภาพเกินกำหนด (สูงสุด 10MB) กรุณาเลือกไฟล์รูปภาพที่มีขนาดไม่เกิน 10MB ครับ");
       return;
     }
     try {
@@ -443,8 +444,8 @@ export default function TeachersTab() {
     setInnovationsList(prev => prev.map(item => item.id === id ? { ...item, [field]: val } : item));
   };
 
-  const handleDeleteInnovation = (id: string) => {
-    if (!confirm("คุณแน่ใจว่าต้องการลบผลงานนวัตกรรมนี้หรือไม่?")) return;
+  const handleDeleteInnovation = async (id: string) => {
+    if (!await swalConfirm("คุณแน่ใจว่าต้องการลบผลงานนวัตกรรมนี้หรือไม่?")) return;
     setInnovationsList(prev => prev.filter(item => item.id !== id));
   };
 
@@ -454,7 +455,7 @@ export default function TeachersTab() {
 
   const handleInnovationCoverUpload = async (id: string, file: File) => {
     if (file.size > 25 * 1024 * 1024) {
-      alert("ขนาดไฟล์รูปภาพเกินกำหนด (สูงสุด 25MB) กรุณาเลือกไฟล์รูปภาพที่มีขนาดไม่เกิน 25MB ครับ");
+      swalAlert("ขนาดไฟล์รูปภาพเกินกำหนด (สูงสุด 25MB) กรุณาเลือกไฟล์รูปภาพที่มีขนาดไม่เกิน 25MB ครับ");
       return;
     }
     try {
@@ -462,17 +463,17 @@ export default function TeachersTab() {
       handleUpdateInnovation(id, "coverImageUrl", dataUrl);
     } catch (err) {
       console.error("Failed to upload innovation cover:", err);
-      alert("ไม่สามารถประมวลผลรูปภาพได้ กรุณาลองใหม่อีกครั้ง");
+      swalAlert("ไม่สามารถประมวลผลรูปภาพได้ กรุณาลองใหม่อีกครั้ง");
     }
   };
 
   const handleInnovationPdfUpload = async (id: string, file: File) => {
     if (!file.name.toLowerCase().endsWith(".pdf") && file.type !== "application/pdf") {
-      alert("กรุณาเลือกไฟล์เอกสารที่เป็นไฟล์ PDF เท่านั้นครับ");
+      swalAlert("กรุณาเลือกไฟล์เอกสารที่เป็นไฟล์ PDF เท่านั้นครับ");
       return;
     }
     if (file.size > 15 * 1024 * 1024) {
-      alert("ขนาดไฟล์ PDF เกิน 15MB แนะนำให้อัปโหลดลง Google Drive / Cloud แล้ววางลิงก์ในช่อง 'ลิงก์ดาวน์โหลด PDF' ด้านล่างแทนได้ครับ");
+      swalAlert("ขนาดไฟล์ PDF เกิน 15MB แนะนำให้อัปโหลดลง Google Drive / Cloud แล้ววางลิงก์ในช่อง 'ลิงก์ดาวน์โหลด PDF' ด้านล่างแทนได้ครับ");
       return;
     }
     try {
@@ -493,7 +494,7 @@ export default function TeachersTab() {
       reader.readAsDataURL(file);
     } catch (err) {
       console.error("Failed to read PDF file:", err);
-      alert("ไม่สามารถอ่านไฟล์ PDF ได้ กรุณาลองใหม่อีกครั้ง");
+      swalAlert("ไม่สามารถอ่านไฟล์ PDF ได้ กรุณาลองใหม่อีกครั้ง");
     }
   };
 
@@ -501,7 +502,7 @@ export default function TeachersTab() {
   const handleSaveProfile = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!name.trim()) {
-      alert("กรุณากรอกชื่อ-นามสกุล");
+      swalAlert("กรุณากรอกชื่อ-นามสกุล");
       return;
     }
 
@@ -552,7 +553,7 @@ export default function TeachersTab() {
 
   // Reset to default Kru Kae data
   const handleResetToDefault = async () => {
-    if (!confirm("คุณต้องการโหลดข้อมูลตั้งต้นสมบูรณ์ของ 'ครูเก๋' หรือไม่? (ข้อมูลที่ยังไม่บันทึกจะถูกแทนที่)")) return;
+    if (!await swalConfirm("คุณต้องการโหลดข้อมูลตั้งต้นสมบูรณ์ของ 'ครูเก๋' หรือไม่? (ข้อมูลที่ยังไม่บันทึกจะถูกแทนที่)")) return;
     setIsLoading(true);
     try {
       const res = await fetch("/api/teachers", {

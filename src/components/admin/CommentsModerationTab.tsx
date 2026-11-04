@@ -1,5 +1,6 @@
 "use client";
 
+import { swalAlert, swalConfirm } from "@/lib/swal";
 import { useState, useEffect, useMemo } from "react";
 import { 
   MessageSquare, Trash2, Search, AlertTriangle, CheckCircle2, 
@@ -108,7 +109,7 @@ export default function CommentsModerationTab() {
 
   // Delete single comment
   const handleDeleteComment = async (id: string) => {
-    if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการลบความคิดเห็นนี้? การดำเนินการนี้ไม่สามารถยกเลิกได้")) {
+    if (!await swalConfirm("คุณแน่ใจหรือไม่ว่าต้องการลบความคิดเห็นนี้? การดำเนินการนี้ไม่สามารถยกเลิกได้")) {
       return;
     }
 
@@ -139,7 +140,7 @@ export default function CommentsModerationTab() {
   // Bulk delete selected
   const handleBulkDeleteSelected = async () => {
     if (selectedIds.size === 0) return;
-    if (!confirm(`คุณต้องการลบความคิดเห็นที่เลือกจำนวน ${selectedIds.size} รายการใช่หรือไม่?`)) {
+    if (!await swalConfirm(`คุณต้องการลบความคิดเห็นที่เลือกจำนวน ${selectedIds.size} รายการใช่หรือไม่?`)) {
       return;
     }
 
@@ -171,11 +172,11 @@ export default function CommentsModerationTab() {
   const handleCleanAllFlagged = async () => {
     const flaggedItems = comments.filter((c) => c.isFlagged);
     if (flaggedItems.length === 0) {
-      alert("ไม่พบความคิดเห็นที่มีข้อความสุ่มเสี่ยงในระบบขณะนี้");
+      swalAlert("ไม่พบความคิดเห็นที่มีข้อความสุ่มเสี่ยงในระบบขณะนี้");
       return;
     }
 
-    if (!confirm(`ต้องการล้างข้อความที่มีคำไม่สุภาพ/สุ่มเสี่ยงทั้งหมดจำนวน ${flaggedItems.length} รายการใช่หรือไม่?`)) {
+    if (!await swalConfirm(`ต้องการล้างข้อความที่มีคำไม่สุภาพ/สุ่มเสี่ยงทั้งหมดจำนวน ${flaggedItems.length} รายการใช่หรือไม่?`)) {
       return;
     }
 

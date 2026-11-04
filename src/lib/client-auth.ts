@@ -1,5 +1,7 @@
 "use client";
 
+import { swalConfirm, swalSuccess } from "@/lib/swal";
+
 /**
  * All localStorage keys used across Art Room for authentication and profile.
  * Every single one of these MUST be strictly cleared on logout or account switch.
@@ -125,8 +127,13 @@ export function setGuestAuth(
 /**
  * Perform a clean, global logout across both server cookies and client storage.
  */
-export async function performGlobalLogout(redirectUrl: string = "/"): Promise<void> {
+export async function performGlobalLogout(redirectUrl: string = "/", skipConfirm: boolean = false): Promise<void> {
   if (typeof window === "undefined") return;
+
+  if (!skipConfirm) {
+    const confirmed = await swalConfirm("คุณต้องการออกจากระบบใช่หรือไม่?");
+    if (!confirmed) return;
+  }
 
   try {
     await Promise.allSettled([
@@ -143,6 +150,8 @@ export async function performGlobalLogout(redirectUrl: string = "/"): Promise<vo
 
   clearAllAuthData();
   window.dispatchEvent(new Event("artroom_profile_updated"));
+
+  await swalSuccess("ออกจากระบบเรียบร้อยแล้ว", undefined, 1100);
 
   if (redirectUrl) {
     window.location.href = redirectUrl;

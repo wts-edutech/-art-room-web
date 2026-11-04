@@ -1,5 +1,6 @@
 "use client";
 
+import { swalAlert } from "@/lib/swal";
 import { useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -49,12 +50,12 @@ export default function SecuritySessionWatcher() {
 
             // If in admin area, force redirect to admin login with kicked parameter
             if (isAdminArea) {
-              alert("⚠️ เซสชันของคุณถูกเตะออกจากระบบโดยผู้ดูแลระบบ หรือรหัสผ่านมีการเปลี่ยนแปลง");
+              await swalAlert("⚠️ เซสชันของคุณถูกเตะออกจากระบบโดยผู้ดูแลระบบ หรือรหัสผ่านมีการเปลี่ยนแปลง");
               window.location.href = "/admin/login?kicked=1";
             } else {
               window.dispatchEvent(new Event("artroom_profile_updated"));
               if (pathname?.startsWith("/me") || pathname?.startsWith("/submissions")) {
-                alert("⚠️ เซสชันของคุณถูกออกจากระบบแล้ว");
+                await swalAlert("⚠️ เซสชันของคุณถูกออกจากระบบแล้ว");
                 window.location.href = "/login?kicked=1";
               }
             }

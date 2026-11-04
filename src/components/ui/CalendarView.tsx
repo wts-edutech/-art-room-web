@@ -1,5 +1,6 @@
 "use client";
 
+import { swalAlert, swalConfirm } from "@/lib/swal";
 import { useState, useMemo, useEffect } from "react";
 import { 
   ChevronLeft, 
@@ -236,7 +237,7 @@ export default function CalendarView({
   };
 
   const handleDeleteEvent = async (id: string) => {
-    if (!confirm("คุณต้องการลบกิจกรรมนี้ออกจากปฏิทินใช่หรือไม่?")) return;
+    if (!await swalConfirm("คุณต้องการลบกิจกรรมนี้ออกจากปฏิทินใช่หรือไม่?")) return;
     try {
       const res = await fetch(`/api/activities?id=${id}`, { method: "DELETE" });
       if (res.ok) {
@@ -244,11 +245,11 @@ export default function CalendarView({
         onActivityDeleted?.(id);
         onRefresh?.();
       } else {
-        alert("ไม่สามารถลบกิจกรรมได้");
+        swalAlert("ไม่สามารถลบกิจกรรมได้");
       }
     } catch (err) {
       console.error("Delete error:", err);
-      alert("เกิดข้อผิดพลาดในการลบกิจกรรม");
+      swalAlert("เกิดข้อผิดพลาดในการลบกิจกรรม");
     }
   };
 
@@ -319,7 +320,7 @@ export default function CalendarView({
           resetForm();
           setShowAddForm(false);
         } else {
-          alert("ไม่สามารถบันทึกการแก้ไขได้");
+          swalAlert("ไม่สามารถบันทึกการแก้ไขได้");
         }
       } else {
         const res = await fetch("/api/activities", {
@@ -335,12 +336,12 @@ export default function CalendarView({
           resetForm();
           setShowAddForm(false);
         } else {
-          alert("ไม่สามารถเพิ่มกิจกรรมได้");
+          swalAlert("ไม่สามารถเพิ่มกิจกรรมได้");
         }
       }
     } catch (err) {
       console.error("Save error:", err);
-      alert("เกิดข้อผิดพลาดในการบันทึกกิจกรรม");
+      swalAlert("เกิดข้อผิดพลาดในการบันทึกกิจกรรม");
     } finally {
       setIsSubmitting(false);
     }

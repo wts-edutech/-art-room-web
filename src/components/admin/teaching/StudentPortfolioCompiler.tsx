@@ -1,5 +1,6 @@
 "use client";
 
+import { swalAlert } from "@/lib/swal";
 import React, { useState, useEffect, useMemo } from "react";
 import { 
   Users, 
@@ -166,7 +167,7 @@ export default function StudentPortfolioCompiler({ initialClassroom }: StudentPo
           }));
         }, 3000);
       } else {
-        alert("ไม่สามารถบันทึกคะแนนได้ กรุณาลองใหม่อีกครั้ง");
+        swalAlert("ไม่สามารถบันทึกคะแนนได้ กรุณาลองใหม่อีกครั้ง");
         setGradingState((prev) => ({
           ...prev,
           [submissionId]: { ...prev[submissionId], isSaving: false },
@@ -174,7 +175,7 @@ export default function StudentPortfolioCompiler({ initialClassroom }: StudentPo
       }
     } catch (err) {
       console.error(err);
-      alert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+      swalAlert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
       setGradingState((prev) => ({
         ...prev,
         [submissionId]: { ...prev[submissionId], isSaving: false },
@@ -207,13 +208,13 @@ export default function StudentPortfolioCompiler({ initialClassroom }: StudentPo
 
       if (res.ok) {
         setFeaturedArtworks((prev) => ({ ...prev, [sub.id]: true }));
-        alert(`นำผลงาน "${title}" ของ ${author} ไปแสดงในแกลเลอรีผลงานโรงเรียนเรียบร้อยแล้ว!`);
+        swalAlert(`นำผลงาน "${title}" ของ ${author} ไปแสดงในแกลเลอรีผลงานโรงเรียนเรียบร้อยแล้ว!`);
       } else {
-        alert("ไม่สามารถเผยแพร่ผลงานได้");
+        swalAlert("ไม่สามารถเผยแพร่ผลงานได้");
       }
     } catch (err) {
       console.error(err);
-      alert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+      swalAlert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
     } finally {
       setIsPublishingArt((prev) => ({ ...prev, [sub.id]: false }));
     }

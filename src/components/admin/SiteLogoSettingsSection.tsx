@@ -1,5 +1,6 @@
 "use client";
 
+import { swalAlert, swalConfirm } from "@/lib/swal";
 import { useState, useEffect, useRef } from "react";
 import { 
   Image as ImageIcon, 
@@ -70,12 +71,12 @@ export default function SiteLogoSettingsSection() {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      alert("กรุณาเลือกไฟล์รูปภาพที่ถูกต้อง (PNG, WebP, JPG หรือ SVG)");
+      swalAlert("กรุณาเลือกไฟล์รูปภาพที่ถูกต้อง (PNG, WebP, JPG หรือ SVG)");
       return;
     }
 
     if (file.size > 10 * 1024 * 1024) {
-      alert("ขนาดไฟล์ภาพใหญ่เกิน 10MB กรุณาเลือกภาพที่มีขนาดเล็กลง");
+      swalAlert("ขนาดไฟล์ภาพใหญ่เกิน 10MB กรุณาเลือกภาพที่มีขนาดเล็กลง");
       return;
     }
 
@@ -131,8 +132,8 @@ export default function SiteLogoSettingsSection() {
     }
   };
 
-  const handleResetToDefault = () => {
-    if (confirm("ต้องการคืนค่ากลับไปใช้รูปตราโรงเรียนวชิรธรรมสาธิตแบบเดิมใช่หรือไม่?")) {
+  const handleResetToDefault = async () => {
+    if (await swalConfirm("ต้องการคืนค่ากลับไปใช้รูปตราโรงเรียนวชิรธรรมสาธิตแบบเดิมใช่หรือไม่?")) {
       setSettings(DEFAULT_LOGO_SETTINGS);
     }
   };

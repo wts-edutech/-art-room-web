@@ -14,6 +14,7 @@ import {
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import ImageEditorModal from "@/components/common/ImageEditorModal";
 import { compressImage } from "@/lib/image-compressor";
+import { swalSuccess, swalError, swalWarning } from "@/lib/swal";
 
 const MAX_COVER_SIZE = 10 * 1024 * 1024; // 10 MB
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
@@ -309,6 +310,7 @@ export default function NewIdeaPage() {
       const selectedFiles = Array.from(e.target.files);
       if (files.length + selectedFiles.length > 5) {
         setErrorMsg("อัปโหลดไฟล์แนบได้สูงสุดไม่เกิน 5 ไฟล์");
+        swalWarning("เกินจำนวนที่กำหนด", "อัปโหลดไฟล์แนบได้สูงสุดไม่เกิน 5 ไฟล์");
         return;
       }
       try {
@@ -340,6 +342,7 @@ export default function NewIdeaPage() {
     
     if (!title.trim() || !description.trim() || !coverImage) {
       setErrorMsg("กรุณากรอกหัวข้อ รายละเอียด และอัปโหลดรูปภาพหน้าปกให้ครบถ้วน");
+      swalWarning("ข้อมูลไม่ครบถ้วน", "กรุณากรอกหัวข้อ รายละเอียด และอัปโหลดรูปภาพหน้าปกให้ครบถ้วน");
       return;
     }
 
@@ -386,16 +389,19 @@ export default function NewIdeaPage() {
 
       if (res.ok) {
         setSuccessMsg("แบ่งปันไอเดียสำเร็จแล้ว! ไอเดียของคุณจะขึ้นแสดงในแชร์ไอเดียทันที");
+        swalSuccess("แบ่งปันไอเดียสำเร็จแล้ว!", "ไอเดียของคุณจะขึ้นแสดงในบอร์ดแชร์ไอเดียทันที", 1500);
         setTimeout(() => {
           router.push("/ideas");
         }, 1500);
       } else {
         const data = (await res.json().catch(() => ({}))) as any;
         setErrorMsg(data.error || "เกิดข้อผิดพลาดในการส่งข้อมูล");
+        swalError("ส่งข้อมูลไม่สำเร็จ", data.error || "เกิดข้อผิดพลาดในการส่งข้อมูล");
         setIsSubmitting(false);
       }
     } catch (error) {
       setErrorMsg("เกิดข้อผิดพลาดในการเชื่อมต่อเครือข่าย");
+      swalError("เชื่อมต่อเครือข่ายไม่สำเร็จ", "เกิดข้อผิดพลาดในการเชื่อมต่อเครือข่าย");
       setIsSubmitting(false);
     }
   };

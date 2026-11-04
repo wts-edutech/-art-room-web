@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff } from "lucide-react";
+import { swalSuccess, swalError } from "@/lib/swal";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -25,14 +26,19 @@ export default function AdminLoginPage() {
       });
 
       if (res.ok) {
+        await swalSuccess("เข้าสู่ระบบผู้ดูแลสำเร็จ!", "กำลังเข้าสู่หน้าจัดการระบบ...", 1200);
         // Redirect to admin dashboard and force refresh to bypass layout cache if needed
         window.location.href = "/admin";
       } else {
         const data = await res.json();
-        setError(data.error || "รหัสผ่านไม่ถูกต้อง");
+        const errMsg = data.error || "รหัสผ่านไม่ถูกต้อง";
+        setError(errMsg);
+        swalError("เข้าสู่ระบบไม่สำเร็จ", errMsg);
       }
     } catch (err) {
-      setError("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+      const netErr = "เกิดข้อผิดพลาดในการเชื่อมต่อ";
+      setError(netErr);
+      swalError("เชื่อมต่อไม่สำเร็จ", netErr);
     } finally {
       setIsLoading(false);
     }

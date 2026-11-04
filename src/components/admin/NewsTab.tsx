@@ -1,5 +1,6 @@
 "use client";
 
+import { swalAlert, swalConfirm } from "@/lib/swal";
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -90,7 +91,7 @@ export default function NewsTab() {
     e.preventDefault();
     if (!newsTitle || !newsExcerpt || !newsDate) return;
     if (!editingNewsId && !newsImageFile && !newsImageUrl) {
-      alert("กรุณาเลือกรูปภาพข่าวสาร");
+      swalAlert("กรุณาเลือกรูปภาพข่าวสาร");
       return;
     }
     
@@ -119,11 +120,11 @@ export default function NewsTab() {
         fetchNewsData();
       } else {
         const err = (await res.json()) as any;
-        alert(err.error || "เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+        swalAlert(err.error || "เกิดข้อผิดพลาดในการบันทึกข้อมูล");
       }
     } catch (error) {
       console.error("Failed to save news", error);
-      alert("ไม่สามารถบันทึกข่าวสารได้");
+      swalAlert("ไม่สามารถบันทึกข่าวสารได้");
     }
   };
 
@@ -150,7 +151,7 @@ export default function NewsTab() {
   };
 
   const handleDeleteNews = async (id: string) => {
-    if (!confirm("คุณแน่ใจหรือไม่ที่จะลบข่าวสารนี้?")) return;
+    if (!await swalConfirm("คุณแน่ใจหรือไม่ที่จะลบข่าวสารนี้?")) return;
     try {
       const res = await fetch(`/api/news?id=${id}`, { method: "DELETE" });
       if (res.ok) fetchNewsData();
@@ -160,7 +161,7 @@ export default function NewsTab() {
   };
 
   const handleDeleteActivity = async (id: string) => {
-    if (!confirm("คุณแน่ใจหรือไม่ที่จะลบกิจกรรมนี้ออกจากปฏิทิน?")) return;
+    if (!await swalConfirm("คุณแน่ใจหรือไม่ที่จะลบกิจกรรมนี้ออกจากปฏิทิน?")) return;
     try {
       const res = await fetch(`/api/activities?id=${id}`, { method: "DELETE" });
       if (res.ok) fetchActivitiesData();

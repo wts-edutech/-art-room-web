@@ -1,5 +1,6 @@
 "use client";
 
+import { swalAlert, swalConfirm, swalSuccess } from "@/lib/swal";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { 
   ShieldAlert, 
@@ -314,13 +315,18 @@ export default function ExamLockModal({
         setPhase("result");
         exitFullscreen();
         onSuccess(data.score);
+        swalSuccess(
+          "ส่งข้อสอบสำเร็จ!",
+          `คุณได้คะแนน ${data.score} / ${data.totalQuestions || questions.length || 20} คะแนน`,
+          2200
+        );
       } else {
-        alert(data.error || "เกิดข้อผิดพลาดในการส่งข้อสอบ คำตอบทั้งหมดยังคงบันทึกไว้ในเครื่องอย่างปลอดภัย กรุณากดส่งอีกครั้ง");
+        swalAlert(data.error || "เกิดข้อผิดพลาดในการส่งข้อสอบ คำตอบทั้งหมดยังคงบันทึกไว้ในเครื่องอย่างปลอดภัย กรุณากดส่งอีกครั้ง");
         setPhase("exam");
       }
     } catch (err) {
       console.error("Error submitting exam:", err);
-      alert("สัญญาณอินเทอร์เน็ตไม่เสถียร คำตอบทั้งหมดยังคงบันทึกไว้ในเครื่องอย่างปลอดภัย กรุณากดปุ่มส่งข้อสอบอีกครั้ง");
+      swalAlert("สัญญาณอินเทอร์เน็ตไม่เสถียร คำตอบทั้งหมดยังคงบันทึกไว้ในเครื่องอย่างปลอดภัย กรุณากดปุ่มส่งข้อสอบอีกครั้ง");
       setPhase("exam");
     }
   }, [quiz.id, student, answers, infractionsCount, questions.length, onSuccess, quizDraftKey]);
@@ -329,7 +335,7 @@ export default function ExamLockModal({
   useEffect(() => {
     if (infractionsCount >= maxInfractions && phase === "exam") {
       setShowWarningModal(false);
-      alert(`⚠️ คุณได้ฝ่าฝืนสลับหน้าจอครบ ${maxInfractions} ครั้ง ระบบกำลังส่งข้อสอบอัตโนมัติ`);
+      swalAlert(`⚠️ คุณได้ฝ่าฝืนสลับหน้าจอครบ ${maxInfractions} ครั้ง ระบบกำลังส่งข้อสอบอัตโนมัติ`);
       handleSubmitExam("force_submitted");
     }
   }, [infractionsCount, phase, handleSubmitExam]);
@@ -377,13 +383,13 @@ export default function ExamLockModal({
   const currentQuestion = questions[currentIdx];
 
   // Confirm and submit helper
-  const handleConfirmSubmit = useCallback(() => {
+  const handleConfirmSubmit = useCallback(async () => {
     if (answeredCount < questions.length) {
-      if (confirm(`คุณยังตอบไม่ครบ (ตอบแล้ว ${answeredCount}/${questions.length} ข้อ)\nคุณแน่ใจหรือไม่ว่าต้องการส่งข้อสอบตอนนี้?`)) {
+      if (await swalConfirm(`คุณยังตอบไม่ครบ (ตอบแล้ว ${answeredCount}/${questions.length} ข้อ)\nคุณแน่ใจหรือไม่ว่าต้องการส่งข้อสอบตอนนี้?`)) {
         handleSubmitExam("completed");
       }
     } else {
-      if (confirm("ยืนยันการส่งข้อสอบและตรวจคำตอบทันที?")) {
+      if (await swalConfirm("ยืนยันการส่งข้อสอบและตรวจคำตอบทันที?")) {
         handleSubmitExam("completed");
       }
     }
@@ -499,24 +505,14 @@ export default function ExamLockModal({
             </p>
           </div>
 
-          {/* Score Box & Art Coins Earned */}
-          <div className="bg-gradient-to-br from-emerald-50 via-amber-50/30 to-teal-50 rounded-2xl p-5 border border-emerald-200 text-emerald-950 space-y-2">
+          {/* Score Box */}
+          <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-5 border border-emerald-200 text-emerald-950 space-y-1">
             <span className="text-xs font-semibold text-emerald-700 block">คะแนนที่ทำได้</span>
             <div className="text-4xl font-extrabold font-kanit text-emerald-600">
               {examResult.score} <span className="text-xl font-medium text-emerald-500">/ {examResult.totalQuestions}</span>
             </div>
-            <div className="text-xs font-medium text-emerald-700">
-              คิดเป็น {percentage}% • แบบทดสอบบทเรียน
-            </div>
-
-            {/* Instant Art Coins Reward */}
-            <div className="pt-2.5 mt-1 border-t border-emerald-200/60 flex items-center justify-between">
-              <span className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
-                <span className="text-base">🪙</span> ได้รับแต้มสะสมศิลป์:
-              </span>
-              <span className="text-xs font-extrabold text-amber-700 bg-amber-100/90 px-3 py-1 rounded-full border border-amber-300 shadow-2xs animate-bounce">
-                +{examResult.score * 10 + (examResult.score === examResult.totalQuestions ? 50 : 0)} Art Coins
-              </span>
+            <div className="text-xs font-medium text-emerald-700 pt-1">
+              คิดเป็น {percentage}% • แบบทดสอบก่อนเรียน
             </div>
           </div>
 

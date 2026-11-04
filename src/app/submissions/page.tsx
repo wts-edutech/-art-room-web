@@ -7,6 +7,7 @@ import Footer from "@/components/layout/Footer";
 import GuestBlockModal from "@/components/modals/GuestBlockModal";
 import SubmitWorkModal from "@/components/submissions/SubmitWorkModal";
 import { performGlobalLogout, syncAuthWithServer } from "@/lib/client-auth";
+import { swalToast } from "@/lib/swal";
 import { 
   User, 
   Calendar, 
@@ -312,6 +313,7 @@ export default function SubmissionsPage() {
         localStorage.setItem("artroom_student_grade", newRoomSelect);
         setStudent((prev) => (prev ? { ...prev, classroom: newRoomSelect } : null));
         setIsChangingRoom(false);
+        swalToast(`อัปเดตห้องเรียนเป็น ${newRoomSelect} แล้ว`, "success");
       }
     } catch (e) {
       console.error(e);
@@ -365,56 +367,6 @@ export default function SubmissionsPage() {
   const actionNeededCount = assignments.filter((a) => !subMap.has(a.id) || subMap.get(a.id)?.status === "resubmit").length;
   const submittedCount = assignments.filter((a) => subMap.has(a.id) && subMap.get(a.id)?.status !== "resubmit").length;
   const progressPercent = totalCount > 0 ? Math.round((submittedCount / totalCount) * 100) : 0;
-
-  // Gamification: Calculate Art Coins & Artist Rank dynamically
-  const gamificationStats = useMemo(() => {
-    let quizCoins = 0;
-    activeQuizzes.forEach((q) => {
-      if (q.attempt) {
-        const qScore = Number(q.attempt.score) || 0;
-        const qTotal = Number(q.attempt.totalQuestions) || 20;
-        quizCoins += qScore * 10;
-        if (qScore === qTotal && qTotal > 0) quizCoins += 50; // Perfect score bonus
-      }
-    });
-
-    let artworkCoins = 0;
-    submissions.forEach((s) => {
-      if (s.score !== null && s.score !== undefined) {
-        artworkCoins += Math.round(Number(s.score) * 10);
-        if (!s.isLate) artworkCoins += 20; // On-time bonus
-      }
-    });
-
-    const totalCoins = quizCoins + artworkCoins;
-
-    let rankTitle = "ศิลปินฝึกหัด";
-    let rankIcon = "🥉";
-    let rankColor = "text-amber-800 bg-amber-50 border-amber-200";
-
-    if (totalCoins >= 1000) {
-      rankTitle = "มาสเตอร์ห้องศิลป์";
-      rankIcon = "💎";
-      rankColor = "text-cyan-800 bg-cyan-50 border-cyan-200";
-    } else if (totalCoins >= 600) {
-      rankTitle = "นักผสมสีเอก";
-      rankIcon = "🥇";
-      rankColor = "text-amber-800 bg-amber-100 border-amber-300";
-    } else if (totalCoins >= 250) {
-      rankTitle = "จิตรกรนักสเก็ตช์";
-      rankIcon = "🥈";
-      rankColor = "text-slate-700 bg-slate-100 border-slate-300";
-    }
-
-    return {
-      totalCoins,
-      quizCoins,
-      artworkCoins,
-      rankTitle,
-      rankIcon,
-      rankColor,
-    };
-  }, [submissions, activeQuizzes]);
 
   // Filtered Assignments for To-Do Tab
   const toDoAssignments = assignments.filter((a) => {
@@ -617,18 +569,6 @@ export default function SubmissionsPage() {
                           ⚠️ ยังไม่ได้ระบุห้องเรียน
                         </span>
                       )}
-
-                      {/* Gamification Coins & Rank Badges */}
-                      <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/90 text-amber-900 shadow-2xs font-sans">
-                        <span className="text-xs">🪙</span>
-                        <span className="font-extrabold text-xs font-kanit">{gamificationStats.totalCoins}</span>
-                        <span className="text-[10px] text-amber-700 font-medium">Coins</span>
-                      </div>
-
-                      <div className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold border shadow-2xs ${gamificationStats.rankColor}`}>
-                        <span>{gamificationStats.rankIcon}</span>
-                        <span>{gamificationStats.rankTitle}</span>
-                      </div>
 
                       <button
                         type="button"
@@ -1525,32 +1465,9 @@ export default function SubmissionsPage() {
                     <Award className="w-4 h-4 text-emerald-600" />
                     <span>คะแนนที่ได้รับ</span>
                   </div>
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-xs font-bold text-amber-800 bg-amber-100/90 px-2.5 py-0.5 rounded-full border border-amber-300 shadow-2xs">
-                      🪙 +{Math.round(Number(previewSubmission.submission.score) * 10)} Coins
-                    </span>
-                    <span className="text-base font-extrabold font-kanit text-emerald-600">
-                      {previewSubmission.submission.score} / {previewSubmission.assignment.maxScore}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* Teacher Feedback & Cheer Stamp */}
-              {previewSubmission.submission.feedback && (
-                <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-50/90 via-orange-50/40 to-white border border-amber-200/90 text-xs shadow-xs space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-amber-900 flex items-center gap-1.5">
-                      <Sparkles className="w-4 h-4 text-orange-500" />
-                      <span>ตราประทับ &amp; คำชมเชยจากครูผู้สอน</span>
-                    </span>
-                    <span className="text-[10px] text-amber-700 bg-amber-100/90 px-2.5 py-0.5 rounded-full font-bold border border-amber-300 shadow-2xs">
-                      Teacher Cheer
-                    </span>
-                  </div>
-                  <p className="text-gray-800 leading-relaxed font-normal bg-white/90 p-3 rounded-xl border border-amber-100/80">
-                    {previewSubmission.submission.feedback}
-                  </p>
+                  <span className="text-base font-extrabold font-kanit text-emerald-600">
+                    {previewSubmission.submission.score} / {previewSubmission.assignment.maxScore}
+                  </span>
                 </div>
               )}
 

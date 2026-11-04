@@ -1,5 +1,6 @@
 "use client";
 
+import { swalAlert } from "@/lib/swal";
 import { useState } from "react";
 import { 
   X, 
@@ -98,7 +99,7 @@ export default function AiMaterialStudioModal({
 
   const handleGenerateInSystem = async () => {
     if (!topic.trim()) {
-      alert("กรุณาระบุหัวข้อสื่อการสอนที่ต้องการออกแบบ");
+      swalAlert("กรุณาระบุหัวข้อสื่อการสอนที่ต้องการออกแบบ");
       return;
     }
 
@@ -121,11 +122,11 @@ export default function AiMaterialStudioModal({
         onClose();
         onOpenPreview(data.material);
       } else {
-        alert(data.error || "ไม่สามารถออกแบบสื่อการสอนได้ กรุณาลองใหม่อีกครั้ง");
+        swalAlert(data.error || "ไม่สามารถออกแบบสื่อการสอนได้ กรุณาลองใหม่อีกครั้ง");
       }
     } catch (e) {
       console.error(e);
-      alert("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์ AI");
+      swalAlert("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์ AI");
     } finally {
       setIsGenerating(false);
     }

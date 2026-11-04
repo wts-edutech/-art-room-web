@@ -1,5 +1,6 @@
 "use client";
 
+import { swalAlert, swalConfirm } from "@/lib/swal";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Trash2, Users, Search, AlertTriangle, Mail, Phone, ShieldCheck, Globe } from "lucide-react";
@@ -28,13 +29,13 @@ export default function GuestsTab() {
   }, []);
 
   const handleDeleteGuest = async (id: string) => {
-    if (!confirm(`คุณแน่ใจหรือไม่ที่จะลบประวัติการเข้าใช้งานรหัส ${id}?`)) return;
+    if (!await swalConfirm(`คุณแน่ใจหรือไม่ที่จะลบประวัติการเข้าใช้งานรหัส ${id}?`)) return;
     try {
       const res = await fetch(`/api/auth/guest?id=${id}`, { method: "DELETE" });
       if (res.ok) {
         fetchData();
       } else {
-        alert("ไม่สามารถลบข้อมูลได้");
+        swalAlert("ไม่สามารถลบข้อมูลได้");
       }
     } catch (error) {
       console.error("Failed to delete guest", error);
@@ -44,7 +45,7 @@ export default function GuestsTab() {
   const handleDeleteAllGuests = async () => {
     const confirmation = prompt('คำเตือน: การกระทำนี้จะลบข้อมูลบุคคลทั่วไปทั้งหมด! พิมพ์ "ยืนยันการลบ" เพื่อดำเนินการต่อ');
     if (confirmation !== 'ยืนยันการลบ') {
-      if (confirmation !== null) alert("ยกเลิกการลบข้อมูลแล้ว");
+      if (confirmation !== null) swalAlert("ยกเลิกการลบข้อมูลแล้ว");
       return;
     }
     
@@ -52,9 +53,9 @@ export default function GuestsTab() {
       const res = await fetch(`/api/auth/guest?action=deleteAll`, { method: "DELETE" });
       if (res.ok) {
         fetchData();
-        alert("ลบข้อมูลบุคคลทั่วไปทั้งหมดเรียบร้อยแล้ว");
+        swalAlert("ลบข้อมูลบุคคลทั่วไปทั้งหมดเรียบร้อยแล้ว");
       } else {
-        alert("ไม่สามารถลบข้อมูลได้");
+        swalAlert("ไม่สามารถลบข้อมูลได้");
       }
     } catch (error) {
       console.error("Failed to delete all guests", error);

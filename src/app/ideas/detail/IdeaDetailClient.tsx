@@ -1,5 +1,6 @@
 "use client";
 
+import { swalAlert, swalConfirm } from "@/lib/swal";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -344,7 +345,7 @@ export default function IdeaDetailClient() {
     if (!commentText.trim() || !idea) return;
 
     if (!isLoggedIn) {
-      alert("กรุณาเข้าสู่ระบบก่อนแสดงความคิดเห็น");
+      swalAlert("กรุณาเข้าสู่ระบบก่อนแสดงความคิดเห็น");
       return;
     }
 
@@ -370,10 +371,10 @@ export default function IdeaDetailClient() {
         setCommentText("");
       } else {
         const err = (await res.json().catch(() => ({}))) as any;
-        alert(err.error || "ไม่สามารถแสดงความคิดเห็นได้");
+        swalAlert(err.error || "ไม่สามารถแสดงความคิดเห็นได้");
       }
     } catch (error) {
-      alert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+      swalAlert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
     } finally {
       setIsSubmittingComment(false);
     }
@@ -381,7 +382,7 @@ export default function IdeaDetailClient() {
 
   const handleDeleteComment = async (commentId: string) => {
     if (!idea) return;
-    if (!confirm("คุณต้องการลบความคิดเห็นนี้ใช่หรือไม่?")) return;
+    if (!await swalConfirm("คุณต้องการลบความคิดเห็นนี้ใช่หรือไม่?")) return;
 
     try {
       const res = await fetch(`/api/ideas/${idea.id}/comment?commentId=${commentId}`, {
@@ -395,10 +396,10 @@ export default function IdeaDetailClient() {
         });
       } else {
         const err = (await res.json().catch(() => ({}))) as any;
-        alert(err.error || "ไม่สามารถลบความคิดเห็นได้");
+        swalAlert(err.error || "ไม่สามารถลบความคิดเห็นได้");
       }
     } catch (error) {
-      alert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+      swalAlert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
     }
   };
 
@@ -713,10 +714,10 @@ export default function IdeaDetailClient() {
                   download={isLoggedIn ? primaryFile.name : undefined}
                   target={isLoggedIn ? "_blank" : undefined}
                   rel={isLoggedIn ? "noopener noreferrer" : undefined}
-                  onClick={(e) => {
+                  onClick={async (e) => {
                     if (!isLoggedIn) {
                       e.preventDefault();
-                      if (confirm("กรุณาเข้าสู่ระบบก่อนดาวน์โหลดเอกสาร ต้องการไปหน้าเข้าสู่ระบบหรือไม่?")) {
+                      if (await swalConfirm("กรุณาเข้าสู่ระบบก่อนดาวน์โหลดเอกสาร ต้องการไปหน้าเข้าสู่ระบบหรือไม่?")) {
                         router.push(`/login?redirect=/ideas/detail?id=${idea.id}`);
                       }
                     }
@@ -783,10 +784,10 @@ export default function IdeaDetailClient() {
                             download={isLoggedIn ? (file.name || `attachment-${index + 1}`) : undefined}
                             target={isLoggedIn ? "_blank" : undefined}
                             rel={isLoggedIn ? "noopener noreferrer" : undefined}
-                            onClick={(e) => {
+                            onClick={async (e) => {
                               if (!isLoggedIn) {
                                 e.preventDefault();
-                                if (confirm("กรุณาเข้าสู่ระบบก่อนดาวน์โหลดไฟล์ ต้องการไปหน้าเข้าสู่ระบบหรือไม่?")) {
+                                if (await swalConfirm("กรุณาเข้าสู่ระบบก่อนดาวน์โหลดไฟล์ ต้องการไปหน้าเข้าสู่ระบบหรือไม่?")) {
                                   router.push(`/login?redirect=/ideas/detail?id=${idea.id}`);
                                 }
                               }
@@ -1080,10 +1081,10 @@ export default function IdeaDetailClient() {
                   download={isLoggedIn ? previewFile.name : undefined}
                   target={isLoggedIn ? "_blank" : undefined}
                   rel={isLoggedIn ? "noopener noreferrer" : undefined}
-                  onClick={(e) => {
+                  onClick={async (e) => {
                     if (!isLoggedIn) {
                       e.preventDefault();
-                      if (confirm("กรุณาเข้าสู่ระบบก่อนดาวน์โหลดเอกสาร ต้องการไปหน้าเข้าสู่ระบบหรือไม่?")) {
+                      if (await swalConfirm("กรุณาเข้าสู่ระบบก่อนดาวน์โหลดเอกสาร ต้องการไปหน้าเข้าสู่ระบบหรือไม่?")) {
                         router.push(`/login?redirect=/ideas/detail?id=${idea.id}`);
                       }
                     }

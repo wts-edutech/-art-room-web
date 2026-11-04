@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { setStudentAuth, setGuestAuth } from "@/lib/client-auth";
 import { useSiteLogo } from "@/context/LogoContext";
+import { swalSuccess, swalError, swalWarning } from "@/lib/swal";
 import { 
   User, 
   Users, 
@@ -155,12 +156,16 @@ export default function LoginPage() {
 
     // Client-side strict validation
     if (!/^\d{5}$/.test(cleanId)) {
-      setErrorMsg("รหัสประจำตัวนักเรียนต้องเป็นตัวเลข 5 หลักเท่านั้น");
+      const msg = "รหัสประจำตัวนักเรียนต้องเป็นตัวเลข 5 หลักเท่านั้น";
+      setErrorMsg(msg);
+      swalWarning("รหัสนักเรียนไม่ถูกต้อง", msg);
       return;
     }
 
     if (!cleanPass) {
-      setErrorMsg("กรุณากรอกรหัสผ่าน");
+      const msg = "กรุณากรอกรหัสผ่าน";
+      setErrorMsg(msg);
+      swalWarning("ข้อมูลไม่ครบถ้วน", msg);
       return;
     }
 
@@ -186,9 +191,13 @@ export default function LoginPage() {
         // Lock out client if 5 consecutive failed attempts
         if (newFailCount >= 5) {
           setLockoutTimer(30);
-          setErrorMsg("คุณระบุข้อมูลไม่ถูกต้องเกิน 5 ครั้ง เพื่อความปลอดภัยระบบถูกระงับชั่วคราว 30 วินาที");
+          const lockMsg = "คุณระบุข้อมูลไม่ถูกต้องเกิน 5 ครั้ง เพื่อความปลอดภัยระบบถูกระงับชั่วคราว 30 วินาที";
+          setErrorMsg(lockMsg);
+          swalError("ระงับการเข้าสู่ระบบชั่วคราว", lockMsg);
         } else {
-          setErrorMsg(data.error || "รหัสนักเรียนหรือรหัสผ่านไม่ถูกต้อง");
+          const errMsg = data.error || "รหัสนักเรียนหรือรหัสผ่านไม่ถูกต้อง";
+          setErrorMsg(errMsg);
+          swalError("เข้าสู่ระบบไม่สำเร็จ", errMsg);
         }
 
         setIsLoading(false);
@@ -206,10 +215,13 @@ export default function LoginPage() {
         avatar: data.student.avatar || null,
       });
       
+      await swalSuccess("เข้าสู่ระบบสำเร็จ!", `ยินดีต้อนรับ ${data.student.name}`, 1300);
       window.location.href = getRedirectPath();
     } catch (error) {
       console.error(error);
-      setErrorMsg("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์ กรุณาลองใหม่อีกครั้ง");
+      const netErr = "เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์ กรุณาลองใหม่อีกครั้ง";
+      setErrorMsg(netErr);
+      swalError("เชื่อมต่อไม่สำเร็จ", netErr);
       setIsLoading(false);
     }
   };
@@ -226,12 +238,16 @@ export default function LoginPage() {
     // Strict email format check
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!trimmedEmail || !emailRegex.test(trimmedEmail)) {
-      setErrorMsg("กรุณาระบุที่อยู่อีเมลที่ถูกต้อง (ตัวอย่างเช่น yourname@gmail.com)");
+      const msg = "กรุณาระบุที่อยู่อีเมลที่ถูกต้อง (ตัวอย่างเช่น yourname@gmail.com)";
+      setErrorMsg(msg);
+      swalWarning("อีเมลไม่ถูกต้อง", msg);
       return;
     }
 
     if (!trimmedName || trimmedName.length < 2) {
-      setErrorMsg("กรุณาระบุชื่อ - นามสกุลจริงของท่าน เพื่อยืนยันการเข้าใช้งาน");
+      const msg = "กรุณาระบุชื่อ - นามสกุลจริงของท่าน เพื่อยืนยันการเข้าใช้งาน";
+      setErrorMsg(msg);
+      swalWarning("กรุณาระบุชื่อ-นามสกุล", msg);
       return;
     }
 
@@ -262,14 +278,19 @@ export default function LoginPage() {
           provider: selectedProvider,
         });
 
+        await swalSuccess("เข้าสู่ระบบผู้เยี่ยมชมสำเร็จ!", `ยินดีต้อนรับคุณ ${trimmedName}`, 1300);
         window.location.href = getRedirectPath();
       } else {
-        setErrorMsg(data.error || "ไม่สามารถเข้าสู่ระบบได้ กรุณาลองใหม่อีกครั้ง");
+        const errMsg = data.error || "ไม่สามารถเข้าสู่ระบบได้ กรุณาลองใหม่อีกครั้ง";
+        setErrorMsg(errMsg);
+        swalError("เข้าสู่ระบบไม่สำเร็จ", errMsg);
         setIsLoading(false);
       }
     } catch (error) {
       console.error(error);
-      setErrorMsg("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
+      const netErr = "เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์";
+      setErrorMsg(netErr);
+      swalError("เชื่อมต่อไม่สำเร็จ", netErr);
       setIsLoading(false);
     }
   };

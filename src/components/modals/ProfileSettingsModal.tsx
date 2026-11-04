@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { ART_AVATAR_PRESETS, getArtAvatarById, resolveUserAvatar, ArtAvatarPreset, getDefaultStudentPreset } from "@/lib/art-avatars";
 import { validatePassword } from "@/lib/password-validator";
+import { swalSuccess, swalError, swalWarning } from "@/lib/swal";
 
 interface ProfileSettingsModalProps {
   isOpen: boolean;
@@ -261,7 +262,9 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
     setErrorMessage("");
 
     if (!fullName.trim()) {
-      setErrorMessage("กรุณาระบุชื่อ-นามสกุล");
+      const msg = "กรุณาระบุชื่อ-นามสกุล";
+      setErrorMessage(msg);
+      swalWarning("ข้อมูลไม่ครบถ้วน", msg);
       return;
     }
 
@@ -269,10 +272,13 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
       const validation = validatePassword(newPassword);
       if (!validation.isValid) {
         setErrorMessage(validation.errors[0]);
+        swalWarning("รหัสผ่านไม่ผ่านเกณฑ์ความปลอดภัย", validation.errors[0]);
         return;
       }
       if (newPassword !== confirmPassword) {
-        setErrorMessage("รหัสผ่านใหม่และการยืนยันรหัสผ่านไม่ตรงกัน");
+        const msg = "รหัสผ่านใหม่และการยืนยันรหัสผ่านไม่ตรงกัน";
+        setErrorMessage(msg);
+        swalWarning("รหัสผ่านไม่ตรงกัน", msg);
         return;
       }
     }
@@ -324,7 +330,9 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
       const resData: any = await res.json().catch(() => ({}));
       if (!res.ok) {
         setIsSaving(false);
-        setErrorMessage(resData.error || "เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+        const errMsg = resData.error || "เกิดข้อผิดพลาดในการบันทึกข้อมูล";
+        setErrorMessage(errMsg);
+        swalError("บันทึกไม่สำเร็จ", errMsg);
         return;
       }
 
@@ -340,6 +348,11 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
 
       setIsSaving(false);
       setSaveSuccess(true);
+      swalSuccess(
+        "บันทึกโปรไฟล์สำเร็จ!",
+        resData.passwordChanged ? "อัปเดตข้อมูลส่วนตัวและรหัสผ่านใหม่เรียบร้อยแล้ว" : "อัปเดตข้อมูลโปรไฟล์เรียบร้อยแล้ว",
+        1800
+      );
 
       setTimeout(() => {
         if (onSaveSuccess) onSaveSuccess();
@@ -348,7 +361,9 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSaveSuccess }:
     } catch (err) {
       console.error(err);
       setIsSaving(false);
-      setErrorMessage("เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง");
+      const netErr = "เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง";
+      setErrorMessage(netErr);
+      swalError("เกิดข้อผิดพลาด", netErr);
     }
   };
 

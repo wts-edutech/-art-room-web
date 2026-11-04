@@ -1,5 +1,6 @@
 "use client";
 
+import { swalAlert, swalConfirm } from "@/lib/swal";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Trash2, Plus, Video, Pencil, Loader2 } from "lucide-react";
@@ -43,24 +44,24 @@ export default function LessonsTab() {
     
     // Validation
     if (category !== "สื่อภาพ" && category !== "สื่อเอกสาร PDF" && !videoId) {
-      alert("กรุณากรอกลิงก์ YouTube");
+      swalAlert("กรุณากรอกลิงก์ YouTube");
       return;
     }
     if (category === "สื่อเอกสาร PDF" && !editingId && !lessonPdfFile && !lessonPdfUrl) {
-      alert("กรุณาเลือกไฟล์ PDF");
+      swalAlert("กรุณาเลือกไฟล์ PDF");
       return;
     }
     if (category === "สื่อภาพ" && !editingId && !lessonImageFile && !lessonImageUrl) {
-      alert("กรุณาเลือกรูปภาพสื่อการสอน");
+      swalAlert("กรุณาเลือกรูปภาพสื่อการสอน");
       return;
     }
 
     if (lessonImageFile && lessonImageFile.size > 10 * 1024 * 1024) {
-      alert("ขนาดไฟล์รูปภาพเกิน 10MB กรุณาเลือกรูปภาพที่มีขนาดไม่เกิน 10MB");
+      swalAlert("ขนาดไฟล์รูปภาพเกิน 10MB กรุณาเลือกรูปภาพที่มีขนาดไม่เกิน 10MB");
       return;
     }
     if (lessonPdfFile && lessonPdfFile.size > 15 * 1024 * 1024) {
-      alert("ขนาดไฟล์ PDF เกิน 15MB กรุณาเลือกไฟล์ PDF ที่มีขนาดไม่เกิน 15MB");
+      swalAlert("ขนาดไฟล์ PDF เกิน 15MB กรุณาเลือกไฟล์ PDF ที่มีขนาดไม่เกิน 15MB");
       return;
     }
 
@@ -100,14 +101,14 @@ export default function LessonsTab() {
       if (res.ok) {
         resetLessonForm();
         fetchData();
-        alert(editingId ? "บันทึกการแก้ไขสื่อการสอนเรียบร้อยแล้ว!" : "เพิ่มสื่อการสอนใหม่สำเร็จ!");
+        swalAlert(editingId ? "บันทึกการแก้ไขสื่อการสอนเรียบร้อยแล้ว!" : "เพิ่มสื่อการสอนใหม่สำเร็จ!");
       } else {
         const err = await res.json();
-        alert(err.error || "เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+        swalAlert(err.error || "เกิดข้อผิดพลาดในการบันทึกข้อมูล");
       }
     } catch (error) {
       console.error("Failed to save lesson", error);
-      alert("ไม่สามารถบันทึกบทเรียนได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต");
+      swalAlert("ไม่สามารถบันทึกบทเรียนได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต");
     } finally {
       setIsSaving(false);
     }
@@ -140,7 +141,7 @@ export default function LessonsTab() {
   };
 
   const handleDeleteLesson = async (id: string) => {
-    if (!confirm("คุณแน่ใจหรือไม่ที่จะลบบทเรียนนี้?")) return;
+    if (!await swalConfirm("คุณแน่ใจหรือไม่ที่จะลบบทเรียนนี้?")) return;
     try {
       const res = await fetch(`/api/lessons?id=${id}`, { method: "DELETE" });
       if (res.ok) fetchData();

@@ -1,5 +1,6 @@
 "use client";
 
+import { swalAlert, swalConfirm } from "@/lib/swal";
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -286,7 +287,7 @@ export default function ActivitiesTab() {
   const totalDuplicatesCount = duplicateGroups.reduce((acc, g) => acc + (g.length - 1), 0);
 
   const handleCleanupDuplicates = async () => {
-    if (!confirm(`ต้องการล้างรายการกิจกรรมที่ซ้ำกัน (${totalDuplicatesCount} รายการ) โดยจะเก็บรายการล่าสุดไว้ใช่หรือไม่?`)) return;
+    if (!await swalConfirm(`ต้องการล้างรายการกิจกรรมที่ซ้ำกัน (${totalDuplicatesCount} รายการ) โดยจะเก็บรายการล่าสุดไว้ใช่หรือไม่?`)) return;
     setIsCleaningDuplicates(true);
     try {
       for (const group of duplicateGroups) {
@@ -302,10 +303,10 @@ export default function ActivitiesTab() {
         }
       }
       await fetchData();
-      alert("ล้างรายการกิจกรรมที่ซ้ำกันเรียบร้อยแล้ว");
+      swalAlert("ล้างรายการกิจกรรมที่ซ้ำกันเรียบร้อยแล้ว");
     } catch (err) {
       console.error("Cleanup failed:", err);
-      alert("เกิดข้อผิดพลาดในการล้างรายการซ้ำ");
+      swalAlert("เกิดข้อผิดพลาดในการล้างรายการซ้ำ");
     } finally {
       setIsCleaningDuplicates(false);
     }
@@ -321,7 +322,7 @@ export default function ActivitiesTab() {
         (a) => a.title?.trim() === activityTitle.trim() && a.date?.trim() === activityDate.trim()
       );
       if (duplicate) {
-        const proceed = confirm(
+        const proceed = await swalConfirm(
           `⚠️ พบกิจกรรม "${activityTitle}" ในวันที่เดียวกันนี้อยู่ในระบบแล้ว\n\nต้องการเพิ่มเป็นกิจกรรมใหม่อีกรายการหนึ่งใช่หรือไม่?\n\n(หากต้องการแก้ไขกิจกรรมเดิม กรุณากด "ยกเลิก" แล้วไปกดปุ่ม "✏️ แก้ไข" ที่การ์ดกิจกรรมนั้นแทน)`
         );
         if (!proceed) return;
@@ -402,11 +403,11 @@ export default function ActivitiesTab() {
         fetchData();
       } else {
         const err = (await res.json()) as any;
-        alert(err.error || "เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+        swalAlert(err.error || "เกิดข้อผิดพลาดในการบันทึกข้อมูล");
       }
     } catch (error) {
       console.error("Failed to save activity", error);
-      alert("ไม่สามารถบันทึกกิจกรรมได้");
+      swalAlert("ไม่สามารถบันทึกกิจกรรมได้");
     } finally {
       setIsSubmitting(false);
       setSubmitProgress("");
@@ -474,7 +475,7 @@ export default function ActivitiesTab() {
   };
 
   const handleDeleteActivity = async (id: string) => {
-    if (!confirm("คุณแน่ใจหรือไม่ที่จะลบกิจกรรมนี้?")) return;
+    if (!await swalConfirm("คุณแน่ใจหรือไม่ที่จะลบกิจกรรมนี้?")) return;
     try {
       const res = await fetch(`/api/activities?id=${id}`, { method: "DELETE" });
       if (res.ok) fetchData();
@@ -644,7 +645,7 @@ export default function ActivitiesTab() {
     e.preventDefault();
     if (!awardModalData) return;
     if (!awardModalData.title || !awardModalData.student) {
-      alert("กรุณาระบุชื่อกิจกรรมและชื่อนักเรียน");
+      swalAlert("กรุณาระบุชื่อกิจกรรมและชื่อนักเรียน");
       return;
     }
 
@@ -685,11 +686,11 @@ export default function ActivitiesTab() {
         setTimeout(() => setToastMessage(null), 8000);
       } else {
         const err = (await res.json()) as any;
-        alert(err.error || "เกิดข้อผิดพลาดในการส่งข้อมูลไปหน้ารางวัล");
+        swalAlert(err.error || "เกิดข้อผิดพลาดในการส่งข้อมูลไปหน้ารางวัล");
       }
     } catch (err: any) {
       console.error("Failed to send award:", err);
-      alert("ไม่สามารถบันทึกผลงานได้: " + (err?.message || ""));
+      swalAlert("ไม่สามารถบันทึกผลงานได้: " + (err?.message || ""));
     } finally {
       setIsSendingAward(false);
     }
@@ -1942,7 +1943,7 @@ export default function ActivitiesTab() {
                     type="button"
                     onClick={() => {
                       setAwardModalData({ ...awardModalData, imageUrl: activePosterUrl });
-                      alert("ตั้งรูปภาพนี้เป็นรูปหลักของรางวัลเรียบร้อยแล้ว");
+                      swalAlert("ตั้งรูปภาพนี้เป็นรูปหลักของรางวัลเรียบร้อยแล้ว");
                     }}
                     className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
                   >

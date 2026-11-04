@@ -1,5 +1,6 @@
 "use client";
 
+import { swalAlert } from "@/lib/swal";
 import { useState, useMemo, useEffect } from "react";
 import { 
   X, 
@@ -343,7 +344,7 @@ ${customNote ? `💬 ข้อความจากครูผู้สอน: 
   // Export unsubmitted students to Excel
   const handleExportUnsubmittedExcel = () => {
     if (activeUnsubmittedList.length === 0) {
-      alert("ไม่มีรายชื่อนักเรียนค้างส่งที่เลือก");
+      swalAlert("ไม่มีรายชื่อนักเรียนค้างส่งที่เลือก");
       return;
     }
 

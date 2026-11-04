@@ -10,6 +10,7 @@ import CommunityDiscussion from "@/components/common/CommunityDiscussion";
 import { Lightbulb, Search, Plus, X, Share2, Check, ArrowUpDown, MessageCircle, Heart } from "lucide-react";
 import { getBookmarkedIdeas, toggleIdeaBookmark, BOOKMARKS_EVENT } from "@/lib/bookmarks";
 import { syncAuthWithServer } from "@/lib/client-auth";
+import { swalToast } from "@/lib/swal";
 
 interface IdeaItem {
   id: string;
@@ -106,6 +107,7 @@ export default function IdeasPage() {
     const shareUrl = `${window.location.origin}/ideas/detail?id=${id}`;
     navigator.clipboard.writeText(shareUrl).then(() => {
       setCopiedId(id);
+      swalToast("คัดลอกลิงก์ไอเดียแล้ว!", "success");
       setTimeout(() => setCopiedId(null), 2500);
     });
   };

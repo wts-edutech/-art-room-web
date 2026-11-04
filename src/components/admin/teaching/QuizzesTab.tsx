@@ -1,5 +1,6 @@
 "use client";
 
+import { swalAlert, swalConfirm } from "@/lib/swal";
 import { useState, useEffect, useMemo } from "react";
 import { 
   HelpCircle, 
@@ -223,7 +224,7 @@ export default function QuizzesTab() {
         );
       } else {
         const err = await res.json();
-        alert(err.error || "ไม่สามารถเปลี่ยนสถานะได้");
+        swalAlert(err.error || "ไม่สามารถเปลี่ยนสถานะได้");
       }
     } catch (err) {
       console.error("Error toggling quiz:", err);
@@ -235,7 +236,7 @@ export default function QuizzesTab() {
   // Delete Quiz
   const handleDeleteQuiz = async (quizId: string, quizTitle: string) => {
     const confirmMsg = `ยืนยันการลบแบบทดสอบ:\n"${quizTitle}"\n\nคำเตือน: ข้อมูลข้อสอบและประวัติการส่งคะแนนทั้งหมดในชุดนี้จะถูกลบถาวร`;
-    if (!confirm(confirmMsg)) return;
+    if (!await swalConfirm(confirmMsg)) return;
 
     try {
       const res = await fetch(`/api/quizzes?id=${encodeURIComponent(quizId)}`, {
@@ -243,7 +244,7 @@ export default function QuizzesTab() {
       });
 
       if (res.ok) {
-        alert("ลบแบบทดสอบเรียบร้อยแล้ว");
+        swalAlert("ลบแบบทดสอบเรียบร้อยแล้ว");
         setQuizzesList((prev) => prev.filter((q) => q.id !== quizId));
         setAttempts((prev) => prev.filter((a) => a.quizId !== quizId));
         if (selectedQuizFilter === quizId) {
@@ -251,11 +252,11 @@ export default function QuizzesTab() {
         }
       } else {
         const err = await res.json();
-        alert(err.error || "ไม่สามารถลบแบบทดสอบได้");
+        swalAlert(err.error || "ไม่สามารถลบแบบทดสอบได้");
       }
     } catch (err) {
       console.error("Error deleting quiz:", err);
-      alert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+      swalAlert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
     }
   };
 
@@ -296,11 +297,11 @@ export default function QuizzesTab() {
         setTargetRoomsModalQuiz(null);
       } else {
         const err = await res.json();
-        alert(err.error || "ไม่สามารถบันทึกการตั้งค่าห้องเรียนได้");
+        swalAlert(err.error || "ไม่สามารถบันทึกการตั้งค่าห้องเรียนได้");
       }
     } catch (e) {
       console.error(e);
-      alert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+      swalAlert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
     } finally {
       setIsSavingTargets(false);
     }
@@ -320,11 +321,11 @@ export default function QuizzesTab() {
         setEditingQuestionId(null);
         setIsAddingQuestion(false);
       } else {
-        alert("ไม่สามารถดึงข้อมูลข้อสอบได้");
+        swalAlert("ไม่สามารถดึงข้อมูลข้อสอบได้");
       }
     } catch (err) {
       console.error(err);
-      alert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+      swalAlert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
     } finally {
       setIsLoadingQuizDetails(false);
     }
@@ -354,7 +355,7 @@ export default function QuizzesTab() {
       !editForm.choiceC.trim() ||
       !editForm.choiceD.trim()
     ) {
-      alert("กรุณากรอกโจทย์และตัวเลือก ก-ง ให้ครบถ้วน");
+      swalAlert("กรุณากรอกโจทย์และตัวเลือก ก-ง ให้ครบถ้วน");
       return;
     }
 
@@ -399,11 +400,11 @@ export default function QuizzesTab() {
         setEditingQuestionId(null);
       } else {
         const err = await res.json();
-        alert(err.error || "ไม่สามารถบันทึกข้อสอบได้");
+        swalAlert(err.error || "ไม่สามารถบันทึกข้อสอบได้");
       }
     } catch (e) {
       console.error(e);
-      alert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+      swalAlert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
     } finally {
       setIsSavingQuestion(false);
     }
@@ -419,7 +420,7 @@ export default function QuizzesTab() {
       !newQuestionForm.choiceC.trim() ||
       !newQuestionForm.choiceD.trim()
     ) {
-      alert("กรุณากรอกโจทย์และตัวเลือก ก-ง ให้ครบถ้วน");
+      swalAlert("กรุณากรอกโจทย์และตัวเลือก ก-ง ให้ครบถ้วน");
       return;
     }
 
@@ -468,11 +469,11 @@ export default function QuizzesTab() {
         setIsAddingQuestion(false);
       } else {
         const err = await res.json();
-        alert(err.error || "ไม่สามารถเพิ่มข้อสอบใหม่ได้");
+        swalAlert(err.error || "ไม่สามารถเพิ่มข้อสอบใหม่ได้");
       }
     } catch (e) {
       console.error(e);
-      alert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+      swalAlert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
     } finally {
       setIsSavingNewQuestion(false);
     }
@@ -481,7 +482,7 @@ export default function QuizzesTab() {
   // Delete Question
   const handleDeleteQuestion = async (questionId: string, questionNumber: number) => {
     if (!previewQuizData) return;
-    if (!confirm(`ยืนยันการลบข้อสอบข้อที่ ${questionNumber} หรือไม่?`)) return;
+    if (!await swalConfirm(`ยืนยันการลบข้อสอบข้อที่ ${questionNumber} หรือไม่?`)) return;
 
     try {
       setIsDeletingQuestionId(questionId);
@@ -510,11 +511,11 @@ export default function QuizzesTab() {
         );
       } else {
         const err = await res.json();
-        alert(err.error || "ไม่สามารถลบข้อสอบได้");
+        swalAlert(err.error || "ไม่สามารถลบข้อสอบได้");
       }
     } catch (e) {
       console.error(e);
-      alert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+      swalAlert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
     } finally {
       setIsDeletingQuestionId(null);
     }
@@ -524,7 +525,7 @@ export default function QuizzesTab() {
   const handleCreateQuiz = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!createQuizForm.title.trim() || !createQuizForm.code.trim()) {
-      alert("กรุณากรอกชื่อแบบทดสอบและรหัสวิชา");
+      swalAlert("กรุณากรอกชื่อแบบทดสอบและรหัสวิชา");
       return;
     }
 
@@ -549,7 +550,7 @@ export default function QuizzesTab() {
 
       if (res.ok) {
         const data = await res.json();
-        alert("สร้างแบบทดสอบใหม่เรียบร้อยแล้ว! คุณครูสามารถกด 'ดูข้อสอบ & แก้ไขโจทย์คำถาม' เพื่อเพิ่มคำถามได้ทันที");
+        swalAlert("สร้างแบบทดสอบใหม่เรียบร้อยแล้ว! คุณครูสามารถกด 'ดูข้อสอบ & แก้ไขโจทย์คำถาม' เพื่อเพิ่มคำถามได้ทันที");
         setQuizzesList((prev) => [data.quiz, ...prev]);
         setIsCreateQuizOpen(false);
 
@@ -570,11 +571,11 @@ export default function QuizzesTab() {
         handleOpenPreviewAndEdit(data.quiz);
       } else {
         const err = await res.json();
-        alert(err.error || "ไม่สามารถสร้างแบบทดสอบได้");
+        swalAlert(err.error || "ไม่สามารถสร้างแบบทดสอบได้");
       }
     } catch (e) {
       console.error(e);
-      alert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+      swalAlert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
     } finally {
       setIsCreatingQuiz(false);
     }
@@ -583,7 +584,7 @@ export default function QuizzesTab() {
   // Reset student attempt
   const handleResetAttempt = async (attempt: QuizAttempt) => {
     const confirmMsg = `ยืนยันการรีเซ็ตผลสอบของนักเรียน:\n${attempt.studentName} (รหัส ${attempt.studentId})\n\nการดำเนินการนี้จะลบคะแนนเดิม (${attempt.score}/${attempt.totalQuestions}) เพื่อให้นักเรียนสามารถเข้าทำข้อสอบใหม่ได้`;
-    if (!confirm(confirmMsg)) return;
+    if (!await swalConfirm(confirmMsg)) return;
 
     try {
       const res = await fetch(`/api/quizzes/attempts?id=${attempt.id}`, {
@@ -591,11 +592,11 @@ export default function QuizzesTab() {
       });
 
       if (res.ok) {
-        alert("รีเซ็ตสิทธิ์ให้นักเรียนทำข้อสอบใหม่เรียบร้อยแล้ว");
+        swalAlert("รีเซ็ตสิทธิ์ให้นักเรียนทำข้อสอบใหม่เรียบร้อยแล้ว");
         setAttempts((prev) => prev.filter((a) => a.id !== attempt.id));
       } else {
         const err = await res.json();
-        alert(err.error || "ไม่สามารถรีเซ็ตผลสอบได้");
+        swalAlert(err.error || "ไม่สามารถรีเซ็ตผลสอบได้");
       }
     } catch (err) {
       console.error("Error resetting attempt:", err);
@@ -605,7 +606,7 @@ export default function QuizzesTab() {
   // Export to Excel
   const handleExportExcel = () => {
     if (filteredAttempts.length === 0) {
-      alert("ไม่มีข้อมูลสำหรับการส่งออก Excel");
+      swalAlert("ไม่มีข้อมูลสำหรับการส่งออก Excel");
       return;
     }
 
@@ -1035,7 +1036,7 @@ export default function QuizzesTab() {
                 if (targetQuiz) {
                   handleOpenLineReminder(targetQuiz, selectedRoomFilter);
                 } else {
-                  alert("กรุณาเลือกแบบทดสอบที่ต้องการแจ้งเตือน");
+                  swalAlert("กรุณาเลือกแบบทดสอบที่ต้องการแจ้งเตือน");
                 }
               }}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#06C755] hover:bg-[#05b34c] text-white font-bold text-xs shadow-xs hover:shadow-md hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"

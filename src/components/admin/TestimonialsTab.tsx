@@ -1,5 +1,6 @@
 "use client";
 
+import { swalConfirm, swalSuccess, swalError } from "@/lib/swal";
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -99,24 +100,30 @@ export default function TestimonialsTab() {
       const resData = await res.json().catch(() => ({}));
 
       if (res.ok) {
+        const okMsg = editingTestimonialId ? "บันทึกการแก้ไขรีวิวเรียบร้อยแล้ว!" : "เพิ่มข้อมูลรีวิวรุ่นพี่สำเร็จแล้ว!";
         setStatusMessage({
           type: "success",
-          text: editingTestimonialId ? "บันทึกการแก้ไขรีวิวเรียบร้อยแล้ว!" : "เพิ่มข้อมูลรีวิวรุ่นพี่สำเร็จแล้ว!",
+          text: okMsg,
         });
+        swalSuccess("สำเร็จ!", okMsg, 1800);
         await fetchData();
         resetTestimonialForm();
       } else {
+        const errMsg = resData?.error || "ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่อีกครั้ง";
         setStatusMessage({
           type: "error",
-          text: resData?.error || "ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่อีกครั้ง",
+          text: errMsg,
         });
+        swalError("บันทึกไม่สำเร็จ", errMsg);
       }
     } catch (error) {
       console.error("Failed to save testimonial", error);
+      const netErr = "เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้ง";
       setStatusMessage({
         type: "error",
-        text: "เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้ง",
+        text: netErr,
       });
+      swalError("เชื่อมต่อไม่สำเร็จ", netErr);
     } finally {
       setIsSaving(false);
     }
@@ -173,19 +180,22 @@ export default function TestimonialsTab() {
   };
 
   const handleDeleteTestimonial = async (id: string) => {
-    if (!confirm("คุณแน่ใจหรือไม่ที่จะลบรีวิวนี้? การกระทำนี้ไม่สามารถย้อนกลับได้")) return;
+    if (!await swalConfirm("คุณแน่ใจหรือไม่ที่จะลบรีวิวนี้? การกระทำนี้ไม่สามารถย้อนกลับได้")) return;
     try {
       const res = await fetch(`/api/testimonials?id=${id}`, { method: "DELETE" });
       if (res.ok) {
         if (editingTestimonialId === id) resetTestimonialForm();
         setStatusMessage({ type: "success", text: "ลบรีวิวเรียบร้อยแล้ว" });
+        swalSuccess("ลบรีวิวเรียบร้อยแล้ว", undefined, 1600);
         fetchData();
       } else {
         setStatusMessage({ type: "error", text: "ไม่สามารถลบรีวิวได้ กรุณาลองใหม่อีกครั้ง" });
+        swalError("ลบไม่สำเร็จ", "ไม่สามารถลบรีวิวได้ กรุณาลองใหม่อีกครั้ง");
       }
     } catch (error) {
       console.error("Failed to delete testimonial", error);
       setStatusMessage({ type: "error", text: "เกิดข้อผิดพลาดในการเชื่อมต่อ" });
+      swalError("เกิดข้อผิดพลาด", "เกิดข้อผิดพลาดในการเชื่อมต่อ");
     }
   };
 

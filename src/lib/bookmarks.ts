@@ -1,5 +1,7 @@
 "use client";
 
+import { swalToast } from "@/lib/swal";
+
 export interface BookmarkedIdea {
   id: string;
   title: string;
@@ -82,6 +84,7 @@ export function toggleIdeaBookmark(item: Partial<BookmarkedIdea> & { id: string;
 
     localStorage.setItem(IDEAS_KEY, JSON.stringify(list));
     notifyChange();
+    swalToast(isSavedNow ? "บันทึกไอเดียไว้ในรายการโปรดแล้ว" : "ยกเลิกการบันทึกไอเดียแล้ว", isSavedNow ? "success" : "info");
     return isSavedNow;
   } catch (e) {
     console.error("Error toggling idea bookmark:", e);
@@ -150,6 +153,7 @@ export function toggleMaterialBookmark(item: Partial<BookmarkedMaterial> & { id:
 
     localStorage.setItem(MATERIALS_KEY, JSON.stringify(list));
     notifyChange();
+    swalToast(isSavedNow ? "บันทึกสื่อการสอนไว้แล้ว" : "ยกเลิกการบันทึกสื่อการสอนแล้ว", isSavedNow ? "success" : "info");
     return isSavedNow;
   } catch (e) {
     console.error("Error toggling material bookmark:", e);

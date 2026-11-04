@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import ImageEditorModal from "@/components/common/ImageEditorModal";
 import { compressImage } from "@/lib/image-compressor";
+import { swalSuccess, swalError, swalWarning, swalToast } from "@/lib/swal";
 
 interface SubmitWorkModalProps {
   assignment: any;
@@ -219,6 +220,7 @@ export default function SubmitWorkModal({
       });
       setIsEditorOpen(false);
       setAiSuccessMessage(`✂️ ปรับแต่งรูปภาพช่องที่ ${activeSlot + 1} เรียบร้อยแล้ว!`);
+      swalToast(`ปรับแต่งรูปภาพช่องที่ ${activeSlot + 1} เรียบร้อยแล้ว`, "success");
       setTimeout(() => setAiSuccessMessage(""), 4000);
     };
     reader.readAsDataURL(editedFile);
@@ -267,6 +269,7 @@ export default function SubmitWorkModal({
                   return next;
                 });
                 setAiSuccessMessage(`✨ AI ปรับแสงและสีสันของภาพช่องที่ ${activeSlot + 1} สวยงามขึ้นแล้ว!`);
+                swalToast(`AI ปรับแสงและสีสันภาพช่องที่ ${activeSlot + 1} เรียบร้อยแล้ว`, "success");
                 setTimeout(() => setAiSuccessMessage(""), 4000);
               };
               reader.readAsDataURL(enhancedFile);
@@ -441,7 +444,9 @@ export default function SubmitWorkModal({
     setErrorMsg("");
 
     if (isGraded) {
-      setErrorMsg("ผลงานนี้ได้รับการตรวจประเมินคะแนนแล้ว ไม่สามารถแก้ไขได้ (ดูได้อย่างเดียว)");
+      const msg = "ผลงานนี้ได้รับการตรวจประเมินคะแนนแล้ว ไม่สามารถแก้ไขได้ (ดูได้อย่างเดียว)";
+      setErrorMsg(msg);
+      swalWarning("ไม่สามารถแก้ไขได้", msg);
       return;
     }
 
@@ -449,7 +454,9 @@ export default function SubmitWorkModal({
     const validImages = imagePreviews.filter(Boolean);
     const hasAnyImage = validImages.length > 0;
     if (!hasAnyImage && !externalLink.trim() && !docFile) {
-      setErrorMsg("กรุณาแนบภาพผลงานศิลปะ หรือลิงก์ผลงาน (Canva/Drive) อย่างน้อย 1 อย่าง");
+      const msg = "กรุณาแนบภาพผลงานศิลปะ หรือลิงก์ผลงาน (Canva/Drive) อย่างน้อย 1 อย่าง";
+      setErrorMsg(msg);
+      swalWarning("กรุณาแนบผลงาน", msg);
       return;
     }
 
@@ -535,12 +542,21 @@ export default function SubmitWorkModal({
           concept: concept ? concept.trim() : undefined,
           docFileName: docFile?.name || undefined,
         });
+        swalSuccess(
+          existingSubmission ? "อัปเดตงานสำเร็จ!" : "ส่งงานสำเร็จ!",
+          `บันทึกผลงาน "${assignment.title}" เรียบร้อยแล้ว`,
+          2200
+        );
       } else {
-        setErrorMsg(data.error || "ไม่สามารถส่งงานได้ กรุณาลองใหม่อีกครั้ง");
+        const errText = data.error || "ไม่สามารถส่งงานได้ กรุณาลองใหม่อีกครั้ง";
+        setErrorMsg(errText);
+        swalError("ส่งงานไม่สำเร็จ", errText);
       }
     } catch (err) {
       console.error(err);
-      setErrorMsg("เกิดข้อผิดพลาดในการเชื่อมต่อเครือข่าย กรุณากดปุ่มลองใหม่อีกครั้ง (ข้อมูลของคุณยังอยู่ครบ)");
+      const netErr = "เกิดข้อผิดพลาดในการเชื่อมต่อเครือข่าย กรุณากดปุ่มลองใหม่อีกครั้ง (ข้อมูลของคุณยังอยู่ครบ)";
+      setErrorMsg(netErr);
+      swalError("เชื่อมต่อเครือข่ายไม่สำเร็จ", netErr);
     } finally {
       setIsSubmitting(false);
     }

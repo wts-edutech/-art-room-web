@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { formatDocumentPreviewUrl } from "@/lib/image-utils";
+import { swalToast } from "@/lib/swal";
 
 interface DigitalLessonWorksheetProps {
   title?: string;
@@ -167,6 +168,7 @@ export default function DigitalLessonWorksheet({
     link.download = `stippling_art_${Date.now()}.png`;
     link.href = canvas.toDataURL("image/png");
     link.click();
+    swalToast("ดาวน์โหลดภาพผลงานสำเร็จ!", "success");
   };
 
   return (

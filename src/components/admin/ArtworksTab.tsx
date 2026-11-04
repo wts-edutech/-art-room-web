@@ -1,3 +1,4 @@
+import { swalAlert, swalConfirm } from "@/lib/swal";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Trash2, Plus, Pencil, Image as ImageIcon, Palette, Maximize2 } from "lucide-react";
@@ -116,11 +117,11 @@ export default function ArtworksTab() {
         fetchData();
       } else {
         const err = (await res.json()) as any;
-        alert(err.error || "เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+        swalAlert(err.error || "เกิดข้อผิดพลาดในการบันทึกข้อมูล");
       }
     } catch (error) {
       console.error("Failed to save artwork", error);
-      alert("ไม่สามารถบันทึกผลงานได้");
+      swalAlert("ไม่สามารถบันทึกผลงานได้");
     } finally {
       setIsSubmitting(false);
     }
@@ -176,7 +177,7 @@ export default function ArtworksTab() {
   };
 
   const handleDeleteArtwork = async (id: string) => {
-    if (!confirm("คุณแน่ใจหรือไม่ที่จะลบผลงานนี้?")) return;
+    if (!await swalConfirm("คุณแน่ใจหรือไม่ที่จะลบผลงานนี้?")) return;
     try {
       const res = await fetch(`/api/artworks?id=${id}`, { method: "DELETE" });
       if (res.ok) fetchData();

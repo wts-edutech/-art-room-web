@@ -1,5 +1,6 @@
 "use client";
 
+import { swalAlert, swalConfirm } from "@/lib/swal";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Trash2, Plus, Video, Pencil, Eye, EyeOff, Loader2 } from "lucide-react";
@@ -59,7 +60,7 @@ export default function M4LessonsTab() {
       ? "คุณต้องการ 'เปิดใช้งาน' เมนูสื่อการสอน ม.4 ให้แสดงผลบนหน้าเว็บไซต์สาธารณะใช่หรือไม่?" 
       : "คุณต้องการ 'ปิด/ซ่อน' เมนูสื่อการสอน ม.4 ออกจากหน้าเว็บไซต์ชั่วคราวใช่หรือไม่?";
 
-    if (!confirm(confirmMsg)) return;
+    if (!await swalConfirm(confirmMsg)) return;
 
     setIsTogglingStatus(true);
     try {
@@ -71,13 +72,13 @@ export default function M4LessonsTab() {
       const data = await res.json();
       if (res.ok) {
         setIsM4Enabled(nextState);
-        alert(data.message || (nextState ? "เปิดการแสดงผลในระบบหน้าบ้านเรียบร้อยแล้ว" : "ปิดการแสดงผลในระบบหน้าบ้านแล้ว"));
+        swalAlert(data.message || (nextState ? "เปิดการแสดงผลในระบบหน้าบ้านเรียบร้อยแล้ว" : "ปิดการแสดงผลในระบบหน้าบ้านแล้ว"));
       } else {
-        alert(data.error || "เกิดข้อผิดพลาดในการเปลี่ยนสถานะ");
+        swalAlert(data.error || "เกิดข้อผิดพลาดในการเปลี่ยนสถานะ");
       }
     } catch (e) {
       console.error("Toggle error", e);
-      alert("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้");
+      swalAlert("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้");
     } finally {
       setIsTogglingStatus(false);
     }
@@ -89,24 +90,24 @@ export default function M4LessonsTab() {
     
     // Validation
     if (m4Category !== "สื่อภาพ" && !m4VideoId) {
-      alert("กรุณากรอกลิงก์ YouTube");
+      swalAlert("กรุณากรอกลิงก์ YouTube");
       return;
     }
     if (m4Category === "สื่อเอกสาร PDF" && !editingM4Id && !m4LessonPdfFile && !m4LessonPdfUrl) {
-      alert("กรุณาเลือกไฟล์ PDF");
+      swalAlert("กรุณาเลือกไฟล์ PDF");
       return;
     }
     if (m4Category === "สื่อภาพ" && !editingM4Id && !m4LessonImageFile && !m4LessonImageUrl) {
-      alert("กรุณาเลือกรูปภาพสื่อการสอน");
+      swalAlert("กรุณาเลือกรูปภาพสื่อการสอน");
       return;
     }
 
     if (m4LessonImageFile && m4LessonImageFile.size > 10 * 1024 * 1024) {
-      alert("ขนาดไฟล์รูปภาพเกิน 10MB กรุณาเลือกรูปภาพที่มีขนาดไม่เกิน 10MB");
+      swalAlert("ขนาดไฟล์รูปภาพเกิน 10MB กรุณาเลือกรูปภาพที่มีขนาดไม่เกิน 10MB");
       return;
     }
     if (m4LessonPdfFile && m4LessonPdfFile.size > 15 * 1024 * 1024) {
-      alert("ขนาดไฟล์ PDF เกิน 15MB กรุณาเลือกไฟล์ PDF ที่มีขนาดไม่เกิน 15MB");
+      swalAlert("ขนาดไฟล์ PDF เกิน 15MB กรุณาเลือกไฟล์ PDF ที่มีขนาดไม่เกิน 15MB");
       return;
     }
 
@@ -141,14 +142,14 @@ export default function M4LessonsTab() {
       if (res.ok) {
         resetM4LessonForm();
         fetchData();
-        alert(editingM4Id ? "บันทึกการแก้ไขบทเรียน ม.4 เรียบร้อยแล้ว!" : "เพิ่มบทเรียน ม.4 ใหม่สำเร็จ!");
+        swalAlert(editingM4Id ? "บันทึกการแก้ไขบทเรียน ม.4 เรียบร้อยแล้ว!" : "เพิ่มบทเรียน ม.4 ใหม่สำเร็จ!");
       } else {
         const err = await res.json();
-        alert(err.error || "เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+        swalAlert(err.error || "เกิดข้อผิดพลาดในการบันทึกข้อมูล");
       }
     } catch (error) {
       console.error("Failed to save lesson", error);
-      alert("ไม่สามารถบันทึกบทเรียนได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต");
+      swalAlert("ไม่สามารถบันทึกบทเรียนได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต");
     } finally {
       setIsSaving(false);
     }
@@ -181,7 +182,7 @@ export default function M4LessonsTab() {
   };
 
   const handleDeleteM4Lesson = async (id: string) => {
-    if (!confirm("คุณแน่ใจหรือไม่ที่จะลบบทเรียนนี้?")) return;
+    if (!await swalConfirm("คุณแน่ใจหรือไม่ที่จะลบบทเรียนนี้?")) return;
     try {
       const res = await fetch(`/api/m4-lessons?id=${id}`, { method: "DELETE" });
       if (res.ok) fetchData();

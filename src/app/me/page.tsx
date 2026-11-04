@@ -1,5 +1,6 @@
 "use client";
 
+import { swalConfirm } from "@/lib/swal";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -65,7 +66,7 @@ export default function MePage() {
   };
 
   const handleRevokeUserSession = async (sessionId: string) => {
-    if (!confirm("คุณต้องการออกจากระบบอุปกรณ์นี้ใช่หรือไม่?")) return;
+    if (!await swalConfirm("คุณต้องการออกจากระบบอุปกรณ์นี้ใช่หรือไม่?")) return;
     setKickingSessionId(sessionId);
     try {
       const res = await fetch("/api/auth/sessions", {
@@ -84,7 +85,7 @@ export default function MePage() {
   };
 
   const handleRevokeOtherUserSessions = async () => {
-    if (!confirm("คุณต้องการออกจากระบบอุปกรณ์อื่นทั้งหมดใช่หรือไม่?")) return;
+    if (!await swalConfirm("คุณต้องการออกจากระบบอุปกรณ์อื่นทั้งหมดใช่หรือไม่?")) return;
     setLoadingSessions(true);
     try {
       const res = await fetch("/api/auth/sessions", {

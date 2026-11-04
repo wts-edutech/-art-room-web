@@ -1,5 +1,6 @@
 "use client";
 
+import { swalAlert, swalConfirm } from "@/lib/swal";
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -228,11 +229,11 @@ export default function DownloadsTab() {
         setSaveGradeSuccess(true);
         setTimeout(() => setSaveGradeSuccess(false), 3000);
       } else {
-        alert("ไม่สามารถบันทึกการตั้งค่าระดับชั้นได้ กรุณาลองใหม่อีกครั้ง");
+        swalAlert("ไม่สามารถบันทึกการตั้งค่าระดับชั้นได้ กรุณาลองใหม่อีกครั้ง");
       }
     } catch (e) {
       console.error(e);
-      alert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+      swalAlert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
     } finally {
       setIsSavingGrades(false);
     }
@@ -365,7 +366,7 @@ export default function DownloadsTab() {
 
   // Delete item
   const handleDelete = async (id: string, itemTitle: string) => {
-    if (!confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบเอกสาร "${itemTitle}"?`)) return;
+    if (!await swalConfirm(`คุณแน่ใจหรือไม่ว่าต้องการลบเอกสาร "${itemTitle}"?`)) return;
     try {
       const res = await fetch(`/api/downloads?id=${encodeURIComponent(id)}`, {
         method: "DELETE",
@@ -374,11 +375,11 @@ export default function DownloadsTab() {
         setDownloads((prev) => prev.filter((d) => d.id !== id));
       } else {
         const err = await res.json();
-        alert(`เกิดข้อผิดพลาด: ${err.error || "ไม่สามารถลบเอกสารได้"}`);
+        swalAlert(`เกิดข้อผิดพลาด: ${err.error || "ไม่สามารถลบเอกสารได้"}`);
       }
     } catch (e) {
       console.error(e);
-      alert("เกิดข้อผิดพลาดในการลบเอกสาร");
+      swalAlert("เกิดข้อผิดพลาดในการลบเอกสาร");
     }
   };
 
@@ -402,7 +403,7 @@ export default function DownloadsTab() {
 
     // Friendly notice if file is very large (> 3 MB)
     if (file.size > 3 * 1024 * 1024) {
-      alert("⚠️ ไฟล์มีขนาดเกิน 3 MB สำหรับไฟล์เอกสารขนาดใหญ่ ขอแนะนำให้อัปโหลดขึ้น Google Drive แล้วนำลิงก์แชร์มาวาง เพื่อให้ระบบโหลดได้รวดเร็วและไม่มีข้อจำกัดขนาดไฟล์ครับ");
+      swalAlert("⚠️ ไฟล์มีขนาดเกิน 3 MB สำหรับไฟล์เอกสารขนาดใหญ่ ขอแนะนำให้อัปโหลดขึ้น Google Drive แล้วนำลิงก์แชร์มาวาง เพื่อให้ระบบโหลดได้รวดเร็วและไม่มีข้อจำกัดขนาดไฟล์ครับ");
     }
 
     setIsUploading(true);
@@ -491,7 +492,7 @@ export default function DownloadsTab() {
       }
     } catch (err: any) {
       console.error("Upload error:", err);
-      alert("เกิดข้อผิดพลาดในการอ่านไฟล์ กรุณาลองใหม่อีกครั้ง หรือระบุลิงก์ตรงภายนอก");
+      swalAlert("เกิดข้อผิดพลาดในการอ่านไฟล์ กรุณาลองใหม่อีกครั้ง หรือระบุลิงก์ตรงภายนอก");
     } finally {
       setIsUploading(false);
       e.target.value = "";
@@ -502,7 +503,7 @@ export default function DownloadsTab() {
   const handleSubmitModal = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !fileUrl.trim()) {
-      alert("กรุณากรอกชื่อเอกสารและลิงก์ดาวน์โหลดไฟล์ให้ครบถ้วน");
+      swalAlert("กรุณากรอกชื่อเอกสารและลิงก์ดาวน์โหลดไฟล์ให้ครบถ้วน");
       return;
     }
 
@@ -535,7 +536,7 @@ export default function DownloadsTab() {
           fetchData();
         } else {
           const err = await res.json();
-          alert(`อัปเดตไม่สำเร็จ: ${err.error || "ข้อผิดพลาดของเซิร์ฟเวอร์"}`);
+          swalAlert(`อัปเดตไม่สำเร็จ: ${err.error || "ข้อผิดพลาดของเซิร์ฟเวอร์"}`);
         }
       } else {
         // POST
@@ -563,12 +564,12 @@ export default function DownloadsTab() {
           fetchData();
         } else {
           const err = await res.json();
-          alert(`บันทึกไม่สำเร็จ: ${err.error || "ข้อผิดพลาดของเซิร์ฟเวอร์"}`);
+          swalAlert(`บันทึกไม่สำเร็จ: ${err.error || "ข้อผิดพลาดของเซิร์ฟเวอร์"}`);
         }
       }
     } catch (e) {
       console.error(e);
-      alert("เกิดข้อผิดพลาดในการบันทึกเอกสาร");
+      swalAlert("เกิดข้อผิดพลาดในการบันทึกเอกสาร");
     } finally {
       setIsSubmitting(false);
     }
@@ -629,7 +630,7 @@ export default function DownloadsTab() {
 
   // Seed / Reset default items
   const handleSeedDefaults = async () => {
-    if (!confirm("คุณต้องการคืนค่าข้อมูลสื่อการสอน ใบงาน และคู่มือการเรียน ให้เป็นชุดเริ่มต้นใช่หรือไม่?")) return;
+    if (!await swalConfirm("คุณต้องการคืนค่าข้อมูลสื่อการสอน ใบงาน และคู่มือการเรียน ให้เป็นชุดเริ่มต้นใช่หรือไม่?")) return;
     try {
       const res = await fetch("/api/downloads", {
         method: "POST",
@@ -637,14 +638,14 @@ export default function DownloadsTab() {
         body: JSON.stringify({ action: "reset_default_data" }),
       });
       if (res.ok) {
-        alert("คืนค่าชุดสื่อการสอนดั้งเดิมสำเร็จเรียบร้อยแล้ว!");
+        swalAlert("คืนค่าชุดสื่อการสอนดั้งเดิมสำเร็จเรียบร้อยแล้ว!");
         fetchData();
       } else {
-        alert("ไม่สามารถคืนค่าชุดข้อมูลเริ่มต้นได้");
+        swalAlert("ไม่สามารถคืนค่าชุดข้อมูลเริ่มต้นได้");
       }
     } catch (e) {
       console.error(e);
-      alert("เกิดข้อผิดพลาดในการโหลดชุดข้อมูล");
+      swalAlert("เกิดข้อผิดพลาดในการโหลดชุดข้อมูล");
     }
   };
 

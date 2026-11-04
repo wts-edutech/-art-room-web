@@ -1,5 +1,6 @@
 "use client";
 
+import { swalAlert, swalConfirm } from "@/lib/swal";
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Trash2, Plus, Pencil, Award, Star, FileText, Loader2, Calendar, LayoutGrid, Grid2X2, Search, X, Users } from "lucide-react";
@@ -160,7 +161,7 @@ export default function AwardsTab() {
     e.preventDefault();
     const validStudents = students.filter((s) => s.name.trim().length > 0);
     if (!awardTitle || validStudents.length === 0) {
-      alert("กรุณาระบุชื่อกิจกรรมและชื่อนักเรียนอย่างน้อย 1 คน");
+      swalAlert("กรุณาระบุชื่อกิจกรรมและชื่อนักเรียนอย่างน้อย 1 คน");
       return;
     }
     
@@ -220,11 +221,11 @@ export default function AwardsTab() {
         fetchData();
       } else {
         const err = (await res.json()) as any;
-        alert(err.error || "เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง");
+        swalAlert(err.error || "เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง");
       }
     } catch (error: any) {
       console.error("Failed to save award", error);
-      alert(error?.message ? `เกิดข้อผิดพลาด: ${error.message}` : "ไม่สามารถบันทึกผลงานได้");
+      swalAlert(error?.message ? `เกิดข้อผิดพลาด: ${error.message}` : "ไม่สามารถบันทึกผลงานได้");
     } finally {
       setIsSubmitting(false);
     }
@@ -274,7 +275,7 @@ export default function AwardsTab() {
   };
 
   const handleDeleteAward = async (id: string) => {
-    if (!confirm("คุณแน่ใจหรือไม่ที่จะลบผลงานนี้?")) return;
+    if (!await swalConfirm("คุณแน่ใจหรือไม่ที่จะลบผลงานนี้?")) return;
     try {
       const res = await fetch(`/api/awards/${id}`, { method: "DELETE" });
       if (res.ok) fetchData();

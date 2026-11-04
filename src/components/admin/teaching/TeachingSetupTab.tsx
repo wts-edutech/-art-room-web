@@ -1,5 +1,6 @@
 "use client";
 
+import { swalAlert, swalConfirm } from "@/lib/swal";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -97,10 +98,10 @@ export default function TeachingSetupTab() {
       });
       if (res.ok) {
         fetchYears();
-        alert("เพิ่มปีการศึกษาสำเร็จ!");
+        swalAlert("เพิ่มปีการศึกษาสำเร็จ!");
       } else {
         const err = await res.json();
-        alert(err.error || "เกิดข้อผิดพลาด");
+        swalAlert(err.error || "เกิดข้อผิดพลาด");
       }
     } catch (e) {
       console.error(e);
@@ -123,7 +124,7 @@ export default function TeachingSetupTab() {
   };
 
   const handleDeleteYear = async (id: string) => {
-    if (!confirm("คุณแน่ใจหรือไม่ที่จะลบปีการศึกษานี้?")) return;
+    if (!await swalConfirm("คุณแน่ใจหรือไม่ที่จะลบปีการศึกษานี้?")) return;
     try {
       const res = await fetch(`/api/academic-years?id=${id}`, { method: "DELETE" });
       if (res.ok) fetchYears();
@@ -151,10 +152,10 @@ export default function TeachingSetupTab() {
         setSubjectCode("");
         setSubjectName("");
         fetchSubjects();
-        alert("เพิ่มรายวิชาสำเร็จ!");
+        swalAlert("เพิ่มรายวิชาสำเร็จ!");
       } else {
         const err = await res.json();
-        alert(err.error || "เกิดข้อผิดพลาด");
+        swalAlert(err.error || "เกิดข้อผิดพลาด");
       }
     } catch (e) {
       console.error(e);
@@ -162,7 +163,7 @@ export default function TeachingSetupTab() {
   };
 
   const handleDeleteSubject = async (id: string, name: string) => {
-    if (!confirm(`คุณแน่ใจหรือไม่ที่จะลบวิชา "${name}"?`)) return;
+    if (!await swalConfirm(`คุณแน่ใจหรือไม่ที่จะลบวิชา "${name}"?`)) return;
     try {
       const res = await fetch(`/api/subjects?id=${id}`, { method: "DELETE" });
       if (res.ok) fetchSubjects();
@@ -195,7 +196,7 @@ export default function TeachingSetupTab() {
   };
 
   const handleBatchGenerateRooms = async () => {
-    if (!confirm(`ต้องการสร้างห้อง ${batchGrade}/1 ถึง ${batchGrade}/${batchCount} อัตโนมัติหรือไม่?`)) return;
+    if (!await swalConfirm(`ต้องการสร้างห้อง ${batchGrade}/1 ถึง ${batchGrade}/${batchCount} อัตโนมัติหรือไม่?`)) return;
 
     try {
       const res = await fetch("/api/classrooms", {
@@ -209,7 +210,7 @@ export default function TeachingSetupTab() {
       });
       if (res.ok) {
         fetchClassrooms();
-        alert(`สร้างห้องเรียนระดับชั้น ${batchGrade} สำเร็จ!`);
+        swalAlert(`สร้างห้องเรียนระดับชั้น ${batchGrade} สำเร็จ!`);
       }
     } catch (e) {
       console.error(e);

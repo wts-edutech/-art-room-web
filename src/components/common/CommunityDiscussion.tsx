@@ -1,5 +1,6 @@
 "use client";
 
+import { swalAlert, swalConfirm, swalToast } from "@/lib/swal";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import Link from "next/link";
 import { 
@@ -265,6 +266,7 @@ export default function CommunityDiscussion({
         const posted = await res.json();
         // Silently replace temporary ID with permanent DB ID
         setComments((prev) => prev.map((c) => (c.id === tempId ? posted : c)));
+        swalToast("แสดงความคิดเห็นเรียบร้อยแล้ว", "success");
       } else {
         // Revert on error
         setComments((prev) => prev.filter((c) => c.id !== tempId));
@@ -273,13 +275,17 @@ export default function CommunityDiscussion({
         if (errData.isProfanity || (errData.error && errData.error.includes("ถ้อยคำที่ไม่เหมาะสม"))) {
           setShowProfanityModal(true);
         } else {
-          setPostError(errData.error || "เกิดข้อผิดพลาดในการส่งข้อความ กรุณาลองใหม่อีกครั้ง");
+          const errMsg = errData.error || "เกิดข้อผิดพลาดในการส่งข้อความ กรุณาลองใหม่อีกครั้ง";
+          setPostError(errMsg);
+          swalAlert(errMsg, "error");
         }
       }
     } catch (err) {
       setComments((prev) => prev.filter((c) => c.id !== tempId));
       setNewComment(commentText);
-      setPostError("ไม่สามารถเชื่อมต่อระบบได้ กรุณาลองใหม่อีกครั้ง");
+      const netErr = "ไม่สามารถเชื่อมต่อระบบได้ กรุณาลองใหม่อีกครั้ง";
+      setPostError(netErr);
+      swalAlert(netErr, "error");
     } finally {
       setIsPosting(false);
     }
@@ -287,7 +293,7 @@ export default function CommunityDiscussion({
 
   // Delete comment with instant optimistic feedback
   const handleDelete = async (commentId: string) => {
-    if (!confirm("คุณต้องการลบความคิดเห็นนี้ใช่หรือไม่?")) return;
+    if (!await swalConfirm("คุณต้องการลบความคิดเห็นนี้ใช่หรือไม่?")) return;
     const previousComments = [...comments];
     // Instant 0ms removal
     setComments((prev) => prev.filter((c) => c.id !== commentId));
@@ -298,7 +304,9 @@ export default function CommunityDiscussion({
       });
       if (!res.ok) {
         setComments(previousComments);
-        alert("ไม่สามารถลบความคิดเห็นได้ กรุณาลองใหม่อีกครั้ง");
+        swalAlert("ไม่สามารถลบความคิดเห็นได้ กรุณาลองใหม่อีกครั้ง");
+      } else {
+        swalToast("ลบความคิดเห็นแล้ว", "success");
       }
     } catch (err) {
       setComments(previousComments);

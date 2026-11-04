@@ -1,5 +1,6 @@
 "use client";
 
+import { swalAlert } from "@/lib/swal";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -211,7 +212,7 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
       setGradingFeedback(sub.feedback || "");
       setGradingStatus(sub.status === "resubmit" ? "resubmit" : "graded");
     } else if (fallbackStudent) {
-      alert(`นักเรียน ${fallbackStudent.name} (เลขที่ ${fallbackStudent.studentNumber || "-"}) ยังไม่ได้ส่งงานนี้`);
+      swalAlert(`นักเรียน ${fallbackStudent.name} (เลขที่ ${fallbackStudent.studentNumber || "-"}) ยังไม่ได้ส่งงานนี้`);
     }
   };
 
@@ -239,7 +240,7 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
         fetchSubmissions();
       } else {
         const err = await res.json();
-        alert(err.error || "ไม่สามารถบันทึกคะแนนได้");
+        swalAlert(err.error || "ไม่สามารถบันทึกคะแนนได้");
       }
     } catch (e) {
       console.error(e);
@@ -261,7 +262,7 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
       const data = await res.json();
 
       if (!res.ok || !data.reportData) {
-        alert("ไม่สามารถสร้างรายงาน Excel ได้");
+        swalAlert("ไม่สามารถสร้างรายงาน Excel ได้");
         return;
       }
 
@@ -294,7 +295,7 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
       XLSX.writeFile(workbook, fileName);
     } catch (e) {
       console.error(e);
-      alert("เกิดข้อผิดพลาดในการสร้างไฟล์ Excel");
+      swalAlert("เกิดข้อผิดพลาดในการสร้างไฟล์ Excel");
     }
   };
 

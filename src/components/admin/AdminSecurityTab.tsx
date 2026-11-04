@@ -31,6 +31,7 @@ import {
 import { Button } from "@/components/ui/button";
 import MasterPinConfirmModal from "@/components/modals/MasterPinConfirmModal";
 import SiteLogoSettingsSection from "./SiteLogoSettingsSection";
+import { swalSuccess, swalError, swalWarning, swalToast } from "@/lib/swal";
 
 interface SessionItem {
   id: string;
@@ -223,6 +224,7 @@ export default function AdminSecurityTab() {
     try {
       await navigator.clipboard.writeText(savedPassword);
       setCopied(true);
+      swalToast("คัดลอกรหัสผ่านผู้ดูแลระบบแล้ว", "success");
       setTimeout(() => setCopied(false), 2000);
     } catch {}
   };
@@ -232,6 +234,7 @@ export default function AdminSecurityTab() {
     try {
       await navigator.clipboard.writeText(masterPin);
       setCopiedPin(true);
+      swalToast("คัดลอกรหัส Master PIN แล้ว", "success");
       setTimeout(() => setCopiedPin(false), 2000);
     } catch {}
   };
@@ -241,6 +244,7 @@ export default function AdminSecurityTab() {
     try {
       await navigator.clipboard.writeText(teachingPassword);
       setCopiedTeachingPassword(true);
+      swalToast("คัดลอกรหัสผ่านครูผู้ช่วยสอนแล้ว", "success");
       setTimeout(() => setCopiedTeachingPassword(false), 2000);
     } catch {}
   };
@@ -280,9 +284,13 @@ export default function AdminSecurityTab() {
       const data = await res.json();
 
       if (!res.ok) {
-        setTeachingPasswordError(data.error || "เกิดข้อผิดพลาดในการบันทึกรหัสผ่าน");
+        const errMsg = data.error || "เกิดข้อผิดพลาดในการบันทึกรหัสผ่าน";
+        setTeachingPasswordError(errMsg);
+        swalError("บันทึกรหัสผ่านไม่สำเร็จ", errMsg);
       } else {
-        setTeachingPasswordSuccess("ตั้งรหัสผ่านสำหรับแอดมินคนที่ 2 (ครูผู้ช่วยสอน) สำเร็จแล้ว");
+        const okMsg = "ตั้งรหัสผ่านสำหรับแอดมินคนที่ 2 (ครูผู้ช่วยสอน) สำเร็จแล้ว";
+        setTeachingPasswordSuccess(okMsg);
+        swalSuccess("บันทึกรหัสผ่านสำเร็จ!", okMsg, 2000);
         setTeachingPassword(newTeachingPasswordInput.trim());
         setNewTeachingPasswordInput("");
         setConfirmTeachingPasswordInput("");
@@ -346,14 +354,18 @@ export default function AdminSecurityTab() {
       const data = await res.json();
 
       if (!res.ok) {
-        setInlinePinError(data.error || "รหัส Master PIN ไม่ถูกต้อง (ค่าเริ่มต้นคือ K1234)");
+        const errMsg = data.error || "รหัส Master PIN ไม่ถูกต้อง (ค่าเริ่มต้นคือ K1234)";
+        setInlinePinError(errMsg);
+        swalError("ไม่สามารถเตะอุปกรณ์ได้", errMsg);
       } else {
         setConfirmingSessionId(null);
         setIsKickAllConfirming(false);
+        const okMsg = data.message || "เตะอุปกรณ์ออกจากระบบเรียบร้อยแล้ว";
         setSessionActionMsg({
           type: 'success',
-          text: data.message || "เตะอุปกรณ์ออกจากระบบเรียบร้อยแล้ว",
+          text: okMsg,
         });
+        swalSuccess("เตะอุปกรณ์สำเร็จ!", okMsg, 1800);
         await fetchSessions();
       }
     } catch (err) {
@@ -450,9 +462,12 @@ export default function AdminSecurityTab() {
       const data = await res.json();
 
       if (!res.ok) {
-        setPinError(data.error || "เกิดข้อผิดพลาดในการเปลี่ยน Master PIN");
+        const errMsg = data.error || "เกิดข้อผิดพลาดในการเปลี่ยน Master PIN";
+        setPinError(errMsg);
+        swalError("เปลี่ยน Master PIN ไม่สำเร็จ", errMsg);
       } else {
         setPinSuccess("เปลี่ยนรหัส Master PIN สำเร็จแล้ว");
+        swalSuccess("เปลี่ยน Master PIN สำเร็จ!", undefined, 1800);
         setCurrentPinInput("");
         setNewPinInput("");
         setConfirmPinInput("");
@@ -556,9 +571,13 @@ export default function AdminSecurityTab() {
       const data = await res.json();
 
       if (!res.ok) {
-        setErrorMessage(data.error || "เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน");
+        const errMsg = data.error || "เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน";
+        setErrorMessage(errMsg);
+        swalError("เปลี่ยนรหัสผ่านไม่สำเร็จ", errMsg);
       } else {
-        setSuccessMessage(data.message || "เปลี่ยนรหัสผ่านผู้ดูแลระบบสำเร็จแล้ว");
+        const okMsg = data.message || "เปลี่ยนรหัสผ่านผู้ดูแลระบบสำเร็จแล้ว";
+        setSuccessMessage(okMsg);
+        swalSuccess("เปลี่ยนรหัสผ่านสำเร็จ!", okMsg, 2000);
         setCurrentPassword("");
         setNewPassword("");
         setConfirmPassword("");

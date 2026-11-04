@@ -1,5 +1,6 @@
 "use client";
 
+import { swalAlert, swalConfirm } from "@/lib/swal";
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -291,7 +292,7 @@ export default function StudentsTab() {
   const handleResetPassword = async (studentId: string, studentName: string) => {
     const defaultPassword = `${studentId}@wts`;
     const confirmMsg = `ยืนยันการรีเซ็ตรหัสผ่านของนักเรียน:\n${studentName} (รหัส ${studentId})\n\nรหัสผ่านจะถูกรีเซ็ตกลับเป็นค่าเริ่มต้นคือ "${defaultPassword}"\nนักเรียนจะสามารถเข้าสู่ระบบด้วยรหัสดังกล่าวได้ทันที`;
-    if (!confirm(confirmMsg)) return;
+    if (!await swalConfirm(confirmMsg)) return;
 
     try {
       const res = await fetch("/api/students", {
@@ -314,17 +315,17 @@ export default function StudentsTab() {
           await navigator.clipboard.writeText(defaultPassword);
           setCopiedId(studentId);
           setTimeout(() => setCopiedId(null), 2500);
-          alert(`รีเซ็ตรหัสผ่านของ ${studentName} สำเร็จ!\nรหัสผ่านเริ่มต้น: ${defaultPassword}\n(คัดลอกรหัสผ่านลงคลิปบอร์ดแล้ว พร้อมส่งให้นักเรียน)`);
+          swalAlert(`รีเซ็ตรหัสผ่านของ ${studentName} สำเร็จ!\nรหัสผ่านเริ่มต้น: ${defaultPassword}\n(คัดลอกรหัสผ่านลงคลิปบอร์ดแล้ว พร้อมส่งให้นักเรียน)`);
         } catch {
-          alert(`รีเซ็ตรหัสผ่านของ ${studentName} สำเร็จ!\nรหัสผ่านเริ่มต้นคือ: ${defaultPassword}`);
+          swalAlert(`รีเซ็ตรหัสผ่านของ ${studentName} สำเร็จ!\nรหัสผ่านเริ่มต้นคือ: ${defaultPassword}`);
         }
       } else {
         const err = await res.json();
-        alert(err.error || "ไม่สามารถรีเซ็ตรหัสผ่านได้");
+        swalAlert(err.error || "ไม่สามารถรีเซ็ตรหัสผ่านได้");
       }
     } catch (err) {
       console.error("Failed to reset password:", err);
-      alert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+      swalAlert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
     }
   };
 
@@ -363,26 +364,26 @@ export default function StudentsTab() {
         setStudentClassroomInput("");
         setStudentNumberInput("");
         fetchData();
-        alert("เพิ่มนักเรียนสำเร็จ!");
+        swalAlert("เพิ่มนักเรียนสำเร็จ!");
       } else {
         const data = await res.json();
-        alert(data.error || "เกิดข้อผิดพลาด");
+        swalAlert(data.error || "เกิดข้อผิดพลาด");
       }
     } catch (error) {
       console.error("Failed to add student", error);
-      alert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+      swalAlert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
     }
   };
 
   // Delete Single Student
   const handleDeleteStudent = async (id: string, name: string) => {
-    if (!confirm(`คุณแน่ใจหรือไม่ที่จะลบนักเรียน:\n${name} (รหัส ${id}) ออกจากระบบ?`)) return;
+    if (!await swalConfirm(`คุณแน่ใจหรือไม่ที่จะลบนักเรียน:\n${name} (รหัส ${id}) ออกจากระบบ?`)) return;
     try {
       const res = await fetch(`/api/students?id=${id}`, { method: "DELETE" });
       if (res.ok) {
         fetchData();
       } else {
-        alert("ไม่สามารถลบนักเรียนได้");
+        swalAlert("ไม่สามารถลบนักเรียนได้");
       }
     } catch (error) {
       console.error("Failed to delete student", error);
@@ -393,7 +394,7 @@ export default function StudentsTab() {
   const handleDeleteAllStudents = async () => {
     const confirmation = prompt('คำเตือน: การกระทำนี้จะลบรายชื่อนักเรียนทั้งหมด! พิมพ์ "ยืนยันการลบ" เพื่อดำเนินการต่อ');
     if (confirmation !== 'ยืนยันการลบ') {
-      if (confirmation !== null) alert("ยกเลิกการลบข้อมูลแล้ว");
+      if (confirmation !== null) swalAlert("ยกเลิกการลบข้อมูลแล้ว");
       return;
     }
     
@@ -401,9 +402,9 @@ export default function StudentsTab() {
       const res = await fetch(`/api/students?action=deleteAll`, { method: "DELETE" });
       if (res.ok) {
         fetchData();
-        alert("ลบรายชื่อนักเรียนทั้งหมดเรียบร้อยแล้ว");
+        swalAlert("ลบรายชื่อนักเรียนทั้งหมดเรียบร้อยแล้ว");
       } else {
-        alert("ไม่สามารถลบข้อมูลได้");
+        swalAlert("ไม่สามารถลบข้อมูลได้");
       }
     } catch (error) {
       console.error("Failed to delete all students", error);
@@ -443,17 +444,17 @@ export default function StudentsTab() {
               addedCount++;
             }
             
-            alert(`เพิ่มนักเรียนจากไฟล์สำเร็จ ${addedCount} คน`);
+            swalAlert(`เพิ่มนักเรียนจากไฟล์สำเร็จ ${addedCount} คน`);
             fetchData();
             e.target.value = "";
           } catch (error) {
             console.error("Error parsing Excel:", error);
-            alert("เกิดข้อผิดพลาดในการอ่านไฟล์");
+            swalAlert("เกิดข้อผิดพลาดในการอ่านไฟล์");
           }
         };
         reader.readAsArrayBuffer(file);
       } else {
-        alert("รองรับเฉพาะไฟล์ .xlsx และ .xls และ .csv เท่านั้น");
+        swalAlert("รองรับเฉพาะไฟล์ .xlsx และ .xls และ .csv เท่านั้น");
         e.target.value = "";
       }
     }
@@ -480,7 +481,7 @@ export default function StudentsTab() {
     }
 
     if (exportList.length === 0) {
-      alert("ไม่มีข้อมูลสำหรับการส่งออก Excel");
+      swalAlert("ไม่มีข้อมูลสำหรับการส่งออก Excel");
       return;
     }
 

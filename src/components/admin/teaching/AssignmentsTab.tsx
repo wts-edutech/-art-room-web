@@ -1,3 +1,4 @@
+import { swalAlert, swalConfirm } from "@/lib/swal";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -203,7 +204,7 @@ export default function AssignmentsTab({ onGoToGrading }: { onGoToGrading?: (ass
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      alert("กรุณาเลือกไฟล์รูปภาพ (JPG, PNG, WebP)");
+      swalAlert("กรุณาเลือกไฟล์รูปภาพ (JPG, PNG, WebP)");
       return;
     }
     setIsCompressingImage(true);
@@ -312,12 +313,12 @@ export default function AssignmentsTab({ onGoToGrading }: { onGoToGrading?: (ass
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !selectedSubjectId) {
-      alert("กรุณาระบุชื่องานและวิชาที่มอบหมาย");
+      swalAlert("กรุณาระบุชื่องานและวิชาที่มอบหมาย");
       return;
     }
 
     if (targetMode === "selective" && selectedStudents.length === 0) {
-      alert("กรุณาเลือกนักเรียนอย่างน้อย 1 คน หรือเลือกโหมด 'มอบหมายทั้งห้องเรียน'");
+      swalAlert("กรุณาเลือกนักเรียนอย่างน้อย 1 คน หรือเลือกโหมด 'มอบหมายทั้งห้องเรียน'");
       return;
     }
 
@@ -349,10 +350,10 @@ export default function AssignmentsTab({ onGoToGrading }: { onGoToGrading?: (ass
       if (res.ok) {
         resetForm();
         fetchData();
-        alert(editingId ? "อัปเดตงานสำเร็จ!" : "สร้างงานใหม่สำเร็จ!");
+        swalAlert(editingId ? "อัปเดตงานสำเร็จ!" : "สร้างงานใหม่สำเร็จ!");
       } else {
         const err = await res.json();
-        alert(err.error || "เกิดข้อผิดพลาด");
+        swalAlert(err.error || "เกิดข้อผิดพลาด");
       }
     } catch (e) {
       console.error(e);
@@ -360,7 +361,7 @@ export default function AssignmentsTab({ onGoToGrading }: { onGoToGrading?: (ass
   };
 
   const handleDelete = async (id: string, title: string) => {
-    if (!confirm(`คุณแน่ใจหรือไม่ที่จะลบงาน "${title}"?`)) return;
+    if (!await swalConfirm(`คุณแน่ใจหรือไม่ที่จะลบงาน "${title}"?`)) return;
     try {
       const res = await fetch(`/api/assignments?id=${id}`, { method: "DELETE" });
       if (res.ok) fetchData();

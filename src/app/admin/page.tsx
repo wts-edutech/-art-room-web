@@ -1,5 +1,6 @@
 "use client";
 
+import { swalAlert, swalConfirm } from "@/lib/swal";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { 
@@ -225,7 +226,8 @@ export default function AdminPage() {
     fetchVisitors();
   }, [fetchVisitors, activeTab]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    if (!(await swalConfirm("คุณต้องการออกจากระบบจัดการหลังบ้านใช่หรือไม่?"))) return;
     try {
       localStorage.removeItem("artroom_role");
       localStorage.removeItem("artroom_author_name");
@@ -867,11 +869,11 @@ export default function AdminPage() {
                         });
                         setIsEditVisitorModalOpen(false);
                       } else {
-                        alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+                        swalAlert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
                       }
                     } catch (e) {
                       console.error("Save visitor error:", e);
-                      alert("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้");
+                      swalAlert("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้");
                     } finally {
                       setIsSavingVisitor(false);
                     }
