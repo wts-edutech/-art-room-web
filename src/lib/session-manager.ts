@@ -206,8 +206,10 @@ export async function isSessionActive(sessionId: string): Promise<boolean> {
       await ensureSessionTableExists();
       const row: any = await d1.prepare("SELECT is_revoked FROM login_sessions WHERE id = ?").bind(sessionId).first();
       if (!row) {
-        // If not found in DB but exists in memory and not revoked, treat as active
-        return cached ? !cached.isRevoked : false;
+        // Revocation is stored as is_revoked=1 (rows are never deleted on revoke).
+        // A missing row means the INSERT at login failed (e.g. D1 full) or was purged,
+        // not that the session was revoked. The signed token is verified by the caller.
+        return cached ? !cached.isRevoked : true;
       }
       const isRevoked = row.is_revoked === 1 || row.is_revoked === true || row.is_revoked === '1';
       return !isRevoked;
@@ -226,7 +228,7 @@ export async function isSessionActive(sessionId: string): Promise<boolean> {
       .get();
 
     if (!session) {
-      return cached ? !cached.isRevoked : false;
+      return cached ? !cached.isRevoked : true;
     }
 
     return !session.isRevoked;
