@@ -938,9 +938,39 @@ export default function SubmissionsCenterTab() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      ข้อเสนอแนะและคำติชมจากครู (Feedback)
-                    </label>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-bold text-slate-700">
+                        ข้อเสนอแนะและคำติชมจากครู (Feedback)
+                      </label>
+                      <span className="text-[10px] text-orange-600 font-semibold flex items-center gap-1">
+                        <Sparkles className="w-3 h-3" /> สติกเกอร์ตรายางคำชม
+                      </span>
+                    </div>
+
+                    {/* 1-Click Creative Cheer Stamps */}
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {[
+                        { emoji: "🚀", text: "ไอเดียสุดล้ำ", phrase: "ไอเดียแปลกใหม่ มีความคิดสร้างสรรค์ยอดเยี่ยมมาก! 🚀" },
+                        { emoji: "🎨", text: "ลงสีละมุนใจ", phrase: "คุมโทนสีและน้ำหนักแสงเงาได้สวยงามลงตัว 🎨" },
+                        { emoji: "⚡", text: "ลายเส้นทรงพลัง", phrase: "ลายเส้นมั่นใจ มีชีวิตชีวาและพลังสร้างสรรค์ ⚡" },
+                        { emoji: "💖", text: "ความตั้งใจเต็มร้อย", phrase: "ชื่นชมในความตั้งใจและเก็บรายละเอียดได้ดีมาก 💖" },
+                        { emoji: "🌟", text: "สวยระดับแกลเลอรี", phrase: "ผลงานโดดเด่น สวยสะดุดตาจนอยากแขวนโชว์ในสตูดิโอ 🌟" },
+                      ].map((stamp, sIdx) => (
+                        <button
+                          key={sIdx}
+                          type="button"
+                          onClick={() => {
+                            setGradingFeedback(prev => prev ? `${prev} ${stamp.phrase}` : stamp.phrase);
+                          }}
+                          className="px-2.5 py-1 rounded-lg bg-orange-50 hover:bg-orange-100 border border-orange-200 text-orange-800 text-[11px] font-semibold transition-all hover:scale-105 active:scale-95 flex items-center gap-1 cursor-pointer"
+                          title={`คลิกเพื่อใส่คำชม: ${stamp.phrase}`}
+                        >
+                          <span>{stamp.emoji}</span>
+                          <span>{stamp.text}</span>
+                        </button>
+                      ))}
+                    </div>
+
                     <textarea
                       rows={3}
                       value={gradingFeedback}

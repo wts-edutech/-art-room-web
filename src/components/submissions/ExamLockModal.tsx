@@ -499,14 +499,24 @@ export default function ExamLockModal({
             </p>
           </div>
 
-          {/* Score Box */}
-          <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-5 border border-emerald-200 text-emerald-950 space-y-1">
+          {/* Score Box & Art Coins Earned */}
+          <div className="bg-gradient-to-br from-emerald-50 via-amber-50/30 to-teal-50 rounded-2xl p-5 border border-emerald-200 text-emerald-950 space-y-2">
             <span className="text-xs font-semibold text-emerald-700 block">คะแนนที่ทำได้</span>
             <div className="text-4xl font-extrabold font-kanit text-emerald-600">
               {examResult.score} <span className="text-xl font-medium text-emerald-500">/ {examResult.totalQuestions}</span>
             </div>
-            <div className="text-xs font-medium text-emerald-700 pt-1">
-              คิดเป็น {percentage}% • แบบทดสอบก่อนเรียน
+            <div className="text-xs font-medium text-emerald-700">
+              คิดเป็น {percentage}% • แบบทดสอบบทเรียน
+            </div>
+
+            {/* Instant Art Coins Reward */}
+            <div className="pt-2.5 mt-1 border-t border-emerald-200/60 flex items-center justify-between">
+              <span className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                <span className="text-base">🪙</span> ได้รับแต้มสะสมศิลป์:
+              </span>
+              <span className="text-xs font-extrabold text-amber-700 bg-amber-100/90 px-3 py-1 rounded-full border border-amber-300 shadow-2xs animate-bounce">
+                +{examResult.score * 10 + (examResult.score === examResult.totalQuestions ? 50 : 0)} Art Coins
+              </span>
             </div>
           </div>
 
