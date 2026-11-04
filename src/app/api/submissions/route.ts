@@ -415,7 +415,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, id, isLate }, { status: 201 });
   } catch (error: any) {
     console.error("POST /api/submissions error:", error);
-    return NextResponse.json({ error: error?.message || 'Failed to submit assignment' }, { status: 500 });
+    return NextResponse.json({ error: error?.message || 'Failed to submit assignment', cause: String(error?.cause?.message || error?.cause || '') }, { status: 500 });
   }
 }
 

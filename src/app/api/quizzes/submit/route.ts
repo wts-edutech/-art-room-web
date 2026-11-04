@@ -131,6 +131,6 @@ export async function POST(request: Request) {
     });
   } catch (error: any) {
     console.error('Error submitting quiz:', error);
-    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Internal Server Error', cause: String(error?.cause?.message || error?.cause || '') }, { status: 500 });
   }
 }
