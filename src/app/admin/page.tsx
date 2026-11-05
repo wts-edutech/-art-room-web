@@ -1,8 +1,8 @@
 "use client";
 
 import { swalAlert, swalConfirm } from "@/lib/swal";
-import { useState, useEffect, useMemo, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useMemo, useCallback, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { 
   BookOpen, 
   Award, 
@@ -159,8 +159,16 @@ const TEACHING_ALLOWED_KEYS: AdminTabKey[] = [
 
 export default function AdminPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab") as AdminTabKey | null;
   const { logoSettings } = useSiteLogo();
-  const [activeTab, setActiveTab] = useState<AdminTabKey>("submissionsCenter");
+  const [activeTab, setActiveTab] = useState<AdminTabKey>(tabParam || "submissionsCenter");
+
+  useEffect(() => {
+    if (tabParam) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
   const [adminRole, setAdminRole] = useState<'super_admin' | 'teaching_admin'>('super_admin');
   const [isLoadingRole, setIsLoadingRole] = useState(true);
   const [gradingAssignmentId, setGradingAssignmentId] = useState<string | undefined>(undefined);
