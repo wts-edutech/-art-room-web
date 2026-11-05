@@ -58,6 +58,7 @@ import CommentsModerationTab from "@/components/admin/CommentsModerationTab";
 import AdminSecurityTab from "@/components/admin/AdminSecurityTab";
 import DownloadsTab from "@/components/admin/DownloadsTab";
 import SiteLogoSettingsSection from "@/components/admin/SiteLogoSettingsSection";
+import MascotSettingsSection from "@/components/admin/MascotSettingsSection";
 import { useSiteLogo } from "@/context/LogoContext";
 
 type AdminTabKey = 
@@ -78,6 +79,7 @@ type AdminTabKey =
   | "teachers" 
   | "heroButton" 
   | "siteLogo"
+  | "siteMascot"
   | "comments" 
   | "adminSecurity";
 
@@ -141,6 +143,7 @@ const ADMIN_CATEGORIES: AdminMenuCategory[] = [
     icon: Shield,
     items: [
       { key: "siteLogo", label: "ตั้งค่ารูปโลโก้ & แบรนด์", sublabel: "Logo & Brand Customizer", icon: ImageIcon, isSpecial: true },
+      { key: "siteMascot", label: "ตั้งค่ามาสคอต (Back to Top)", sublabel: "เปลี่ยนรูปตัวการ์ตูนมุมขวาล่าง", icon: Sparkles, isSpecial: true },
       { key: "heroButton", label: "ตั้งค่าปุ่ม AI Art Model", sublabel: "Hero Section Link", icon: Sparkles, isSpecial: true },
       { key: "adminSecurity", label: "ศูนย์ความปลอดภัย & Master PIN", sublabel: "เปลี่ยนรหัส / เตะอุปกรณ์ / K1234", icon: KeyRound, badge: "Master", isSpecial: true },
     ]
@@ -780,6 +783,7 @@ export default function AdminPage() {
                 {activeTab === "ideas" && <IdeasTab />}
                 {activeTab === "comments" && <CommentsModerationTab />}
                 {activeTab === "siteLogo" && <SiteLogoSettingsSection />}
+                {activeTab === "siteMascot" && <MascotSettingsSection />}
                 {activeTab === "heroButton" && <HeroButtonTab />}
                 {activeTab === "adminSecurity" && <AdminSecurityTab />}
               </>
