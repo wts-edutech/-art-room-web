@@ -31,6 +31,7 @@ import {
 import { Button } from "@/components/ui/button";
 import MasterPinConfirmModal from "@/components/modals/MasterPinConfirmModal";
 import SiteLogoSettingsSection from "./SiteLogoSettingsSection";
+import ImageMigrationPanel from "./ImageMigrationPanel";
 import { swalSuccess, swalError, swalWarning, swalToast } from "@/lib/swal";
 
 interface SessionItem {
@@ -608,6 +609,9 @@ export default function AdminSecurityTab() {
         title={pendingKickAction?.type === 'all' ? "ยืนยันเตะอุปกรณ์อื่นทั้งหมด" : `ยืนยันเตะอุปกรณ์: ${pendingKickAction?.userName || 'เซสชัน'}`}
         description="กรุณากรอกรหัส Master Security PIN (เช่น K1234) เพื่อยืนยันสิทธิ์แอดมินหลักก่อนทำรายการเตะอุปกรณ์"
       />
+
+      {/* R2 Image Migration */}
+      <ImageMigrationPanel />
 
       {/* Header Card */}
       <div className="bg-white rounded-3xl p-6 border border-gray-200/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
