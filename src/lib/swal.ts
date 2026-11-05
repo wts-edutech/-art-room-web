@@ -256,3 +256,4 @@ export function swalWarning(title: string, text?: string) {
     confirmButtonColor: '#3085d6',
   });
 }
+

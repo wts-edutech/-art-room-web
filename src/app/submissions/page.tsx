@@ -48,6 +48,9 @@ import ExamLockModal from "@/components/submissions/ExamLockModal";
 import StudentArtworkAlbum from "@/components/submissions/StudentArtworkAlbum";
 import ProfileSettingsModal from "@/components/modals/ProfileSettingsModal";
 import { resolveUserAvatar } from "@/lib/art-avatars";
+import { calculateGamification } from "@/lib/gamification";
+import ArtToyCompanionCard from "@/components/gamification/ArtToyCompanionCard";
+import ArtToyGalleryModal from "@/components/gamification/ArtToyGalleryModal";
 
 export default function SubmissionsPage() {
   const [isGuest, setIsGuest] = useState<boolean>(() => {
@@ -99,6 +102,22 @@ export default function SubmissionsPage() {
 
   // Quizzes / Pre-tests state
   const [activeQuizzes, setActiveQuizzes] = useState<any[]>([]);
+  const [isArtToyGalleryOpen, setIsArtToyGalleryOpen] = useState(false);
+  const [artToySeries, setArtToySeries] = useState<string>("red");
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("artroom_arttoy_series");
+      if (saved) setArtToySeries(saved);
+    } catch {}
+  }, []);
+
+  const handleSelectArtToySeries = (id: string) => {
+    setArtToySeries(id);
+    try {
+      localStorage.setItem("artroom_arttoy_series", id);
+    } catch {}
+  };
   const [activeQuizToTake, setActiveQuizToTake] = useState<any | null>(null);
 
   // Auto-detect and resolve logged-in student seamlessly with real-time DB sync
@@ -368,6 +387,12 @@ export default function SubmissionsPage() {
   const submittedCount = assignments.filter((a) => subMap.has(a.id) && subMap.get(a.id)?.status !== "resubmit").length;
   const progressPercent = totalCount > 0 ? Math.round((submittedCount / totalCount) * 100) : 0;
 
+  // Gamification: Art Coins, Rank & Art Toy Companion
+  const gamificationStats = useMemo(
+    () => calculateGamification(submissions, activeQuizzes, artToySeries),
+    [submissions, activeQuizzes, artToySeries]
+  );
+
   // Filtered Assignments for To-Do Tab
   const toDoAssignments = assignments.filter((a) => {
     if (toDoFilter === "missing") {
@@ -628,6 +653,19 @@ export default function SubmissionsPage() {
                   </button>
                 </div>
               </div>
+
+              {/* ART TOY COMPANION & ART COINS */}
+              <ArtToyCompanionCard
+                stats={gamificationStats}
+                onOpenGallery={() => setIsArtToyGalleryOpen(true)}
+              />
+              <ArtToyGalleryModal
+                isOpen={isArtToyGalleryOpen}
+                onClose={() => setIsArtToyGalleryOpen(false)}
+                stats={gamificationStats}
+                selectedSeriesId={artToySeries}
+                onSelectSeries={handleSelectArtToySeries}
+              />
 
               {/* ──────────────────────────────────────────── */}
               {/* PROGRESS SUMMARY BAR */}

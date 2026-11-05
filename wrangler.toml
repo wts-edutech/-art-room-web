@@ -8,3 +8,10 @@ pages_build_output_dir = ".vercel/output/static"
 binding = "DB"
 database_name = "art-room-db"
 database_id = "a6a5cb12-3c61-4927-9ba5-1ee7e9ce7e4b"
+
+# R2 bucket สำหรับเก็บรูปงานนักเรียน (แทน base64 ใน D1)
+# เปิดใช้งาน: สร้าง bucket "art-room-media" ใน Cloudflare Dashboard แล้วลบ # สามบรรทัดด้านล่าง
+# และเพิ่ม R2 binding ชื่อ MEDIA ใน Pages > Settings > Bindings ด้วย
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "artroom-uploads"

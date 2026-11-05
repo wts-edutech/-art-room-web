@@ -3,17 +3,17 @@
 import { swalConfirm, swalSuccess, swalError } from "@/lib/swal";
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { 
-  Trash2, 
-  Plus, 
-  Pencil, 
-  BookOpen, 
-  CheckCircle2, 
-  AlertCircle, 
-  X, 
-  Loader2, 
-  UploadCloud, 
-  RotateCcw 
+import {
+  Trash2,
+  Plus,
+  Pencil,
+  BookOpen,
+  CheckCircle2,
+  AlertCircle,
+  X,
+  Loader2,
+  UploadCloud,
+  RotateCcw
 } from "lucide-react";
 
 import { optimizeImageToFile } from "@/lib/image-optimizer";
@@ -63,14 +63,14 @@ export default function TestimonialsTab() {
 
     setIsSaving(true);
     setStatusMessage(null);
-    
+
     try {
       const formData = new FormData();
       if (editingTestimonialId) formData.append("id", editingTestimonialId);
       formData.append("name", testimonialName.trim());
       formData.append("university", testimonialUniv.trim());
       formData.append("quote", testimonialQuote.trim());
-      
+
       // Handle Student Photo
       if (testimonialImageFile) {
         const compressed = await optimizeImageToFile(testimonialImageFile, { maxWidth: 1600, maxHeight: 1600, quality: 0.82 });
@@ -228,11 +228,10 @@ export default function TestimonialsTab() {
 
           {/* Status Message Notification */}
           {statusMessage && (
-            <div className={`p-3 mb-3.5 rounded-xl text-xs flex items-center justify-between font-medium ${
-              statusMessage.type === "success" 
-                ? "bg-emerald-50 text-emerald-800 border border-emerald-200" 
-                : "bg-red-50 text-red-800 border border-red-200"
-            }`}>
+            <div className={`p-3 mb-3.5 rounded-xl text-xs flex items-center justify-between font-medium ${statusMessage.type === "success"
+              ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+              : "bg-red-50 text-red-800 border border-red-200"
+              }`}>
               <div className="flex items-center gap-2">
                 {statusMessage.type === "success" ? (
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -241,8 +240,8 @@ export default function TestimonialsTab() {
                 )}
                 <span>{statusMessage.text}</span>
               </div>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={() => setStatusMessage(null)}
                 className="text-gray-400 hover:text-gray-600 ml-2"
                 title="ปิด"
@@ -255,36 +254,36 @@ export default function TestimonialsTab() {
           <form onSubmit={handleAddTestimonial} className="space-y-3.5">
             <div>
               <label className="text-xs font-semibold text-slate-700 block mb-1">ชื่อรุ่นพี่ (เช่น พี่บอย)</label>
-              <input 
-                type="text" 
-                required 
-                value={testimonialName} 
-                onChange={(e) => setTestimonialName(e.target.value)} 
+              <input
+                type="text"
+                required
+                value={testimonialName}
+                onChange={(e) => setTestimonialName(e.target.value)}
                 placeholder="ชื่อ-นามสกุล หรือชื่อเล่น"
-                className="w-full h-9 px-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none text-xs transition-colors" 
+                className="w-full h-9 px-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none text-xs transition-colors"
               />
             </div>
 
             <div>
               <label className="text-xs font-semibold text-slate-700 block mb-1">มหาวิทยาลัย / คณะ / สถานะ</label>
-              <input 
-                type="text" 
-                required 
-                value={testimonialUniv} 
-                onChange={(e) => setTestimonialUniv(e.target.value)} 
+              <input
+                type="text"
+                required
+                value={testimonialUniv}
+                onChange={(e) => setTestimonialUniv(e.target.value)}
                 placeholder="เช่น จุฬาลงกรณ์มหาวิทยาลัย คณะศิลปกรรมศาสตร์"
-                className="w-full h-9 px-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none text-xs transition-colors" 
+                className="w-full h-9 px-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none text-xs transition-colors"
               />
             </div>
 
             <div>
               <label className="text-xs font-semibold text-slate-700 block mb-1">ข้อความรีวิว / คำแนะนำ</label>
-              <textarea 
-                required 
-                value={testimonialQuote} 
-                onChange={(e) => setTestimonialQuote(e.target.value)} 
+              <textarea
+                required
+                value={testimonialQuote}
+                onChange={(e) => setTestimonialQuote(e.target.value)}
                 placeholder="ความรู้สึก ความประทับใจ หรือคำแนะนำรุ่นน้อง..."
-                className="w-full h-24 p-2.5 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none resize-none text-xs leading-relaxed transition-colors" 
+                className="w-full h-24 p-2.5 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none resize-none text-xs leading-relaxed transition-colors"
               />
             </div>
 
@@ -293,11 +292,11 @@ export default function TestimonialsTab() {
               <label className="text-xs font-semibold text-slate-700 block mb-1">
                 รูปภาพรุ่นพี่ {editingTestimonialId && <span className="text-[11px] font-normal text-slate-400">(เว้นว่างหากใช้รูปเดิม)</span>}
               </label>
-              
+
               <div className="relative border border-dashed border-orange-200 bg-orange-50/40 hover:bg-orange-50/70 transition-colors rounded-xl p-3 text-center cursor-pointer overflow-hidden group">
-                <input 
+                <input
                   id="testimonialImageInput"
-                  type="file" 
+                  type="file"
                   accept="image/*,image/jpeg,image/jpg,image/png,image/webp"
                   onChange={(e) => {
                     if (e.target.files && e.target.files[0]) {
@@ -316,16 +315,16 @@ export default function TestimonialsTab() {
                   </span>
                 </div>
               </div>
-              
+
               {/* Image Preview & Delete Button */}
               {(testimonialImageFile || (!isPhotoRemoved && editingTestimonialId && testimonialImageUrl)) ? (
                 <div className="mt-2.5 flex items-center gap-3 p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
                   <div className="relative w-12 h-12 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 shadow-2xs shrink-0">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img 
-                      src={testimonialImageFile ? URL.createObjectURL(testimonialImageFile) : testimonialImageUrl} 
-                      alt="preview" 
-                      className="w-full h-full object-cover" 
+                    <img
+                      src={testimonialImageFile ? URL.createObjectURL(testimonialImageFile) : testimonialImageUrl}
+                      alt="preview"
+                      className="w-full h-full object-cover"
                       onError={(e) => (e.currentTarget.src = "https://placehold.co/150x150/eeeeee/999999?text=Image+Not+Found")}
                     />
                   </div>
@@ -365,11 +364,11 @@ export default function TestimonialsTab() {
               <label className="text-xs font-semibold text-slate-700 block mb-1">
                 ตรามหาวิทยาลัย / คณะ {editingTestimonialId && <span className="text-[11px] font-normal text-slate-400">(เว้นว่างหากใช้รูปเดิม)</span>}
               </label>
-              
+
               <div className="relative border border-dashed border-gray-300 bg-gray-50/70 hover:bg-gray-100/80 transition-colors rounded-xl p-3 text-center cursor-pointer overflow-hidden group">
-                <input 
+                <input
                   id="testimonialUnivImageInput"
-                  type="file" 
+                  type="file"
                   accept="image/*,image/jpeg,image/jpg,image/png,image/webp"
                   onChange={(e) => {
                     if (e.target.files && e.target.files[0]) {
@@ -388,16 +387,16 @@ export default function TestimonialsTab() {
                   </span>
                 </div>
               </div>
-              
+
               {/* Univ Image Preview & Delete Button */}
               {(testimonialUnivImageFile || (!isUnivLogoRemoved && editingTestimonialId && testimonialUnivImageUrl)) ? (
                 <div className="mt-2.5 flex items-center gap-3 p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
                   <div className="relative w-12 h-12 bg-white rounded-lg overflow-hidden border border-gray-200 shadow-2xs flex justify-center items-center shrink-0 p-1">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img 
-                      src={testimonialUnivImageFile ? URL.createObjectURL(testimonialUnivImageFile) : testimonialUnivImageUrl} 
-                      alt="univ preview" 
-                      className="max-h-full max-w-full object-contain" 
+                    <img
+                      src={testimonialUnivImageFile ? URL.createObjectURL(testimonialUnivImageFile) : testimonialUnivImageUrl}
+                      alt="univ preview"
+                      className="max-h-full max-w-full object-contain"
                       onError={(e) => (e.currentTarget.src = "https://placehold.co/150x150/eeeeee/999999?text=Logo+Not+Found")}
                     />
                   </div>
@@ -431,10 +430,10 @@ export default function TestimonialsTab() {
                 </div>
               ) : null}
             </div>
-            
+
             <div className="flex gap-2 pt-3 border-t border-gray-100">
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={isSaving}
                 className="flex-1 h-9 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold shadow-xs disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 cursor-pointer"
               >
@@ -448,11 +447,11 @@ export default function TestimonialsTab() {
                 )}
               </Button>
               {editingTestimonialId && (
-                <Button 
-                  type="button" 
-                  variant="outline" 
+                <Button
+                  type="button"
+                  variant="outline"
                   disabled={isSaving}
-                  onClick={resetTestimonialForm} 
+                  onClick={resetTestimonialForm}
                   className="h-9 rounded-xl px-3 border-gray-200 text-xs font-medium cursor-pointer"
                 >
                   ยกเลิก
@@ -462,13 +461,13 @@ export default function TestimonialsTab() {
           </form>
         </div>
       </div>
-      
+
       {/* Testimonials List Section */}
       <div className="lg:col-span-2">
         <div className="bg-white rounded-2xl shadow-2xs border border-gray-200 overflow-hidden">
           <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between bg-gray-50/70">
             <h2 className="text-sm sm:text-base font-bold font-kanit text-gray-900 flex items-center gap-2">
-              <BookOpen className="text-orange-500 w-4 h-4" /> 
+              <BookOpen className="text-orange-500 w-4 h-4" />
               รายการรีวิวทั้งหมด
             </h2>
             <span className="text-xs font-semibold text-gray-600 bg-white px-2.5 py-1 rounded-full border border-gray-200 shadow-2xs">
@@ -487,19 +486,18 @@ export default function TestimonialsTab() {
               {(Array.isArray(testimonials) ? testimonials : []).map((testimonial) => {
                 const isSelected = editingTestimonialId === testimonial.id;
                 return (
-                  <div 
-                    key={testimonial.id} 
-                    className={`p-4 sm:p-5 transition-colors flex flex-col sm:flex-row gap-4 items-start ${
-                      isSelected ? "bg-orange-50/60 ring-2 ring-orange-400/80 rounded-xl m-1.5" : "hover:bg-orange-50/20"
-                    }`}
+                  <div
+                    key={testimonial.id}
+                    className={`p-4 sm:p-5 transition-colors flex flex-col sm:flex-row gap-4 items-start ${isSelected ? "bg-orange-50/60 ring-2 ring-orange-400/80 rounded-xl m-1.5" : "hover:bg-orange-50/20"
+                      }`}
                   >
                     <div className="w-14 h-14 bg-gray-100 rounded-full overflow-hidden shrink-0 border-2 border-white shadow-xs self-center sm:self-start">
                       {testimonial.imageUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img 
-                          src={testimonial.imageUrl} 
-                          alt={testimonial.name} 
-                          className="w-full h-full object-cover" 
+                        <img
+                          src={testimonial.imageUrl}
+                          alt={testimonial.name}
+                          className="w-full h-full object-cover"
                           onError={(e) => (e.currentTarget.src = "https://placehold.co/150x150/eeeeee/999999?text=No+Photo")}
                         />
                       ) : (
@@ -510,7 +508,7 @@ export default function TestimonialsTab() {
                         </div>
                       )}
                     </div>
-                    
+
                     <div className="flex-1 flex flex-col min-w-0 w-full">
                       <div className="flex justify-between items-start gap-2 mb-1.5">
                         <div className="min-w-0">
@@ -528,10 +526,10 @@ export default function TestimonialsTab() {
                             {testimonial.univImageUrl && (
                               <div className="w-5 h-5 rounded-md bg-white border border-gray-100 p-0.5 flex items-center justify-center shrink-0 shadow-2xs">
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img 
-                                  src={testimonial.univImageUrl} 
-                                  alt="Univ Logo" 
-                                  className="w-full h-full object-contain mix-blend-multiply" 
+                                <img
+                                  src={testimonial.univImageUrl}
+                                  alt="Univ Logo"
+                                  className="w-full h-full object-contain mix-blend-multiply"
                                 />
                               </div>
                             )}
@@ -539,17 +537,16 @@ export default function TestimonialsTab() {
                           </div>
                         </div>
                         <div className="flex gap-1.5 shrink-0">
-                          <button 
-                            onClick={() => handleEditTestimonial(testimonial)} 
-                            className={`h-7 w-7 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
-                              isSelected ? "bg-orange-500 text-white shadow-xs" : "text-orange-600 bg-orange-50 hover:bg-orange-100"
-                            }`}
+                          <button
+                            onClick={() => handleEditTestimonial(testimonial)}
+                            className={`h-7 w-7 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${isSelected ? "bg-orange-500 text-white shadow-xs" : "text-orange-600 bg-orange-50 hover:bg-orange-100"
+                              }`}
                             title="แก้ไขรีวิว"
                           >
                             <Pencil className="w-3.5 h-3.5" />
                           </button>
-                          <button 
-                            onClick={() => handleDeleteTestimonial(testimonial.id)} 
+                          <button
+                            onClick={() => handleDeleteTestimonial(testimonial.id)}
                             className="h-7 w-7 rounded-lg flex items-center justify-center text-red-600 bg-red-50 hover:bg-red-100 transition-colors cursor-pointer"
                             title="ลบรีวิว"
                           >

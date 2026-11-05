@@ -6,6 +6,7 @@ import { submissions, assignments, students } from '@/db/schema';
 import { eq, and, or, desc, inArray, sql } from 'drizzle-orm';
 import { checkIsAdmin, getAdminSession, getSession } from '@/lib/api-auth';
 import { sendSubmissionNotification } from '@/lib/email-notifier';
+import { offloadDataUrls } from '@/lib/r2-storage';
 
 export async function GET(request: Request) {
   try {
@@ -231,7 +232,7 @@ export async function POST(request: Request) {
     // Limit to max 3 images for stability and storage safety
     imageUrls = imageUrls.slice(0, 3);
     const primaryImage = imageUrls[0] || imageUrl || '';
-    const imagesJson = imageUrls.length > 0 ? JSON.stringify(imageUrls) : null;
+    let imagesJson = imageUrls.length > 0 ? JSON.stringify(imageUrls) : null;
 
     const {
       assignmentId,
@@ -311,6 +312,12 @@ export async function POST(request: Request) {
         )
       ))
       .get();
+
+    // Offload base64 images/files to R2 (falls back to data URLs if MEDIA binding is missing)
+    if (imageUrls.length > 0) {
+      imageUrls = await offloadDataUrls(imageUrls, `submissions/${finalStudentId}/${assignmentId}`);
+      imagesJson = JSON.stringify(imageUrls);
+    }
 
     const nowIso = new Date().toISOString();
 

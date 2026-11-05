@@ -3,6 +3,7 @@ export const runtime = 'edge';
 import { getDb } from '@/db';
 import { submissions } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { R2_PREFIX, serveR2Ref } from '@/lib/r2-storage';
 
 export async function GET(request: Request) {
   try {
@@ -48,6 +49,12 @@ export async function GET(request: Request) {
 
     if (!targetImg) {
       return new Response('Image not found', { status: 404 });
+    }
+
+    // Image stored in Cloudflare R2
+    if (targetImg.startsWith(R2_PREFIX)) {
+      const r2Res = await serveR2Ref(targetImg);
+      return r2Res || new Response('Image not found', { status: 404 });
     }
 
     // Handle data URL (e.g. data:image/webp;base64,... or data:image/jpeg;base64,...)
