@@ -31,6 +31,7 @@ import {
 import { Button } from "@/components/ui/button";
 import MasterPinConfirmModal from "@/components/modals/MasterPinConfirmModal";
 import SiteLogoSettingsSection from "./SiteLogoSettingsSection";
+import MascotSettingsSection from "./MascotSettingsSection";
 import ImageMigrationPanel from "./ImageMigrationPanel";
 import { swalSuccess, swalError, swalWarning, swalToast } from "@/lib/swal";
 
@@ -778,6 +779,11 @@ export default function AdminSecurityTab() {
       {/* ===== SECTION: SITE LOGO & SCHOOL BRAND SETTINGS CARD ===== */}
       {/* ============================================================ */}
       <SiteLogoSettingsSection />
+
+      {/* ============================================================ */}
+      {/* ===== SECTION: MASCOT BACK TO TOP SETTINGS CARD ===== */}
+      {/* ============================================================ */}
+      <MascotSettingsSection />
 
       {/* ============================================================ */}
       {/* ===== SECTION 2: ACTIVE ADMIN SESSIONS / DEVICES ===== */}

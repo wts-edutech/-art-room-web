@@ -4,8 +4,10 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
 import { ChevronUp } from "lucide-react";
+import { useSiteMascot } from "@/context/MascotContext";
 
 export default function BackToTop() {
+  const { mascotSettings, resolvedMascotSrc } = useSiteMascot();
   const [isVisible, setIsVisible] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const pathname = usePathname();
@@ -56,26 +58,32 @@ export default function BackToTop() {
         title="เลื่อนขึ้นด้านบนสุด"
       >
         {/* Tooltip / Floating Indicator */}
-        <div
-          className={`absolute -top-8 px-2.5 py-0.5 rounded-full bg-gray-900/90 text-white text-[11px] font-bold font-kanit shadow-md transition-all duration-200 pointer-events-none whitespace-nowrap flex items-center gap-1 ${
-            isHovered
-              ? "opacity-100 -translate-y-1 scale-100"
-              : "opacity-0 translate-y-1 scale-90"
-          }`}
-        >
-          <ChevronUp className="w-3 h-3 text-orange-400 animate-bounce" />
-          <span>ขึ้นด้านบน</span>
-        </div>
+        {mascotSettings.showTooltip && (
+          <div
+            className={`absolute -top-8 px-2.5 py-0.5 rounded-full bg-gray-900/90 text-white text-[11px] font-bold font-kanit shadow-md transition-all duration-200 pointer-events-none whitespace-nowrap flex items-center gap-1 ${
+              isHovered
+                ? "opacity-100 -translate-y-1 scale-100"
+                : "opacity-0 translate-y-1 scale-90"
+            }`}
+          >
+            <ChevronUp className="w-3 h-3 text-orange-400 animate-bounce" />
+            <span>{mascotSettings.tooltipText || "ขึ้นด้านบน"}</span>
+          </div>
+        )}
 
         {/* Die-cut Mascot Logo Button */}
-        <div className="relative w-[52px] h-[65px] sm:w-[62px] sm:h-[78px] transition-all duration-300 drop-shadow-[0_8px_16px_rgba(0,0,0,0.25)] hover:drop-shadow-[0_12px_24px_rgba(132,204,22,0.45)] group-hover:-translate-y-1.5">
-          <Image
-            src="/images/artroom-mascot-transparent.png"
-            alt="Art Room Mascot Back to Top"
-            width={80}
-            height={100}
+        <div 
+          className="relative transition-all duration-300 drop-shadow-[0_8px_16px_rgba(0,0,0,0.25)] hover:drop-shadow-[0_12px_24px_rgba(132,204,22,0.45)] group-hover:-translate-y-1.5"
+          style={{
+            width: `${mascotSettings.size || 64}px`,
+            height: `${Math.round((mascotSettings.size || 64) * 1.25)}px`,
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={resolvedMascotSrc}
+            alt={mascotSettings.mascotAlt || "Art Room Mascot Back to Top"}
             className="w-full h-full object-contain filter select-none pointer-events-none"
-            priority={false}
           />
 
           {/* Subtle Upward Mini Indicator Badge */}

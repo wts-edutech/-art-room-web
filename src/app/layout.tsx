@@ -10,6 +10,7 @@ import VisitorTracker from "@/components/VisitorTracker";
 import BottomNavbar from "@/components/layout/BottomNavbar";
 import BackToTop from "@/components/ui/BackToTop";
 import { LogoProvider } from "@/context/LogoContext";
+import { MascotProvider } from "@/context/MascotContext";
 
 const sarabun = Sarabun({
   variable: "--font-sarabun",
@@ -199,14 +200,16 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col overflow-x-hidden has-bottom-nav relative bg-white">
         <SessionProvider>
           <LogoProvider>
-            <SecuritySessionWatcher />
-            <VisitorTracker />
-            <LiveClock />
-            {children}
-            <CookieConsent />
-            <FloatingSocialSidebar />
-            <BackToTop />
-            <BottomNavbar />
+            <MascotProvider>
+              <SecuritySessionWatcher />
+              <VisitorTracker />
+              <LiveClock />
+              {children}
+              <CookieConsent />
+              <FloatingSocialSidebar />
+              <BackToTop />
+              <BottomNavbar />
+            </MascotProvider>
           </LogoProvider>
         </SessionProvider>
       </body>
