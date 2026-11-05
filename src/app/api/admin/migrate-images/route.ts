@@ -84,3 +84,4 @@ export async function POST() {
     return NextResponse.json({ error: error?.message || 'Migration failed' }, { status: 500 });
   }
 }
+

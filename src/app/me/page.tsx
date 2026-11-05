@@ -32,6 +32,9 @@ import { performGlobalLogout } from "@/lib/client-auth";
 import { FONTS_LIST, applyActiveFont } from "@/components/ui/FontSelectorDropdown";
 import type { FontOption } from "@/components/ui/FontSelectorDropdown";
 import ProfileSettingsModal from "@/components/modals/ProfileSettingsModal";
+import { calculateGamification, GamificationStats } from "@/lib/gamification";
+import ArtToyCompanionCard from "@/components/gamification/ArtToyCompanionCard";
+import ArtToyGalleryModal from "@/components/gamification/ArtToyGalleryModal";
 
 export default function MePage() {
   const router = useRouter();
@@ -49,6 +52,50 @@ export default function MePage() {
   const [userSessions, setUserSessions] = useState<any[]>([]);
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [kickingSessionId, setKickingSessionId] = useState<string | null>(null);
+
+  // Gamification & Art Toy State
+  const [gamificationStats, setGamificationStats] = useState<GamificationStats | null>(null);
+  const [isArtToyGalleryOpen, setIsArtToyGalleryOpen] = useState(false);
+  const [artToySeries, setArtToySeries] = useState<string>("red");
+
+  const loadGamificationData = async () => {
+    try {
+      const savedSeries = localStorage.getItem("artroom_arttoy_series") || "red";
+      setArtToySeries(savedSeries);
+
+      // Fetch Submissions and Quizzes
+      const [subRes, quizRes] = await Promise.all([
+        fetch("/api/submissions", { cache: "no-store" }).catch(() => null),
+        fetch("/api/quizzes", { cache: "no-store" }).catch(() => null),
+      ]);
+
+      let subs: any[] = [];
+      let quizzes: any[] = [];
+
+      if (subRes && subRes.ok) {
+        const subData = await subRes.json();
+        subs = subData.submissions || [];
+      }
+
+      if (quizRes && quizRes.ok) {
+        const quizData = await quizRes.json();
+        quizzes = quizData.quizzes || [];
+      }
+
+      const stats = calculateGamification(subs, quizzes, savedSeries);
+      setGamificationStats(stats);
+    } catch (e) {
+      console.error("Error loading gamification in me page:", e);
+    }
+  };
+
+  const handleSelectArtToySeries = (id: string) => {
+    setArtToySeries(id);
+    try {
+      localStorage.setItem("artroom_arttoy_series", id);
+      loadGamificationData();
+    } catch {}
+  };
 
   const fetchUserSessions = async () => {
     setLoadingSessions(true);
@@ -123,6 +170,7 @@ export default function MePage() {
   useEffect(() => {
     setMounted(true);
     loadUserData();
+    loadGamificationData();
 
     // Load saved font
     try {
@@ -255,6 +303,23 @@ export default function MePage() {
             <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-orange-500 transition-colors" />
           </button>
         </section>
+
+        {/* ===== ART TOY COMPANION & GAMIFICATION ===== */}
+        {gamificationStats && userRole === "student" && (
+          <div className="mb-4">
+            <ArtToyCompanionCard
+              stats={gamificationStats}
+              onOpenGallery={() => setIsArtToyGalleryOpen(true)}
+            />
+            <ArtToyGalleryModal
+              isOpen={isArtToyGalleryOpen}
+              onClose={() => setIsArtToyGalleryOpen(false)}
+              stats={gamificationStats}
+              selectedSeriesId={artToySeries}
+              onSelectSeries={handleSelectArtToySeries}
+            />
+          </div>
+        )}
 
         {/* ===== FONT SETTINGS SECTION ===== */}
         <section className="bg-white rounded-2xl sm:rounded-3xl border border-gray-200 p-4 sm:p-6 mb-4">

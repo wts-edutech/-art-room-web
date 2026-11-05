@@ -1,5 +1,6 @@
 // src/lib/gamification.ts
 // ระบบเหรียญสะสมศิลป์ (Art Coins), ฉายาศิลปิน (Artist Ranks) และ Art Toy Companion
+// ปรับแต่งตามโครงสร้างหลักสูตร 1 เทอม (10 - 15 กิจกรรม / ~1,500 - 2,000 Coins)
 
 export interface ArtToyStage {
   level: number;
@@ -9,6 +10,7 @@ export interface ArtToyStage {
   description: string;
   badge: string;
   color: string;
+  glowEffect?: boolean;
 }
 
 export interface ArtToySeries {
@@ -38,38 +40,39 @@ export const ART_TOY_SERIES: Record<string, ArtToySeries> = {
       {
         level: 1,
         name: "จิ้งจอกฝึกหัด (Little Spark)",
-        minCoins: 100,
+        minCoins: 120, // สัปดาห์ที่ 1 - 2 (ส่งงาน 1 ชิ้นแรก)
         image: "/arttoy/red-1.jpg",
         description: "เริ่มก้าวแรกในการวาดเส้น มีประกายไฟแห่งความมุ่งมั่นลุกโชน",
-        badge: "🔥 สปาร์กแรก",
+        badge: "🔥 สปาร์กแรก (งานที่ 1-2)",
         color: "text-orange-800 bg-orange-50 border-orange-200",
       },
       {
         level: 2,
         name: "จิ้งจอกปัดแปรง (Brush Flame)",
-        minCoins: 300,
+        minCoins: 450, // สัปดาห์ที่ 4 - 5 (ส่งงาน 4 ชิ้น)
         image: "/arttoy/red-2.jpg",
         description: "ผสมสีและควบคุมปลายพู่กันได้อย่างคล่องแคล่วเปี่ยมพลัง",
-        badge: "🎨 ช่างฝีมือเปลวเพลิง",
+        badge: "🎨 ช่างฝีมือเปลวเพลิง (งานที่ 4-5)",
         color: "text-rose-800 bg-rose-50 border-rose-200",
       },
       {
         level: 3,
         name: "จิ้งจอกคัลเลอร์ฟูล (Flare Master)",
-        minCoins: 600,
+        minCoins: 900, // สัปดาห์ที่ 8 - 9 (ช่วงกลางภาค ส่งงาน 8 ชิ้น)
         image: "/arttoy/red-3.jpg",
         description: "สร้างสรรค์ผลงานที่สะกดทุกสายตา เส้นสายและโทนสีมีเอกลักษณ์",
-        badge: "✨ จิตรกรเพลิงเอก",
+        badge: "✨ จิตรกรเพลิงเอก (กลางภาค)",
         color: "text-pink-800 bg-pink-50 border-pink-200",
       },
       {
         level: 4,
         name: "จิ้งจอกสุริยันมาสเตอร์ (Solar Deity)",
-        minCoins: 1000,
+        minCoins: 1500, // สัปดาห์ที่ 13 - 15 (ปลายเทอม ส่งงาน 12 - 15 ชิ้น)
         image: "/arttoy/red-4.jpg",
-        description: "ร่างสูงสุดแห่งแรงบันดาลใจ ผลงานเปล่งประกายดุจดวงอาทิตย์!",
-        badge: "👑 มาสเตอร์ห้องศิลป์",
+        description: "ร่างสูงสุดแห่งแรงบันดาลใจ ผลงานเปล่งประกายดุจดวงอาทิตย์ จบหลักสูตรอย่างสมบูรณ์แบบ!",
+        badge: "👑 มาสเตอร์ห้องศิลป์ (ปลายเทอม)",
         color: "text-amber-900 bg-gradient-to-r from-amber-100 to-orange-100 border-amber-300",
+        glowEffect: true,
       },
     ],
   },
@@ -91,7 +94,7 @@ export const ART_TOY_SERIES: Record<string, ArtToySeries> = {
       {
         level: 1,
         name: "ภูตพรายสีฟ้า (Cyan Breeze)",
-        minCoins: 150,
+        minCoins: 350,
         image: "/arttoy/blue-1.jpg",
         description: "สมาธินิ่งสงบ เส้นสายลื่นไหลไร้ขอบเขต",
         badge: "🌊 กระแสลมศิลป์",
@@ -100,11 +103,12 @@ export const ART_TOY_SERIES: Record<string, ArtToySeries> = {
       {
         level: 2,
         name: "นักรบคลื่นคราม (Deep Ocean Master)",
-        minCoins: 500,
+        minCoins: 1000,
         image: "/arttoy/blue-2.jpg",
         description: "ลึกซึ้งในหลักการจัดองค์ประกอบและแสงเงาเหนือระดับ",
         badge: "💎 ปรมาจารย์คลื่นสี",
         color: "text-blue-900 bg-blue-100 border-blue-300",
+        glowEffect: true,
       },
     ],
   },
@@ -126,7 +130,7 @@ export const ART_TOY_SERIES: Record<string, ArtToySeries> = {
       {
         level: 1,
         name: "เงาหมึกสเก็ตช์ (Ink Shadow)",
-        minCoins: 100,
+        minCoins: 120,
         image: "/arttoy/black-1.jpg",
         description: "เริ่มควบคุมเส้นหมึกดำและน้ำหนักขาว-ดำได้อย่างเฉียบคม",
         badge: "✒️ ลายเส้นหมึกดำ",
@@ -135,7 +139,7 @@ export const ART_TOY_SERIES: Record<string, ArtToySeries> = {
       {
         level: 2,
         name: "ภูตหมึกรัตติกาล (Midnight Phantom)",
-        minCoins: 300,
+        minCoins: 450,
         image: "/arttoy/black-2.jpg",
         description: "ความมืดมิดสะท้อนแสงเงาที่ตัดกันอย่างทรงพลัง",
         badge: "🌙 เงารัตติกาล",
@@ -144,7 +148,7 @@ export const ART_TOY_SERIES: Record<string, ArtToySeries> = {
       {
         level: 3,
         name: "อัศวินหมึกดำ (Void Knight)",
-        minCoins: 600,
+        minCoins: 900,
         image: "/arttoy/black-3.jpg",
         description: "สร้างมิติและแรงดึงดูดที่ไม่เหมือนใครในโลกศิลปะ",
         badge: "⚡ จอมขมังเวทย์แห่งเส้น",
@@ -153,11 +157,12 @@ export const ART_TOY_SERIES: Record<string, ArtToySeries> = {
       {
         level: 4,
         name: "ออบซิเดียนมาสเตอร์ (Obsidian Legend)",
-        minCoins: 1000,
+        minCoins: 1500,
         image: "/arttoy/black-4.jpg",
         description: "ตำนานแห่งห้องศิลป์ผู้พิชิตทุกโจทย์และปลดปล่อยจินตนาการสูงสุด",
         badge: "👑 ราชาแห่งเงามืด",
         color: "text-black bg-gradient-to-r from-zinc-200 to-neutral-300 border-zinc-400",
+        glowEffect: true,
       },
     ],
   },
@@ -175,6 +180,8 @@ export interface GamificationStats {
   currentSeries: ArtToySeries;
   progressPercentToNext: number;
   coinsNeededForNext: number;
+  unlockedAllStages: boolean;
+  canHatchNewSeries: boolean;
 }
 
 export function calculateGamification(
@@ -206,23 +213,27 @@ export function calculateGamification(
 
   const totalCoins = quizCoins + artworkCoins;
 
-  // Ranks
+  // ปรับบันไดยศตาม 1 เทอม (10 - 15 งาน)
   let rankTitle = "ศิลปินฝึกหัด";
   let rankIcon = "🥉";
   let rankColor = "text-amber-800 bg-amber-50 border-amber-200";
 
-  if (totalCoins >= 1000) {
-    rankTitle = "มาสเตอร์ห้องศิลป์";
+  if (totalCoins >= 1500) {
+    rankTitle = "มาสเตอร์ห้องศิลป์ระดับตำนาน";
     rankIcon = "💎";
-    rankColor = "text-cyan-800 bg-cyan-50 border-cyan-200";
-  } else if (totalCoins >= 600) {
-    rankTitle = "นักผสมสีเอก";
+    rankColor = "text-cyan-900 bg-cyan-100 border-cyan-300 shadow-xs";
+  } else if (totalCoins >= 900) {
+    rankTitle = "จิตรกรเอกแห่งห้องศิลป์";
     rankIcon = "🥇";
-    rankColor = "text-amber-800 bg-amber-100 border-amber-300";
-  } else if (totalCoins >= 250) {
-    rankTitle = "จิตรกรนักสเก็ตช์";
+    rankColor = "text-amber-900 bg-amber-100 border-amber-300";
+  } else if (totalCoins >= 450) {
+    rankTitle = "นักผสมสีผู้ชำนาญ";
     rankIcon = "🥈";
-    rankColor = "text-slate-700 bg-slate-100 border-slate-300";
+    rankColor = "text-slate-800 bg-slate-100 border-slate-300";
+  } else if (totalCoins >= 120) {
+    rankTitle = "จิตรกรนักสเก็ตช์";
+    rankIcon = "✏️";
+    rankColor = "text-orange-800 bg-orange-50 border-orange-200";
   }
 
   // Selected series
@@ -250,6 +261,9 @@ export function calculateGamification(
     coinsNeededForNext = Math.max(0, nextToy.minCoins - totalCoins);
   }
 
+  const unlockedAllStages = !nextToy;
+  const canHatchNewSeries = totalCoins >= 900; // เมื่อสะสมได้ 900 เหรียญขึ้นไป สามารถสลับไปเลี้ยงซีรีส์อื่นคู่กันได้
+
   return {
     totalCoins,
     quizCoins,
@@ -262,6 +276,7 @@ export function calculateGamification(
     currentSeries: series,
     progressPercentToNext,
     coinsNeededForNext,
+    unlockedAllStages,
+    canHatchNewSeries,
   };
 }
-

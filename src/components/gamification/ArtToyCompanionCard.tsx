@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Sparkles, Trophy, ChevronRight, HelpCircle } from "lucide-react";
+import { Sparkles, Trophy, ChevronRight, HelpCircle, Flame } from "lucide-react";
 import { GamificationStats } from "@/lib/gamification";
 
 interface ArtToyCompanionCardProps {
@@ -13,10 +13,14 @@ export default function ArtToyCompanionCard({
   stats,
   onOpenGallery,
 }: ArtToyCompanionCardProps) {
-  const { currentToy, nextToy, progressPercentToNext, coinsNeededForNext, totalCoins, rankTitle, rankIcon } = stats;
+  const { currentToy, nextToy, progressPercentToNext, coinsNeededForNext, totalCoins, rankTitle, rankIcon, unlockedAllStages } = stats;
 
   return (
-    <div className="bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-rose-500/10 rounded-2xl border border-amber-200/80 p-4 shadow-sm relative overflow-hidden group">
+    <div className={`rounded-2xl border p-4 shadow-sm relative overflow-hidden transition-all group ${
+      currentToy.glowEffect 
+        ? "bg-gradient-to-br from-amber-500/15 via-orange-500/10 to-rose-500/15 border-amber-300 ring-2 ring-amber-400/30"
+        : "bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-rose-500/10 border-amber-200/80"
+    }`}>
       {/* Background Decorative Sparkles */}
       <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-gradient-to-br from-orange-400/20 to-amber-300/20 rounded-full blur-xl pointer-events-none" />
 
@@ -25,7 +29,9 @@ export default function ArtToyCompanionCard({
         <div className="flex items-center gap-3.5 min-w-0">
           <div 
             onClick={onOpenGallery}
-            className="relative w-16 h-16 sm:w-18 sm:h-18 rounded-2xl overflow-hidden shrink-0 bg-white border-2 border-amber-300 shadow-md group-hover:scale-105 transition-transform cursor-pointer"
+            className={`relative w-16 h-16 sm:w-18 sm:h-18 rounded-2xl overflow-hidden shrink-0 bg-white border-2 shadow-md group-hover:scale-105 transition-transform cursor-pointer ${
+              currentToy.glowEffect ? "border-amber-400 ring-4 ring-amber-300/40 animate-pulse" : "border-amber-300"
+            }`}
             title="คลิกเพื่อเปิดคลัง Art Toy ศิลปิน"
           >
             <Image
@@ -38,6 +44,11 @@ export default function ArtToyCompanionCard({
             <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded-md bg-amber-500/90 text-white text-[9px] font-extrabold shadow-2xs backdrop-blur-xs">
               Lv.{currentToy.level}
             </div>
+            {currentToy.glowEffect && (
+              <div className="absolute bottom-1 right-1 px-1 py-0.5 rounded bg-orange-600/90 text-white text-[8px] font-bold shadow-xs">
+                MAX 👑
+              </div>
+            )}
           </div>
 
           <div className="min-w-0">
@@ -50,8 +61,11 @@ export default function ArtToyCompanionCard({
               </span>
             </div>
 
-            <h3 className="text-base font-bold font-kanit text-gray-900 truncate mt-1">
-              {currentToy.name}
+            <h3 className="text-base font-bold font-kanit text-gray-900 truncate mt-1 flex items-center gap-1.5">
+              <span>{currentToy.name}</span>
+              {currentToy.glowEffect && (
+                <Sparkles className="w-4 h-4 text-amber-500 animate-spin-slow shrink-0" />
+              )}
             </h3>
 
             <p className="text-xs text-gray-500 font-light truncate max-w-xs sm:max-w-md">
@@ -97,8 +111,9 @@ export default function ArtToyCompanionCard({
               </div>
             </div>
           ) : (
-            <div className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-xl border border-emerald-200 flex items-center gap-1">
-              <Sparkles className="w-3.5 h-3.5" /> ปลดล็อกร่างสูงสุดแล้ว!
+            <div className="text-xs font-bold text-amber-900 bg-gradient-to-r from-amber-100 to-orange-100 px-3 py-1.5 rounded-xl border border-amber-300 shadow-2xs flex items-center gap-1.5">
+              <Sparkles className="w-4 h-4 text-amber-600 animate-bounce" /> 
+              <span>พิชิตร่างสุดยอดประจำเทอมแล้ว! 🌟</span>
             </div>
           )}
         </div>
@@ -106,4 +121,3 @@ export default function ArtToyCompanionCard({
     </div>
   );
 }
-
