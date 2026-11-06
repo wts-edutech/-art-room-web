@@ -15,9 +15,9 @@ interface MascotSettings {
 }
 
 const DEFAULT_MASCOT_SETTINGS: MascotSettings = {
-  mascotUrl: "/images/artroom-mascot-transparent.png",
+  mascotUrl: "/images/artroom-mascot-custom.png",
   mascotAlt: "Art Room Mascot Back to Top",
-  size: 64,
+  size: 110,
   showTooltip: true,
   tooltipText: "ขึ้นด้านบน",
 };

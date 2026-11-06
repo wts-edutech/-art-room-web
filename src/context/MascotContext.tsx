@@ -12,9 +12,9 @@ export interface MascotSettings {
 }
 
 export const DEFAULT_MASCOT_SETTINGS: MascotSettings = {
-  mascotUrl: "/images/artroom-mascot-transparent.png",
+  mascotUrl: "/images/artroom-mascot-custom.png",
   mascotAlt: "Art Room Mascot Back to Top",
-  size: 64,
+  size: 110,
   showTooltip: true,
   tooltipText: "ขึ้นด้านบน",
 };
@@ -35,15 +35,19 @@ const MascotContext = createContext<MascotContextType>({
   refreshMascotSettings: async () => {},
 });
 
-const STORAGE_KEY = "artroom_site_mascot_settings";
+const STORAGE_KEY = "artroom_site_mascot_settings_v2";
 
 export function MascotProvider({ children }: { children: React.ReactNode }) {
   const [mascotSettings, setMascotSettings] = useState<MascotSettings>(() => {
     if (typeof window !== "undefined") {
       try {
+        localStorage.removeItem("artroom_site_mascot_settings");
         const cached = localStorage.getItem(STORAGE_KEY);
         if (cached) {
           const parsed = JSON.parse(cached);
+          if (parsed.mascotUrl === "/images/artroom-mascot-transparent.png") {
+            parsed.mascotUrl = DEFAULT_MASCOT_SETTINGS.mascotUrl;
+          }
           return { ...DEFAULT_MASCOT_SETTINGS, ...parsed };
         }
       } catch {}
@@ -58,8 +62,11 @@ export function MascotProvider({ children }: { children: React.ReactNode }) {
       const res = await fetch(`/api/settings/mascot?t=${Date.now()}`, { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
+        const rawUrl = data.mascotUrl === "/images/artroom-mascot-transparent.png"
+          ? DEFAULT_MASCOT_SETTINGS.mascotUrl
+          : (data.mascotUrl || DEFAULT_MASCOT_SETTINGS.mascotUrl);
         const merged: MascotSettings = {
-          mascotUrl: data.mascotUrl || DEFAULT_MASCOT_SETTINGS.mascotUrl,
+          mascotUrl: rawUrl,
           mascotAlt: data.mascotAlt || DEFAULT_MASCOT_SETTINGS.mascotAlt,
           size: typeof data.size === "number" ? data.size : DEFAULT_MASCOT_SETTINGS.size,
           showTooltip: data.showTooltip !== undefined ? Boolean(data.showTooltip) : true,
