@@ -9,17 +9,22 @@ import {
   CheckCircle2, 
   Sliders, 
   ChevronUp, 
-  Image as ImageIcon 
+  Image as ImageIcon,
+  Wand2
 } from "lucide-react";
 import { useSiteMascot, DEFAULT_MASCOT_SETTINGS, MascotSettings } from "@/context/MascotContext";
-import { optimizeImageToDataUrl } from "@/lib/image-optimizer";
+import { optimizeImageToDataUrl, removeBackgroundFromDataUrl } from "@/lib/image-optimizer";
 import { swalAlert, swalSuccess, swalError } from "@/lib/swal";
 
 export default function MascotSettingsSection() {
   const { mascotSettings, refreshMascotSettings, resolvedMascotSrc } = useSiteMascot();
   const [settings, setSettings] = useState<MascotSettings>(DEFAULT_MASCOT_SETTINGS);
   const [previewSrc, setPreviewSrc] = useState<string>(resolvedMascotSrc);
+  const [originalUploadedSrc, setOriginalUploadedSrc] = useState<string | null>(null);
+  const [autoRemoveBg, setAutoRemoveBg] = useState<boolean>(true);
+  const [bgTolerance, setBgTolerance] = useState<number>(38);
   const [isOptimizing, setIsOptimizing] = useState(false);
+  const [isRemovingBg, setIsRemovingBg] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -35,7 +40,7 @@ export default function MascotSettingsSection() {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      swalAlert("กรุณาเลือกไฟล์ภาพ PNG, WebP, JPG หรือ SVG (แนะนำภาพพื้นหลังโปร่งใส PNG)");
+      swalAlert("กรุณาเลือกไฟล์ภาพ PNG, WebP, JPG หรือ SVG");
       return;
     }
 
@@ -46,13 +51,13 @@ export default function MascotSettingsSection() {
 
     setIsOptimizing(true);
     try {
-      const isPng = file.type === "image/png" || file.name.toLowerCase().endsWith(".png");
       const isSvg = file.type === "image/svg+xml" || file.name.toLowerCase().endsWith(".svg");
 
       if (isSvg) {
         const reader = new FileReader();
         reader.onload = () => {
           const dataUrl = reader.result as string;
+          setOriginalUploadedSrc(dataUrl);
           setSettings((prev) => ({ ...prev, mascotUrl: dataUrl }));
           setPreviewSrc(dataUrl);
           setIsOptimizing(false);
@@ -61,20 +66,51 @@ export default function MascotSettingsSection() {
         return;
       }
 
-      const dataUrl = await optimizeImageToDataUrl(file, {
-        maxWidth: 400,
-        maxHeight: 400,
-        quality: 0.9,
-        outputType: isPng ? "image/png" : "image/webp",
+      // Always output PNG so transparency is preserved 100%
+      const rawPngDataUrl = await optimizeImageToDataUrl(file, {
+        maxWidth: 420,
+        maxHeight: 420,
+        quality: 0.92,
+        outputType: "image/png",
+        autoTrimBorders: false,
       });
-      setSettings((prev) => ({ ...prev, mascotUrl: dataUrl }));
-      setPreviewSrc(dataUrl);
+      setOriginalUploadedSrc(rawPngDataUrl);
+
+      const finalDataUrl = autoRemoveBg
+        ? await removeBackgroundFromDataUrl(rawPngDataUrl, bgTolerance)
+        : rawPngDataUrl;
+
+      setSettings((prev) => ({ ...prev, mascotUrl: finalDataUrl }));
+      setPreviewSrc(finalDataUrl);
     } catch (err) {
       console.error("Failed to optimize mascot image:", err);
       swalError("ประมวลผลรูปภาพไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
     } finally {
       setIsOptimizing(false);
     }
+  };
+
+  const handleManualRemoveBg = async (customTolerance?: number) => {
+    const source = originalUploadedSrc || previewSrc;
+    if (!source) return;
+    setIsRemovingBg(true);
+    try {
+      const tol = customTolerance ?? bgTolerance;
+      const transparentPng = await removeBackgroundFromDataUrl(source, tol);
+      setSettings((prev) => ({ ...prev, mascotUrl: transparentPng }));
+      setPreviewSrc(transparentPng);
+    } catch (err) {
+      console.error("Remove background failed:", err);
+      swalError("ลบพื้นหลังไม่สำเร็จ");
+    } finally {
+      setIsRemovingBg(false);
+    }
+  };
+
+  const handleRestoreOriginalUpload = () => {
+    if (!originalUploadedSrc) return;
+    setSettings((prev) => ({ ...prev, mascotUrl: originalUploadedSrc }));
+    setPreviewSrc(originalUploadedSrc);
   };
 
   const handleResetDefault = () => {
@@ -166,16 +202,80 @@ export default function MascotSettingsSection() {
             />
             <button
               type="button"
-              disabled={isOptimizing}
+              disabled={isOptimizing || isRemovingBg}
               onClick={() => fileInputRef.current?.click()}
               className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl border-2 border-dashed border-orange-200 hover:border-orange-400 bg-orange-50/40 hover:bg-orange-50/80 text-orange-700 font-bold text-xs transition-all cursor-pointer disabled:opacity-50"
             >
               <Upload className="w-4 h-4" />
-              <span>{isOptimizing ? "กำลังย่อและปรับแต่งรูปภาพ..." : "คลิกเพื่อเลือกรูปตัวการ์ตูนใหม่จากเครื่อง"}</span>
+              <span>{isOptimizing ? "กำลังย่อและไดคัทลบพื้นหลัง PNG..." : "คลิกเพื่อเลือกรูปตัวการ์ตูนใหม่จากเครื่อง"}</span>
             </button>
-            <p className="text-[11px] text-gray-400 mt-1.5">
-              รองรับไฟล์ PNG (ไดคัทโปร่งใส), WebP หรือ JPG (ระบบจะจัดเก็บไฟล์ขึ้น Cloudflare R2 โดยอัตโนมัติ)
-            </p>
+
+            {/* Background Removal Tool Box */}
+            <div className="mt-3 p-3.5 rounded-2xl bg-gradient-to-r from-orange-50/70 via-amber-50/40 to-white border border-orange-200/80 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <label className="flex items-center gap-2 text-xs font-bold text-orange-900 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={autoRemoveBg}
+                    onChange={(e) => setAutoRemoveBg(e.target.checked)}
+                    className="w-4 h-4 accent-orange-600 rounded cursor-pointer"
+                  />
+                  <span>ไดคัทลบพื้นหลังสีขาวเป็น PNG โปร่งใสอัตโนมัติ</span>
+                </label>
+
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    disabled={isRemovingBg || isOptimizing}
+                    onClick={() => handleManualRemoveBg()}
+                    className="px-3 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+                  >
+                    <Wand2 className="w-3.5 h-3.5" />
+                    <span>{isRemovingBg ? "กำลังลบพื้นหลัง..." : "ลบพื้นหลังเป็น PNG ทันที"}</span>
+                  </button>
+
+                  {originalUploadedSrc && (
+                    <button
+                      type="button"
+                      onClick={handleRestoreOriginalUpload}
+                      className="px-2.5 py-1.5 rounded-xl bg-white hover:bg-gray-100 text-gray-600 border border-gray-200 text-[11px] font-semibold transition-all cursor-pointer"
+                      title="คืนค่ารูปต้นฉบับก่อนลบพื้นหลัง"
+                    >
+                      รูปต้นฉบับ
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Tolerance Fine-tuning Slider */}
+              <div className="space-y-1 pt-1 border-t border-orange-200/50">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-gray-600 font-semibold">
+                    ระดับความเนียนในการตัดขอบพื้นหลัง (Tolerance):
+                  </span>
+                  <span className="font-mono font-bold text-orange-700">{bgTolerance}</span>
+                </div>
+                <input
+                  type="range"
+                  min={15}
+                  max={85}
+                  step={1}
+                  value={bgTolerance}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    setBgTolerance(val);
+                  }}
+                  onMouseUp={() => handleManualRemoveBg(bgTolerance)}
+                  onTouchEnd={() => handleManualRemoveBg(bgTolerance)}
+                  className="w-full accent-orange-500 cursor-pointer h-1.5"
+                />
+                <div className="flex justify-between text-[10px] text-gray-400">
+                  <span>ตัดเฉพาะขาวจัด (15)</span>
+                  <span>มาตรฐาน (38)</span>
+                  <span>ตัดขอบเงาเข้ม (85)</span>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Size Slider */}
@@ -237,9 +337,18 @@ export default function MascotSettingsSection() {
         </div>
 
         {/* Right: Live Interactive Preview */}
-        <div className="lg:col-span-5 bg-gradient-to-br from-gray-50 to-orange-50/30 rounded-3xl p-6 border border-gray-200/80 flex flex-col items-center justify-center min-h-[280px] relative overflow-hidden">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 absolute top-4 left-4 flex items-center gap-1">
-            <ImageIcon className="w-3 h-3" /> ตัวอย่างแสดงผลจริง (Preview)
+        <div
+          className="lg:col-span-5 rounded-3xl p-6 border border-gray-200/80 flex flex-col items-center justify-center min-h-[280px] relative overflow-hidden"
+          style={{
+            backgroundColor: "#f8fafc",
+            backgroundImage:
+              "linear-gradient(45deg, #e2e8f0 25%, transparent 25%), linear-gradient(-45deg, #e2e8f0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e2e8f0 75%), linear-gradient(-45deg, transparent 75%, #e2e8f0 75%)",
+            backgroundSize: "16px 16px",
+            backgroundPosition: "0 0, 0 8px, 8px -8px, -8px 0",
+          }}
+        >
+          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-600 bg-white/90 px-2.5 py-1 rounded-full shadow-2xs absolute top-4 left-4 flex items-center gap-1">
+            <ImageIcon className="w-3 h-3 text-orange-500" /> ตัวอย่างแสดงผลจริง (ตารางโปร่งใส PNG)
           </span>
 
           <div className="flex flex-col items-center justify-center relative mt-4">

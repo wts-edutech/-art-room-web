@@ -18,7 +18,7 @@ import {
   ZoomIn
 } from "lucide-react";
 import { LogoSettings, DEFAULT_LOGO_SETTINGS, useSiteLogo } from "@/context/LogoContext";
-import { optimizeImageToDataUrl } from "@/lib/image-optimizer";
+import { optimizeImageToDataUrl, removeBackgroundFromDataUrl } from "@/lib/image-optimizer";
 import MascotSettingsSection from "@/components/admin/MascotSettingsSection";
 
 export default function SiteLogoSettingsSection() {
@@ -103,7 +103,7 @@ export default function SiteLogoSettingsSection() {
         maxWidth: 800,
         maxHeight: 800,
         quality: 0.95,
-        mimeType: isPng ? "image/png" : "image/webp",
+        outputType: "image/png",
         autoTrimBorders: false,
       });
 
@@ -603,6 +603,24 @@ export default function SiteLogoSettingsSection() {
                 >
                   <Upload className="w-3.5 h-3.5" />
                   เลือกรูปอื่นใหม่
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!settings.logoUrl) return;
+                    setIsOptimizing(true);
+                    try {
+                      const transparentPng = await removeBackgroundFromDataUrl(settings.logoUrl, 38);
+                      setSettings((prev) => ({ ...prev, logoUrl: transparentPng }));
+                    } finally {
+                      setIsOptimizing(false);
+                    }
+                  }}
+                  disabled={isOptimizing}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95 disabled:opacity-50"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  ลบพื้นหลังเป็น PNG
                 </button>
                 <button
                   type="button"
