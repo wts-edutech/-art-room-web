@@ -29,6 +29,19 @@ interface IdeaItem {
   comments?: any[];
 }
 
+// Helper function to clean markdown and limit text for clean card preview
+function cleanTextPreview(text: string): string {
+  if (!text) return "";
+  return text
+    .replace(/#{1,6}\s+/g, "") // remove markdown headers like ###
+    .replace(/\*\*(.*?)\*\*/g, "$1") // remove bold markdown **text**
+    .replace(/\*(.*?)\*/g, "$1") // remove italic *text*
+    .replace(/\[(.*?)\]\(.*?\)/g, "$1") // remove markdown links [text](url)
+    .replace(/`{1,3}.*?`{1,3}/g, "") // remove code snippets
+    .replace(/\s+/g, " ") // collapse multiple spaces and newlines
+    .trim();
+}
+
 export default function IdeasPage() {
   const [ideas, setIdeas] = useState<IdeaItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -377,12 +390,15 @@ export default function IdeasPage() {
                       <div className="p-3 sm:p-5 pb-2 sm:pb-3 flex-1 flex flex-col justify-between">
                         <div>
                           <Link href={`/ideas/detail?id=${idea.id}`}>
-                            <h3 className="text-xs sm:text-[15px] md:text-base font-bold mb-1 sm:mb-2 line-clamp-2 min-h-[2.2rem] sm:min-h-[2.8rem] group-hover:text-orange-500 transition-colors leading-snug">
+                            <h3 
+                              className="text-xs sm:text-[15px] md:text-base font-bold mb-1 sm:mb-2 line-clamp-2 min-h-[2.2rem] sm:min-h-[2.8rem] group-hover:text-orange-500 transition-colors leading-snug break-words"
+                              title={idea.title}
+                            >
                               {idea.title}
                             </h3>
                           </Link>
-                          <p className="text-gray-500 text-[11px] sm:text-[13px] line-clamp-2 mb-2 font-light leading-relaxed hidden sm:block">
-                            {idea.description}
+                          <p className="text-gray-500 text-[11px] sm:text-[13px] line-clamp-2 min-h-[2rem] sm:min-h-[2.4rem] mb-2 font-light leading-relaxed break-words">
+                            {cleanTextPreview(idea.description) || "คลิกเพื่อดูรายละเอียดไอเดียศิลปะ..."}
                           </p>
                         </div>
                       </div>
