@@ -1,6 +1,3 @@
-import { getDb } from '@/db';
-import { loginSessions } from '@/db/schema';
-import { eq, and, desc, sql, ne, or, isNull } from 'drizzle-orm';
 import { parseDeviceInfo, DeviceInfo } from './device-detector';
 import { getRequestContext } from '@cloudflare/next-on-pages';
 
@@ -130,25 +127,6 @@ export async function registerLoginSession(params: {
     } catch (d1Err) {
       console.warn('registerLoginSession D1 insert warning:', d1Err);
     }
-  } else {
-    try {
-      const db = getDb();
-      await db.insert(loginSessions).values({
-        id: sessionId,
-        userId: params.userId,
-        userName: params.userName,
-        role: params.role,
-        ipAddress: deviceInfo.ipAddress,
-        userAgent: deviceInfo.userAgent,
-        deviceType: deviceInfo.deviceType,
-        browser: deviceInfo.browser,
-        os: deviceInfo.os,
-        location: deviceInfo.location,
-        createdAt: nowIso,
-        lastActiveAt: nowIso,
-        isRevoked: false,
-      });
-    } catch {}
   }
 
   return { sessionId, deviceInfo };
@@ -219,22 +197,7 @@ export async function isSessionActive(sessionId: string): Promise<boolean> {
     }
   }
 
-  try {
-    const db = getDb();
-    const session = await db
-      .select()
-      .from(loginSessions)
-      .where(eq(loginSessions.id, sessionId))
-      .get();
-
-    if (!session) {
-      return cached ? !cached.isRevoked : true;
-    }
-
-    return !session.isRevoked;
-  } catch {
-    return cached ? !cached.isRevoked : true;
-  }
+  return cached ? !cached.isRevoked : true;
 }
 
 /**
@@ -253,14 +216,6 @@ export async function touchSession(sessionId: string) {
   if (d1) {
     try {
       await d1.prepare("UPDATE login_sessions SET last_active_at = ? WHERE id = ?").bind(nowIso, sessionId).run();
-    } catch {}
-  } else {
-    try {
-      const db = getDb();
-      await db
-        .update(loginSessions)
-        .set({ lastActiveAt: nowIso })
-        .where(eq(loginSessions.id, sessionId));
     } catch {}
   }
 }
@@ -293,24 +248,7 @@ export async function revokeSessionById(sessionId: string, userId?: string, isAd
     }
   }
 
-  try {
-    const db = getDb();
-    if (isAdmin) {
-      await db.update(loginSessions).set({ isRevoked: true }).where(eq(loginSessions.id, sessionId));
-      return true;
-    }
-
-    if (!userId) return false;
-    await db
-      .update(loginSessions)
-      .set({ isRevoked: true })
-      .where(and(eq(loginSessions.id, sessionId), eq(loginSessions.userId, userId)));
-
-    return true;
-  } catch (err) {
-    console.error('Revoke session error:', err);
-    return Boolean(cached);
-  }
+  return Boolean(cached);
 }
 
 /**
@@ -339,25 +277,7 @@ export async function revokeAllOtherSessions(userId: string, currentSessionId?: 
     }
   }
 
-  try {
-    const db = getDb();
-    let query;
-    if (currentSessionId) {
-      query = and(
-        eq(loginSessions.userId, userId),
-        ne(loginSessions.id, currentSessionId),
-        eq(loginSessions.isRevoked, false)
-      );
-    } else {
-      query = and(eq(loginSessions.userId, userId), eq(loginSessions.isRevoked, false));
-    }
-
-    await db.update(loginSessions).set({ isRevoked: true }).where(query);
-    return 1;
-  } catch (err) {
-    console.error('Revoke other sessions error:', err);
-    return 1;
-  }
+  return 1;
 }
 
 /**
@@ -435,35 +355,6 @@ export async function getAllActiveSessions(currentSessionId?: string): Promise<{
     } catch (err) {
       console.warn('getAllActiveSessions D1 warning:', err);
     }
-  }
-
-  if (rawList.length === 0) {
-    // Try via Drizzle or Memory
-    try {
-      const db = getDb();
-      const drizzleList = await db
-        .select()
-        .from(loginSessions)
-        .where(or(eq(loginSessions.isRevoked, false), isNull(loginSessions.isRevoked)))
-        .orderBy(desc(loginSessions.lastActiveAt))
-        .all();
-
-      rawList = drizzleList.map(item => ({
-        id: item.id,
-        user_id: item.userId,
-        user_name: item.userName,
-        role: item.role,
-        ip_address: item.ipAddress,
-        user_agent: item.userAgent,
-        device_type: item.deviceType,
-        browser: item.browser,
-        os: item.os,
-        location: item.location,
-        created_at: item.createdAt,
-        last_active_at: item.lastActiveAt,
-        is_revoked: item.isRevoked,
-      }));
-    } catch {}
   }
 
   // Merge with memory sessions

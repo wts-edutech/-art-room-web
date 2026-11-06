@@ -1,8 +1,6 @@
 export const runtime = 'edge';
 
-import { getDb } from '@/db';
-import { assignments } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { getRequestContext } from '@cloudflare/next-on-pages';
 
 export async function GET(request: Request) {
   try {
@@ -13,12 +11,10 @@ export async function GET(request: Request) {
       return new Response('Missing assignment id', { status: 400 });
     }
 
-    const db = getDb();
-    const ass = await db
-      .select({ imageUrl: assignments.imageUrl })
-      .from(assignments)
-      .where(eq(assignments.id, id))
-      .get();
+    const d1 = getRequestContext()?.env?.DB;
+    const ass: any = d1
+      ? await d1.prepare('SELECT image_url AS imageUrl FROM assignments WHERE id = ?').bind(id).first()
+      : null;
 
     if (!ass || !ass.imageUrl) {
       return new Response('Image not found', { status: 404 });

@@ -1,8 +1,6 @@
 export const runtime = 'edge';
 
-import { getDb } from '@/db';
-import { submissions } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { getRequestContext } from '@cloudflare/next-on-pages';
 import { R2_PREFIX, serveR2Ref } from '@/lib/r2-storage';
 
 export async function GET(request: Request) {
@@ -15,12 +13,10 @@ export async function GET(request: Request) {
       return new Response('Missing submission id', { status: 400 });
     }
 
-    const db = getDb();
-    const sub = await db
-      .select({ imageUrl: submissions.imageUrl, images: submissions.images })
-      .from(submissions)
-      .where(eq(submissions.id, id))
-      .get();
+    const d1 = getRequestContext()?.env?.DB;
+    const sub: any = d1
+      ? await d1.prepare('SELECT image_url AS imageUrl, images FROM submissions WHERE id = ?').bind(id).first()
+      : null;
 
     if (!sub) {
       return new Response('Submission not found', { status: 404 });
