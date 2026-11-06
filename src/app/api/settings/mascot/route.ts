@@ -49,10 +49,15 @@ async function ensureSettingsTable(d1: any) {
 }
 
 export async function GET() {
+  const headers = {
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0',
+  };
   try {
     const d1 = await getD1();
     if (!d1) {
-      return NextResponse.json(memorySettings);
+      return NextResponse.json(memorySettings, { headers });
     }
 
     await ensureSettingsTable(d1);
@@ -72,10 +77,10 @@ export async function GET() {
       }
     }
 
-    return NextResponse.json(memorySettings);
+    return NextResponse.json(memorySettings, { headers });
   } catch (error) {
     console.error("GET /api/settings/mascot error:", error);
-    return NextResponse.json(memorySettings);
+    return NextResponse.json(memorySettings, { headers });
   }
 }
 

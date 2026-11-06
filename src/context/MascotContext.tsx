@@ -55,7 +55,7 @@ export function MascotProvider({ children }: { children: React.ReactNode }) {
 
   const refreshMascotSettings = useCallback(async () => {
     try {
-      const res = await fetch("/api/settings/mascot", { cache: "no-store" });
+      const res = await fetch(`/api/settings/mascot?t=${Date.now()}`, { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
         const merged: MascotSettings = {
@@ -68,7 +68,9 @@ export function MascotProvider({ children }: { children: React.ReactNode }) {
         };
         setMascotSettings(merged);
         if (typeof window !== "undefined") {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+          } catch {}
         }
       }
     } catch (err) {
@@ -80,13 +82,54 @@ export function MascotProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     refreshMascotSettings();
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === STORAGE_KEY && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          setMascotSettings((prev) => ({ ...prev, ...parsed }));
+        } catch {}
+      }
+    };
+
+    const handleCustomUpdate = (e: CustomEvent<MascotSettings>) => {
+      if (e.detail) {
+        setMascotSettings((prev) => ({ ...prev, ...e.detail }));
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(e.detail));
+        } catch {}
+      } else {
+        refreshMascotSettings();
+      }
+    };
+
+    const handleVisibilityOrFocus = () => {
+      if (document.visibilityState === "visible") {
+        refreshMascotSettings();
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("artroom_mascot_updated" as any, handleCustomUpdate);
+    window.addEventListener("focus", handleVisibilityOrFocus);
+    document.addEventListener("visibilitychange", handleVisibilityOrFocus);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("artroom_mascot_updated" as any, handleCustomUpdate);
+      window.removeEventListener("focus", handleVisibilityOrFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityOrFocus);
+    };
   }, [refreshMascotSettings]);
 
   const updateLocalSettings = useCallback((partial: Partial<MascotSettings>) => {
     setMascotSettings((prev) => {
       const updated = { ...prev, ...partial };
       if (typeof window !== "undefined") {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+          window.dispatchEvent(new CustomEvent("artroom_mascot_updated", { detail: updated }));
+        } catch {}
       }
       return updated;
     });

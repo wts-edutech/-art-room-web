@@ -100,6 +100,7 @@ export default function BackToTop() {
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
+            key={mascotSettings.updatedAt || resolvedMascotSrc.slice(-32)}
             src={resolvedMascotSrc}
             alt={mascotSettings.mascotAlt || "Art Room Mascot Back to Top"}
             className="w-full h-full object-contain filter select-none pointer-events-none"

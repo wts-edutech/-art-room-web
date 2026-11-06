@@ -17,10 +17,11 @@ import { optimizeImageToDataUrl, removeBackgroundFromDataUrl } from "@/lib/image
 import { swalAlert, swalSuccess, swalError } from "@/lib/swal";
 
 export default function MascotSettingsSection() {
-  const { mascotSettings, refreshMascotSettings, resolvedMascotSrc } = useSiteMascot();
+  const { mascotSettings, refreshMascotSettings, updateLocalSettings, resolvedMascotSrc } = useSiteMascot();
   const [settings, setSettings] = useState<MascotSettings>(DEFAULT_MASCOT_SETTINGS);
   const [previewSrc, setPreviewSrc] = useState<string>(resolvedMascotSrc);
   const [originalUploadedSrc, setOriginalUploadedSrc] = useState<string | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [autoRemoveBg, setAutoRemoveBg] = useState<boolean>(true);
   const [bgTolerance, setBgTolerance] = useState<number>(38);
   const [isOptimizing, setIsOptimizing] = useState(false);
@@ -29,11 +30,11 @@ export default function MascotSettingsSection() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (mascotSettings) {
+    if (mascotSettings && !hasUnsavedChanges) {
       setSettings(mascotSettings);
       setPreviewSrc(resolvedMascotSrc);
     }
-  }, [mascotSettings, resolvedMascotSrc]);
+  }, [mascotSettings, resolvedMascotSrc, hasUnsavedChanges]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -58,6 +59,7 @@ export default function MascotSettingsSection() {
         reader.onload = () => {
           const dataUrl = reader.result as string;
           setOriginalUploadedSrc(dataUrl);
+          setHasUnsavedChanges(true);
           setSettings((prev) => ({ ...prev, mascotUrl: dataUrl }));
           setPreviewSrc(dataUrl);
           setIsOptimizing(false);
@@ -75,6 +77,7 @@ export default function MascotSettingsSection() {
         autoTrimBorders: false,
       });
       setOriginalUploadedSrc(rawPngDataUrl);
+      setHasUnsavedChanges(true);
 
       const finalDataUrl = autoRemoveBg
         ? await removeBackgroundFromDataUrl(rawPngDataUrl, bgTolerance)
@@ -97,6 +100,7 @@ export default function MascotSettingsSection() {
     try {
       const tol = customTolerance ?? bgTolerance;
       const transparentPng = await removeBackgroundFromDataUrl(source, tol);
+      setHasUnsavedChanges(true);
       setSettings((prev) => ({ ...prev, mascotUrl: transparentPng }));
       setPreviewSrc(transparentPng);
     } catch (err) {
@@ -109,11 +113,13 @@ export default function MascotSettingsSection() {
 
   const handleRestoreOriginalUpload = () => {
     if (!originalUploadedSrc) return;
+    setHasUnsavedChanges(true);
     setSettings((prev) => ({ ...prev, mascotUrl: originalUploadedSrc }));
     setPreviewSrc(originalUploadedSrc);
   };
 
   const handleResetDefault = () => {
+    setHasUnsavedChanges(true);
     setSettings(DEFAULT_MASCOT_SETTINGS);
     setPreviewSrc(DEFAULT_MASCOT_SETTINGS.mascotUrl);
   };
@@ -136,6 +142,10 @@ export default function MascotSettingsSection() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "บันทึกข้อมูลไม่สำเร็จ");
 
+      setHasUnsavedChanges(false);
+      if (data.settings) {
+        updateLocalSettings(data.settings);
+      }
       await refreshMascotSettings();
       swalSuccess("บันทึกสำเร็จ!", "อัปเดตตัวการ์ตูนปุ่มเลื่อนขึ้นด้านบนเรียบร้อยแล้ว");
     } catch (err: any) {
@@ -295,7 +305,10 @@ export default function MascotSettingsSection() {
               max={110}
               step={2}
               value={settings.size || 64}
-              onChange={(e) => setSettings({ ...settings, size: Number(e.target.value) })}
+              onChange={(e) => {
+                setHasUnsavedChanges(true);
+                setSettings({ ...settings, size: Number(e.target.value) });
+              }}
               className="w-full accent-orange-500 cursor-pointer"
             />
             <div className="flex justify-between text-[10px] text-gray-400">
@@ -314,7 +327,10 @@ export default function MascotSettingsSection() {
               <input
                 type="checkbox"
                 checked={settings.showTooltip}
-                onChange={(e) => setSettings({ ...settings, showTooltip: e.target.checked })}
+                onChange={(e) => {
+                  setHasUnsavedChanges(true);
+                  setSettings({ ...settings, showTooltip: e.target.checked });
+                }}
                 className="w-4 h-4 accent-orange-500 rounded cursor-pointer"
               />
             </div>
@@ -327,7 +343,10 @@ export default function MascotSettingsSection() {
                 <input
                   type="text"
                   value={settings.tooltipText}
-                  onChange={(e) => setSettings({ ...settings, tooltipText: e.target.value })}
+                  onChange={(e) => {
+                    setHasUnsavedChanges(true);
+                    setSettings({ ...settings, tooltipText: e.target.value });
+                  }}
                   placeholder="เช่น ขึ้นด้านบน, เลื่อนขึ้นสุด"
                   className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs text-gray-800 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
                 />

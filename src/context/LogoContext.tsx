@@ -68,7 +68,7 @@ export function LogoProvider({ children }: { children: React.ReactNode }) {
 
   const fetchSettings = useCallback(async () => {
     try {
-      const res = await fetch("/api/settings/logo");
+      const res = await fetch(`/api/settings/logo?t=${Date.now()}`, { cache: "no-store" });
       if (res.ok) {
         const data: any = await res.json();
         const rawLogoUrl = data.logoUrl;
