@@ -116,3 +116,4 @@ export function MascotProvider({ children }: { children: React.ReactNode }) {
 export function useSiteMascot() {
   return useContext(MascotContext);
 }
+

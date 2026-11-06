@@ -5,7 +5,7 @@ import { checkIsAdmin } from '@/lib/api-auth';
 import { getRequestContext } from '@cloudflare/next-on-pages';
 import { offloadDataUrl } from '@/lib/r2-storage';
 
-export interface MascotSettings {
+interface MascotSettings {
   mascotUrl: string;
   mascotAlt: string;
   size: number; // in pixels (width, e.g. 64)
@@ -14,7 +14,7 @@ export interface MascotSettings {
   updatedAt?: string;
 }
 
-export const DEFAULT_MASCOT_SETTINGS: MascotSettings = {
+const DEFAULT_MASCOT_SETTINGS: MascotSettings = {
   mascotUrl: "/images/artroom-mascot-transparent.png",
   mascotAlt: "Art Room Mascot Back to Top",
   size: 64,
@@ -148,3 +148,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error?.message || "บันทึกการตั้งค่าไม่สำเร็จ" }, { status: 500 });
   }
 }
+
