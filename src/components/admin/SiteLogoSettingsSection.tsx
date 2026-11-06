@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { LogoSettings, DEFAULT_LOGO_SETTINGS, useSiteLogo } from "@/context/LogoContext";
 import { optimizeImageToDataUrl } from "@/lib/image-optimizer";
+import MascotSettingsSection from "@/components/admin/MascotSettingsSection";
 
 export default function SiteLogoSettingsSection() {
   const { refreshLogoSettings } = useSiteLogo();
@@ -790,6 +791,11 @@ export default function SiteLogoSettingsSection() {
           </button>
         </div>
       </form>
+
+      {/* Mascot Back to Top Settings right below Logo Settings */}
+      <div className="mt-8 pt-8 border-t border-orange-200/60">
+        <MascotSettingsSection />
+      </div>
     </div>
   );
 }

@@ -1,19 +1,38 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
-import { ChevronUp } from "lucide-react";
+import { ChevronUp, Pencil } from "lucide-react";
 import { useSiteMascot } from "@/context/MascotContext";
 
 export default function BackToTop() {
   const { mascotSettings, resolvedMascotSrc } = useSiteMascot();
   const [isVisible, setIsVisible] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [isUserAdmin, setIsUserAdmin] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
 
   // Do not render on admin pages to keep the dashboard clean
   const isAdmin = pathname?.startsWith("/admin");
+
+  useEffect(() => {
+    const checkAdmin = () => {
+      try {
+        const role = localStorage.getItem("artroom_role");
+        const hasAdminCookie = document.cookie.includes("admin_token=");
+        setIsUserAdmin(role === "admin" || hasAdminCookie);
+      } catch {}
+    };
+    checkAdmin();
+    window.addEventListener("storage", checkAdmin);
+    window.addEventListener("artroom_profile_updated", checkAdmin);
+    return () => {
+      window.removeEventListener("storage", checkAdmin);
+      window.removeEventListener("artroom_profile_updated", checkAdmin);
+    };
+  }, []);
 
   useEffect(() => {
     const toggleVisibility = () => {
@@ -92,6 +111,22 @@ export default function BackToTop() {
           </div>
         </div>
       </button>
+
+      {/* Quick Edit Button for Admin right above Mascot */}
+      {isUserAdmin && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            router.push("/admin?tab=siteMascot");
+          }}
+          className="mt-1.5 mx-auto flex items-center gap-1 px-2.5 py-1 rounded-full bg-orange-600 hover:bg-orange-700 text-white text-[10px] font-bold shadow-md border border-white cursor-pointer transition-all hover:scale-105"
+          title="แก้ไขรูปตัวการ์ตูนมุมขวาล่าง"
+        >
+          <Pencil className="w-2.5 h-2.5" />
+          <span>แก้ไขตัวการ์ตูน</span>
+        </button>
+      )}
     </div>
   );
 }

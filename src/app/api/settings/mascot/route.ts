@@ -96,9 +96,7 @@ export async function POST(request: Request) {
       if (file && file.size > 0) {
         const bytes = await file.arrayBuffer();
         const base64 = Buffer.from(bytes).toString("base64");
-        const dataUrl = `data:${file.type || "image/png"};base64,${base64}`;
-        // Offload image to R2 directly if available!
-        mascotUrl = await offloadDataUrl(dataUrl, `mascot/mascot_${Date.now()}`);
+        mascotUrl = `data:${file.type || "image/png"};base64,${base64}`;
       }
 
       payload = {
@@ -110,9 +108,6 @@ export async function POST(request: Request) {
       };
     } else {
       payload = await request.json().catch(() => ({}));
-      if (payload.mascotUrl && payload.mascotUrl.startsWith("data:")) {
-        payload.mascotUrl = await offloadDataUrl(payload.mascotUrl, `mascot/mascot_${Date.now()}`);
-      }
     }
 
     const updatedAt = new Date().toISOString();

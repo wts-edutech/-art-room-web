@@ -12,14 +12,14 @@ import {
   Image as ImageIcon 
 } from "lucide-react";
 import { useSiteMascot, DEFAULT_MASCOT_SETTINGS, MascotSettings } from "@/context/MascotContext";
+import { optimizeImageToDataUrl } from "@/lib/image-optimizer";
 import { swalAlert, swalSuccess, swalError } from "@/lib/swal";
 
 export default function MascotSettingsSection() {
   const { mascotSettings, refreshMascotSettings, resolvedMascotSrc } = useSiteMascot();
   const [settings, setSettings] = useState<MascotSettings>(DEFAULT_MASCOT_SETTINGS);
   const [previewSrc, setPreviewSrc] = useState<string>(resolvedMascotSrc);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isOptimizing, setIsOptimizing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -30,56 +30,78 @@ export default function MascotSettingsSection() {
     }
   }, [mascotSettings, resolvedMascotSrc]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      swalAlert("กรุณาเลือกไฟล์ภาพ PNG, WebP หรือ JPG (แนะนำภาพพื้นหลังโปร่งใส PNG)");
+      swalAlert("กรุณาเลือกไฟล์ภาพ PNG, WebP, JPG หรือ SVG (แนะนำภาพพื้นหลังโปร่งใส PNG)");
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      swalAlert("ขนาดไฟล์ใหญ่เกิน 5MB กรุณาเลือกไฟล์ที่มีขนาดเล็กลง");
+    if (file.size > 10 * 1024 * 1024) {
+      swalAlert("ขนาดไฟล์ใหญ่เกิน 10MB กรุณาเลือกไฟล์ที่มีขนาดเล็กลง");
       return;
     }
 
-    setSelectedFile(file);
-    const objectUrl = URL.createObjectURL(file);
-    setPreviewSrc(objectUrl);
+    setIsOptimizing(true);
+    try {
+      const isPng = file.type === "image/png" || file.name.toLowerCase().endsWith(".png");
+      const isSvg = file.type === "image/svg+xml" || file.name.toLowerCase().endsWith(".svg");
+
+      if (isSvg) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const dataUrl = reader.result as string;
+          setSettings((prev) => ({ ...prev, mascotUrl: dataUrl }));
+          setPreviewSrc(dataUrl);
+          setIsOptimizing(false);
+        };
+        reader.readAsDataURL(file);
+        return;
+      }
+
+      const dataUrl = await optimizeImageToDataUrl(file, {
+        maxWidth: 400,
+        maxHeight: 400,
+        quality: 0.9,
+        outputType: isPng ? "image/png" : "image/webp",
+      });
+      setSettings((prev) => ({ ...prev, mascotUrl: dataUrl }));
+      setPreviewSrc(dataUrl);
+    } catch (err) {
+      console.error("Failed to optimize mascot image:", err);
+      swalError("ประมวลผลรูปภาพไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      setIsOptimizing(false);
+    }
   };
 
   const handleResetDefault = () => {
     setSettings(DEFAULT_MASCOT_SETTINGS);
-    setSelectedFile(null);
     setPreviewSrc(DEFAULT_MASCOT_SETTINGS.mascotUrl);
   };
 
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const formData = new FormData();
-      if (selectedFile) {
-        formData.append("mascotFile", selectedFile);
-      } else {
-        formData.append("mascotUrl", settings.mascotUrl);
-      }
-      formData.append("mascotAlt", settings.mascotAlt || "Art Room Mascot");
-      formData.append("tooltipText", settings.tooltipText || "ขึ้นด้านบน");
-      formData.append("showTooltip", String(settings.showTooltip));
-      formData.append("size", String(settings.size || 64));
-
       const res = await fetch("/api/settings/mascot", {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mascotUrl: settings.mascotUrl,
+          mascotAlt: settings.mascotAlt || "Art Room Mascot",
+          tooltipText: settings.tooltipText || "ขึ้นด้านบน",
+          showTooltip: settings.showTooltip,
+          size: settings.size || 64,
+        }),
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "บันทึกข้อมูลไม่สำเร็จ");
 
       await refreshMascotSettings();
-      setSelectedFile(null);
-      swalSuccess("บันทึกสำเร็จ", "อัปเดตตัวการ์ตูนปุ่มเลื่อนขึ้นด้านบนเรียบร้อยแล้ว");
+      swalSuccess("บันทึกสำเร็จ!", "อัปเดตตัวการ์ตูนปุ่มเลื่อนขึ้นด้านบนเรียบร้อยแล้ว");
     } catch (err: any) {
       console.error(err);
       swalError("บันทึกไม่สำเร็จ", err?.message);
@@ -144,11 +166,12 @@ export default function MascotSettingsSection() {
             />
             <button
               type="button"
+              disabled={isOptimizing}
               onClick={() => fileInputRef.current?.click()}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl border-2 border-dashed border-orange-200 hover:border-orange-400 bg-orange-50/40 hover:bg-orange-50/80 text-orange-700 font-bold text-xs transition-all cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl border-2 border-dashed border-orange-200 hover:border-orange-400 bg-orange-50/40 hover:bg-orange-50/80 text-orange-700 font-bold text-xs transition-all cursor-pointer disabled:opacity-50"
             >
               <Upload className="w-4 h-4" />
-              <span>{selectedFile ? `เลือกไฟล์แล้ว: ${selectedFile.name}` : "คลิกเพื่อเลือกไฟล์รูปตัวการ์ตูนจากเครื่อง"}</span>
+              <span>{isOptimizing ? "กำลังย่อและปรับแต่งรูปภาพ..." : "คลิกเพื่อเลือกรูปตัวการ์ตูนใหม่จากเครื่อง"}</span>
             </button>
             <p className="text-[11px] text-gray-400 mt-1.5">
               รองรับไฟล์ PNG (ไดคัทโปร่งใส), WebP หรือ JPG (ระบบจะจัดเก็บไฟล์ขึ้น Cloudflare R2 โดยอัตโนมัติ)

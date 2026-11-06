@@ -635,6 +635,11 @@ export default function AdminSecurityTab() {
       </div>
 
       {/* ============================================================ */}
+      {/* ===== SECTION: MASCOT BACK TO TOP SETTINGS CARD ===== */}
+      {/* ============================================================ */}
+      <MascotSettingsSection />
+
+      {/* ============================================================ */}
       {/* ===== SECTION 1: MASTER ADMIN PIN MANAGEMENT CARD ===== */}
       {/* ============================================================ */}
       <div className="bg-gradient-to-br from-amber-50/80 via-orange-50/40 to-white rounded-3xl p-6 sm:p-8 border border-amber-200 shadow-xs space-y-6">
@@ -779,11 +784,6 @@ export default function AdminSecurityTab() {
       {/* ===== SECTION: SITE LOGO & SCHOOL BRAND SETTINGS CARD ===== */}
       {/* ============================================================ */}
       <SiteLogoSettingsSection />
-
-      {/* ============================================================ */}
-      {/* ===== SECTION: MASCOT BACK TO TOP SETTINGS CARD ===== */}
-      {/* ============================================================ */}
-      <MascotSettingsSection />
 
       {/* ============================================================ */}
       {/* ===== SECTION 2: ACTIVE ADMIN SESSIONS / DEVICES ===== */}
