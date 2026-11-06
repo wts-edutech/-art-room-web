@@ -33,6 +33,11 @@ interface IdeaDetail {
   category?: string;
   authorName: string;
   authorEmail?: string;
+  authorAvatar?: string;
+  authorClassroom?: string;
+  authorGradeLevel?: string;
+  authorStudentId?: string;
+  authorRole?: string;
   coverImageUrl?: string;
   files?: any[];
   link?: string;
@@ -444,39 +449,52 @@ export default function IdeaDetailClient() {
             {/* 2. Author Row & Stats Bar */}
             <div className="flex items-center justify-between gap-4 pb-4 border-b border-gray-100">
               {/* Left Column: Avatar + Author + Date (Clickable with hover enlargement) */}
-              <Link
-                href={`/teachers/profile?name=${encodeURIComponent(idea.authorName || "ครูสลิน")}`}
-                className="group flex items-center gap-3 min-w-0 cursor-pointer"
-                title="คลิกเพื่อดูโปรไฟล์และข้อมูลของคุณครู"
-              >
-                <div className="w-11 h-11 rounded-full overflow-hidden border border-gray-200/80 bg-orange-50 shrink-0 shadow-2xs flex items-center justify-center transition-transform duration-200 group-hover:scale-110 group-hover:ring-2 group-hover:ring-orange-300">
-                  {(!idea.authorName || idea.authorName.includes("สลิน")) ? (
-                    <TeacherMascotAvatar className="w-full h-full" />
-                  ) : (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img 
-                      src={`https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(idea.authorName)}&backgroundColor=ffdfbf`} 
-                      alt={idea.authorName}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                        if (e.currentTarget.parentElement) {
-                          e.currentTarget.parentElement.innerHTML = `<span class="text-orange-600 font-bold text-base">${idea.authorName.charAt(0)}</span>`;
-                        }
-                      }}
-                    />
-                  )}
-                </div>
-                <div className="min-w-0">
-                  <h3 className="font-semibold text-gray-900 text-sm sm:text-[15px] leading-tight truncate transition-all duration-200 group-hover:scale-110 group-hover:text-[#1E3A8A] group-hover:font-bold origin-left inline-block">
-                    {idea.authorName || "ครูสลิน"}
-                  </h3>
-                  <p className="text-xs text-gray-400 font-light mt-0.5 truncate">
-                    {new Date(idea.createdAt || Date.now()).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' })}
-                    {idea.createdAt ? ` (แก้ไข ${new Date(idea.createdAt).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' })})` : ''}
-                  </p>
-                </div>
-              </Link>
+              {(() => {
+                const authorAvatarData = resolveUserAvatar(idea.authorAvatar, idea.authorName || "ครูสลิน");
+                const isTeacherSalin = !idea.authorName || idea.authorName.includes("สลิน") || idea.authorName.includes("(Admin)");
+                const profileHref = idea.authorStudentId
+                  ? `/teachers/profile?name=${encodeURIComponent(idea.authorName || "ครูสลิน")}&studentId=${encodeURIComponent(idea.authorStudentId)}`
+                  : `/teachers/profile?name=${encodeURIComponent(idea.authorName || "ครูสลิน")}`;
+                return (
+                  <Link
+                    href={profileHref}
+                    className="group flex items-center gap-3 min-w-0 cursor-pointer"
+                    title={`คลิกเพื่อดูโปรไฟล์ของ ${idea.authorName || "ครูสลิน"}`}
+                  >
+                    <div className="w-11 h-11 rounded-full overflow-hidden border border-orange-200/80 bg-orange-50 shrink-0 shadow-2xs flex items-center justify-center transition-transform duration-200 group-hover:scale-110 group-hover:ring-2 group-hover:ring-orange-300">
+                      {isTeacherSalin && !idea.authorAvatar ? (
+                        <TeacherMascotAvatar className="w-full h-full" />
+                      ) : authorAvatarData.type === "image" ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={authorAvatarData.value}
+                          alt={idea.authorName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : authorAvatarData.type === "preset" ? (
+                        <span className="text-xl select-none">{authorAvatarData.value}</span>
+                      ) : (
+                        <span className="text-orange-600 font-bold text-base">{authorAvatarData.value}</span>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-semibold text-gray-900 text-sm sm:text-[15px] leading-tight truncate transition-all duration-200 group-hover:text-orange-600 group-hover:font-bold">
+                          {idea.authorName || "ครูสลิน"}
+                        </h3>
+                        {idea.authorClassroom && (
+                          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                            ชั้น {idea.authorClassroom}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-400 font-light mt-0.5 truncate">
+                        {new Date(idea.createdAt || Date.now()).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      </p>
+                    </div>
+                  </Link>
+                );
+              })()}
 
               {/* Right Column: Views/Comments + Reactions + Share/Bookmark */}
               <div className="flex flex-col items-end gap-2 shrink-0">

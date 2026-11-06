@@ -12,18 +12,22 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
+    const nameParam = searchParams.get('name');
     const classroom = searchParams.get('classroom');
 
     const db = getDb();
     const { submissions, quizAttempts } = await import('@/db/schema');
 
-    if (id) {
-      const student = await db.select().from(students).where(eq(students.id, id)).get();
+    if (id || nameParam) {
+      const student = id
+        ? await db.select().from(students).where(eq(students.id, id)).get()
+        : await db.select().from(students).where(eq(students.name, nameParam!.trim())).get();
       if (!student) return NextResponse.json(null);
 
+      const targetId = student.id;
       const [userSubs, userQuizzes] = await Promise.all([
-        db.select().from(submissions).where(eq(submissions.studentId, id)),
-        db.select().from(quizAttempts).where(eq(quizAttempts.studentId, id)),
+        db.select().from(submissions).where(eq(submissions.studentId, targetId)),
+        db.select().from(quizAttempts).where(eq(quizAttempts.studentId, targetId)),
       ]);
 
       const dates = [
@@ -33,14 +37,31 @@ export async function GET(request: Request) {
       ].filter(Boolean) as string[];
       dates.sort().reverse();
 
+      const gradedSubs = userSubs.filter(s => s.status === 'graded');
+      const totalSubScore = gradedSubs.reduce((acc, s) => acc + (Number(s.score) || 0), 0);
+      const totalQuizScore = userQuizzes.reduce((acc, q) => acc + (Number(q.score) || 0), 0);
+
       return NextResponse.json({
         ...student,
         password: (student.password && String(student.password).length > 0) ? 'CUSTOM_SET' : null,
         loginCount: student.loginCount || 0,
         lastLoginAt: student.lastLoginAt || null,
         submissionsCount: userSubs.length,
+        gradedCount: gradedSubs.length,
+        totalSubScore,
         quizzesCount: userQuizzes.length,
+        totalQuizScore,
         lastActiveAt: dates[0] || null,
+        recentSubmissions: userSubs.slice(0, 6).map(s => ({
+          id: s.id,
+          assignmentId: s.assignmentId,
+          classroom: s.classroom,
+          imageUrl: s.imageUrl,
+          concept: s.concept,
+          score: s.score,
+          status: s.status,
+          submittedAt: s.submittedAt,
+        })),
       });
     }
 

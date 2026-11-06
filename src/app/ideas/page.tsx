@@ -10,6 +10,7 @@ import { Lightbulb, Search, Plus, X, Share2, Check, ArrowUpDown, MessageCircle, 
 import { getBookmarkedIdeas, toggleIdeaBookmark, BOOKMARKS_EVENT } from "@/lib/bookmarks";
 import { syncAuthWithServer } from "@/lib/client-auth";
 import { swalToast } from "@/lib/swal";
+import { resolveUserAvatar } from "@/lib/art-avatars";
 
 interface IdeaItem {
   id: string;
@@ -18,6 +19,11 @@ interface IdeaItem {
   category?: string;
   authorName: string;
   authorEmail?: string;
+  authorAvatar?: string;
+  authorClassroom?: string;
+  authorGradeLevel?: string;
+  authorStudentId?: string;
+  authorRole?: string;
   coverImageUrl?: string;
   files?: any[];
   link?: string;
@@ -403,18 +409,48 @@ export default function IdeasPage() {
                       <div className="px-2.5 sm:px-5 pb-3 sm:pb-4 pt-2 sm:pt-3 border-t border-gray-100/80 space-y-2 sm:space-y-2.5">
                         {/* Row 1: Author & Comments */}
                         <div className="flex items-center justify-between gap-1 text-[10px] sm:text-xs">
-                          <Link
-                            href={`/teachers/profile?name=${encodeURIComponent(idea.authorName || "ครูสลิน")}`}
-                            className="group/author flex items-center gap-1.5 min-w-0 cursor-pointer"
-                            title="ดูโปรไฟล์คุณครู"
-                          >
-                            <div className="w-5 h-5 sm:w-7 sm:h-7 rounded-full bg-[#ffb300] text-white flex items-center justify-center font-bold text-[9px] sm:text-xs uppercase shrink-0 shadow-2xs">
-                              {(idea.authorName || "ส").charAt(0)}
-                            </div>
-                            <span className="text-[10px] sm:text-xs font-semibold text-gray-800 truncate max-w-[70px] sm:max-w-[120px]">
-                              {idea.authorName || "ครูสลิน"}
-                            </span>
-                          </Link>
+                          {(() => {
+                            const authorAvatarData = resolveUserAvatar(idea.authorAvatar, idea.authorName || "ครูสลิน");
+                            const profileHref = idea.authorStudentId
+                              ? `/teachers/profile?name=${encodeURIComponent(idea.authorName || "ครูสลิน")}&studentId=${encodeURIComponent(idea.authorStudentId)}`
+                              : `/teachers/profile?name=${encodeURIComponent(idea.authorName || "ครูสลิน")}`;
+                            return (
+                              <Link
+                                href={profileHref}
+                                className="group/author flex items-center gap-1.5 min-w-0 cursor-pointer"
+                                title={`ดูโปรไฟล์ของ ${idea.authorName || "ครูสลิน"}`}
+                              >
+                                <div className="w-5 h-5 sm:w-7 sm:h-7 rounded-full overflow-hidden bg-orange-50 border border-orange-200/80 flex items-center justify-center shrink-0 shadow-2xs transition-transform group-hover/author:scale-110">
+                                  {authorAvatarData.type === "image" ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img
+                                      src={authorAvatarData.value}
+                                      alt={idea.authorName || "Author"}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : authorAvatarData.type === "preset" ? (
+                                    <span className="text-xs sm:text-sm select-none leading-none">
+                                      {authorAvatarData.value}
+                                    </span>
+                                  ) : (
+                                    <span className="w-full h-full bg-[#ffb300] text-white flex items-center justify-center font-bold text-[9px] sm:text-xs uppercase">
+                                      {authorAvatarData.value}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="min-w-0 flex flex-col">
+                                  <span className="text-[10px] sm:text-xs font-semibold text-gray-800 group-hover/author:text-orange-600 transition-colors truncate max-w-[75px] sm:max-w-[130px] leading-tight">
+                                    {idea.authorName || "ครูสลิน"}
+                                  </span>
+                                  {idea.authorClassroom && (
+                                    <span className="text-[8px] sm:text-[10px] text-gray-400 font-normal leading-tight truncate">
+                                      ชั้น {idea.authorClassroom}
+                                    </span>
+                                  )}
+                                </div>
+                              </Link>
+                            );
+                          })()}
 
                           <div className="flex items-center gap-1.5 shrink-0">
                             <Link

@@ -68,16 +68,25 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     
     const studentMapById = new Map<string, string>();
     const studentMapByName = new Map<string, string>();
+    let authorStudentInfo: any = null;
     try {
-      const targetIds = Array.from(new Set(ideaComments.map((c: any) => (c.authorEmail || '').replace(/@.*$/, '').trim()).filter(Boolean)));
-      const targetNames = Array.from(new Set(ideaComments.map((c: any) => (c.author || '').trim()).filter(Boolean)));
+      const cleanIdeaAuthorId = (ideaData.authorEmail || '').replace(/@.*$/, '').trim();
+      const cleanIdeaAuthorName = (ideaData.authorName || '').trim();
+      const targetIds = Array.from(new Set([
+        cleanIdeaAuthorId,
+        ...ideaComments.map((c: any) => (c.authorEmail || '').replace(/@.*$/, '').trim())
+      ].filter(Boolean)));
+      const targetNames = Array.from(new Set([
+        cleanIdeaAuthorName,
+        ...ideaComments.map((c: any) => (c.author || '').trim())
+      ].filter(Boolean)));
       
       const studPromises = [];
       if (targetIds.length > 0) {
-        studPromises.push(db.select({ id: students.id, name: students.name, avatar: students.avatar }).from(students).where(inArray(students.id, targetIds)));
+        studPromises.push(db.select({ id: students.id, name: students.name, classroom: students.classroom, gradeLevel: students.gradeLevel, avatar: students.avatar }).from(students).where(inArray(students.id, targetIds)));
       }
       if (targetNames.length > 0) {
-        studPromises.push(db.select({ id: students.id, name: students.name, avatar: students.avatar }).from(students).where(inArray(students.name, targetNames)));
+        studPromises.push(db.select({ id: students.id, name: students.name, classroom: students.classroom, gradeLevel: students.gradeLevel, avatar: students.avatar }).from(students).where(inArray(students.name, targetNames)));
       }
       
       const studResults = await Promise.all(studPromises);
@@ -86,12 +95,24 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
           studentMapById.set(s.id, s.avatar);
           studentMapByName.set(s.name.trim(), s.avatar);
         }
+        if ((cleanIdeaAuthorId && s.id === cleanIdeaAuthorId) || (cleanIdeaAuthorName && s.name.trim() === cleanIdeaAuthorName)) {
+          authorStudentInfo = s;
+        }
       }
     } catch (e) {}
+
+    const cleanIdeaAuthorId = (ideaData.authorEmail || '').replace(/@.*$/, '').trim();
+    const isStudentPrefix = /^(เด็กชาย|เด็กหญิง|ด\.ช\.|ด\.ญ\.|นาย|นางสาว|น\.ส\.)/.test((ideaData.authorName || '').trim());
+    const authorRole = authorStudentInfo || isStudentPrefix ? 'student' : 'teacher';
 
     const ideaWithComments = {
       ...ideaData,
       files: safeFiles,
+      authorAvatar: authorStudentInfo?.avatar || '',
+      authorClassroom: authorStudentInfo?.classroom || '',
+      authorGradeLevel: authorStudentInfo?.gradeLevel || '',
+      authorStudentId: authorStudentInfo?.id || (/^\d{5}$/.test(cleanIdeaAuthorId) ? cleanIdeaAuthorId : ''),
+      authorRole,
       comments: ideaComments.map((c: any) => {
         const cleanId = (c.authorEmail || '').replace(/@.*$/, '').trim();
         const liveAvatar = studentMapById.get(cleanId) || studentMapByName.get(c.author?.trim()) || c.authorImage || '';

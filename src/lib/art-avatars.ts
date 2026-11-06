@@ -129,6 +129,22 @@ export function getDefaultStudentPreset(identifier?: string | null): ArtAvatarPr
 }
 
 /**
+ * Strips common Thai titles/prefixes (เด็กชาย, เด็กหญิง, ด.ช., ด.ญ., นาย, นางสาว, น.ส., ครู, อาจารย์)
+ * and leading Thai vowels (เ, แ, โ, ไ, ใ) to get the true first consonant of a person's name.
+ */
+export function getCleanThaiInitial(name?: string | null): string {
+  const raw = String(name || "").trim();
+  if (!raw) return "A";
+  const stripped = raw
+    .replace(/^(เด็กชาย|เด็กหญิง|ด\.ช\.|ด\.ญ\.|นางสาว|น\.ส\.|นาย|นาง|คุณครู|ครู|อาจารย์)\s*/i, "")
+    .trim();
+  const target = stripped || raw;
+  // Find first Thai consonant (ก-ฮ) or English letter/number, skipping leading front vowels (เ, แ, โ, ไ, ใ)
+  const match = target.match(/[ก-ฮa-zA-Z0-9]/);
+  return (match ? match[0] : target.charAt(0)).toUpperCase();
+}
+
+/**
  * Returns user avatar display data:
  * - If it's a data:image or http url -> returns as image src
  * - If it matches an ArtAvatarPreset ID -> returns preset details
@@ -145,7 +161,7 @@ export function resolveUserAvatar(avatarValue?: string | null, userName?: string
         preset: defaultPreset,
       };
     }
-    const initial = (userName || "A").trim().charAt(0).toUpperCase();
+    const initial = getCleanThaiInitial(userName);
     return {
       type: "initials" as const,
       value: initial,
@@ -153,7 +169,7 @@ export function resolveUserAvatar(avatarValue?: string | null, userName?: string
     };
   }
 
-  if (avatarValue.startsWith("data:image/") || avatarValue.startsWith("http://") || avatarValue.startsWith("https://")) {
+  if (avatarValue.startsWith("data:image/") || avatarValue.startsWith("http://") || avatarValue.startsWith("https://") || avatarValue.startsWith("/api/media")) {
     return {
       type: "image" as const,
       value: avatarValue,
@@ -180,7 +196,7 @@ export function resolveUserAvatar(avatarValue?: string | null, userName?: string
     };
   }
 
-  const initial = (userName || "A").trim().charAt(0).toUpperCase();
+  const initial = getCleanThaiInitial(userName);
   return {
     type: "initials" as const,
     value: initial,
