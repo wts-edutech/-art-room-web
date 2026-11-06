@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import StudentVideoShowcase from "@/components/ideas/StudentVideoShowcase";
 import CommunityDiscussion from "@/components/common/CommunityDiscussion";
 import { Lightbulb, Search, Plus, X, Share2, Check, ArrowUpDown, MessageCircle, Heart } from "lucide-react";
 import { getBookmarkedIdeas, toggleIdeaBookmark, BOOKMARKS_EVENT } from "@/lib/bookmarks";
@@ -186,9 +185,6 @@ export default function IdeasPage() {
               </a>
             </div>
           </div>
-
-          {/* Student Creative Video & DIY Showcase (Inspiring Young Creators) */}
-          <StudentVideoShowcase />
 
           {/* Search & Filter Control Bar */}
           <div className="max-w-4xl mx-auto mb-6 sm:mb-12">
