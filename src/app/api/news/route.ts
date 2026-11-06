@@ -10,7 +10,11 @@ export async function GET() {
   try {
     const db = getDb();
     const all = await db.select().from(news).orderBy(desc(news.createdAt));
-    return NextResponse.json(all);
+    return NextResponse.json(all, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+      },
+    });
   } catch (error) {
     console.error("GET /api/news error:", error);
     return NextResponse.json({ error: 'Failed to fetch' }, { status: 500 });
@@ -37,6 +41,9 @@ export async function POST(request: Request) {
       }
     }
     
+    if (!newEntry.content && newEntry.excerpt) {
+      newEntry.content = newEntry.excerpt;
+    }
     if (!newEntry.createdAt) newEntry.createdAt = new Date().toISOString();
     
     await db.insert(news).values(newEntry as any);
@@ -44,6 +51,49 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("POST /api/news error:", error);
     return NextResponse.json({ error: 'Failed to create' }, { status: 500 });
+  }
+}
+
+export async function PUT(request: Request) {
+  try {
+    if (!(await checkIsAdmin())) {
+      return NextResponse.json({ error: 'Unauthorized — สำหรับผู้ดูแลระบบเท่านั้น' }, { status: 401 });
+    }
+    const formData = await request.formData();
+    const id = formData.get('id') as string;
+    if (!id) {
+      return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+    }
+
+    const db = getDb();
+    const updateData: any = {};
+
+    for (const [key, value] of formData.entries()) {
+      if (key === 'id') continue;
+      if (value instanceof File && value.size > 0) {
+        const bytes = await value.arrayBuffer();
+        const base64 = Buffer.from(bytes).toString('base64');
+        updateData[key === 'image' || key === 'coverImage' ? (key === 'coverImage' ? 'coverImageUrl' : 'imageUrl') : key] = `data:${value.type};base64,${base64}`;
+      } else if (typeof value === 'string' && key !== 'image' && key !== 'coverImage') {
+        updateData[key] = value;
+      }
+    }
+
+    if (!updateData.content && updateData.excerpt) {
+      updateData.content = updateData.excerpt;
+    }
+
+    await db.update(news).set({
+      ...(updateData.title ? { title: updateData.title } : {}),
+      ...(updateData.content !== undefined ? { content: updateData.content } : {}),
+      ...(updateData.date ? { date: updateData.date } : {}),
+      ...(updateData.imageUrl ? { imageUrl: updateData.imageUrl } : {}),
+    }).where(eq(news.id, id));
+
+    return NextResponse.json({ success: true, id, ...updateData });
+  } catch (error) {
+    console.error("PUT /api/news error:", error);
+    return NextResponse.json({ error: 'Failed to update' }, { status: 500 });
   }
 }
 

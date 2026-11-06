@@ -1,20 +1,57 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowRight, ExternalLink } from "lucide-react";
+import { ArrowRight, ExternalLink, Sparkles } from "lucide-react";
 import { optimizeImageUrl } from "@/lib/image-utils";
 
 export default function NewsSection({ featuredNews }: { featuredNews?: any }) {
   const defaultFeatured = {
-    title: "นิทรรศการศิลปกรรมนักเรียนประจำปี ART ROOM ANNUAL EXHIBITION 2026: ปลดปล่อยจินตนาการสู่โลกศิลปะร่วมสมัย",
-    excerpt: "กลุ่มสาระการเรียนรู้ศิลปะ โรงเรียนวชิรธรรมสาธิต ขอเชิญชวนครู นักเรียน และผู้ปกครอง ร่วมชมนิทรรศการแสดงผลงานศิลปะยอดเยี่ยมประจำปีการศึกษา 2569 รวบรวมผลงานภาพวาด จิตรกรรม และดิจิทัลอาร์ตกว่า 150 ชิ้น",
-    date: "10 พ.ย. 2569",
-    source: "กลุ่มสาระฯ ศิลปะ",
-    imageUrl: "/images/news/hero-exhibition.jpg",
+    title: "ภาพวาด จาก ภาพจำ : ห้องเรียนศิลปะ ผ่านเรื่องเล่า จินตนาการ ถึง สมเด็จพระบรมราชชนนีพันปีหลวง | The Active",
+    excerpt: "ติดตามเรื่องราวความประทับใจจากห้องเรียนศิลปะ โรงเรียนวชิรธรรมสาธิต ผ่านการถ่ายทอดผลงานภาพวาดและจินตนาการของนักเรียน",
+    date: "2025-11-06",
+    source: "Art Room",
+    imageUrl: "https://files.wp.thaipbs.or.th/theactive/2025/11/Act_Web_Read-16x9-1-2.jpg",
     url: "/news"
   };
 
-  const item = featuredNews || defaultFeatured;
+  const [liveNews, setLiveNews] = useState<any | null>(featuredNews || null);
+
+  useEffect(() => {
+    if (featuredNews) {
+      setLiveNews(featuredNews);
+      return;
+    }
+
+    fetch(`/api/news?t=${Date.now()}`, { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          const latest = data[0];
+          const rawExcerpt = (latest.excerpt || latest.content || "").trim();
+          const cleanExcerpt =
+            !rawExcerpt || rawExcerpt === "-" || rawExcerpt === "-..."
+              ? "ติดตามรายละเอียดข่าวสารและกิจกรรมสร้างสรรค์จากห้องเรียนศิลปะ โรงเรียนวชิรธรรมสาธิต"
+              : rawExcerpt;
+
+          setLiveNews({
+            id: latest.id,
+            title: latest.title || defaultFeatured.title,
+            excerpt: cleanExcerpt,
+            date: latest.date || defaultFeatured.date,
+            source: latest.source || "Art Room",
+            imageUrl: latest.imageUrl || defaultFeatured.imageUrl,
+            url: latest.url || "/news",
+          });
+        }
+      })
+      .catch((err) => {
+        console.warn("Failed to load featured news for homepage:", err);
+      });
+  }, [featuredNews]);
+
+  const item = liveNews || defaultFeatured;
+  const isExternalUrl = Boolean(item.url && (item.url.startsWith("http://") || item.url.startsWith("https://")));
 
   return (
     <section className="py-10 sm:py-16 md:py-24 bg-transparent">
@@ -84,9 +121,23 @@ export default function NewsSection({ featuredNews }: { featuredNews?: any }) {
 
               {item.url && (
                 <div className="relative z-10">
-                  <a href={item.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 sm:gap-2 px-4 py-2 sm:px-6 sm:py-3 bg-white text-gray-900 font-bold text-xs sm:text-sm rounded-xl hover:bg-gray-100 transition-colors shadow-xs active:scale-95">
-                    อ่านบทความต้นฉบับ <ExternalLink className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  </a>
+                  {isExternalUrl ? (
+                    <a
+                      href={item.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 sm:gap-2 px-4 py-2 sm:px-6 sm:py-3 bg-white text-gray-900 font-bold text-xs sm:text-sm rounded-xl hover:bg-gray-100 transition-colors shadow-xs active:scale-95"
+                    >
+                      อ่านบทความต้นฉบับ <ExternalLink className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    </a>
+                  ) : (
+                    <Link
+                      href={item.url}
+                      className="inline-flex items-center gap-1.5 sm:gap-2 px-4 py-2 sm:px-6 sm:py-3 bg-white text-gray-900 font-bold text-xs sm:text-sm rounded-xl hover:bg-gray-100 transition-colors shadow-xs active:scale-95"
+                    >
+                      อ่านข่าวสารเพิ่มเติม <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    </Link>
+                  )}
                 </div>
               )}
             </div>

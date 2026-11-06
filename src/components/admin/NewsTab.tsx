@@ -142,7 +142,7 @@ export default function NewsTab() {
 
   const handleEditNews = (news: any) => {
     setNewsTitle(news.title);
-    setNewsExcerpt(news.excerpt);
+    setNewsExcerpt(news.excerpt || news.content || "");
     setNewsSource(news.source || "Art Room");
     setNewsDate(news.date);
     setNewsImageUrl(news.imageUrl);
@@ -360,8 +360,8 @@ export default function NewsTab() {
                       </div>
                       <div className="flex-1 flex flex-col justify-center min-w-0">
                         <h3 className="font-bold text-slate-800 truncate mb-0.5 text-xs sm:text-sm group-hover:text-orange-600 transition-colors" title={news.title}>{news.title}</h3>
-                        <p className="text-[11px] text-slate-400 mb-1 truncate">{news.date} • {news.source}</p>
-                        <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">{news.excerpt}</p>
+                        <p className="text-[11px] text-slate-400 mb-1 truncate">{news.date} • {news.source || "Art Room"}</p>
+                        <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">{news.excerpt || news.content}</p>
                       </div>
                       <div className="flex sm:flex-col justify-end sm:justify-center gap-1.5 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
                         <button onClick={() => handleEditNews(news)} className="h-7.5 px-3 sm:px-0 sm:w-7.5 rounded-lg flex items-center justify-center text-xs font-semibold text-orange-600 bg-orange-50 hover:bg-orange-100 transition-colors active:scale-95" title="แก้ไข">

@@ -149,19 +149,27 @@ export default function NewsPageClient({
 }) {
   // Combine real database news with demo news if database has fewer items
   const combinedNews: NewsItem[] = initialNews.length > 0 
-    ? initialNews.map((n, idx) => ({
-        id: n.id || `db-${idx}`,
-        title: n.title,
-        excerpt: n.excerpt || n.content?.slice(0, 150) + "...",
-        content: n.content || n.excerpt || "",
-        date: n.date || "ไม่ระบุวันที่",
-        source: n.source || "Art Room",
-        category: n.category || "ข่าวสารทั่วไป",
-        imageUrl: n.imageUrl || "/images/news/hero-exhibition.jpg",
-        imageType: (idx % 3 === 0 ? "banner" : idx % 3 === 1 ? "poster" : "square") as any,
-        isFeatured: idx === 0,
-        tags: ["ข่าวสาร", "Art Room"]
-      }))
+    ? initialNews.map((n, idx) => {
+        const rawText = (n.excerpt || n.content || "").trim();
+        const isPlaceholder = !rawText || rawText === "-" || rawText === "-...";
+        return {
+          id: n.id || `db-${idx}`,
+          title: n.title,
+          excerpt: isPlaceholder
+            ? "ติดตามรายละเอียดข่าวสารและเรื่องราวความภาคภูมิใจจากห้องเรียนศิลปะ โรงเรียนวชิรธรรมสาธิต"
+            : (n.excerpt || (n.content?.length > 150 ? n.content.slice(0, 150) + "..." : n.content)),
+          content: isPlaceholder
+            ? n.title
+            : (n.content || n.excerpt || ""),
+          date: n.date || "ไม่ระบุวันที่",
+          source: n.source || "Art Room",
+          category: n.category || "ข่าวสารทั่วไป",
+          imageUrl: n.imageUrl || "/images/news/hero-exhibition.jpg",
+          imageType: (idx % 3 === 0 ? "banner" : idx % 3 === 1 ? "poster" : "square") as any,
+          isFeatured: idx === 0,
+          tags: ["ข่าวสาร", "Art Room"]
+        };
+      })
     : DEMO_NEWS_LIST;
 
   const [selectedCategory, setSelectedCategory] = useState("ทั้งหมด");
