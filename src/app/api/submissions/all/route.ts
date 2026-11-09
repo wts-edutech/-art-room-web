@@ -6,6 +6,24 @@ import { submissions, assignments, students, quizzes, quizAttempts } from '@/db/
 import { desc, inArray, sql } from 'drizzle-orm';
 import { checkIsAdmin } from '@/lib/api-auth';
 
+// Helper to safely parse images whether raw array, single-stringified, or double-stringified JSON
+function parseImageArray(raw: any): string[] {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw.filter((x): x is string => typeof x === 'string');
+  if (typeof raw !== 'string') return [];
+  let val: any = raw.trim();
+  for (let i = 0; i < 5 && typeof val === 'string'; i++) {
+    try {
+      const next = JSON.parse(val);
+      if (next === val) break;
+      val = next;
+    } catch {
+      break;
+    }
+  }
+  return Array.isArray(val) ? val.filter((x): x is string => typeof x === 'string') : [];
+}
+
 export async function GET(request: Request) {
   try {
     if (!(await checkIsAdmin())) {
@@ -57,16 +75,11 @@ export async function GET(request: Request) {
     const normalizedSubmissions = (subList || []).map(sub => {
       const ass = assignmentMap.get(sub.assignmentId);
       const student = studentMap.get(sub.studentId);
+      const parsedImages = parseImageArray(sub.images);
       let imagesList: string[] = [];
-      if (sub.images) {
-        try {
-          const parsed = typeof sub.images === 'string' ? JSON.parse(sub.images) : sub.images;
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            imagesList = parsed.map((_, idx) => `/api/submissions/image?id=${encodeURIComponent(sub.id)}&index=${idx}`);
-          }
-        } catch {}
-      }
-      if (imagesList.length === 0 && sub.hasImage) {
+      if (parsedImages.length > 0) {
+        imagesList = parsedImages.map((_, idx) => `/api/submissions/image?id=${encodeURIComponent(sub.id)}&index=${idx}`);
+      } else if (sub.hasImage) {
         imagesList = [`/api/submissions/image?id=${encodeURIComponent(sub.id)}&index=0`];
       }
 
@@ -87,7 +100,7 @@ export async function GET(request: Request) {
         isLate: Boolean(sub.isLate),
         imageUrl: imagesList.length > 0 ? imagesList[0] : (sub.hasImage ? `/api/submissions/image?id=${encodeURIComponent(sub.id)}` : null),
         images: imagesList,
-        fileUrl: sub.hasFile ? `/api/submissions/image?id=${encodeURIComponent(sub.id)}` : null,
+        fileUrl: sub.hasFile ? `/api/submissions/image?id=${encodeURIComponent(sub.id)}&type=file` : null,
         fileName: sub.fileName || null,
         externalLink: sub.externalLink || null,
         concept: sub.concept || null,

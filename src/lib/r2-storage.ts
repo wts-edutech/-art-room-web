@@ -35,6 +35,10 @@ const EXT: Record<string, string> = {
   'image/webp': 'webp',
   'image/gif': 'gif',
   'application/pdf': 'pdf',
+  'application/msword': 'doc',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+  'application/vnd.ms-powerpoint': 'ppt',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'pptx',
 };
 
 /**
@@ -58,17 +62,19 @@ export async function offloadDataUrls(values: string[], keyBase: string): Promis
 }
 
 /** คืน Response ของไฟล์จาก R2 ตาม ref "r2:<key>" หรือ null ถ้าไม่พบ */
-export async function serveR2Ref(ref: string): Promise<Response | null> {
+export async function serveR2Ref(ref: string, filename?: string | null): Promise<Response | null> {
   if (!ref.startsWith(R2_PREFIX)) return null;
   const bucket = getMediaBucket();
   if (!bucket) return null;
   const obj = await bucket.get(ref.slice(R2_PREFIX.length));
   if (!obj) return null;
-  return new Response(obj.body, {
-    headers: {
-      'Content-Type': obj.httpMetadata?.contentType || 'application/octet-stream',
-      'Cache-Control': 'public, max-age=31536000, immutable',
-    },
-  });
+  const headers: Record<string, string> = {
+    'Content-Type': obj.httpMetadata?.contentType || 'application/octet-stream',
+    'Cache-Control': 'public, max-age=31536000, immutable',
+  };
+  if (filename) {
+    headers['Content-Disposition'] = `inline; filename="${encodeURIComponent(filename)}"`;
+  }
+  return new Response(obj.body, { headers });
 }
 

@@ -6,7 +6,25 @@ import { submissions, assignments, students } from '@/db/schema';
 import { eq, and, or, desc, inArray, sql } from 'drizzle-orm';
 import { checkIsAdmin, getAdminSession, getSession } from '@/lib/api-auth';
 import { sendSubmissionNotification } from '@/lib/email-notifier';
-import { offloadDataUrls } from '@/lib/r2-storage';
+import { offloadDataUrl, offloadDataUrls } from '@/lib/r2-storage';
+
+// Helper to safely parse images whether raw array, single-stringified, or double-stringified JSON
+function parseImageArray(raw: any): string[] {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw.filter((x): x is string => typeof x === 'string');
+  if (typeof raw !== 'string') return [];
+  let val: any = raw.trim();
+  for (let i = 0; i < 5 && typeof val === 'string'; i++) {
+    try {
+      const next = JSON.parse(val);
+      if (next === val) break;
+      val = next;
+    } catch {
+      break;
+    }
+  }
+  return Array.isArray(val) ? val.filter((x): x is string => typeof x === 'string') : [];
+}
 
 export async function GET(request: Request) {
   try {
@@ -121,16 +139,11 @@ export async function GET(request: Request) {
     const assignmentMap = new Map(assignmentsList.map(a => [a.id, a]));
 
     const enriched = list.map(item => {
+      const parsedImages = parseImageArray(item.images);
       let imageList: string[] = [];
-      if (item.images) {
-        try {
-          const parsed = typeof item.images === 'string' ? JSON.parse(item.images) : item.images;
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            imageList = parsed.map((_, idx) => `/api/submissions/image?id=${encodeURIComponent(item.id)}&index=${idx}`);
-          }
-        } catch {}
-      }
-      if (imageList.length === 0 && item.hasImage) {
+      if (parsedImages.length > 0) {
+        imageList = parsedImages.map((_, idx) => `/api/submissions/image?id=${encodeURIComponent(item.id)}&index=${idx}`);
+      } else if (item.hasImage) {
         imageList = [`/api/submissions/image?id=${encodeURIComponent(item.id)}&index=0`];
       }
 
@@ -144,7 +157,7 @@ export async function GET(request: Request) {
         images: imageList,
         hasImage: imageList.length > 0 ? 1 : 0,
         hasFile: item.hasFile,
-        fileUrl: item.hasFile ? `/api/submissions/image?id=${encodeURIComponent(item.id)}` : null,
+        fileUrl: item.hasFile ? `/api/submissions/image?id=${encodeURIComponent(item.id)}&type=file` : null,
         fileName: item.fileName,
         externalLink: item.externalLink,
         concept: item.concept,
@@ -212,27 +225,22 @@ export async function POST(request: Request) {
       fileName = body.fileName || '';
     }
 
-    // Support images array passed as JSON or data URLs
-    if (body.images) {
-      try {
-        const parsed = typeof body.images === 'string' ? JSON.parse(body.images) : body.images;
-        if (Array.isArray(parsed)) {
-          for (const item of parsed) {
-            if (typeof item === 'string' && (item.startsWith('data:image') || item.startsWith('http') || item.startsWith('/'))) {
-              imageUrls.push(item);
-            }
-          }
+    // Support images array passed as JSON or data URLs (only if binary files weren't uploaded)
+    if (imageUrls.length === 0 && body.images) {
+      const parsed = parseImageArray(body.images);
+      for (const item of parsed) {
+        if (typeof item === 'string' && (item.startsWith('data:') || item.startsWith('http') || item.startsWith('/') || item.startsWith('r2:'))) {
+          imageUrls.push(item);
         }
-      } catch {}
+      }
     }
 
-    if (imageUrl && !imageUrls.includes(imageUrl)) {
-      imageUrls.unshift(imageUrl);
+    if (imageUrls.length === 0 && imageUrl && (imageUrl.startsWith('data:') || imageUrl.startsWith('http') || imageUrl.startsWith('/') || imageUrl.startsWith('r2:'))) {
+      imageUrls.push(imageUrl);
     }
     // Limit to max 3 images for stability and storage safety
     imageUrls = imageUrls.slice(0, 3);
     const primaryImage = imageUrls[0] || imageUrl || '';
-    let imagesJson = imageUrls.length > 0 ? JSON.stringify(imageUrls) : null;
 
     const {
       assignmentId,
@@ -316,7 +324,9 @@ export async function POST(request: Request) {
     // Offload base64 images/files to R2 (falls back to data URLs if MEDIA binding is missing)
     if (imageUrls.length > 0) {
       imageUrls = await offloadDataUrls(imageUrls, `submissions/${finalStudentId}/${assignmentId}`);
-      imagesJson = JSON.stringify(imageUrls);
+    }
+    if (fileUrl && fileUrl.startsWith('data:')) {
+      fileUrl = await offloadDataUrl(fileUrl, `submissions/${finalStudentId}/${assignmentId}_file`);
     }
 
     const nowIso = new Date().toISOString();
@@ -342,7 +352,7 @@ export async function POST(request: Request) {
 
       if (imageUrls.length > 0) {
         updateData.imageUrl = `/api/submissions/image?id=${encodeURIComponent(existing.id)}&index=0`;
-        updateData.images = imagesJson;
+        updateData.images = imageUrls;
       } else if (body.removeImage === 'true' || body.removeImage === true) {
         updateData.imageUrl = '';
         updateData.images = null;
@@ -385,7 +395,7 @@ export async function POST(request: Request) {
       studentName: String(studentName).trim(),
       classroom: finalClassroom,
       imageUrl: imageUrls.length > 0 ? `/api/submissions/image?id=${encodeURIComponent(id)}&index=0` : (primaryImage || null),
-      images: imagesJson,
+      images: imageUrls.length > 0 ? imageUrls : null,
       fileUrl: fileUrl || null,
       fileName: fileName || null,
       externalLink: externalLink ? String(externalLink).trim() : null,
