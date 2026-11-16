@@ -25,8 +25,10 @@ import {
   Share2,
   ListOrdered,
   Palette,
-  MessageCircle
+  MessageCircle,
+  PenLine
 } from "lucide-react";
+import ImageAnnotator, { AnnotatorImage } from "@/components/submissions/ImageAnnotator";
 import StudentPortfolioCompiler from "./StudentPortfolioCompiler";
 import AssignmentLineReminderModal from "./AssignmentLineReminderModal";
 
@@ -54,6 +56,9 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
   const [gradingStatus, setGradingStatus] = useState<string>("graded");
   const [isSaving, setIsSaving] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [isAnnotating, setIsAnnotating] = useState(false);
+  const [pendingAnnotations, setPendingAnnotations] = useState<Record<number, string | null>>({});
+  const [gradingActiveImgIdx, setGradingActiveImgIdx] = useState(0);
 
   const fetchInitialData = async () => {
     setIsLoading(true);
@@ -211,6 +216,9 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
       setGradingScore(sub.score !== null && sub.score !== undefined ? String(sub.score) : "");
       setGradingFeedback(sub.feedback || "");
       setGradingStatus(sub.status === "resubmit" ? "resubmit" : "graded");
+      setPendingAnnotations({});
+      setGradingActiveImgIdx(0);
+      setIsAnnotating(false);
     } else if (fallbackStudent) {
       swalAlert(`นักเรียน ${fallbackStudent.name} (เลขที่ ${fallbackStudent.studentNumber || "-"}) ยังไม่ได้ส่งงานนี้`);
     }
@@ -232,11 +240,13 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
           score: gradingScore,
           feedback: gradingFeedback,
           status: effectiveStatus,
+          annotations: Object.keys(pendingAnnotations).length > 0 ? pendingAnnotations : undefined,
         }),
       });
 
       if (res.ok) {
         setSelectedSubmission(null);
+        setPendingAnnotations({});
         fetchSubmissions();
       } else {
         const err = await res.json();
@@ -792,28 +802,95 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
 
             {/* Submission Content Review */}
             <div className="space-y-4 mb-6">
-              {/* Artwork Image */}
-              {selectedSubmission.imageUrl && (
-                <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1.5">
-                    ภาพถ่ายผลงานศิลปะ
-                  </label>
-                  <div
-                    onClick={() => setLightboxImage(selectedSubmission.imageUrl)}
-                    className="relative max-h-80 w-full rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 flex items-center justify-center cursor-zoom-in group"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={selectedSubmission.imageUrl}
-                      alt="Student submission"
-                      className="max-h-80 object-contain group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-bold text-xs gap-1.5">
-                      <ImageIcon className="w-4 h-4" /> คลิกเพื่อดูภาพขยายเต็มจอ
+              {/* Artwork Image & Annotation Review */}
+              {(() => {
+                const subImages: string[] = Array.isArray(selectedSubmission.images) && selectedSubmission.images.length > 0
+                  ? selectedSubmission.images
+                  : (selectedSubmission.imageUrl ? [selectedSubmission.imageUrl] : []);
+
+                if (subImages.length === 0) return null;
+
+                const annotatorImages: AnnotatorImage[] = subImages.map((orig, i) => {
+                  const pending = pendingAnnotations[i];
+                  if (pending !== undefined) {
+                    return { originalUrl: orig, currentUrl: pending === null ? orig : pending };
+                  }
+                  const existingAnnotated = Array.isArray(selectedSubmission.annotatedImages) ? selectedSubmission.annotatedImages[i] : null;
+                  return { originalUrl: orig, currentUrl: existingAnnotated || orig };
+                });
+
+                const currentPreviewUrl = annotatorImages[gradingActiveImgIdx]?.currentUrl || subImages[gradingActiveImgIdx] || selectedSubmission.imageUrl;
+                const hasAnnotatedThis = annotatorImages[gradingActiveImgIdx] && annotatorImages[gradingActiveImgIdx].currentUrl !== annotatorImages[gradingActiveImgIdx].originalUrl;
+                const hasPendingThis = pendingAnnotations[gradingActiveImgIdx] !== undefined;
+
+                return (
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-2">
+                        <label className="text-xs font-bold text-gray-700 block">
+                          ภาพถ่ายผลงานศิลปะ {subImages.length > 1 ? `(${gradingActiveImgIdx + 1}/${subImages.length})` : ""}
+                        </label>
+                        {hasAnnotatedThis && (
+                          <span className={`text-[10.5px] font-bold px-2 py-0.5 rounded-full border ${hasPendingThis ? "bg-amber-50 text-amber-700 border-amber-200" : "bg-red-50 text-red-700 border-red-200"}`}>
+                            {hasPendingThis ? "✏️ แก้ไขแล้ว (รอคลิกบันทึกคะแนน)" : "✏️ มีลายเส้นตรวจ"}
+                          </span>
+                        )}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setIsAnnotating(true)}
+                        className="px-3 py-1.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95"
+                        title="เปิดหน้าจอเขียนตรวจผลงานนักเรียนด้วยปากกาหรือนิ้ว"
+                      >
+                        <PenLine className="w-3.5 h-3.5" />
+                        <span>✏️ เขียนตรวจบนภาพ</span>
+                      </button>
                     </div>
+
+                    <div
+                      onClick={() => setLightboxImage(currentPreviewUrl)}
+                      className="relative max-h-80 w-full rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 flex items-center justify-center cursor-zoom-in group"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={currentPreviewUrl || ''}
+                        alt="Student submission"
+                        className="max-h-80 object-contain group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-bold text-xs gap-1.5">
+                        <ImageIcon className="w-4 h-4" /> คลิกเพื่อดูภาพขยายเต็มจอ
+                      </div>
+                    </div>
+
+                    {/* Thumbnail strip for multiple images */}
+                    {subImages.length > 1 && (
+                      <div className="flex items-center gap-2 mt-2.5 overflow-x-auto pb-1">
+                        {subImages.map((_, idx) => {
+                          const thumbUrl = annotatorImages[idx]?.currentUrl || subImages[idx];
+                          const isThumbAnnotated = annotatorImages[idx] && annotatorImages[idx].currentUrl !== annotatorImages[idx].originalUrl;
+                          return (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => setGradingActiveImgIdx(idx)}
+                              className={`relative w-12 h-12 rounded-xl overflow-hidden border-2 transition-all cursor-pointer shrink-0 ${
+                                gradingActiveImgIdx === idx ? "border-orange-500 ring-2 ring-orange-300" : "border-gray-200 opacity-70 hover:opacity-100"
+                              }`}
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={thumbUrl} alt={`thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
+                              {isThumbAnnotated && (
+                                <span className="absolute top-0.5 right-0.5 w-2.5 h-2.5 rounded-full bg-red-500 border border-white" />
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* Concept & Technique Description */}
               {selectedSubmission.concept && (
@@ -962,6 +1039,34 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
           onSelectAssignment={(a) => setSelectedAssignmentId(a.id)}
         />
       )}
+
+      {/* FULLSCREEN IMAGE ANNOTATOR MODAL */}
+      {isAnnotating && selectedSubmission && (() => {
+        const subImages: string[] = Array.isArray(selectedSubmission.images) && selectedSubmission.images.length > 0
+          ? selectedSubmission.images
+          : (selectedSubmission.imageUrl ? [selectedSubmission.imageUrl] : []);
+        const annotatorImages: AnnotatorImage[] = subImages.map((orig, i) => {
+          const pending = pendingAnnotations[i];
+          if (pending !== undefined) {
+            return { originalUrl: orig, currentUrl: pending === null ? orig : pending };
+          }
+          const existingAnnotated = Array.isArray(selectedSubmission.annotatedImages) ? selectedSubmission.annotatedImages[i] : null;
+          return { originalUrl: orig, currentUrl: existingAnnotated || orig };
+        });
+
+        return (
+          <ImageAnnotator
+            images={annotatorImages}
+            initialIndex={gradingActiveImgIdx}
+            title={`ผลงานของ ${selectedSubmission.studentName} (${selectedSubmission.studentId})`}
+            onDone={(changes) => {
+              setPendingAnnotations((prev) => ({ ...prev, ...changes }));
+              setIsAnnotating(false);
+            }}
+            onCancel={() => setIsAnnotating(false)}
+          />
+        );
+      })()}
         </>
       )}
     </div>

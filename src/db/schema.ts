@@ -203,6 +203,7 @@ export const submissions = sqliteTable('submissions', {
   classroom: text('classroom').notNull(),
   imageUrl: text('image_url'),
   images: text('images', { mode: 'json' }),
+  annotatedImages: text('annotated_images', { mode: 'json' }), // ภาพที่ครูเขียนตรวจ (index ตรงกับ images, '' = ไม่มี)
   fileUrl: text('file_url'),
   fileName: text('file_name'),
   externalLink: text('external_link'), // Canva, Google Drive, YouTube link

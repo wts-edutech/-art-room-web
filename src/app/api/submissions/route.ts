@@ -7,6 +7,7 @@ import { eq, and, or, desc, inArray, sql } from 'drizzle-orm';
 import { checkIsAdmin, getAdminSession, getSession } from '@/lib/api-auth';
 import { sendSubmissionNotification } from '@/lib/email-notifier';
 import { offloadDataUrl, offloadDataUrls } from '@/lib/r2-storage';
+import { buildAnnotatedUrls, parseStringArray } from '@/lib/submission-annotations';
 
 // Helper to safely parse images whether raw array, single-stringified, or double-stringified JSON
 function parseImageArray(raw: any): string[] {
@@ -100,6 +101,7 @@ export async function GET(request: Request) {
       studentName: submissions.studentName,
       classroom: submissions.classroom,
       images: submissions.images,
+      annotatedImages: submissions.annotatedImages,
       hasImage: sql<number>`CASE WHEN ${submissions.imageUrl} IS NOT NULL AND length(${submissions.imageUrl}) > 0 THEN 1 ELSE 0 END`,
       hasFile: sql<number>`CASE WHEN ${submissions.fileUrl} IS NOT NULL AND length(${submissions.fileUrl}) > 0 THEN 1 ELSE 0 END`,
       fileName: submissions.fileName,
@@ -155,6 +157,7 @@ export async function GET(request: Request) {
         classroom: item.classroom,
         imageUrl: imageList.length > 0 ? imageList[0] : null,
         images: imageList,
+        annotatedImages: buildAnnotatedUrls(item.id, item.annotatedImages, imageList.length, item.updatedAt),
         hasImage: imageList.length > 0 ? 1 : 0,
         hasFile: item.hasFile,
         fileUrl: item.hasFile ? `/api/submissions/image?id=${encodeURIComponent(item.id)}&type=file` : null,
@@ -353,9 +356,11 @@ export async function POST(request: Request) {
       if (imageUrls.length > 0) {
         updateData.imageUrl = `/api/submissions/image?id=${encodeURIComponent(existing.id)}&index=0`;
         updateData.images = imageUrls;
+        updateData.annotatedImages = null; // ภาพใหม่ → ล้างการเขียนตรวจของภาพเดิม
       } else if (body.removeImage === 'true' || body.removeImage === true) {
         updateData.imageUrl = '';
         updateData.images = null;
+        updateData.annotatedImages = null;
       }
       if (fileUrl) {
         updateData.fileUrl = fileUrl;
@@ -444,7 +449,7 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json().catch(() => ({}));
-    const { id, score, feedback, status } = body;
+    const { id, score, feedback, status, annotations } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
@@ -468,6 +473,33 @@ export async function PUT(request: Request) {
       updateData.status = 'graded';
     } else if (status) {
       updateData.status = status;
+    }
+
+    // ภาพที่ครูเขียนตรวจ: { [index]: dataUrl (บันทึกใหม่) | null (ลบการเขียน) }
+    if (annotations && typeof annotations === 'object' && !Array.isArray(annotations)) {
+      const entries = Object.entries(annotations as Record<string, unknown>)
+        .map(([k, v]) => [parseInt(k, 10), v] as const)
+        .filter(([i, v]) => Number.isInteger(i) && i >= 0 && i < 10 && (v === null || (typeof v === 'string' && v.startsWith('data:image/'))));
+
+      if (entries.length > 0) {
+        const existing = await db
+          .select({ annotatedImages: submissions.annotatedImages, studentId: submissions.studentId })
+          .from(submissions)
+          .where(eq(submissions.id, id))
+          .get();
+        if (!existing) {
+          return NextResponse.json({ error: 'ไม่พบงานที่ส่ง' }, { status: 404 });
+        }
+        const list = parseStringArray(existing.annotatedImages);
+        const stamp = Date.now();
+        for (const [i, v] of entries) {
+          while (list.length <= i) list.push('');
+          list[i] = v === null
+            ? ''
+            : await offloadDataUrl(v as string, `submissions/annotated/${existing.studentId}/${id}_${i}_${stamp}`);
+        }
+        updateData.annotatedImages = list.some(Boolean) ? list : null;
+      }
     }
 
     await db.update(submissions).set(updateData).where(eq(submissions.id, id));

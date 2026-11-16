@@ -30,9 +30,11 @@ import {
   Copy,
   ChevronRight,
   TrendingUp,
-  GraduationCap
+  GraduationCap,
+  PenLine
 } from "lucide-react";
 import * as XLSX from "xlsx";
+import ImageAnnotator, { AnnotatorImage } from "@/components/submissions/ImageAnnotator";
 
 interface UnifiedItem {
   id: string;
@@ -49,6 +51,8 @@ interface UnifiedItem {
   status: string; // 'pending' | 'graded' | 'resubmit' | 'completed'
   isLate: boolean;
   imageUrl: string | null;
+  images?: string[];
+  annotatedImages?: (string | null)[];
   fileUrl: string | null;
   fileName: string | null;
   externalLink: string | null;
@@ -102,6 +106,9 @@ export default function SubmissionsCenterTab() {
   const [gradingStatus, setGradingStatus] = useState<string>('graded');
   const [isSavingGrade, setIsSavingGrade] = useState<boolean>(false);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [isAnnotating, setIsAnnotating] = useState<boolean>(false);
+  const [pendingAnnotations, setPendingAnnotations] = useState<Record<number, string | null>>({});
+  const [gradingActiveImgIdx, setGradingActiveImgIdx] = useState<number>(0);
 
   // Email Notification Settings & Outbox Modal
   const [showSettingsModal, setShowSettingsModal] = useState<boolean>(false);
@@ -156,6 +163,9 @@ export default function SubmissionsCenterTab() {
     setGradingScore(item.score !== null && item.score !== undefined ? String(item.score) : '');
     setGradingFeedback(item.feedback || '');
     setGradingStatus(item.status === 'resubmit' ? 'resubmit' : 'graded');
+    setPendingAnnotations({});
+    setGradingActiveImgIdx(0);
+    setIsAnnotating(false);
   };
 
   // Save Grade
@@ -173,6 +183,7 @@ export default function SubmissionsCenterTab() {
           score: gradingScore,
           feedback: gradingFeedback,
           status: gradingStatus,
+          annotations: Object.keys(pendingAnnotations).length > 0 ? pendingAnnotations : undefined,
         }),
       });
 
@@ -187,6 +198,7 @@ export default function SubmissionsCenterTab() {
           )
         );
         setInspectItem(null);
+        setPendingAnnotations({});
         fetchData();
       } else {
         const err = await res.json();
@@ -858,23 +870,98 @@ export default function SubmissionsCenterTab() {
 
             {/* Submission Preview Content */}
             <div className="space-y-4">
-              {/* Artwork Image if present */}
-              {inspectItem.imageUrl && (
-                <div className="rounded-2xl overflow-hidden border border-slate-200 bg-slate-50 relative group">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={inspectItem.imageUrl}
-                    alt="Artwork"
-                    className="w-full max-h-80 object-contain mx-auto bg-slate-950/5"
-                  />
-                  <button
-                    onClick={() => setLightboxImage(inspectItem.imageUrl)}
-                    className="absolute bottom-3 right-3 bg-black/75 hover:bg-black text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors shadow-lg"
-                  >
-                    <Eye className="w-3.5 h-3.5" /> ดูภาพขนาดเต็ม
-                  </button>
-                </div>
-              )}
+              {/* Artwork Image & Annotations */}
+              {(() => {
+                const subImages: string[] = Array.isArray(inspectItem.images) && inspectItem.images.length > 0
+                  ? inspectItem.images
+                  : (inspectItem.imageUrl ? [inspectItem.imageUrl] : []);
+
+                if (subImages.length === 0) return null;
+
+                const annotatorImages: AnnotatorImage[] = subImages.map((orig, i) => {
+                  const pending = pendingAnnotations[i];
+                  if (pending !== undefined) {
+                    return { originalUrl: orig, currentUrl: pending === null ? orig : pending };
+                  }
+                  const existingAnnotated = Array.isArray(inspectItem.annotatedImages) ? inspectItem.annotatedImages[i] : null;
+                  return { originalUrl: orig, currentUrl: existingAnnotated || orig };
+                });
+
+                const currentPreviewUrl = annotatorImages[gradingActiveImgIdx]?.currentUrl || subImages[gradingActiveImgIdx] || inspectItem.imageUrl;
+                const hasAnnotatedThis = annotatorImages[gradingActiveImgIdx] && annotatorImages[gradingActiveImgIdx].currentUrl !== annotatorImages[gradingActiveImgIdx].originalUrl;
+                const hasPendingThis = pendingAnnotations[gradingActiveImgIdx] !== undefined;
+
+                return (
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-2">
+                        <label className="text-xs font-bold text-slate-700 block">
+                          ภาพถ่ายผลงานศิลปะ {subImages.length > 1 ? `(${gradingActiveImgIdx + 1}/${subImages.length})` : ""}
+                        </label>
+                        {hasAnnotatedThis && (
+                          <span className={`text-[10.5px] font-bold px-2 py-0.5 rounded-full border ${hasPendingThis ? "bg-amber-50 text-amber-700 border-amber-200" : "bg-red-50 text-red-700 border-red-200"}`}>
+                            {hasPendingThis ? "✏️ แก้ไขแล้ว (รอคลิกบันทึก)" : "✏️ มีลายเส้นตรวจ"}
+                          </span>
+                        )}
+                      </div>
+
+                      {inspectItem.type === 'assignment' && (
+                        <button
+                          type="button"
+                          onClick={() => setIsAnnotating(true)}
+                          className="px-3 py-1.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95"
+                          title="เปิดหน้าจอเขียนตรวจผลงานนักเรียนด้วยปากกาหรือนิ้ว"
+                        >
+                          <PenLine className="w-3.5 h-3.5" />
+                          <span>✏️ เขียนตรวจบนภาพ</span>
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="rounded-2xl overflow-hidden border border-slate-200 bg-slate-50 relative group">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={currentPreviewUrl || ''}
+                        alt="Artwork"
+                        className="w-full max-h-80 object-contain mx-auto bg-slate-950/5"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setLightboxImage(currentPreviewUrl)}
+                        className="absolute bottom-3 right-3 bg-black/75 hover:bg-black text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors shadow-lg cursor-pointer"
+                      >
+                        <Eye className="w-3.5 h-3.5" /> ดูภาพขนาดเต็ม
+                      </button>
+                    </div>
+
+                    {/* Thumbnail strip for multiple images */}
+                    {subImages.length > 1 && (
+                      <div className="flex items-center gap-2 mt-2.5 overflow-x-auto pb-1">
+                        {subImages.map((_, idx) => {
+                          const thumbUrl = annotatorImages[idx]?.currentUrl || subImages[idx];
+                          const isThumbAnnotated = annotatorImages[idx] && annotatorImages[idx].currentUrl !== annotatorImages[idx].originalUrl;
+                          return (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => setGradingActiveImgIdx(idx)}
+                              className={`relative w-12 h-12 rounded-xl overflow-hidden border-2 transition-all cursor-pointer shrink-0 ${
+                                gradingActiveImgIdx === idx ? "border-orange-500 ring-2 ring-orange-300" : "border-slate-200 opacity-70 hover:opacity-100"
+                              }`}
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={thumbUrl} alt={`thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
+                              {isThumbAnnotated && (
+                                <span className="absolute top-0.5 right-0.5 w-2.5 h-2.5 rounded-full bg-red-500 border border-white" />
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* External Link or File */}
               {inspectItem.externalLink && (
@@ -1232,6 +1319,34 @@ export default function SubmissionsCenterTab() {
           </div>
         </div>
       )}
+
+      {/* FULLSCREEN IMAGE ANNOTATOR MODAL */}
+      {isAnnotating && inspectItem && inspectItem.type === 'assignment' && (() => {
+        const subImages: string[] = Array.isArray(inspectItem.images) && inspectItem.images.length > 0
+          ? inspectItem.images
+          : (inspectItem.imageUrl ? [inspectItem.imageUrl] : []);
+        const annotatorImages: AnnotatorImage[] = subImages.map((orig, i) => {
+          const pending = pendingAnnotations[i];
+          if (pending !== undefined) {
+            return { originalUrl: orig, currentUrl: pending === null ? orig : pending };
+          }
+          const existingAnnotated = Array.isArray(inspectItem.annotatedImages) ? inspectItem.annotatedImages[i] : null;
+          return { originalUrl: orig, currentUrl: existingAnnotated || orig };
+        });
+
+        return (
+          <ImageAnnotator
+            images={annotatorImages}
+            initialIndex={gradingActiveImgIdx}
+            title={`ผลงานของ ${inspectItem.studentName} (${inspectItem.studentId})`}
+            onDone={(changes) => {
+              setPendingAnnotations((prev) => ({ ...prev, ...changes }));
+              setIsAnnotating(false);
+            }}
+            onCancel={() => setIsAnnotating(false)}
+          />
+        );
+      })()}
     </div>
   );
 }

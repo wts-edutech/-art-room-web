@@ -199,7 +199,8 @@ export default function StudentArtworkAlbum({
         /* 4. Modern Visual Photo Gallery (2-3 Columns) */
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredWorks.map(({ assignment, submission }) => {
-            const artworkImg = submission.imageUrl || submission.fileUrl;
+            const annotatedImg = Array.isArray(submission.annotatedImages) && submission.annotatedImages[0] ? submission.annotatedImages[0] : null;
+            const artworkImg = annotatedImg || submission.imageUrl || submission.fileUrl;
             const isGraded = (submission.status === "graded" || (submission.score !== null && submission.score !== undefined)) && submission.status !== "resubmit";
             const maxScore = assignment.maxScore || 10;
             const score = submission.score;
@@ -257,6 +258,12 @@ export default function StudentArtworkAlbum({
                     <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold shadow-xs bg-white/95 backdrop-blur-md text-gray-800 border border-gray-200">
                       {assignment.subject ? assignment.subject.name : "วิชาศิลปะ"}
                     </span>
+                    {annotatedImg && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-600/95 backdrop-blur-md text-white shadow-xs flex items-center gap-1">
+                        <span>✏️</span>
+                        <span>มีลายเส้นตรวจ</span>
+                      </span>
+                    )}
                     {Array.isArray(submission.images) && submission.images.length > 1 && (
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-600/95 backdrop-blur-md text-white shadow-xs flex items-center gap-1">
                         <span>📷</span>
@@ -526,7 +533,8 @@ export default function StudentArtworkAlbum({
 
                 <div className="space-y-6">
                   {submittedWorks.map(({ assignment, submission }, idx) => {
-                    const artworkImg = submission.imageUrl || submission.fileUrl;
+                    const annotatedImg = Array.isArray(submission.annotatedImages) && submission.annotatedImages[0] ? submission.annotatedImages[0] : null;
+                    const artworkImg = annotatedImg || submission.imageUrl || submission.fileUrl;
                     const maxScore = assignment.maxScore || 10;
                     const score = submission.score;
 

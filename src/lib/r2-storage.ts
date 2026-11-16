@@ -21,7 +21,7 @@ export function getMediaBucket(): R2Like | null {
 }
 
 function dataUrlToBytes(dataUrl: string): { mime: string; bytes: Uint8Array } | null {
-  const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/s);
+  const match = dataUrl.match(/^data:([^;]+);base64,([\s\S]+)$/);
   if (!match) return null;
   const bin = atob(match[2]);
   const bytes = new Uint8Array(bin.length);

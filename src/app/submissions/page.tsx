@@ -95,6 +95,7 @@ export default function SubmissionsPage() {
   // Modal State
   const [modalAssignment, setModalAssignment] = useState<any | null>(null);
   const [previewSubmission, setPreviewSubmission] = useState<{ submission: any; assignment: any } | null>(null);
+  const [showOriginalImage, setShowOriginalImage] = useState<boolean>(false);
   const [isFullscreenView, setIsFullscreenView] = useState<boolean>(false);
   const [lightboxImageIndex, setLightboxImageIndex] = useState<number>(0);
   const [standaloneLightboxUrl, setStandaloneLightboxUrl] = useState<string | null>(null);
@@ -1469,30 +1470,92 @@ export default function SubmissionsPage() {
             </div>
 
             {/* Artwork Image Container - Displays full dimensions without any cropping */}
-            <div className="p-3 sm:p-6 bg-gray-900/5 flex flex-col items-center justify-center relative">
-              <div className="relative group max-w-full flex items-center justify-center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={previewSubmission.submission.imageUrl}
-                  alt={previewSubmission.assignment.title}
-                  className="max-h-[72vh] w-auto max-w-full object-contain rounded-2xl shadow-md border border-gray-200 bg-white cursor-zoom-in transition-transform group-hover:scale-[1.01]"
-                  onClick={() => setIsFullscreenView(true)}
-                  title="คลิกเพื่อดูภาพขยายเต็มจอ"
-                />
-                <button
-                  type="button"
-                  onClick={() => setIsFullscreenView(true)}
-                  className="absolute bottom-3 right-3 px-3 py-1.5 rounded-xl bg-black/75 hover:bg-black/90 text-white text-xs font-bold backdrop-blur-xs flex items-center gap-1.5 transition-all shadow-md cursor-pointer"
-                >
-                  <Maximize2 className="w-3.5 h-3.5" />
-                  <span>ดูเต็มจอ</span>
-                </button>
-              </div>
-              <p className="text-[11px] text-gray-500 mt-2.5 flex items-center gap-1 font-medium">
-                <ZoomIn className="w-3 h-3 text-orange-600" />
-                <span>แสดงภาพเต็มขนาดจริง 100% ตามต้นฉบับ • คลิกที่รูปภาพเพื่อเปิดโหมดเต็มจอ</span>
-              </p>
-            </div>
+            {(() => {
+              const allImgs: string[] = Array.isArray(previewSubmission.submission.images) && previewSubmission.submission.images.length > 0
+                ? previewSubmission.submission.images
+                : [previewSubmission.submission.imageUrl].filter(Boolean);
+              const origUrl = allImgs[lightboxImageIndex] || previewSubmission.submission.imageUrl;
+              const annotatedUrl = Array.isArray(previewSubmission.submission.annotatedImages) ? previewSubmission.submission.annotatedImages[lightboxImageIndex] : null;
+              const hasAnnotated = Boolean(annotatedUrl);
+              const displayUrl = (hasAnnotated && !showOriginalImage) ? annotatedUrl! : origUrl;
+
+              return (
+                <div className="p-3 sm:p-6 bg-gray-900/5 flex flex-col items-center justify-center relative">
+                  {/* Top Bar for toggle and badge */}
+                  {hasAnnotated && (
+                    <div className="w-full flex items-center justify-between pb-3 px-1">
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${
+                        !showOriginalImage 
+                          ? "bg-red-50 text-red-700 border-red-200" 
+                          : "bg-blue-50 text-blue-700 border-blue-200"
+                      }`}>
+                        {!showOriginalImage ? "✏️ แสดงภาพที่มีลายเส้นตรวจจากครู" : "🖼️ แสดงภาพต้นฉบับของนักเรียน"}
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() => setShowOriginalImage(!showOriginalImage)}
+                        className="px-3 py-1.5 rounded-xl bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 text-xs font-bold shadow-xs transition-all cursor-pointer active:scale-95 flex items-center gap-1.5"
+                      >
+                        {!showOriginalImage ? "🖼️ ดูภาพต้นฉบับ" : "✏️ ดูภาพที่ครูตรวจ"}
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="relative group max-w-full flex items-center justify-center">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={displayUrl}
+                      alt={previewSubmission.assignment.title}
+                      className="max-h-[72vh] w-auto max-w-full object-contain rounded-2xl shadow-md border border-gray-200 bg-white cursor-zoom-in transition-transform group-hover:scale-[1.01]"
+                      onClick={() => setIsFullscreenView(true)}
+                      title="คลิกเพื่อดูภาพขยายเต็มจอ"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setIsFullscreenView(true)}
+                      className="absolute bottom-3 right-3 px-3 py-1.5 rounded-xl bg-black/75 hover:bg-black/90 text-white text-xs font-bold backdrop-blur-xs flex items-center gap-1.5 transition-all shadow-md cursor-pointer"
+                    >
+                      <Maximize2 className="w-3.5 h-3.5" />
+                      <span>ดูเต็มจอ</span>
+                    </button>
+                  </div>
+
+                  {/* Thumbnail strip for multiple images */}
+                  {allImgs.length > 1 && (
+                    <div className="flex items-center gap-2 mt-3 overflow-x-auto max-w-full pb-1">
+                      {allImgs.map((img, idx) => {
+                        const hasThisAnnotated = Boolean(Array.isArray(previewSubmission.submission.annotatedImages) && previewSubmission.submission.annotatedImages[idx]);
+                        const thumbUrl = (hasThisAnnotated && !showOriginalImage)
+                          ? previewSubmission.submission.annotatedImages[idx]
+                          : img;
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => setLightboxImageIndex(idx)}
+                            className={`relative w-12 h-12 rounded-xl overflow-hidden border-2 transition-all cursor-pointer shrink-0 ${
+                              lightboxImageIndex === idx ? "border-orange-500 ring-2 ring-orange-300" : "border-gray-200 opacity-70 hover:opacity-100"
+                            }`}
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={thumbUrl} alt={`thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
+                            {hasThisAnnotated && (
+                              <span className="absolute top-0.5 right-0.5 w-2.5 h-2.5 rounded-full bg-red-500 border border-white" />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  <p className="text-[11px] text-gray-500 mt-2.5 flex items-center gap-1 font-medium">
+                    <ZoomIn className="w-3 h-3 text-orange-600" />
+                    <span>คลิกที่รูปภาพเพื่อเปิดโหมดขยายเต็มจอ</span>
+                  </p>
+                </div>
+              );
+            })()}
 
             {/* Details & Concept */}
             <div className="p-4 sm:p-6 space-y-4">
@@ -1540,16 +1603,27 @@ export default function SubmissionsPage() {
 
               {/* Actions */}
               <div className="flex items-center justify-between gap-3 pt-2">
-                <a
-                  href={previewSubmission.submission.imageUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  download={`artwork_${previewSubmission.assignment.title}.jpg`}
-                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold transition-all cursor-pointer"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>ดาวน์โหลดภาพต้นฉบับ</span>
-                </a>
+                {(() => {
+                  const allImgs: string[] = Array.isArray(previewSubmission.submission.images) && previewSubmission.submission.images.length > 0
+                    ? previewSubmission.submission.images
+                    : [previewSubmission.submission.imageUrl].filter(Boolean);
+                  const origUrl = allImgs[lightboxImageIndex] || previewSubmission.submission.imageUrl;
+                  const annotatedUrl = Array.isArray(previewSubmission.submission.annotatedImages) ? previewSubmission.submission.annotatedImages[lightboxImageIndex] : null;
+                  const dlUrl = (!showOriginalImage && annotatedUrl) ? annotatedUrl : origUrl;
+
+                  return (
+                    <a
+                      href={dlUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      download={`artwork_${previewSubmission.assignment.title}.jpg`}
+                      className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold transition-all cursor-pointer"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>{(!showOriginalImage && annotatedUrl) ? "ดาวน์โหลดภาพที่ครูตรวจ" : "ดาวน์โหลดภาพต้นฉบับ"}</span>
+                    </a>
+                  );
+                })()}
 
                 <button
                   type="button"
@@ -1577,7 +1651,10 @@ export default function SubmissionsPage() {
             const allImgs: string[] = Array.isArray(previewSubmission.submission.images) && previewSubmission.submission.images.length > 0
               ? previewSubmission.submission.images
               : [previewSubmission.submission.imageUrl].filter(Boolean);
-            const currentImgUrl = allImgs[lightboxImageIndex] || previewSubmission.submission.imageUrl;
+            const origUrl = allImgs[lightboxImageIndex] || previewSubmission.submission.imageUrl;
+            const annotatedUrl = Array.isArray(previewSubmission.submission.annotatedImages) ? previewSubmission.submission.annotatedImages[lightboxImageIndex] : null;
+            const hasAnnotated = Boolean(annotatedUrl);
+            const currentImgUrl = (hasAnnotated && !showOriginalImage) ? annotatedUrl! : origUrl;
 
             return (
               <>
@@ -1585,12 +1662,26 @@ export default function SubmissionsPage() {
                   className="absolute top-4 inset-x-4 sm:inset-x-8 flex items-center justify-between z-10 pointer-events-auto"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="bg-black/60 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10 text-white">
-                    <p className="font-bold text-xs sm:text-sm font-kanit">{previewSubmission.assignment.title}</p>
-                    <p className="text-[11px] text-gray-300">
-                      ผลงานของนักเรียน {allImgs.length > 1 ? `(ภาพที่ ${lightboxImageIndex + 1} จาก ${allImgs.length})` : ""}
-                    </p>
+                  <div className="bg-black/60 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10 text-white flex items-center gap-3">
+                    <div>
+                      <p className="font-bold text-xs sm:text-sm font-kanit">{previewSubmission.assignment.title}</p>
+                      <p className="text-[11px] text-gray-300">
+                        {allImgs.length > 1 ? `(ภาพที่ ${lightboxImageIndex + 1} จาก ${allImgs.length}) • ` : ""}
+                        {hasAnnotated && !showOriginalImage ? "ภาพที่ครูเขียนตรวจ" : "ภาพต้นฉบับ"}
+                      </p>
+                    </div>
+
+                    {hasAnnotated && (
+                      <button
+                        type="button"
+                        onClick={() => setShowOriginalImage(!showOriginalImage)}
+                        className="px-3 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-white text-xs font-bold border border-white/20 backdrop-blur-md transition-all cursor-pointer"
+                      >
+                        {!showOriginalImage ? "🖼️ ดูภาพต้นฉบับ" : "✏️ ดูภาพที่ครูตรวจ"}
+                      </button>
+                    )}
                   </div>
+
                   <div className="flex items-center gap-2">
                     <a
                       href={currentImgUrl}
@@ -1628,21 +1719,28 @@ export default function SubmissionsPage() {
                     className="absolute bottom-5 inset-x-0 flex items-center justify-center gap-3 z-10 pointer-events-auto"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    {allImgs.map((imgUrl, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => setLightboxImageIndex(idx)}
-                        className={`w-14 h-14 rounded-xl overflow-hidden border-2 transition-all cursor-pointer bg-black/40 ${
-                          lightboxImageIndex === idx
-                            ? "border-orange-500 scale-110 shadow-lg ring-2 ring-orange-400/50"
-                            : "border-white/30 opacity-60 hover:opacity-100"
-                        }`}
-                      >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={imgUrl} alt={`thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
-                      </button>
-                    ))}
+                    {allImgs.map((imgUrl, idx) => {
+                      const hasThisAnnotated = Boolean(Array.isArray(previewSubmission.submission.annotatedImages) && previewSubmission.submission.annotatedImages[idx]);
+                      const thumb = (hasThisAnnotated && !showOriginalImage) ? previewSubmission.submission.annotatedImages[idx] : imgUrl;
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setLightboxImageIndex(idx)}
+                          className={`relative w-14 h-14 rounded-xl overflow-hidden border-2 transition-all cursor-pointer bg-black/40 ${
+                            lightboxImageIndex === idx
+                              ? "border-orange-500 scale-110 shadow-lg ring-2 ring-orange-400/50"
+                              : "border-white/30 opacity-60 hover:opacity-100"
+                          }`}
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={thumb} alt={`thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
+                          {hasThisAnnotated && (
+                            <span className="absolute top-0.5 right-0.5 w-2.5 h-2.5 rounded-full bg-red-500 border border-white" />
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </>

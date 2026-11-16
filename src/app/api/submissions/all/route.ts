@@ -5,6 +5,7 @@ import { getDb } from '@/db';
 import { submissions, assignments, students, quizzes, quizAttempts } from '@/db/schema';
 import { desc, inArray, sql } from 'drizzle-orm';
 import { checkIsAdmin } from '@/lib/api-auth';
+import { buildAnnotatedUrls } from '@/lib/submission-annotations';
 
 // Helper to safely parse images whether raw array, single-stringified, or double-stringified JSON
 function parseImageArray(raw: any): string[] {
@@ -45,6 +46,7 @@ export async function GET(request: Request) {
       studentName: submissions.studentName,
       classroom: submissions.classroom,
       images: submissions.images,
+      annotatedImages: submissions.annotatedImages,
       hasImage: sql<number>`CASE WHEN ${submissions.imageUrl} IS NOT NULL AND length(${submissions.imageUrl}) > 0 THEN 1 ELSE 0 END`,
       hasFile: sql<number>`CASE WHEN ${submissions.fileUrl} IS NOT NULL AND length(${submissions.fileUrl}) > 0 THEN 1 ELSE 0 END`,
       fileName: submissions.fileName,
@@ -100,6 +102,7 @@ export async function GET(request: Request) {
         isLate: Boolean(sub.isLate),
         imageUrl: imagesList.length > 0 ? imagesList[0] : (sub.hasImage ? `/api/submissions/image?id=${encodeURIComponent(sub.id)}` : null),
         images: imagesList,
+        annotatedImages: buildAnnotatedUrls(sub.id, sub.annotatedImages, imagesList.length, sub.updatedAt),
         fileUrl: sub.hasFile ? `/api/submissions/image?id=${encodeURIComponent(sub.id)}&type=file` : null,
         fileName: sub.fileName || null,
         externalLink: sub.externalLink || null,

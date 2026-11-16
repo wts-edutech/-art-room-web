@@ -27,12 +27,25 @@ export async function GET(request: Request) {
     const id = searchParams.get('id');
     const index = parseInt(searchParams.get('index') || '0', 10);
     const isFileRequest = searchParams.get('type') === 'file' || searchParams.has('file');
+    const isAnnotated = searchParams.get('annotated') === '1';
 
     if (!id) {
       return new Response('Missing submission id', { status: 400 });
     }
 
     const d1 = getRequestContext()?.env?.DB;
+
+    // ภาพที่ครูเขียนตรวจแล้ว
+    if (isAnnotated) {
+      const row: any = d1
+        ? await d1.prepare('SELECT annotated_images AS annotatedImages FROM submissions WHERE id = ?').bind(id).first()
+        : null;
+      const list = parseImageArray(row?.annotatedImages);
+      const target = list[index];
+      if (!target) return new Response('Annotation not found', { status: 404 });
+      return serveTarget(target, request, null);
+    }
+
     const sub: any = d1
       ? await d1
           .prepare(
@@ -98,7 +111,7 @@ async function serveTarget(target: string, request: Request, fileName?: string |
 
   // Data URL (data:image/webp;base64,... or data:application/pdf;base64,...)
   if (target.startsWith('data:')) {
-    const match = target.match(/^data:([^;]+);base64,(.+)$/s);
+    const match = target.match(/^data:([^;]+);base64,([\s\S]+)$/);
     if (match) {
       const mimeType = match[1];
       const base64Data = match[2];
