@@ -40,6 +40,8 @@ import {
   KeyRound,
   UserCheck,
   Palette,
+  Trophy,
+  Star,
   ClipboardList,
   Printer,
   Camera
@@ -388,6 +390,30 @@ export default function SubmissionsPage() {
   const submittedCount = assignments.filter((a) => subMap.has(a.id) && subMap.get(a.id)?.status !== "resubmit").length;
   const progressPercent = totalCount > 0 ? Math.round((submittedCount / totalCount) * 100) : 0;
 
+  // Total Score Calculation for Assignments (คะแนนรวมกิจกรรมใบงาน)
+  const totalPossibleScore = assignments.reduce((acc, a) => acc + (Number(a.maxScore) || 10), 0);
+  const gradedPossibleScore = assignments.reduce((acc, a) => {
+    const sub = subMap.get(a.id);
+    if (isSubmissionGraded(sub)) {
+      return acc + (Number(a.maxScore) || 10);
+    }
+    return acc;
+  }, 0);
+  const totalEarnedScore = assignments.reduce((acc, a) => {
+    const sub = subMap.get(a.id);
+    if (isSubmissionGraded(sub) && typeof sub.score === "number") {
+      return acc + sub.score;
+    }
+    return acc;
+  }, 0);
+
+  const gradedScorePercent = gradedPossibleScore > 0 
+    ? Math.round((totalEarnedScore / gradedPossibleScore) * 100) 
+    : 0;
+  const overallScorePercent = totalPossibleScore > 0 
+    ? Math.round((totalEarnedScore / totalPossibleScore) * 100) 
+    : 0;
+
   // Gamification: Art Coins, Rank & Art Toy Companion
   const gamificationStats = useMemo(
     () => calculateGamification(submissions, activeQuizzes, artToySeries),
@@ -642,6 +668,17 @@ export default function SubmissionsPage() {
                       <Palette className="w-3.5 h-3.5 text-emerald-600" />
                       <span>ส่งแล้ว {submittedWorksCount} ชิ้น</span>
                     </button>
+
+                    {/* Badge 3: Total Assignment Score */}
+                    <button
+                      type="button"
+                      onClick={() => setPortalView("album")}
+                      className="px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200 shadow-2xs transition-all cursor-pointer"
+                      title="คลิกเพื่อดูคะแนนและคลังผลงานศิลปะของคุณ"
+                    >
+                      <Trophy className="w-3.5 h-3.5 text-amber-600" />
+                      <span>คะแนนรวมใบงาน {totalEarnedScore} / {totalPossibleScore}</span>
+                    </button>
                   </div>
 
                   <button
@@ -669,72 +706,128 @@ export default function SubmissionsPage() {
               />
 
               {/* ──────────────────────────────────────────── */}
-              {/* PROGRESS SUMMARY BAR */}
+              {/* PROGRESS & SCORE SUMMARY CARDS (ความคืบหน้า & คะแนนรวมกิจกรรมใบงาน) */}
               {totalCount > 0 && (
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-5">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white shadow-sm shrink-0">
-                        <Layers className="w-4 h-4" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
+                  {/* Card 1: Submission Progress */}
+                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-5 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between gap-3 mb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white shadow-sm shrink-0">
+                            <Layers className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-gray-900">ความคืบหน้าการส่งงาน</p>
+                            <p className="text-[11px] text-gray-400 font-light">ภาระงานศิลปะทั้งหมด</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2.5 text-right">
+                          <div className="text-right">
+                            <span className="text-xl sm:text-2xl font-black font-kanit text-gray-900">{submittedCount}</span>
+                            <span className="text-xs sm:text-sm text-gray-400 font-light"> / {totalCount} ชิ้น</span>
+                          </div>
+                          <div className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center font-black text-xs sm:text-sm shrink-0 ${
+                            progressPercent === 100 
+                              ? "bg-emerald-100 text-emerald-700" 
+                              : progressPercent >= 50 
+                              ? "bg-orange-100 text-orange-700" 
+                              : "bg-rose-100 text-rose-700"
+                          }`}>
+                            {progressPercent}%
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-xs font-bold text-gray-900">ความคืบหน้าการส่งงานทั้งหมด</p>
-                        <p className="text-[11px] text-gray-400 font-light">ภาคเรียนปัจจุบัน</p>
+
+                      {/* Progress Bar Track */}
+                      <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden mb-2.5">
+                        <div
+                          className={`h-full rounded-full transition-all duration-700 ${
+                            progressPercent === 100
+                              ? "bg-gradient-to-r from-emerald-400 to-teal-500"
+                              : progressPercent >= 50
+                              ? "bg-gradient-to-r from-orange-400 to-amber-400"
+                              : "bg-gradient-to-r from-rose-400 to-orange-400"
+                          }`}
+                          style={{ width: `${progressPercent}%` }}
+                        />
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 text-right">
-                      <div className="text-right">
-                        <span className="text-2xl font-black font-kanit text-gray-900">{submittedCount}</span>
-                        <span className="text-sm text-gray-400 font-light"> / {totalCount} ชิ้น</span>
-                      </div>
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center font-black text-sm shrink-0 ${
-                        progressPercent === 100 
-                          ? "bg-emerald-100 text-emerald-700" 
-                          : progressPercent >= 50 
-                          ? "bg-orange-100 text-orange-700" 
-                          : "bg-rose-100 text-rose-700"
-                      }`}>
-                        {progressPercent}%
-                      </div>
+
+                    {/* Mini stats row */}
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] pt-1.5 border-t border-gray-100/70">
+                      <span className="flex items-center gap-1 text-emerald-700 font-semibold">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        ตรวจแล้ว {gradedCount} ชิ้น
+                      </span>
+                      <span className="flex items-center gap-1 text-amber-700 font-semibold">
+                        <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                        รอตรวจ {pendingCount} ชิ้น
+                      </span>
+                      {resubmitCount > 0 && (
+                        <span className="flex items-center gap-1 text-rose-700 font-semibold">
+                          <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+                          แก้ไขใหม่ {resubmitCount} ชิ้น
+                        </span>
+                      )}
+                      {missingCount > 0 && (
+                        <span className="flex items-center gap-1 text-slate-500 font-semibold">
+                          <span className="w-2 h-2 rounded-full bg-slate-300"></span>
+                          ยังไม่ส่ง {missingCount} ชิ้น
+                        </span>
+                      )}
                     </div>
                   </div>
 
-                  {/* Progress Bar Track */}
-                  <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all duration-700 ${
-                        progressPercent === 100
-                          ? "bg-gradient-to-r from-emerald-400 to-teal-500"
-                          : progressPercent >= 50
-                          ? "bg-gradient-to-r from-orange-400 to-amber-400"
-                          : "bg-gradient-to-r from-rose-400 to-orange-400"
-                      }`}
-                      style={{ width: `${progressPercent}%` }}
-                    />
-                  </div>
+                  {/* Card 2: Total Assignment Score (คะแนนรวมกิจกรรมใบงาน) */}
+                  <div className="bg-white rounded-2xl border border-amber-200/80 shadow-sm p-4 sm:p-5 flex flex-col justify-between bg-gradient-to-br from-white via-amber-50/20 to-orange-50/30">
+                    <div>
+                      <div className="flex items-center justify-between gap-3 mb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-white shadow-sm shrink-0">
+                            <Trophy className="w-4 h-4 text-white" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-gray-900">คะแนนรวมกิจกรรมใบงาน</p>
+                            <p className="text-[11px] text-amber-700/80 font-light">คะแนนสะสมภาระงานศิลปะ</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2.5 text-right">
+                          <div className="text-right">
+                            <span className="text-xl sm:text-2xl font-black font-kanit text-amber-600">{totalEarnedScore}</span>
+                            <span className="text-xs sm:text-sm text-gray-400 font-light"> / {totalPossibleScore} คะแนน</span>
+                          </div>
+                          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center font-black text-xs sm:text-sm shrink-0 bg-amber-100 text-amber-800 border border-amber-200 shadow-2xs">
+                            {overallScorePercent}%
+                          </div>
+                        </div>
+                      </div>
 
-                  {/* Mini stats row */}
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2.5 text-[11px]">
-                    <span className="flex items-center gap-1 text-emerald-700 font-semibold">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                      ตรวจแล้ว {gradedCount} ชิ้น
-                    </span>
-                    <span className="flex items-center gap-1 text-amber-700 font-semibold">
-                      <span className="w-2 h-2 rounded-full bg-amber-400"></span>
-                      รอตรวจ {pendingCount} ชิ้น
-                    </span>
-                    {resubmitCount > 0 && (
-                      <span className="flex items-center gap-1 text-rose-700 font-semibold">
-                        <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
-                        แก้ไขใหม่ {resubmitCount} ชิ้น
+                      {/* Score Progress Bar Track */}
+                      <div className="w-full h-2.5 bg-amber-100/60 rounded-full overflow-hidden mb-2.5">
+                        <div
+                          className="h-full rounded-full transition-all duration-700 bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500"
+                          style={{ width: `${Math.min(100, overallScorePercent)}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Score detail mini row */}
+                    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px] pt-1.5 border-t border-amber-100">
+                      <span className="text-amber-800 font-semibold flex items-center gap-1">
+                        <Award className="w-3.5 h-3.5 text-amber-600" />
+                        {gradedCount > 0 ? (
+                          <span>งานที่ตรวจแล้วได้ <strong>{totalEarnedScore}</strong>/{gradedPossibleScore} คะแนน ({gradedScorePercent}%)</span>
+                        ) : (
+                          <span>ยังไม่มีผลงานที่บันทึกคะแนน</span>
+                        )}
                       </span>
-                    )}
-                    {missingCount > 0 && (
-                      <span className="flex items-center gap-1 text-slate-500 font-semibold">
-                        <span className="w-2 h-2 rounded-full bg-slate-300"></span>
-                        ยังไม่ส่ง {missingCount} ชิ้น
-                      </span>
-                    )}
+                      {pendingCount > 0 && (
+                        <span className="text-gray-500 text-[10px]">
+                          รอประเมินอีก {pendingCount} ชิ้น
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
@@ -1010,13 +1103,20 @@ export default function SubmissionsPage() {
 
               {/* To-Do Assignments Header */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse" />
                   <h3 className="text-base sm:text-lg font-bold font-kanit text-gray-900">
                     {toDoFilter === "missing" ? "ภาระงานที่ต้องส่ง / การบ้านค้างส่ง" : "รายการภาระงานศิลปะทั้งหมด"}
                   </h3>
                   <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-700">
                     {toDoAssignments.length} รายการ
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200/80 shadow-2xs flex items-center gap-1.5">
+                    <Trophy className="w-3.5 h-3.5 text-amber-600" />
+                    <span>คะแนนรวม: <strong>{totalEarnedScore}</strong> / {totalPossibleScore} คะแนน</span>
+                    {gradedCount > 0 && (
+                      <span className="text-[10px] font-normal text-amber-600">({gradedScorePercent}%)</span>
+                    )}
                   </span>
                 </div>
 
