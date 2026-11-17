@@ -748,6 +748,9 @@ export default function SubmissionsCenterTab() {
                                   src={item.imageUrl}
                                   alt="Artwork preview"
                                   className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    (e.currentTarget as HTMLElement).style.display = 'none';
+                                  }}
                                 />
                               </button>
                             ) : item.externalLink ? (

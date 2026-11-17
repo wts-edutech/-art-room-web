@@ -102,7 +102,11 @@ export async function GET(request: Request) {
       classroom: submissions.classroom,
       images: submissions.images,
       annotatedImages: submissions.annotatedImages,
-      hasImage: sql<number>`CASE WHEN ${submissions.imageUrl} IS NOT NULL AND length(${submissions.imageUrl}) > 0 THEN 1 ELSE 0 END`,
+      hasImage: sql<number>`CASE 
+        WHEN ${submissions.images} IS NOT NULL AND length(${submissions.images}) > 2 THEN 1 
+        WHEN ${submissions.imageUrl} IS NOT NULL AND length(${submissions.imageUrl}) > 0 AND ${submissions.imageUrl} NOT LIKE '%/api/submissions/image%' THEN 1 
+        ELSE 0 
+      END`,
       hasFile: sql<number>`CASE WHEN ${submissions.fileUrl} IS NOT NULL AND length(${submissions.fileUrl}) > 0 THEN 1 ELSE 0 END`,
       fileName: submissions.fileName,
       externalLink: submissions.externalLink,
@@ -232,18 +236,27 @@ export async function POST(request: Request) {
     if (imageUrls.length === 0 && body.images) {
       const parsed = parseImageArray(body.images);
       for (const item of parsed) {
-        if (typeof item === 'string' && (item.startsWith('data:') || item.startsWith('http') || item.startsWith('/') || item.startsWith('r2:'))) {
+        if (
+          typeof item === 'string' &&
+          !item.includes('/api/submissions/image') &&
+          (item.startsWith('data:') || item.startsWith('http') || item.startsWith('/') || item.startsWith('r2:'))
+        ) {
           imageUrls.push(item);
         }
       }
     }
 
-    if (imageUrls.length === 0 && imageUrl && (imageUrl.startsWith('data:') || imageUrl.startsWith('http') || imageUrl.startsWith('/') || imageUrl.startsWith('r2:'))) {
+    if (
+      imageUrls.length === 0 &&
+      imageUrl &&
+      !imageUrl.includes('/api/submissions/image') &&
+      (imageUrl.startsWith('data:') || imageUrl.startsWith('http') || imageUrl.startsWith('/') || imageUrl.startsWith('r2:'))
+    ) {
       imageUrls.push(imageUrl);
     }
     // Limit to max 3 images for stability and storage safety
     imageUrls = imageUrls.slice(0, 3);
-    const primaryImage = imageUrls[0] || imageUrl || '';
+    const primaryImage = imageUrls[0] || (imageUrl && !imageUrl.includes('/api/submissions/image') ? imageUrl : '');
 
     const {
       assignmentId,

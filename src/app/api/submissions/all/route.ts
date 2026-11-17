@@ -47,7 +47,11 @@ export async function GET(request: Request) {
       classroom: submissions.classroom,
       images: submissions.images,
       annotatedImages: submissions.annotatedImages,
-      hasImage: sql<number>`CASE WHEN ${submissions.imageUrl} IS NOT NULL AND length(${submissions.imageUrl}) > 0 THEN 1 ELSE 0 END`,
+      hasImage: sql<number>`CASE 
+        WHEN ${submissions.images} IS NOT NULL AND length(${submissions.images}) > 2 THEN 1 
+        WHEN ${submissions.imageUrl} IS NOT NULL AND length(${submissions.imageUrl}) > 0 AND ${submissions.imageUrl} NOT LIKE '%/api/submissions/image%' THEN 1 
+        ELSE 0 
+      END`,
       hasFile: sql<number>`CASE WHEN ${submissions.fileUrl} IS NOT NULL AND length(${submissions.fileUrl}) > 0 THEN 1 ELSE 0 END`,
       fileName: submissions.fileName,
       externalLink: submissions.externalLink,

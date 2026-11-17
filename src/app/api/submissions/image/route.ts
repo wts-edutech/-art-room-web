@@ -49,7 +49,7 @@ export async function GET(request: Request) {
     const sub: any = d1
       ? await d1
           .prepare(
-            'SELECT image_url AS imageUrl, images, file_url AS fileUrl, file_name AS fileName FROM submissions WHERE id = ?'
+            'SELECT student_id AS studentId, assignment_id AS assignmentId, image_url AS imageUrl, images, file_url AS fileUrl, file_name AS fileName FROM submissions WHERE id = ?'
           )
           .bind(id)
           .first()
@@ -77,16 +77,38 @@ export async function GET(request: Request) {
     }
 
     // Fall back to primary imageUrl ONLY if it is not a circular reference to this endpoint
-    if (!targetImg && sub.imageUrl && !sub.imageUrl.includes('/api/submissions/image')) {
+    if ((!targetImg || targetImg.includes('/api/submissions/image')) && sub.imageUrl && !sub.imageUrl.includes('/api/submissions/image')) {
       targetImg = sub.imageUrl;
     }
 
+    // 3. Auto-heal: If targetImg is still missing or circular, attempt direct resolution from R2 bucket
+    if ((!targetImg || targetImg.includes('/api/submissions/image')) && sub.studentId && sub.assignmentId) {
+      try {
+        const bucket = (getRequestContext()?.env as any)?.MEDIA;
+        if (bucket && typeof bucket.list === 'function') {
+          const prefix = `submissions/${sub.studentId}/${sub.assignmentId}/`;
+          const listRes = await bucket.list({ prefix, limit: 10 }).catch(() => null);
+          if (listRes && Array.isArray(listRes.objects) && listRes.objects.length > 0) {
+            const sorted = listRes.objects.sort((a: any, b: any) =>
+              new Date(a.uploaded || 0).getTime() - new Date(b.uploaded || 0).getTime()
+            );
+            const obj = sorted[index] || sorted[0];
+            if (obj && obj.key) {
+              targetImg = `${R2_PREFIX}${obj.key}`;
+            }
+          }
+        }
+      } catch (r2LookupErr) {
+        console.warn('R2 auto-heal lookup failed:', r2LookupErr);
+      }
+    }
+
     // If still no image found, but a file attachment exists, serve the file attachment
-    if (!targetImg && sub.fileUrl) {
+    if ((!targetImg || targetImg.includes('/api/submissions/image')) && sub.fileUrl) {
       return serveTarget(sub.fileUrl, request, sub.fileName);
     }
 
-    if (!targetImg) {
+    if (!targetImg || targetImg.includes('/api/submissions/image')) {
       return new Response('Image not found', { status: 404 });
     }
 
