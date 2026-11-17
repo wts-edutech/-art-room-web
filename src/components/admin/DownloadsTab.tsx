@@ -29,6 +29,7 @@ import {
   Image as ImageIcon
 } from "lucide-react";
 import { compressImage } from "@/lib/image-compressor";
+import { optimizeImageUrl } from "@/lib/image-utils";
 
 import AiMaterialStudioModal from "./materials/AiMaterialStudioModal";
 import MaterialLivePreviewModal from "./materials/MaterialLivePreviewModal";
@@ -523,7 +524,7 @@ export default function DownloadsTab() {
             fileName: fileName.trim() || `${title}.pdf`,
             fileSize: fileSize.trim() || "1.0 MB",
             fileUrl: fileUrl.trim(),
-            imageUrl: imageUrl.trim() || null,
+            imageUrl: imageUrl.trim() ? optimizeImageUrl(imageUrl.trim(), { width: 800 }) : null,
             mediaType: mediaType || "pdf",
             videoId: videoId || null,
             orderIndex: Number(orderIndex) || 0,
@@ -551,7 +552,7 @@ export default function DownloadsTab() {
             fileName: fileName.trim() || `${title}.pdf`,
             fileSize: fileSize.trim() || "1.0 MB",
             fileUrl: fileUrl.trim(),
-            imageUrl: imageUrl.trim() || null,
+            imageUrl: imageUrl.trim() ? optimizeImageUrl(imageUrl.trim(), { width: 800 }) : null,
             mediaType: mediaType || "pdf",
             videoId: videoId || null,
             orderIndex: Number(orderIndex) || 0,
@@ -899,7 +900,20 @@ export default function DownloadsTab() {
                   {item.imageUrl ? (
                     <div className="w-12 h-12 rounded-xl bg-gray-100 overflow-hidden shrink-0 border border-gray-200 shadow-2xs">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
+                      <img
+                        src={optimizeImageUrl(item.imageUrl, { width: 200 })}
+                        alt={item.title}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          target.style.display = "none";
+                          const fallback = target.nextElementSibling as HTMLElement;
+                          if (fallback) fallback.classList.remove("hidden");
+                        }}
+                      />
+                      <div className="hidden w-full h-full bg-red-50 text-red-600 flex items-center justify-center">
+                        <FileText className="w-5 h-5" />
+                      </div>
                     </div>
                   ) : (
                     <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shrink-0">
@@ -1220,7 +1234,7 @@ export default function DownloadsTab() {
                         <div className="w-16 h-10 sm:w-20 sm:h-12 rounded-lg overflow-hidden bg-black/10 shrink-0 border border-gray-200">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
-                            src={urlAnalysis.imageUrl || fileUrl}
+                            src={optimizeImageUrl(urlAnalysis.imageUrl || fileUrl, { width: 300 })}
                             alt="ภาพตัวอย่าง"
                             className="w-full h-full object-cover"
                             onError={(e) => (e.currentTarget.style.display = "none")}

@@ -3,6 +3,7 @@ export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { checkIsAdmin } from '@/lib/api-auth';
 import { getRequestContext } from '@cloudflare/next-on-pages';
+import { extractGoogleDriveId } from '@/lib/image-utils';
 
 const DEFAULT_DOWNLOADS = [
   {
@@ -210,8 +211,22 @@ export async function GET() {
       }, { headers: noCacheHeaders });
     }
 
+    const sanitizedDownloads = (result.results || []).map((row: any) => {
+      let img = row.imageUrl;
+      if (img && (img.includes('drive.google.com') || img.includes('googleusercontent.com'))) {
+        const driveId = extractGoogleDriveId(img);
+        if (driveId) {
+          img = `https://lh3.googleusercontent.com/d/${driveId}=w800`;
+        }
+      }
+      return {
+        ...row,
+        imageUrl: img,
+      };
+    });
+
     return NextResponse.json({
-      downloads: result.results,
+      downloads: sanitizedDownloads,
       gradeSettings
     }, { headers: noCacheHeaders });
 
@@ -322,7 +337,13 @@ export async function POST(request: Request) {
     const fileName = String(body.fileName || `${title}.pdf`).trim();
     const fileSize = String(body.fileSize || '1.5 MB').trim();
     const fileUrl = String(body.fileUrl || '').trim();
-    const imageUrl = body.imageUrl ? String(body.imageUrl).trim() : null;
+    let imageUrl = body.imageUrl ? String(body.imageUrl).trim() : null;
+    if (imageUrl && (imageUrl.includes('drive.google.com') || imageUrl.includes('googleusercontent.com'))) {
+      const driveId = extractGoogleDriveId(imageUrl);
+      if (driveId) {
+        imageUrl = `https://lh3.googleusercontent.com/d/${driveId}=w800`;
+      }
+    }
     const topic = body.topic ? String(body.topic).trim() : null;
     const mediaType = String(body.mediaType || 'pdf').trim();
     const content = body.content ? String(body.content) : null;
@@ -390,7 +411,13 @@ export async function PUT(request: Request) {
     const fileName = String(body.fileName || '').trim();
     const fileSize = String(body.fileSize || '1.0 MB').trim();
     const fileUrl = String(body.fileUrl || '').trim();
-    const imageUrl = body.imageUrl ? String(body.imageUrl).trim() : null;
+    let imageUrl = body.imageUrl ? String(body.imageUrl).trim() : null;
+    if (imageUrl && (imageUrl.includes('drive.google.com') || imageUrl.includes('googleusercontent.com'))) {
+      const driveId = extractGoogleDriveId(imageUrl);
+      if (driveId) {
+        imageUrl = `https://lh3.googleusercontent.com/d/${driveId}=w800`;
+      }
+    }
     const topic = body.topic ? String(body.topic).trim() : null;
     const mediaType = String(body.mediaType || 'pdf').trim();
     const content = body.content ? String(body.content) : null;

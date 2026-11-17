@@ -19,6 +19,7 @@ import {
   Globe
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { optimizeImageUrl } from "@/lib/image-utils";
 
 interface MaterialLivePreviewModalProps {
   isOpen: boolean;
@@ -203,9 +204,12 @@ export default function MaterialLivePreviewModal({
                 <div className="relative aspect-16/10 w-full bg-gray-100 overflow-hidden">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={imageUrl}
+                    src={optimizeImageUrl(imageUrl, { width: 800 })}
                     alt={title}
                     className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1541701494587-cb58502866ab?q=80&w=800&auto=format&fit=crop";
+                    }}
                   />
                   {/* Dark Vignette Overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
