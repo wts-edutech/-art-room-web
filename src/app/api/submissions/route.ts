@@ -100,7 +100,13 @@ export async function GET(request: Request) {
       studentId: submissions.studentId,
       studentName: submissions.studentName,
       classroom: submissions.classroom,
-      images: submissions.images,
+      imageCount: sql<number>`CASE 
+        WHEN ${submissions.images} IS NULL THEN 0 
+        WHEN json_valid(${submissions.images}) AND json_type(${submissions.images}) = 'array' THEN json_array_length(${submissions.images})
+        WHEN json_valid(${submissions.images}) AND json_type(${submissions.images}) = 'text' AND json_valid(json_extract(${submissions.images}, '$')) THEN json_array_length(json_extract(${submissions.images}, '$'))
+        WHEN length(${submissions.images}) > 5 THEN 1
+        ELSE 0
+      END`,
       annotatedImages: submissions.annotatedImages,
       hasImage: sql<number>`CASE 
         WHEN ${submissions.images} IS NOT NULL AND length(${submissions.images}) > 2 THEN 1 
@@ -145,12 +151,10 @@ export async function GET(request: Request) {
     const assignmentMap = new Map(assignmentsList.map(a => [a.id, a]));
 
     const enriched = list.map(item => {
-      const parsedImages = parseImageArray(item.images);
+      const count = Math.max(Number(item.imageCount) || 0, item.hasImage ? 1 : 0);
       let imageList: string[] = [];
-      if (parsedImages.length > 0) {
-        imageList = parsedImages.map((_, idx) => `/api/submissions/image?id=${encodeURIComponent(item.id)}&index=${idx}`);
-      } else if (item.hasImage) {
-        imageList = [`/api/submissions/image?id=${encodeURIComponent(item.id)}&index=0`];
+      if (count > 0) {
+        imageList = Array.from({ length: count }, (_, idx) => `/api/submissions/image?id=${encodeURIComponent(item.id)}&index=${idx}`);
       }
 
       return {
