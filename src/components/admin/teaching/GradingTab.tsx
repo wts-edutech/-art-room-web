@@ -88,13 +88,39 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
     }
   };
 
-  const fetchSubmissions = async () => {
+  const fetchSubmissions = async (autoSelectActiveRoom = false) => {
     if (!selectedAssignmentId) return;
     try {
       let url = `/api/submissions?assignmentId=${selectedAssignmentId}`;
       const res = await fetch(url);
       const data = await res.json();
-      setSubmissions(Array.isArray(data) ? data : []);
+      const list = Array.isArray(data) ? data : [];
+      setSubmissions(list);
+
+      if (autoSelectActiveRoom && list.length > 0) {
+        const currentAss = assignments.find((a) => a.id === selectedAssignmentId);
+        const rooms: string[] =
+          currentAss && Array.isArray(currentAss.classroomsList) && currentAss.classroomsList.length > 0
+            ? currentAss.classroomsList
+            : classrooms.map((c) => c.name);
+
+        // Check if current selectedClassroom has any submissions
+        const currentRoomHasSubs = selectedClassroom && list.some((s: any) => s.classroom === selectedClassroom);
+        if (!currentRoomHasSubs && rooms.length > 0) {
+          // Prefer first room with pending (ungraded) submissions, otherwise first room with any submissions
+          const roomWithPending = rooms.find((r) =>
+            list.some((s: any) => s.classroom === r && s.status !== "graded")
+          );
+          const roomWithAny = rooms.find((r) =>
+            list.some((s: any) => s.classroom === r)
+          );
+          if (roomWithPending) {
+            setSelectedClassroom(roomWithPending);
+          } else if (roomWithAny) {
+            setSelectedClassroom(roomWithAny);
+          }
+        }
+      }
     } catch (e) {
       console.error(e);
     }
@@ -105,8 +131,8 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
   }, []);
 
   useEffect(() => {
-    fetchSubmissions();
-  }, [selectedAssignmentId]);
+    fetchSubmissions(true);
+  }, [selectedAssignmentId, assignments.length]);
 
   const currentAssignment = assignments.find((a) => a.id === selectedAssignmentId);
 
@@ -116,6 +142,30 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
       return classrooms.map((c) => c.name);
     }
     return currentAssignment.classroomsList;
+  })();
+
+  // Per-classroom submission counts for quick visibility
+  const roomStatsMap = (() => {
+    const map = new Map<string, { submitted: number; pending: number; graded: number }>();
+    for (const room of availableClassrooms) {
+      map.set(room, { submitted: 0, pending: 0, graded: 0 });
+    }
+    const seenStudentPerRoom = new Set<string>();
+    for (const s of submissions) {
+      const r = s.classroom || "";
+      const key = `${r}::${s.studentId || s.studentName}`;
+      if (seenStudentPerRoom.has(key)) continue;
+      seenStudentPerRoom.add(key);
+      const entry = map.get(r) || { submitted: 0, pending: 0, graded: 0 };
+      entry.submitted += 1;
+      if (s.status === "graded") {
+        entry.graded += 1;
+      } else {
+        entry.pending += 1;
+      }
+      map.set(r, entry);
+    }
+    return map;
   })();
 
   // Filter students in selected classroom and sort by studentNumber (เลขที่ 1, 2, 3...)
@@ -405,12 +455,21 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
               onChange={(e) => setSelectedClassroom(e.target.value)}
               className="h-10 px-3 rounded-lg border border-gray-200 bg-white hover:border-gray-300 focus:border-orange-500 outline-none text-sm font-medium text-gray-800 transition-colors cursor-pointer"
             >
-              <option value="">ทุกห้องเรียน</option>
-              {availableClassrooms.map((roomName: string, idx: number) => (
-                <option key={idx} value={roomName}>
-                  ห้อง {roomName}
-                </option>
-              ))}
+              <option value="">ทุกห้องเรียน (ส่งรวม {submissions.length} คน)</option>
+              {availableClassrooms.map((roomName: string, idx: number) => {
+                const st = roomStatsMap.get(roomName);
+                const subCnt = st?.submitted || 0;
+                const pendCnt = st?.pending || 0;
+                const label =
+                  subCnt > 0
+                    ? `ห้อง ${roomName} (ส่งแล้ว ${subCnt}${pendCnt > 0 ? ` • รอตรวจ ${pendCnt}` : " • ตรวจครบ"})`
+                    : `ห้อง ${roomName} (ยังไม่ส่ง)`;
+                return (
+                  <option key={idx} value={roomName}>
+                    {label}
+                  </option>
+                );
+              })}
             </select>
           </div>
 
@@ -452,6 +511,67 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
           </button>
         </div>
       </div>
+
+      {/* Quick Classroom Switcher Pills */}
+      {availableClassrooms.length > 1 && (
+        <div className="bg-white rounded-xl p-2.5 border border-gray-200/90 shadow-xs flex flex-wrap items-center gap-1.5">
+          <span className="text-xs font-bold text-gray-500 px-2 flex items-center gap-1">
+            <Users className="w-3.5 h-3.5 text-orange-500" />
+            เลือกห้องเรียน:
+          </span>
+          <button
+            type="button"
+            onClick={() => setSelectedClassroom("")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              selectedClassroom === ""
+                ? "bg-slate-900 text-white shadow-xs"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            <span>ทุกห้อง</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-white/20 font-mono">
+              {submissions.length}
+            </span>
+          </button>
+          {availableClassrooms.map((roomName: string) => {
+            const st = roomStatsMap.get(roomName);
+            const subCnt = st?.submitted || 0;
+            const pendCnt = st?.pending || 0;
+            const isSelected = selectedClassroom === roomName;
+            return (
+              <button
+                key={roomName}
+                type="button"
+                onClick={() => setSelectedClassroom(roomName)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border ${
+                  isSelected
+                    ? "bg-orange-500 text-white border-orange-600 shadow-xs"
+                    : subCnt > 0
+                    ? "bg-amber-50/80 text-amber-900 border-amber-200 hover:bg-amber-100"
+                    : "bg-gray-50 text-gray-400 border-gray-200 hover:bg-gray-100"
+                }`}
+              >
+                <span>{roomName}</span>
+                {subCnt > 0 ? (
+                  <span
+                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
+                      isSelected
+                        ? "bg-white text-orange-600 font-extrabold"
+                        : pendCnt > 0
+                        ? "bg-amber-500 text-white"
+                        : "bg-emerald-500 text-white"
+                    }`}
+                  >
+                    ส่ง {subCnt}{pendCnt > 0 ? ` (รอตรวจ ${pendCnt})` : " ✓"}
+                  </span>
+                ) : (
+                  <span className="text-[10px] opacity-70 font-mono">(0)</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Status Segmented Tabs + Quick Summary */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-white p-1.5 rounded-xl border border-gray-200/90 shadow-xs">
@@ -511,7 +631,7 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
           <span>คะแนนเต็ม {currentAssignment?.maxScore || 10}</span>
           <button
             type="button"
-            onClick={fetchSubmissions}
+            onClick={() => fetchSubmissions(false)}
             className="p-1 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors cursor-pointer"
             title="รีเฟรชข้อมูล"
           >
