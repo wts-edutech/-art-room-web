@@ -3,7 +3,7 @@
 import { swalAlert, swalConfirm } from "@/lib/swal";
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Trash2, Plus, Pencil, Award, Star, FileText, Loader2, Calendar, LayoutGrid, Grid2X2, Search, X, Users } from "lucide-react";
+import { Trash2, Plus, Pencil, Award, Star, FileText, Loader2, Calendar, LayoutGrid, Grid2X2, Search, X, Users, Eye, EyeOff, CheckCircle2, ExternalLink } from "lucide-react";
 import PRImageGuide from "./PRImageGuide";
 import { optimizeImageToFile } from "@/lib/image-optimizer";
 import { GRADE_GROUPS } from "@/lib/constants/grades";
@@ -91,6 +91,8 @@ export default function AwardsTab() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [cardSize, setCardSize] = useState<"compact" | "normal">("compact");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isAwardsEnabled, setIsAwardsEnabled] = useState(true);
+  const [isTogglingStatus, setIsTogglingStatus] = useState(false);
 
   const handleAddStudentRow = () => {
     setStudents((prev) => [...prev, { name: "", grade: prev[prev.length - 1]?.grade || "" }]);
@@ -153,9 +155,41 @@ export default function AwardsTab() {
     }
   };
 
+  const fetchStatus = async () => {
+    try {
+      const res = await fetch("/api/awards/status");
+      const data = await res.json();
+      if (data && typeof data.enabled === "boolean") {
+        setIsAwardsEnabled(data.enabled);
+      }
+    } catch (e) {
+      console.error("Failed to fetch awards status", e);
+    }
+  };
+
   useEffect(() => {
     fetchData();
+    fetchStatus();
   }, []);
+
+  const handleToggleStatus = async () => {
+    setIsTogglingStatus(true);
+    const nextStatus = !isAwardsEnabled;
+    try {
+      const res = await fetch("/api/awards/status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: nextStatus }),
+      });
+      if (res.ok) {
+        setIsAwardsEnabled(nextStatus);
+      }
+    } catch (err) {
+      console.error("Failed to update awards visibility status:", err);
+    } finally {
+      setIsTogglingStatus(false);
+    }
+  };
 
   const handleAddAward = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -300,7 +334,68 @@ export default function AwardsTab() {
   }, [awards, searchQuery]);
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+    <div className="space-y-6">
+      {/* Visibility Toggle Alert Bar */}
+      <div className={`p-4 sm:p-5 rounded-3xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all shadow-sm ${
+        isAwardsEnabled 
+          ? "bg-emerald-50/80 border-emerald-200 text-emerald-900" 
+          : "bg-amber-50/80 border-amber-200 text-amber-900"
+      }`}>
+        <div className="flex items-center gap-3.5">
+          {isAwardsEnabled ? (
+            <div className="w-10 h-10 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+              <Eye className="w-5 h-5" />
+            </div>
+          ) : (
+            <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+              <EyeOff className="w-5 h-5" />
+            </div>
+          )}
+          <div>
+            <div className="text-sm font-bold flex items-center gap-2 flex-wrap">
+              <span>{isAwardsEnabled ? "เปิดการแสดงผลหน้ารางวัลที่ได้รับแล้ว (สาธารณะ)" : "ปิดการแสดงผลหน้ารางวัลที่ได้รับ (ซ่อนอยู่)"}</span>
+              <span className="text-xs px-2.5 py-0.5 rounded-full font-medium bg-white/80 border shadow-2xs">
+                {isAwardsEnabled ? "ทุกคนสามารถเข้าดูได้ที่ /awards" : "บุคคลภายนอกไม่เห็นเมนูนี้ เฉพาะแอดมินที่ดูได้"}
+              </span>
+            </div>
+            <p className="text-xs opacity-80 mt-1 font-light leading-relaxed">
+              {isAwardsEnabled 
+                ? "เมนู 'รางวัลที่ได้รับ' แสดงในเมนูบาร์หน้าบ้าน และเปิดให้นักเรียน/ผู้ปกครอง/บุคคลทั่วไปเข้าชมได้ตามปกติ"
+                : "เมนู 'รางวัลที่ได้รับ' ถูกซ่อนจากแถบเมนูหน้าบ้าน และผู้ใช้งานทั่วไปจะมองไม่เห็นหน้านี้จนกว่าคุณครูจะกดเปิด"}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <a
+            href="/awards"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-3.5 py-2 rounded-xl text-xs font-semibold text-gray-700 bg-white hover:bg-gray-50 border border-gray-200 shadow-2xs transition-all flex items-center gap-1.5"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            <span>ดูหน้าจริง</span>
+          </a>
+          <button
+            type="button"
+            onClick={handleToggleStatus}
+            disabled={isTogglingStatus}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer shadow-sm ${
+              isAwardsEnabled
+                ? "bg-white hover:bg-amber-100 text-amber-800 border border-amber-300"
+                : "bg-emerald-600 hover:bg-emerald-700 text-white"
+            }`}
+          >
+            {isTogglingStatus 
+              ? "กำลังเปลี่ยนสถานะ..." 
+              : isAwardsEnabled 
+                ? "กดเพื่อซ่อนหน้ารางวัล" 
+                : "กดเพื่อเปิดให้คนอื่นเห็น"}
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
       {/* Award Form Section */}
       <div className="xl:col-span-1">
         <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 sticky top-8">
@@ -802,5 +897,6 @@ export default function AwardsTab() {
         </div>
       </div>
     </div>
+  </div>
   );
 }

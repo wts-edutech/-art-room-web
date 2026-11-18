@@ -18,6 +18,8 @@ export default function Navbar() {
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isTeachersEnabled, setIsTeachersEnabled] = useState(true);
+  const [isAwardsEnabled, setIsAwardsEnabled] = useState(true);
+  const isAdmin = userRole === "admin" || userRole === "teacher";
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -71,6 +73,16 @@ export default function Navbar() {
       .then((data: any) => {
         if (data && typeof data.enabled === 'boolean') {
           setIsTeachersEnabled(data.enabled);
+        }
+      })
+      .catch(() => {});
+
+    // Check if awards page is enabled by admin
+    fetch('/api/awards/status')
+      .then(res => res.json())
+      .then((data: any) => {
+        if (data && typeof data.enabled === 'boolean') {
+          setIsAwardsEnabled(data.enabled);
         }
       })
       .catch(() => {});
@@ -209,21 +221,28 @@ export default function Navbar() {
               openDropdown === "artworks" ? "opacity-100 visible pointer-events-auto" : "opacity-0 invisible pointer-events-none"
             }`}>
               <div className="bg-white rounded-2xl shadow-xl border border-gray-100 py-2 px-1.5 flex flex-col gap-1">
-                <Link 
-                  href="/awards" 
-                  onClick={() => setOpenDropdown(null)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl min-h-[44px] hover:bg-red-50/80 transition-colors group/item ${
-                    pathname.startsWith("/awards") ? "bg-red-50 text-red-600 font-bold" : "text-gray-700 hover:text-red-600"
-                  }`}
-                >
-                  <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center shrink-0 group-hover/item:scale-105 transition-transform">
-                    <Trophy className="w-4 h-4" />
-                  </div>
-                  <div className="flex flex-col text-left">
-                    <span className="text-sm font-semibold leading-tight">รางวัลที่ได้รับ</span>
-                    <span className="text-[11px] text-gray-400 font-normal leading-tight mt-0.5">ผลงานการประกวดและการแข่งขัน</span>
-                  </div>
-                </Link>
+                {(isAwardsEnabled || isAdmin) && (
+                  <Link 
+                    href="/awards" 
+                    onClick={() => setOpenDropdown(null)}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl min-h-[44px] hover:bg-red-50/80 transition-colors group/item ${
+                      pathname.startsWith("/awards") ? "bg-red-50 text-red-600 font-bold" : "text-gray-700 hover:text-red-600"
+                    }`}
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center shrink-0 group-hover/item:scale-105 transition-transform">
+                      <Trophy className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col text-left">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm font-semibold leading-tight">รางวัลที่ได้รับ</span>
+                        {!isAwardsEnabled && isAdmin && (
+                          <span className="text-[9px] px-1.5 py-0.2 rounded-md bg-amber-100 text-amber-800 font-bold leading-none">ซ่อนอยู่</span>
+                        )}
+                      </div>
+                      <span className="text-[11px] text-gray-400 font-normal leading-tight mt-0.5">ผลงานการประกวดและการแข่งขัน</span>
+                    </div>
+                  </Link>
+                )}
                 <Link 
                   href="/artworks" 
                   onClick={() => setOpenDropdown(null)}

@@ -41,6 +41,8 @@ export default function BottomNavbar() {
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isTeachersEnabled, setIsTeachersEnabled] = useState(true);
+  const [isAwardsEnabled, setIsAwardsEnabled] = useState(true);
+  const isAdmin = userRole === "admin" || userRole === "teacher";
   const [mounted, setMounted] = useState(false);
   const [isExamActive, setIsExamActive] = useState(false);
 
@@ -89,6 +91,15 @@ export default function BottomNavbar() {
       .then((data: any) => {
         if (data && typeof data.enabled === "boolean") {
           setIsTeachersEnabled(data.enabled);
+        }
+      })
+      .catch(() => {});
+
+    fetch("/api/awards/status")
+      .then((res) => res.json())
+      .then((data: any) => {
+        if (data && typeof data.enabled === "boolean") {
+          setIsAwardsEnabled(data.enabled);
         }
       })
       .catch(() => {});
@@ -399,21 +410,28 @@ export default function BottomNavbar() {
                 </button>
                 {expandedSections.artworks && (
                   <div className="px-3 pb-3 pt-1 space-y-1.5 bg-white/70 border-t border-gray-100">
-                    <Link
-                      href="/awards"
-                      onClick={() => setIsMoreMenuOpen(false)}
-                      className={`flex items-center gap-3 p-2.5 rounded-lg transition-colors min-h-[44px] ${
-                        pathname.startsWith("/awards") ? "bg-amber-50 text-amber-900 font-bold" : "hover:bg-amber-50/60 text-gray-700 font-semibold"
-                      }`}
-                    >
-                      <div className="w-7 h-7 rounded-md bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
-                        <Trophy className="w-3.5 h-3.5" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-xs leading-tight">รางวัลที่ได้รับ</p>
-                        <p className="text-[10px] text-gray-400 leading-tight">ผลงานการประกวดและการแข่งขัน</p>
-                      </div>
-                    </Link>
+                    {(isAwardsEnabled || isAdmin) && (
+                      <Link
+                        href="/awards"
+                        onClick={() => setIsMoreMenuOpen(false)}
+                        className={`flex items-center gap-3 p-2.5 rounded-lg transition-colors min-h-[44px] ${
+                          pathname.startsWith("/awards") ? "bg-amber-50 text-amber-900 font-bold" : "hover:bg-amber-50/60 text-gray-700 font-semibold"
+                        }`}
+                      >
+                        <div className="w-7 h-7 rounded-md bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+                          <Trophy className="w-3.5 h-3.5" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <p className="text-xs leading-tight">รางวัลที่ได้รับ</p>
+                            {!isAwardsEnabled && isAdmin && (
+                              <span className="text-[9px] px-1 py-0.2 rounded bg-amber-100 text-amber-800 font-bold leading-none">ซ่อนอยู่</span>
+                            )}
+                          </div>
+                          <p className="text-[10px] text-gray-400 leading-tight">ผลงานการประกวดและการแข่งขัน</p>
+                        </div>
+                      </Link>
+                    )}
 
                     <Link
                       href="/artworks"
