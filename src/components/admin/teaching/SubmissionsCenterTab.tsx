@@ -740,14 +740,15 @@ export default function SubmissionsCenterTab() {
                             {item.imageUrl ? (
                               <button
                                 onClick={() => setLightboxImage(item.imageUrl)}
-                                className="w-10 h-10 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 shrink-0 hover:opacity-80 transition-opacity"
+                                className="w-10 h-10 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 shrink-0 hover:opacity-80 transition-opacity flex items-center justify-center relative"
                                 title="คลิกเพื่อดูภาพผลงานขนาดใหญ่"
                               >
+                                <FileText className="w-4 h-4 text-slate-400" />
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img
                                   src={item.imageUrl}
                                   alt="Artwork preview"
-                                  className="w-full h-full object-cover"
+                                  className="w-full h-full object-cover absolute inset-0 bg-slate-100"
                                   onError={(e) => {
                                     (e.currentTarget as HTMLElement).style.display = 'none';
                                   }}

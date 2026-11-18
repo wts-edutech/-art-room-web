@@ -349,8 +349,9 @@ export default function SubmitWorkModal({
   };
 
   const processAndSetImage = async (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      setErrorMsg("กรุณาเลือกไฟล์รูปภาพที่ถูกต้อง (JPG, PNG, WebP)");
+    const isImageFile = file.type.startsWith("image/") || /\.(heic|heif|jpg|jpeg|png|webp|gif)$/i.test(file.name || "");
+    if (!isImageFile) {
+      setErrorMsg("กรุณาเลือกไฟล์รูปภาพที่ถูกต้อง (JPG, PNG, WebP, HEIC)");
       return;
     }
     setErrorMsg("");
@@ -443,6 +444,13 @@ export default function SubmitWorkModal({
     e.preventDefault();
     setErrorMsg("");
 
+    if (isCompressing) {
+      const msg = "กำลังประมวลผลรูปภาพ กรุณารอสักครู่แล้วกดยืนยันอีกครั้ง";
+      setErrorMsg(msg);
+      swalWarning("กำลังเตรียมรูปภาพ", msg);
+      return;
+    }
+
     if (isGraded) {
       const msg = "ผลงานนี้ได้รับการตรวจประเมินคะแนนแล้ว ไม่สามารถแก้ไขได้ (ดูได้อย่างเดียว)";
       setErrorMsg(msg);
@@ -450,9 +458,10 @@ export default function SubmitWorkModal({
       return;
     }
 
-    // Validation: Require at least one image, link, or document
-    const validImages = imagePreviews.filter(Boolean);
-    const hasAnyImage = validImages.length > 0;
+    // Validation: Require at least one image, link, or document (never send temporary blob: URLs)
+    const validImages = imagePreviews.filter((u) => Boolean(u) && !u.startsWith("blob:"));
+    const hasImageFilesReady = imageFiles.some(Boolean);
+    const hasAnyImage = validImages.length > 0 || hasImageFilesReady;
     if (!hasAnyImage && !externalLink.trim() && !docFile) {
       const msg = "กรุณาแนบภาพผลงานศิลปะ หรือลิงก์ผลงาน (Canva/Drive) อย่างน้อย 1 อย่าง";
       setErrorMsg(msg);
@@ -1347,11 +1356,17 @@ export default function SubmitWorkModal({
           <div className="pt-3 flex items-center gap-3">
             <Button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isCompressing}
               className="flex-1 h-12 rounded-xl bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold text-sm shadow-md shadow-red-600/20 active:scale-95 transition-all cursor-pointer"
               style={{ backgroundColor: "#dc2626", color: "#ffffff" }}
             >
-              {isSubmitting ? "กำลังส่งงาน..." : existingSubmission ? "บันทึกการแก้ไขงาน" : "ยืนยันการส่งงาน"}
+              {isCompressing
+                ? "กำลังเตรียมรูปภาพ..."
+                : isSubmitting
+                ? "กำลังส่งงาน..."
+                : existingSubmission
+                ? "บันทึกการแก้ไขงาน"
+                : "ยืนยันการส่งงาน"}
             </Button>
             <Button
               type="button"

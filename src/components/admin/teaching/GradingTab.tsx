@@ -698,14 +698,15 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
                                 <button
                                   type="button"
                                   onClick={() => setLightboxImage(sub.imageUrl)}
-                                  className="w-7 h-7 rounded-lg overflow-hidden border border-gray-200 hover:border-gray-400 transition-colors cursor-pointer"
+                                  className="w-7 h-7 rounded-lg overflow-hidden border border-gray-200 hover:border-gray-400 transition-colors cursor-pointer flex items-center justify-center relative bg-gray-50"
                                   title="คลิกดูภาพผลงาน"
                                 >
+                                  <ImageIcon className="w-3.5 h-3.5 text-gray-400" />
                                   {/* eslint-disable-next-line @next/next/no-img-element */}
                                   <img
                                     src={sub.imageUrl}
                                     alt="work"
-                                    className="w-full h-full object-cover"
+                                    className="w-full h-full object-cover absolute inset-0 bg-gray-50"
                                     onError={(e) => {
                                       (e.currentTarget as HTMLElement).style.display = 'none';
                                     }}

@@ -102,6 +102,7 @@ export async function GET(request: Request) {
       classroom: submissions.classroom,
       imageCount: sql<number>`CASE 
         WHEN ${submissions.images} IS NULL THEN 0 
+        WHEN ${submissions.images} LIKE '%blob:%' OR ${submissions.images} LIKE '%/api/submissions/image%' THEN 0
         WHEN json_valid(${submissions.images}) AND json_type(${submissions.images}) = 'array' THEN json_array_length(${submissions.images})
         WHEN json_valid(${submissions.images}) AND json_type(${submissions.images}) = 'text' AND json_valid(json_extract(${submissions.images}, '$')) THEN json_array_length(json_extract(${submissions.images}, '$'))
         WHEN length(${submissions.images}) > 5 THEN 1
@@ -109,8 +110,8 @@ export async function GET(request: Request) {
       END`,
       annotatedImages: submissions.annotatedImages,
       hasImage: sql<number>`CASE 
-        WHEN ${submissions.images} IS NOT NULL AND length(${submissions.images}) > 2 THEN 1 
-        WHEN ${submissions.imageUrl} IS NOT NULL AND length(${submissions.imageUrl}) > 0 AND ${submissions.imageUrl} NOT LIKE '%/api/submissions/image%' THEN 1 
+        WHEN ${submissions.images} IS NOT NULL AND length(${submissions.images}) > 2 AND ${submissions.images} NOT LIKE '%blob:%' AND ${submissions.images} NOT LIKE '%/api/submissions/image%' THEN 1 
+        WHEN ${submissions.imageUrl} IS NOT NULL AND length(${submissions.imageUrl}) > 0 AND ${submissions.imageUrl} NOT LIKE '%/api/submissions/image%' AND ${submissions.imageUrl} NOT LIKE '%blob:%' THEN 1 
         ELSE 0 
       END`,
       hasFile: sql<number>`CASE WHEN ${submissions.fileUrl} IS NOT NULL AND length(${submissions.fileUrl}) > 0 THEN 1 ELSE 0 END`,
