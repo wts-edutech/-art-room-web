@@ -765,15 +765,22 @@ export default function SubmissionsCenterTab() {
                                 <ExternalLink className="w-4 h-4" />
                               </a>
                             ) : (
-                              <div className="w-10 h-10 rounded-lg border border-slate-200 bg-slate-50 text-slate-400 flex items-center justify-center shrink-0">
-                                <FileText className="w-4 h-4" />
-                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleOpenInspect(item)}
+                                className="w-10 h-10 rounded-lg border border-rose-200 bg-rose-50 text-rose-500 flex items-center justify-center shrink-0 hover:bg-rose-100 transition-colors cursor-pointer"
+                                title="ไฟล์รูปภาพไม่สมบูรณ์ (แจ้งให้นักเรียนส่งรูปใหม่แล้ว)"
+                              >
+                                <AlertCircle className="w-4 h-4" />
+                              </button>
                             )}
                             <div>
                               {item.score !== null && item.score !== undefined ? (
                                 <p className="font-bold text-slate-900">
                                   {item.score} <span className="text-slate-400 text-[10px]">/ {item.maxScore}</span>
                                 </p>
+                              ) : !item.imageUrl && !item.externalLink && !item.fileUrl ? (
+                                <p className="text-rose-600 text-[11px] font-semibold">รอส่งรูปใหม่</p>
                               ) : (
                                 <p className="text-slate-400 text-[11px] font-medium">ยังไม่ตรวจ</p>
                               )}
@@ -880,7 +887,22 @@ export default function SubmissionsCenterTab() {
                   ? inspectItem.images
                   : (inspectItem.imageUrl ? [inspectItem.imageUrl] : []);
 
-                if (subImages.length === 0) return null;
+                if (subImages.length === 0) {
+                  if (inspectItem.type === 'assignment' && !inspectItem.externalLink && !inspectItem.fileUrl) {
+                    return (
+                      <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-2.5">
+                        <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="font-bold">ไม่พบข้อมูลไฟล์รูปภาพ (ไฟล์ต้นฉบับจากมือถือว่างเปล่า)</p>
+                          <p className="text-rose-700/90 mt-0.5">
+                            ระบบได้ปรับสถานะเป็น &quot;แจ้งให้นักเรียนส่งซ้ำ / ปรับปรุง (Resubmit)&quot; เรียบร้อยแล้ว เมื่อนักเรียนเข้าหน้าส่งงานจะเห็นแจ้งเตือนให้อัปโหลดรูปภาพส่งใหม่อีกครั้ง
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                }
 
                 const annotatorImages: AnnotatorImage[] = subImages.map((orig, i) => {
                   const pending = pendingAnnotations[i];
