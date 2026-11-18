@@ -30,7 +30,7 @@ export default function AdminLoginPage() {
         // Redirect to admin dashboard and force refresh to bypass layout cache if needed
         window.location.href = "/admin";
       } else {
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         const errMsg = data.error || "รหัสผ่านไม่ถูกต้อง";
         setError(errMsg);
         swalError("เข้าสู่ระบบไม่สำเร็จ", errMsg);
