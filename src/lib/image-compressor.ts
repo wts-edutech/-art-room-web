@@ -57,6 +57,28 @@ async function convertHeicViaCdn(file: File): Promise<File | null> {
   }
 }
 
+function isCanvasBlankOrTransparent(ctx: CanvasRenderingContext2D, width: number, height: number): boolean {
+  try {
+    // Sample a 5x5 grid of points across the canvas to verify actual non-transparent pixels were drawn
+    const cols = 5;
+    const rows = 5;
+    for (let r = 1; r <= rows; r++) {
+      for (let c = 1; c <= cols; c++) {
+        const x = Math.min(width - 1, Math.floor((width * c) / (cols + 1)));
+        const y = Math.min(height - 1, Math.floor((height * r) / (rows + 1)));
+        const pixel = ctx.getImageData(x, y, 1, 1).data;
+        // pixel[3] is alpha; if any sampled pixel has non-zero alpha and isn't pure transparent black
+        if (pixel[3] > 10) {
+          return false;
+        }
+      }
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function compressImage(
   file: File,
   options: CompressionOptions = {}
@@ -73,69 +95,36 @@ export async function compressImage(
   const quality = options.quality ?? 0.78;
   const outputFormat = options.outputFormat || 'image/webp';
 
-  // Fast path: Try createImageBitmap (hardware-accelerated, no base64 string conversion)
-  if (typeof window !== 'undefined' && 'createImageBitmap' in window) {
-    try {
-      const bitmap = await createImageBitmap(workingFile);
-      let { width, height } = bitmap;
-
-      if (width > maxWidth || height > maxHeight) {
-        if (width / height > maxWidth / maxHeight) {
-          height = Math.round((height * maxWidth) / width);
-          width = maxWidth;
-        } else {
-          width = Math.round((width * maxHeight) / height);
-          height = maxHeight;
-        }
-      }
-
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-
-      if (ctx) {
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
-        ctx.drawImage(bitmap, 0, 0, width, height);
-
-        const blob = await new Promise<Blob | null>((resolve) =>
-          canvas.toBlob(resolve, outputFormat, quality)
-        );
-
-        if (blob) {
-          const ext = outputFormat === 'image/webp' ? '.webp' : '.jpg';
-          const baseName = workingFile.name.replace(/\.[^/.]+$/, '');
-          return new File([blob], `${baseName}${ext}`, {
-            type: outputFormat,
-            lastModified: Date.now(),
-          });
-        }
-      }
-    } catch (e) {
-      console.warn('[ImageCompressor] createImageBitmap fallback to FileReader:', e);
-      if (isHeic) {
-        const decodedHeic = await convertHeicViaCdn(workingFile);
-        if (decodedHeic) {
-          workingFile = decodedHeic;
-        }
-      }
-    }
-  } else if (isHeic) {
+  // If file is HEIC/HEIF, pre-convert via heic2any on non-Safari or when needed
+  if (isHeic) {
     const decodedHeic = await convertHeicViaCdn(workingFile);
     if (decodedHeic) {
       workingFile = decodedHeic;
     }
   }
 
-  // Standard fallback path: FileReader + Image element
+  // Primary path: URL.createObjectURL + HTMLImageElement (avoids iOS Safari createImageBitmap transparent-canvas bug)
   return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        let width = img.width;
-        let height = img.height;
+    const objectUrl = typeof URL !== 'undefined' && URL.createObjectURL ? URL.createObjectURL(workingFile) : null;
+    const img = new Image();
+
+    const cleanup = () => {
+      if (objectUrl) {
+        try {
+          URL.revokeObjectURL(objectUrl);
+        } catch {}
+      }
+    };
+
+    img.onload = async () => {
+      try {
+        let width = img.naturalWidth || img.width;
+        let height = img.naturalHeight || img.height;
+
+        if (!width || !height) {
+          cleanup();
+          return resolve(workingFile);
+        }
 
         // Calculate proportional scale
         if (width > maxWidth || height > maxHeight) {
@@ -154,16 +143,29 @@ export async function compressImage(
 
         const ctx = canvas.getContext('2d');
         if (!ctx) {
-          return resolve(workingFile); // Fallback to original
+          cleanup();
+          return resolve(workingFile);
         }
 
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
         ctx.drawImage(img, 0, 0, width, height);
 
+        // Guard against iOS WebKit silent blank canvas bug
+        if (isCanvasBlankOrTransparent(ctx, width, height)) {
+          cleanup();
+          if (isHeic && workingFile === file) {
+            const fallbackHeic = await convertHeicViaCdn(file);
+            if (fallbackHeic) return resolve(fallbackHeic);
+          }
+          return resolve(workingFile);
+        }
+
         canvas.toBlob(
           (blob) => {
-            if (!blob) {
+            cleanup();
+            // Reject suspiciously tiny blobs (< 3KB for normal photos) that indicate blank encoding
+            if (!blob || (blob.size < 3000 && workingFile.size > 20000)) {
               return resolve(workingFile);
             }
 
@@ -179,22 +181,33 @@ export async function compressImage(
           outputFormat,
           quality
         );
-      };
-
-      img.onerror = async () => {
-        if (isHeic && workingFile === file) {
-          const decodedHeic = await convertHeicViaCdn(file);
-          if (decodedHeic) {
-            return resolve(decodedHeic);
-          }
-        }
-        resolve(workingFile);
-      };
-      img.src = e.target?.result as string;
+      } catch {
+        cleanup();
+        return resolve(workingFile);
+      }
     };
 
-    reader.onerror = () => resolve(workingFile);
-    reader.readAsDataURL(workingFile);
+    img.onerror = async () => {
+      cleanup();
+      if (isHeic && workingFile === file) {
+        const decodedHeic = await convertHeicViaCdn(file);
+        if (decodedHeic) {
+          return resolve(decodedHeic);
+        }
+      }
+      resolve(workingFile);
+    };
+
+    if (objectUrl) {
+      img.src = objectUrl;
+    } else {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = () => resolve(workingFile);
+      reader.readAsDataURL(workingFile);
+    }
   });
 }
 
