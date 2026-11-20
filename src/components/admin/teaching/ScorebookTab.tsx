@@ -212,18 +212,11 @@ export default function ScorebookTab() {
   const getColumnsForClassroom = useCallback(
     (room: string) => {
       const activeAssignments = assignments.filter((a) => a.isActive !== false);
-      // Exclude pre-test quizzes (แบบทดสอบก่อนเรียน), keep graded/formative quizzes
-      const activeQuizzes = quizzes.filter(
-        (q) =>
-          !q.id.includes("pretest") &&
-          !q.title.includes("ก่อนเรียน") &&
-          (q.isActive !== false || quizAttempts.some((att) => att.quizId === q.id))
-      );
 
       if (room === "all") {
         return {
           colsAssignments: activeAssignments,
-          colsQuizzes: activeQuizzes,
+          colsQuizzes: [] as QuizCol[],
         };
       }
 
@@ -241,20 +234,9 @@ export default function ScorebookTab() {
         return true;
       });
 
-      const colsQuizzes = activeQuizzes.filter((q) => {
-        const targetRooms = parseJsonArray(q.targetClassrooms);
-        if (targetRooms.length > 0) {
-          return targetRooms.includes(room);
-        }
-        if (q.gradeLevel && roomGrade) {
-          return extractGradePrefix(q.gradeLevel) === roomGrade;
-        }
-        return true;
-      });
-
-      return { colsAssignments, colsQuizzes };
+      return { colsAssignments, colsQuizzes: [] as QuizCol[] };
     },
-    [assignments, quizzes, quizAttempts, subjectMap]
+    [assignments, subjectMap]
   );
 
   const { colsAssignments, colsQuizzes } = useMemo(
