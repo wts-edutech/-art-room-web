@@ -63,22 +63,49 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
   const fetchInitialData = async () => {
     setIsLoading(true);
     try {
-      const [dataAss, dataRooms, dataStudents] = await Promise.all([
+      const preSubPromise = selectedAssignmentId
+        ? fetch(`/api/submissions?assignmentId=${selectedAssignmentId}`).then((r) => (r.ok ? r.json() : [])).catch(() => [])
+        : Promise.resolve(null);
+
+      const [dataAss, dataRooms, dataStudents, preSubs] = await Promise.all([
         fetch("/api/assignments").then((r) => (r.ok ? r.json() : [])).catch(() => []),
         fetch("/api/classrooms").then((r) => (r.ok ? r.json() : [])).catch(() => []),
-        fetch("/api/students").then((r) => (r.ok ? r.json() : [])).catch(() => []),
+        fetch("/api/students?light=true").then((r) => (r.ok ? r.json() : [])).catch(() => []),
+        preSubPromise,
       ]);
 
       const assList = Array.isArray(dataAss) ? dataAss : [];
+      const roomList = Array.isArray(dataRooms) ? dataRooms : [];
       setAssignments(assList);
-      setClassrooms(Array.isArray(dataRooms) ? dataRooms : []);
+      setClassrooms(roomList);
       setStudents(Array.isArray(dataStudents) ? dataStudents : []);
 
+      const targetAssId = selectedAssignmentId || (assList.length > 0 ? assList[0].id : "");
       if (assList.length > 0 && !selectedAssignmentId) {
-        setSelectedAssignmentId(assList[0].id);
-        const rooms = assList[0].classroomsList;
-        if (Array.isArray(rooms) && rooms.length > 0) {
-          setSelectedClassroom(rooms[0]);
+        setSelectedAssignmentId(targetAssId);
+      }
+
+      if (targetAssId) {
+        const subList = Array.isArray(preSubs)
+          ? preSubs
+          : await fetch(`/api/submissions?assignmentId=${targetAssId}`).then((r) => (r.ok ? r.json() : [])).catch(() => []);
+        const validSubs = Array.isArray(subList) ? subList : [];
+        setSubmissions(validSubs);
+
+        const currentAss = assList.find((a: any) => a.id === targetAssId);
+        const rooms: string[] =
+          currentAss && Array.isArray(currentAss.classroomsList) && currentAss.classroomsList.length > 0
+            ? currentAss.classroomsList
+            : roomList.map((c: any) => c.name);
+
+        if (rooms.length > 0) {
+          const roomWithPending = rooms.find((r) =>
+            validSubs.some((s: any) => s.classroom === r && s.status !== "graded")
+          );
+          const roomWithAny = rooms.find((r) =>
+            validSubs.some((s: any) => s.classroom === r)
+          );
+          setSelectedClassroom(roomWithPending || roomWithAny || rooms[0]);
         }
       }
     } catch (e) {
@@ -724,7 +751,16 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
             </thead>
 
             <tbody className="divide-y divide-gray-100 text-sm">
-              {currentClassStudents.length === 0 ? (
+              {isLoading ? (
+                <tr>
+                  <td colSpan={8} className="px-6 py-12 text-center text-gray-500 text-sm">
+                    <div className="inline-flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+                      <span>กำลังโหลดข้อมูลการตรวจงาน...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : currentClassStudents.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="px-6 py-12 text-center text-gray-400 text-sm">
                     ไม่พบรายชื่อนักเรียนในห้องนี้ (กรุณาเลือกห้องเรียนที่มีนักเรียน หรือเพิ่มนักเรียนในระบบ)

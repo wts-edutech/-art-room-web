@@ -94,6 +94,12 @@ export async function GET(request: Request) {
       ? db.select(studentSelectFields).from(students).where(eq(students.classroom, classroom)).orderBy(students.id)
       : db.select(studentSelectFields).from(students).orderBy(students.id);
 
+    const isLight = searchParams.get('light') === 'true';
+    if (isLight) {
+      const lightList = await studentQuery;
+      return NextResponse.json(lightList || []);
+    }
+
     const [all, allSubmissions, allQuizAttempts] = await Promise.all([
       studentQuery,
       db.select({ studentId: submissions.studentId, submittedAt: submissions.submittedAt }).from(submissions),
