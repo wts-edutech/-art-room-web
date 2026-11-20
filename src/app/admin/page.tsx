@@ -34,7 +34,8 @@ import {
   Layers,
   ChevronDown,
   Edit3,
-  RefreshCw
+  RefreshCw,
+  Table2
 } from "lucide-react";
 
 // Import tabs
@@ -43,6 +44,7 @@ import TeachingSetupTab from "@/components/admin/teaching/TeachingSetupTab";
 import AssignmentsTab from "@/components/admin/teaching/AssignmentsTab";
 import GradingTab from "@/components/admin/teaching/GradingTab";
 import QuizzesTab from "@/components/admin/teaching/QuizzesTab";
+import ScorebookTab from "@/components/admin/teaching/ScorebookTab";
 
 import AwardsTab from "@/components/admin/AwardsTab";
 import ArtworksTab from "@/components/admin/ArtworksTab";
@@ -67,6 +69,7 @@ type AdminTabKey =
   | "assignments" 
   | "grading" 
   | "quizzes" 
+  | "scorebook"
   | "downloads" 
   | "artworks" 
   | "awards" 
@@ -110,7 +113,8 @@ const ADMIN_CATEGORIES: AdminMenuCategory[] = [
       { key: "assignments", label: "2. มอบหมายงาน", sublabel: "Assignments", icon: ClipboardList },
       { key: "grading", label: "3. ตรวจงาน & ให้คะแนน", sublabel: "Evaluation & Scoring", icon: BookCheck },
       { key: "quizzes", label: "4. แบบทดสอบก่อนเรียน", sublabel: "Pre-tests & Reports", icon: HelpCircle },
-      { key: "downloads", label: "5. สื่อการสอน & ใบงาน (AI)", sublabel: "AI Material Studio & Files", icon: FolderDown, isSpecial: true },
+      { key: "scorebook", label: "5. ตารางรวมคะแนนรายบุคคล", sublabel: "Real-time Scorebook & Excel", icon: Table2, badge: "LIVE", isSpecial: true },
+      { key: "downloads", label: "6. สื่อการสอน & ใบงาน (AI)", sublabel: "AI Material Studio & Files", icon: FolderDown, isSpecial: true },
     ]
   },
   {
@@ -155,6 +159,7 @@ const TEACHING_ALLOWED_KEYS: AdminTabKey[] = [
   "assignments",
   "grading",
   "quizzes",
+  "scorebook",
 ];
 
 export default function AdminPage() {
@@ -779,6 +784,7 @@ export default function AdminPage() {
                   <GradingTab preselectedAssignmentId={gradingAssignmentId} />
                 )}
                 {activeTab === "quizzes" && <QuizzesTab />}
+                {activeTab === "scorebook" && <ScorebookTab />}
                 {activeTab === "downloads" && <DownloadsTab />}
                 {activeTab === "awards" && <AwardsTab />}
                 {activeTab === "artworks" && <ArtworksTab />}
