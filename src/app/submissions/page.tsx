@@ -1526,7 +1526,7 @@ export default function SubmissionsPage() {
       {/* ARTWORK PREVIEW MODAL / LIGHTBOX */}
       {previewSubmission && (
         <div
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200"
+          className="fixed inset-0 z-[110] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200"
           onClick={() => setPreviewSubmission(null)}
         >
           <div

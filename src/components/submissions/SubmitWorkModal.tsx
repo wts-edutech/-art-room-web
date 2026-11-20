@@ -573,7 +573,7 @@ export default function SubmitWorkModal({
 
   if (submissionResult) {
     return (
-      <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
         <div
           className="bg-white rounded-3xl max-w-lg w-full max-h-[90dvh] overflow-y-auto shadow-2xl border border-gray-100 p-4 sm:p-8 animate-in zoom-in-95 duration-200"
           onClick={(e) => e.stopPropagation()}
@@ -742,7 +742,7 @@ export default function SubmitWorkModal({
     const percentage = score !== null && score !== undefined ? Math.min(100, Math.round((score / maxScore) * 100)) : null;
 
     return (
-      <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
         <div
           className="bg-white rounded-3xl max-w-xl w-full max-h-[90dvh] overflow-y-auto shadow-2xl border border-gray-100 p-4 sm:p-8 animate-in zoom-in-95 duration-200"
           onClick={(e) => e.stopPropagation()}
@@ -876,7 +876,7 @@ export default function SubmitWorkModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
       {/* Hidden file input: Photo Library / Gallery */}
       <input
         ref={fileInputRef}

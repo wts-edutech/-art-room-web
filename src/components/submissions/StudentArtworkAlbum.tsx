@@ -379,7 +379,7 @@ export default function StudentArtworkAlbum({
       {/* 5. Teacher Feedback Modal Dialog */}
       {activeFeedbackModal && (
         <div 
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150"
+          className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150"
           onClick={() => setActiveFeedbackModal(null)}
         >
           <div 
@@ -450,7 +450,7 @@ export default function StudentArtworkAlbum({
 
       {/* 6. Printable Portfolio Dossier Modal */}
       {isPrintModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 overflow-y-auto print:p-0 print:bg-white print:static">
+        <div className="fixed inset-0 z-[110] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 overflow-y-auto print:p-0 print:bg-white print:static">
           <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[90dvh] overflow-y-auto shadow-2xl border border-gray-100 p-4 sm:p-8 space-y-6 print:max-w-none print:shadow-none print:border-none print:p-0">
             {/* Modal Controls (Hidden in Print) */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-gray-100 print:hidden">
