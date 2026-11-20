@@ -74,12 +74,21 @@ interface QuizAttemptItem {
 }
 
 function parseJsonArray(val: unknown): string[] {
-  if (Array.isArray(val)) return val.map((v) => String(v).trim()).filter(Boolean);
-  if (typeof val === "string" && val.trim().startsWith("[")) {
-    try {
-      const parsed = JSON.parse(val);
-      if (Array.isArray(parsed)) return parsed.map((v) => String(v).trim()).filter(Boolean);
-    } catch {}
+  let cur: unknown = val;
+  for (let i = 0; i < 3; i++) {
+    if (Array.isArray(cur)) return cur.map((v) => String(v).trim()).filter(Boolean);
+    if (typeof cur === "string") {
+      const trimmed = cur.trim();
+      if (trimmed.startsWith("[") || trimmed.startsWith('"')) {
+        try {
+          cur = JSON.parse(trimmed);
+          continue;
+        } catch {
+          break;
+        }
+      }
+    }
+    break;
   }
   return [];
 }
@@ -203,11 +212,18 @@ export default function ScorebookTab() {
   const getColumnsForClassroom = useCallback(
     (room: string) => {
       const activeAssignments = assignments.filter((a) => a.isActive !== false);
+      // Exclude pre-test quizzes (แบบทดสอบก่อนเรียน), keep graded/formative quizzes
+      const activeQuizzes = quizzes.filter(
+        (q) =>
+          !q.id.includes("pretest") &&
+          !q.title.includes("ก่อนเรียน") &&
+          (q.isActive !== false || quizAttempts.some((att) => att.quizId === q.id))
+      );
 
       if (room === "all") {
         return {
           colsAssignments: activeAssignments,
-          colsQuizzes: [] as QuizCol[],
+          colsQuizzes: activeQuizzes,
         };
       }
 
@@ -225,9 +241,20 @@ export default function ScorebookTab() {
         return true;
       });
 
-      return { colsAssignments, colsQuizzes: [] as QuizCol[] };
+      const colsQuizzes = activeQuizzes.filter((q) => {
+        const targetRooms = parseJsonArray(q.targetClassrooms);
+        if (targetRooms.length > 0) {
+          return targetRooms.includes(room);
+        }
+        if (q.gradeLevel && roomGrade) {
+          return extractGradePrefix(q.gradeLevel) === roomGrade;
+        }
+        return true;
+      });
+
+      return { colsAssignments, colsQuizzes };
     },
-    [assignments, subjectMap]
+    [assignments, quizzes, quizAttempts, subjectMap]
   );
 
   const { colsAssignments, colsQuizzes } = useMemo(
