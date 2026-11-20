@@ -15,8 +15,19 @@ export async function POST(request: Request) {
   try {
     const clientIp = getClientIp(request);
 
-    // 1. Rate Limiting Protection (Max 6 attempts per minute per IP)
-    const rateCheck = checkRateLimit(`login_${clientIp}`, 6, 60000);
+    const body = await request.json().catch(() => ({}));
+    
+    // 1. Anti-Bot Honeypot Check
+    if (body.hp_website || body.bot_trap) {
+      return NextResponse.json({ error: 'ตรวจพบบอทอัตโนมัติ คำขอถูกระงับ' }, { status: 400 });
+    }
+
+    const studentId = String(body.studentId || '').trim();
+    const password = String(body.password || '').trim();
+
+    // 2. Rate Limiting Protection (Per IP+StudentID so classmates on shared school/mobile NAT don't block each other)
+    const rateKey = studentId ? `login_${clientIp}_${studentId}` : `login_${clientIp}`;
+    const rateCheck = checkRateLimit(rateKey, 10, 60000);
     if (!rateCheck.allowed) {
       return NextResponse.json(
         { 
@@ -25,16 +36,6 @@ export async function POST(request: Request) {
         { status: 429 }
       );
     }
-
-    const body = await request.json().catch(() => ({}));
-    
-    // 2. Anti-Bot Honeypot Check
-    if (body.hp_website || body.bot_trap) {
-      return NextResponse.json({ error: 'ตรวจพบบอทอัตโนมัติ คำขอถูกระงับ' }, { status: 400 });
-    }
-
-    const studentId = String(body.studentId || '').trim();
-    const password = String(body.password || '').trim();
 
     // 3. Strict Input Format Validation (Prevent SQLi / Script Injection)
     if (!studentId || !password) {

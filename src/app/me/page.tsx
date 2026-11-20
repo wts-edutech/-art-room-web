@@ -28,7 +28,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { resolveUserAvatar } from "@/lib/art-avatars";
-import { performGlobalLogout } from "@/lib/client-auth";
+import { performGlobalLogout, syncAuthWithServer } from "@/lib/client-auth";
 import { FONTS_LIST, applyActiveFont } from "@/components/ui/FontSelectorDropdown";
 import type { FontOption } from "@/components/ui/FontSelectorDropdown";
 import ProfileSettingsModal from "@/components/modals/ProfileSettingsModal";
@@ -186,11 +186,21 @@ export default function MePage() {
     return () => window.removeEventListener("artroom_profile_updated", loadUserData);
   }, []);
 
-  // Redirect if not logged in
+  // Redirect if not logged in (verify with server session first)
   useEffect(() => {
-    if (mounted && !userName) {
-      router.replace("/login");
-    }
+    if (!mounted || userName) return;
+    let cancelled = false;
+    syncAuthWithServer().then((serverAuth) => {
+      if (cancelled) return;
+      if (serverAuth.authenticated && serverAuth.user) {
+        loadUserData();
+      } else {
+        router.replace("/login");
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [mounted, userName, router]);
 
   const handleSelectFont = (font: FontOption) => {

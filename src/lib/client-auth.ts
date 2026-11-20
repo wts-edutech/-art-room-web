@@ -49,6 +49,7 @@ export function setStudentAuth(
   emitEvent: boolean = true
 ): void {
   if (typeof window === "undefined") return;
+  clearAllAuthData();
 
   const cleanId = String(student.id || "").trim();
   const cleanName = String(student.name || "").trim();
@@ -160,59 +161,73 @@ export async function performGlobalLogout(redirectUrl: string = "/", skipConfirm
   }
 }
 
-let isSyncing = false;
+let syncPromise: Promise<{
+  authenticated: boolean;
+  user: any;
+  isAdmin: boolean;
+}> | null = null;
 
 /**
  * Query /api/auth/profile to synchronize client state with the server session.
- * Never causes infinite event loops.
+ * Shares any in-flight request across concurrent callers and never caches stale auth.
  */
 export async function syncAuthWithServer(): Promise<{
   authenticated: boolean;
   user: any;
   isAdmin: boolean;
 }> {
-  if (typeof window === "undefined" || isSyncing) {
+  if (typeof window === "undefined") {
     return { authenticated: false, user: null, isAdmin: false };
   }
 
-  isSyncing = true;
-  try {
-    const res = await fetch("/api/auth/profile");
-    if (!res.ok) {
-      return { authenticated: false, user: null, isAdmin: false };
-    }
+  if (syncPromise) {
+    return syncPromise;
+  }
 
-    const data: any = await res.json();
-
-    if (data.authenticated && data.user) {
-      if (data.user.role === "student") {
-        setStudentAuth(
-          {
-            id: data.user.id || data.user.userId,
-            name: data.user.name,
-            classroom: data.user.classroom,
-            gradeLevel: data.user.gradeLevel,
-            avatar: data.user.avatar,
-          },
-          false // DO NOT emit event here to prevent infinite recursion
-        );
-      } else if (data.user.role === "guest") {
-        setGuestAuth(
-          {
-            name: data.user.name,
-            email: data.user.email || "",
-            role: data.user.userRole || "บุคคลทั่วไป",
-          },
-          false // DO NOT emit event here
-        );
+  syncPromise = (async () => {
+    try {
+      const res = await fetch("/api/auth/profile", {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      });
+      if (!res.ok) {
+        return { authenticated: false, user: null, isAdmin: false };
       }
-    }
 
-    return data;
-  } catch (err) {
-    console.warn("syncAuthWithServer error:", err);
-    return { authenticated: false, user: null, isAdmin: false };
-  } finally {
-    isSyncing = false;
-  }
+      const data: any = await res.json();
+
+      if (data.authenticated && data.user) {
+        if (data.user.role === "student") {
+          setStudentAuth(
+            {
+              id: data.user.id || data.user.userId,
+              name: data.user.name,
+              classroom: data.user.classroom,
+              gradeLevel: data.user.gradeLevel,
+              avatar: data.user.avatar,
+            },
+            false // DO NOT emit event here to prevent infinite recursion
+          );
+        } else if (data.user.role === "guest") {
+          setGuestAuth(
+            {
+              name: data.user.name,
+              email: data.user.email || "",
+              role: data.user.userRole || "บุคคลทั่วไป",
+            },
+            false // DO NOT emit event here
+          );
+        }
+      }
+
+      return data;
+    } catch (err) {
+      console.warn("syncAuthWithServer error:", err);
+      return { authenticated: false, user: null, isAdmin: false };
+    } finally {
+      syncPromise = null;
+    }
+  })();
+
+  return syncPromise;
 }

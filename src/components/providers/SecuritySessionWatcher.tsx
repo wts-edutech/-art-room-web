@@ -1,6 +1,7 @@
 "use client";
 
 import { swalAlert } from "@/lib/swal";
+import { clearAllAuthData } from "@/lib/client-auth";
 import { useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -17,8 +18,13 @@ export default function SecuritySessionWatcher() {
   const isKickingRef = useRef(false);
 
   useEffect(() => {
-    // Skip checking on login and public landing pages if not logged in
-    const isAdminArea = pathname?.startsWith("/admin") && pathname !== "/admin/login";
+    // Skip checking on login pages so stale cookies never interfere with a fresh sign-in
+    if (pathname === "/login" || pathname === "/admin/login") {
+      isKickingRef.current = false;
+      return;
+    }
+
+    const isAdminArea = pathname?.startsWith("/admin");
 
     const checkSession = async () => {
       if (isKickingRef.current) return;
@@ -38,11 +44,7 @@ export default function SecuritySessionWatcher() {
 
             // Purge client state immediately
             try {
-              localStorage.removeItem("artroom_role");
-              localStorage.removeItem("artroom_author_name");
-              localStorage.removeItem("artroom_user_role");
-              localStorage.removeItem("artroom_author_email");
-              localStorage.removeItem("artroom_avatar");
+              clearAllAuthData();
             } catch {}
 
             document.cookie = "admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
@@ -76,16 +78,19 @@ export default function SecuritySessionWatcher() {
       checkSession();
     };
 
-    window.addEventListener("focus", onFocus);
-    window.addEventListener("visibilitychange", () => {
+    const onVisibilityChange = () => {
       if (document.visibilityState === "visible") {
         checkSession();
       }
-    });
+    };
+
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibilityChange);
 
     return () => {
       clearInterval(interval);
       window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [pathname, router]);
 

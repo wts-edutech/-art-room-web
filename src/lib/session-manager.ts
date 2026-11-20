@@ -38,10 +38,13 @@ export interface SessionRecordItem {
   isCurrent?: boolean;
 }
 
+let sessionTableEnsured = false;
+
 /**
  * Ensures login_sessions table exists in Cloudflare D1 / SQLite
  */
 export async function ensureSessionTableExists() {
+  if (sessionTableEnsured) return;
   const d1 = getD1();
   if (d1) {
     try {
@@ -62,6 +65,7 @@ export async function ensureSessionTableExists() {
           is_revoked INTEGER DEFAULT 0
         )
       `).run();
+      sessionTableEnsured = true;
     } catch (err) {
       console.warn('ensureSessionTableExists D1 note:', err);
     }

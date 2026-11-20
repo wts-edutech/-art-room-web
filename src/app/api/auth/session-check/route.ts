@@ -43,7 +43,7 @@ export async function GET(request: Request) {
     }
 
     // If general check: if user had cookies but session is no longer valid, they were kicked
-    if (hasAdminCookie && !adminSession.isAdmin) {
+    if (hasAdminCookie && !adminSession.isAdmin && !userSession) {
       const res = NextResponse.json({ active: false, reason: 'kicked', role: 'admin' }, { status: 401, headers: NO_CACHE_HEADERS });
       res.cookies.set('admin_token', '', { path: '/', maxAge: 0, expires: new Date(0) });
       return res;
@@ -55,11 +55,18 @@ export async function GET(request: Request) {
       return res;
     }
 
-    return NextResponse.json({
+    const res = NextResponse.json({
       active: adminSession.isAdmin || Boolean(userSession),
       isAdmin: adminSession.isAdmin,
       user: userSession,
     }, { headers: NO_CACHE_HEADERS });
+
+    // Quietly clean up stale admin_token if student session is valid
+    if (hasAdminCookie && !adminSession.isAdmin) {
+      res.cookies.set('admin_token', '', { path: '/', maxAge: 0, expires: new Date(0) });
+    }
+
+    return res;
   } catch (error) {
     console.error('Session check error:', error);
     return NextResponse.json({ active: true }, { status: 200, headers: NO_CACHE_HEADERS });
