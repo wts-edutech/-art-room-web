@@ -706,7 +706,6 @@ export default function ScorebookTab() {
                   </th>
                 ))}
 
-                <th className="py-3 px-3 text-center w-24 border-l border-gray-200 bg-slate-50">ส่งแล้ว</th>
                 <th className="py-3 px-3 text-center w-28 border-l border-gray-200 bg-orange-50/50 text-orange-900">
                   คะแนนรวม
                 </th>
@@ -716,7 +715,7 @@ export default function ScorebookTab() {
               {tableRows.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={6 + colsAssignments.length + colsQuizzes.length}
+                    colSpan={5 + colsAssignments.length + colsQuizzes.length}
                     className="py-12 text-center text-gray-400 text-sm"
                   >
                     ไม่พบข้อมูลนักเรียนตามเงื่อนไขที่เลือก
@@ -779,18 +778,6 @@ export default function ScorebookTab() {
                         )}
                       </td>
                     ))}
-
-                    <td className="py-2.5 px-3 text-center border-l border-gray-100 bg-slate-50/50">
-                      <span
-                        className={`font-bold text-[11px] ${
-                          row.missingCount === 0 && row.totalTasks > 0
-                            ? "text-emerald-600"
-                            : "text-gray-700"
-                        }`}
-                      >
-                        {row.completedCount} / {row.totalTasks}
-                      </span>
-                    </td>
 
                     <td className="py-2.5 px-3 text-center border-l border-gray-100 bg-orange-50/20">
                       <div className="font-bold text-gray-900 font-kanit">
