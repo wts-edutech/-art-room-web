@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Check, Eraser, PenLine, RotateCcw, Trash2, Undo2, X, ImageOff } from "lucide-react";
+import { Check, Eraser, PenLine, RotateCcw, Stamp, Trash2, Undo2, X, ImageOff } from "lucide-react";
 import { swalAlert, swalConfirm } from "@/lib/swal";
 
 /**
@@ -16,15 +16,92 @@ export interface AnnotatorImage {
   currentUrl: string;
 }
 
-type Tool = "pen" | "eraser";
+type Tool = "stamp" | "pen" | "eraser";
 type Point = { x: number; y: number; p: number };
-type Stroke = { tool: Tool; points: Point[] };
+type Stroke = { tool: Tool; points: Point[]; stampDate?: string };
 type ImageState = { base: "current" | "original"; strokes: Stroke[] };
 
 const PEN_COLOR = "#ef2b2b";
+const STAMP_COLOR = "#dc2626";
 const PEN_WIDTH = 0.0045; // สัดส่วนของด้านยาวของภาพ
 const ERASER_WIDTH = 0.035;
 const MAX_EXPORT_DIM = 2000;
+
+function getThaiShortDate(): string {
+  try {
+    return new Date().toLocaleDateString("th-TH", {
+      day: "numeric",
+      month: "short",
+      year: "2-digit",
+    });
+  } catch {
+    return "";
+  }
+}
+
+function drawStamp(
+  ctx: CanvasRenderingContext2D,
+  pt: Point,
+  w: number,
+  h: number,
+  dateText?: string
+) {
+  const longSide = Math.max(w, h);
+  const stampW = Math.max(84, longSide * 0.19);
+  const stampH = stampW * 0.46;
+  const cx = pt.x * w;
+  const cy = pt.y * h;
+  const radius = stampH * 0.16;
+
+  ctx.save();
+  ctx.globalCompositeOperation = "source-over";
+  ctx.translate(cx, cy);
+  ctx.rotate((-10 * Math.PI) / 180);
+
+  // Subtle translucent white backing so stamp is readable even on dark artwork
+  ctx.fillStyle = "rgba(255, 255, 255, 0.86)";
+  ctx.beginPath();
+  ctx.roundRect(-stampW / 2, -stampH / 2, stampW, stampH, radius);
+  ctx.fill();
+
+  // Outer thick stamp border
+  ctx.strokeStyle = STAMP_COLOR;
+  ctx.lineWidth = Math.max(2, stampW * 0.028);
+  ctx.beginPath();
+  ctx.roundRect(-stampW / 2, -stampH / 2, stampW, stampH, radius);
+  ctx.stroke();
+
+  // Inner thin stamp border
+  const inset = Math.max(3, stampW * 0.032);
+  ctx.lineWidth = Math.max(1, stampW * 0.01);
+  ctx.beginPath();
+  ctx.roundRect(
+    -stampW / 2 + inset,
+    -stampH / 2 + inset,
+    stampW - inset * 2,
+    stampH - inset * 2,
+    Math.max(2, radius - inset * 0.5)
+  );
+  ctx.stroke();
+
+  // Main text: ✓ ตรวจแล้ว
+  ctx.fillStyle = STAMP_COLOR;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  const mainFontSize = Math.max(14, stampH * 0.42);
+  ctx.font = `800 ${mainFontSize}px "Kanit", "Sarabun", sans-serif`;
+  const mainY = dateText ? -stampH * 0.1 : 0;
+  ctx.fillText("✓ ตรวจแล้ว", 0, mainY);
+
+  // Date subtitle
+  if (dateText) {
+    const subFontSize = Math.max(9, stampH * 0.21);
+    ctx.font = `600 ${subFontSize}px "Sarabun", sans-serif`;
+    ctx.fillText(dateText, 0, stampH * 0.23);
+  }
+
+  ctx.restore();
+}
 
 function widthFactor(p: number) {
   // pressure 0..1 (เมาส์/นิ้วมักเป็น 0.5) → 0.55..1.45
@@ -55,6 +132,10 @@ function drawSegment(
 function drawStroke(ctx: CanvasRenderingContext2D, stroke: Stroke, w: number, h: number) {
   const pts = stroke.points;
   if (pts.length === 0) return;
+  if (stroke.tool === "stamp") {
+    drawStamp(ctx, pts[0], w, h, stroke.stampDate);
+    return;
+  }
   if (pts.length === 1) {
     drawSegment(ctx, stroke, pts[0], { ...pts[0], x: pts[0].x + 0.0001 }, w, h);
     return;
@@ -116,7 +197,7 @@ interface ImageAnnotatorProps {
 
 export default function ImageAnnotator({ images, initialIndex = 0, title, onDone, onCancel }: ImageAnnotatorProps) {
   const [activeIdx, setActiveIdx] = useState(Math.min(initialIndex, Math.max(0, images.length - 1)));
-  const [tool, setTool] = useState<Tool>("pen");
+  const [tool, setTool] = useState<Tool>("stamp");
   const [states, setStates] = useState<ImageState[]>(() => images.map(() => ({ base: "current", strokes: [] })));
   const [natural, setNatural] = useState<{ w: number; h: number } | null>(null);
   const [box, setBox] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
@@ -204,6 +285,14 @@ export default function ImageAnnotator({ images, initialIndex = 0, title, onDone
     if (activePointer.current !== null) return;
     if (e.pointerType === "mouse" && e.button !== 0) return;
     e.preventDefault();
+
+    if (tool === "stamp") {
+      const pt = toPoint(e);
+      const stampStroke: Stroke = { tool: "stamp", points: [pt], stampDate: getThaiShortDate() };
+      updateActive((s) => ({ ...s, strokes: [...s.strokes, stampStroke] }));
+      return;
+    }
+
     activePointer.current = e.pointerId;
     e.currentTarget.setPointerCapture(e.pointerId);
     const stroke: Stroke = { tool, points: [toPoint(e)] };
@@ -315,11 +404,17 @@ export default function ImageAnnotator({ images, initialIndex = 0, title, onDone
       {/* Top bar */}
       <div className="flex flex-wrap items-center justify-between gap-2 px-3 sm:px-5 py-2.5 bg-black/60 border-b border-white/10">
         <div className="min-w-0">
-          <p className="text-white font-bold text-sm sm:text-base font-kanit truncate">✏️ เขียนตรวจบนภาพ</p>
+          <p className="text-white font-bold text-sm sm:text-base font-kanit truncate">
+            {tool === "stamp" ? "💮 แตะบนภาพเพื่อปั๊มตรา \"ตรวจแล้ว\"" : "✏️ เขียนตรวจบนภาพ"}
+          </p>
           {title && <p className="text-[11px] text-gray-300 truncate">{title}</p>}
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+          <button type="button" onClick={() => setTool("stamp")} className={toolBtn(tool === "stamp")} title="ตราปั๊ม ตรวจแล้ว">
+            <Stamp className="w-4 h-4" style={{ color: tool === "stamp" ? STAMP_COLOR : undefined }} />
+            <span>ตราปั๊มตรวจแล้ว</span>
+          </button>
           <button type="button" onClick={() => setTool("pen")} className={toolBtn(tool === "pen")} title="ปากกาแดง">
             <PenLine className="w-4 h-4" style={{ color: tool === "pen" ? PEN_COLOR : undefined }} />
             <span className="hidden sm:inline">ปากกา</span>
