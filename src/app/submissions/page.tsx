@@ -420,13 +420,19 @@ export default function SubmissionsPage() {
     [submissions, activeQuizzes, artToySeries]
   );
 
-  // Filtered Assignments for To-Do Tab
-  const toDoAssignments = assignments.filter((a) => {
-    if (toDoFilter === "missing") {
-      return !subMap.has(a.id) || subMap.get(a.id)?.status === "resubmit";
-    }
-    return true;
-  });
+  // Filtered Assignments for To-Do Tab (newest assignment at the top)
+  const toDoAssignments = [...assignments]
+    .filter((a) => {
+      if (toDoFilter === "missing") {
+        return !subMap.has(a.id) || subMap.get(a.id)?.status === "resubmit";
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return tb - ta;
+    });
 
   return (
     <>
@@ -872,165 +878,6 @@ export default function SubmissionsPage() {
                         ยกเลิก
                       </button>
                     </div>
-                  </div>
-                </div>
-              )}
-
-              {/* ACTIVE PRE-TESTS SECTION (WHEN RELEASED BY TEACHER) */}
-              {activeQuizzes.length > 0 && (
-                <div className="space-y-3 mb-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center justify-center p-1.5 rounded-lg bg-indigo-100 text-indigo-700">
-                        <BookOpen className="w-4 h-4" />
-                      </span>
-                      <h2 className="text-base font-bold text-gray-900 font-kanit">
-                        แบบทดสอบออนไลน์ประจำวิชา (Online Exam)
-                      </h2>
-                    </div>
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                      <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
-                      ระบบ Anti-Cheat ล็อคหน้าจอ
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-4">
-                    {activeQuizzes.map((quiz) => {
-                      const hasAttempted = Boolean(quiz.userAttempt);
-                      const attempt = quiz.userAttempt;
-
-                      return (
-                        <div
-                          key={quiz.id}
-                          className={`relative overflow-hidden rounded-3xl p-5 sm:p-6 transition-all border ${
-                            hasAttempted
-                              ? "bg-gradient-to-br from-emerald-50/80 via-white to-white border-emerald-200 shadow-sm"
-                              : "bg-gradient-to-br from-indigo-50/90 via-white to-orange-50/40 border-indigo-200 shadow-md hover:shadow-lg"
-                          }`}
-                        >
-                          {/* Top Tag & Grade */}
-                          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                            <div className="flex items-center gap-2">
-                              <span className="px-3 py-1 rounded-xl bg-indigo-600 text-white text-xs font-bold font-kanit shadow-sm">
-                                {quiz.code}
-                              </span>
-                              <span className="px-2.5 py-1 rounded-xl bg-gray-100 text-gray-700 text-xs font-semibold">
-                                ระดับชั้น {quiz.gradeLevel}
-                              </span>
-                              <span className="px-2.5 py-1 rounded-xl bg-purple-50 text-purple-700 text-xs font-medium border border-purple-100">
-                                {quiz.title?.includes("ก่อนเรียน")
-                                  ? "แบบทดสอบก่อนเรียน"
-                                  : quiz.title?.includes("หลังเรียน")
-                                  ? "แบบทดสอบหลังเรียน"
-                                  : quiz.title?.includes("เก็บคะแนน")
-                                  ? "แบบทดสอบเก็บคะแนน"
-                                  : "แบบทดสอบออนไลน์"}
-                              </span>
-                            </div>
-
-                            {hasAttempted ? (
-                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                                ทำแบบทดสอบแล้ว
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300 animate-pulse">
-                                <Clock className="w-3.5 h-3.5 text-amber-600" />
-                                เปิดให้ทำแบบทดสอบแล้ว
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Quiz Title & Details */}
-                          <div className="mb-4">
-                            <h3 className="text-lg font-bold text-gray-900 font-kanit">
-                              {quiz.title}
-                            </h3>
-                            <p className="text-xs text-gray-500 mt-1 leading-relaxed">
-                              {quiz.description}
-                            </p>
-                          </div>
-
-                          {/* Info Badges */}
-                          <div className="flex flex-wrap items-center gap-4 text-xs text-gray-600 py-2.5 px-3.5 rounded-2xl bg-white/80 border border-gray-100 mb-4">
-                            <div className="flex items-center gap-1.5">
-                              <FileText className="w-4 h-4 text-indigo-500" />
-                              <span>จำนวน <strong>{quiz.totalQuestions}</strong> ข้อ (ปรนัย 4 ตัวเลือก)</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <Clock className="w-4 h-4 text-amber-500" />
-                              <span>เวลาทำ <strong>{quiz.timeLimitMinutes}</strong> นาที</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <Award className="w-4 h-4 text-emerald-500" />
-                              <span>คะแนนเต็ม <strong>{quiz.maxScore}</strong> คะแนน</span>
-                            </div>
-                          </div>
-
-                          {/* Actions / Score Results */}
-                          {hasAttempted ? (
-                            <div className="bg-emerald-50/60 border border-emerald-200/80 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                              <div>
-                                <p className="text-xs font-medium text-emerald-800">ผลการทำแบบทดสอบของคุณ</p>
-                                <div className="flex items-baseline gap-2 mt-1">
-                                  <span className="text-2xl font-bold font-kanit text-emerald-700">
-                                    {attempt.score}
-                                  </span>
-                                  <span className="text-sm font-semibold text-gray-500">
-                                    / {attempt.totalQuestions} คะแนน
-                                  </span>
-                                  <span className="text-xs px-2 py-0.5 rounded-md bg-emerald-200 text-emerald-900 font-bold ml-1">
-                                    {Math.round((attempt.score / attempt.totalQuestions) * 100)}%
-                                  </span>
-                                </div>
-                                {attempt.infractionsCount > 0 && (
-                                  <p className="text-[11px] text-amber-700 font-medium mt-1 flex items-center gap-1">
-                                    <AlertCircle className="w-3.5 h-3.5" />
-                                    ตรวจพบการสลับหน้าจอ {attempt.infractionsCount} ครั้ง
-                                  </p>
-                                )}
-                              </div>
-
-                              <div className="text-left sm:text-right">
-                                <span className="text-[11px] text-gray-400 block">
-                                  ส่งคำตอบเมื่อ {new Date(attempt.submittedAt).toLocaleDateString("th-TH", {
-                                    year: "numeric",
-                                    month: "short",
-                                    day: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })}
-                                </span>
-                                <span className="inline-block mt-1 text-[11px] font-bold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-lg">
-                                  บันทึกคะแนนเข้าสู่ระบบแล้ว (ทำได้ 1 ครั้ง)
-                                </span>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-2">
-                              <div className="flex items-start gap-2 text-xs text-amber-800">
-                                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                                <span>
-                                  เมื่อกดปุ่มเริ่มทำแบบทดสอบ ระบบจะเข้าสู่โหมดเต็มจอและล็อคการสลับหน้าจอทันที (จับเวลา {quiz.timeLimitMinutes} นาที)
-                                </span>
-                              </div>
-
-                              <button
-                                type="button"
-                                onClick={() => setActiveQuizToTake(quiz)}
-                                className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold text-xs sm:text-sm shadow-md shadow-red-600/20 active:scale-95 transition-all duration-150 cursor-pointer shrink-0"
-                                style={{ backgroundColor: "#dc2626", color: "#ffffff" }}
-                              >
-                                <PlayCircle className="w-4 h-4 text-white shrink-0" />
-                                <span className="text-white font-bold text-xs sm:text-sm">
-                                  เริ่มทำแบบทดสอบ
-                                </span>
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
                   </div>
                 </div>
               )}
@@ -1498,6 +1345,165 @@ export default function SubmissionsPage() {
               </div>
             </>
           )}
+
+              {/* ACTIVE PRE-TESTS SECTION (BELOW LATEST ASSIGNMENTS) */}
+              {activeQuizzes.length > 0 && (
+                <div className="space-y-3 pt-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center justify-center p-1.5 rounded-lg bg-indigo-100 text-indigo-700">
+                        <BookOpen className="w-4 h-4" />
+                      </span>
+                      <h2 className="text-base font-bold text-gray-900 font-kanit">
+                        แบบทดสอบออนไลน์ประจำวิชา (Online Exam)
+                      </h2>
+                    </div>
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                      <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
+                      ระบบ Anti-Cheat ล็อคหน้าจอ
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4">
+                    {activeQuizzes.map((quiz) => {
+                      const hasAttempted = Boolean(quiz.userAttempt);
+                      const attempt = quiz.userAttempt;
+
+                      return (
+                        <div
+                          key={quiz.id}
+                          className={`relative overflow-hidden rounded-3xl p-5 sm:p-6 transition-all border ${
+                            hasAttempted
+                              ? "bg-gradient-to-br from-emerald-50/80 via-white to-white border-emerald-200 shadow-sm"
+                              : "bg-gradient-to-br from-indigo-50/90 via-white to-orange-50/40 border-indigo-200 shadow-md hover:shadow-lg"
+                          }`}
+                        >
+                          {/* Top Tag & Grade */}
+                          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                            <div className="flex items-center gap-2">
+                              <span className="px-3 py-1 rounded-xl bg-indigo-600 text-white text-xs font-bold font-kanit shadow-sm">
+                                {quiz.code}
+                              </span>
+                              <span className="px-2.5 py-1 rounded-xl bg-gray-100 text-gray-700 text-xs font-semibold">
+                                ระดับชั้น {quiz.gradeLevel}
+                              </span>
+                              <span className="px-2.5 py-1 rounded-xl bg-purple-50 text-purple-700 text-xs font-medium border border-purple-100">
+                                {quiz.title?.includes("ก่อนเรียน")
+                                  ? "แบบทดสอบก่อนเรียน"
+                                  : quiz.title?.includes("หลังเรียน")
+                                  ? "แบบทดสอบหลังเรียน"
+                                  : quiz.title?.includes("เก็บคะแนน")
+                                  ? "แบบทดสอบเก็บคะแนน"
+                                  : "แบบทดสอบออนไลน์"}
+                              </span>
+                            </div>
+
+                            {hasAttempted ? (
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                ทำแบบทดสอบแล้ว
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300 animate-pulse">
+                                <Clock className="w-3.5 h-3.5 text-amber-600" />
+                                เปิดให้ทำแบบทดสอบแล้ว
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Quiz Title & Details */}
+                          <div className="mb-4">
+                            <h3 className="text-lg font-bold text-gray-900 font-kanit">
+                              {quiz.title}
+                            </h3>
+                            <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                              {quiz.description}
+                            </p>
+                          </div>
+
+                          {/* Info Badges */}
+                          <div className="flex flex-wrap items-center gap-4 text-xs text-gray-600 py-2.5 px-3.5 rounded-2xl bg-white/80 border border-gray-100 mb-4">
+                            <div className="flex items-center gap-1.5">
+                              <FileText className="w-4 h-4 text-indigo-500" />
+                              <span>จำนวน <strong>{quiz.totalQuestions}</strong> ข้อ (ปรนัย 4 ตัวเลือก)</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <Clock className="w-4 h-4 text-amber-500" />
+                              <span>เวลาทำ <strong>{quiz.timeLimitMinutes}</strong> นาที</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <Award className="w-4 h-4 text-emerald-500" />
+                              <span>คะแนนเต็ม <strong>{quiz.maxScore}</strong> คะแนน</span>
+                            </div>
+                          </div>
+
+                          {/* Actions / Score Results */}
+                          {hasAttempted ? (
+                            <div className="bg-emerald-50/60 border border-emerald-200/80 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                              <div>
+                                <p className="text-xs font-medium text-emerald-800">ผลการทำแบบทดสอบของคุณ</p>
+                                <div className="flex items-baseline gap-2 mt-1">
+                                  <span className="text-2xl font-bold font-kanit text-emerald-700">
+                                    {attempt.score}
+                                  </span>
+                                  <span className="text-sm font-semibold text-gray-500">
+                                    / {attempt.totalQuestions} คะแนน
+                                  </span>
+                                  <span className="text-xs px-2 py-0.5 rounded-md bg-emerald-200 text-emerald-900 font-bold ml-1">
+                                    {Math.round((attempt.score / attempt.totalQuestions) * 100)}%
+                                  </span>
+                                </div>
+                                {attempt.infractionsCount > 0 && (
+                                  <p className="text-[11px] text-amber-700 font-medium mt-1 flex items-center gap-1">
+                                    <AlertCircle className="w-3.5 h-3.5" />
+                                    ตรวจพบการสลับหน้าจอ {attempt.infractionsCount} ครั้ง
+                                  </p>
+                                )}
+                              </div>
+
+                              <div className="text-left sm:text-right">
+                                <span className="text-[11px] text-gray-400 block">
+                                  ส่งคำตอบเมื่อ {new Date(attempt.submittedAt).toLocaleDateString("th-TH", {
+                                    year: "numeric",
+                                    month: "short",
+                                    day: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </span>
+                                <span className="inline-block mt-1 text-[11px] font-bold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-lg">
+                                  บันทึกคะแนนเข้าสู่ระบบแล้ว (ทำได้ 1 ครั้ง)
+                                </span>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-2">
+                              <div className="flex items-start gap-2 text-xs text-amber-800">
+                                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                                <span>
+                                  เมื่อกดปุ่มเริ่มทำแบบทดสอบ ระบบจะเข้าสู่โหมดเต็มจอและล็อคการสลับหน้าจอทันที (จับเวลา {quiz.timeLimitMinutes} นาที)
+                                </span>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => setActiveQuizToTake(quiz)}
+                                className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold text-xs sm:text-sm shadow-md shadow-red-600/20 active:scale-95 transition-all duration-150 cursor-pointer shrink-0"
+                                style={{ backgroundColor: "#dc2626", color: "#ffffff" }}
+                              >
+                                <PlayCircle className="w-4 h-4 text-white shrink-0" />
+                                <span className="text-white font-bold text-xs sm:text-sm">
+                                  เริ่มทำแบบทดสอบ
+                                </span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
         </div>
     )}
   </div>
