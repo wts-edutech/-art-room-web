@@ -81,57 +81,67 @@ function drawStamp(
   ctx.stroke();
 
   // Inner dashed red accent border
-  const inset = Math.max(3.5, stampW * 0.024);
+  const inset = Math.max(3, stampW * 0.028);
+  const innerW = stampW - inset * 2;
+  const innerH = stampH - inset * 2;
+  const innerLeft = -stampW / 2 + inset;
+  const innerRight = stampW / 2 - inset;
+
   ctx.strokeStyle = STAMP_COLOR;
-  ctx.lineWidth = Math.max(1.2, stampW * 0.009);
-  ctx.setLineDash([Math.max(3.5, stampW * 0.022), Math.max(2, stampW * 0.014)]);
+  ctx.lineWidth = Math.max(1.1, stampW * 0.009);
+  ctx.setLineDash([Math.max(3, stampW * 0.022), Math.max(2, stampW * 0.014)]);
   ctx.beginPath();
   ctx.roundRect(
-    -stampW / 2 + inset,
+    innerLeft,
     -stampH / 2 + inset,
-    stampW - inset * 2,
-    stampH - inset * 2,
+    innerW,
+    innerH,
     Math.max(2, radius - inset * 0.5)
   );
   ctx.stroke();
   ctx.setLineDash([]);
 
   const hasMascot = Boolean(mascotImg && mascotImg.complete && mascotImg.naturalWidth > 0);
+  let textAreaLeft = innerLeft + innerW * 0.05;
   if (hasMascot && mascotImg) {
-    const iconSize = stampH * 0.66;
-    const iconX = -stampW / 2 + inset * 1.5;
+    const iconSize = innerH * 0.78;
+    const iconX = innerLeft + innerW * 0.02;
     const iconY = -iconSize / 2;
     ctx.drawImage(mascotImg, iconX, iconY, iconSize, iconSize);
+    textAreaLeft = iconX + iconSize + innerW * 0.02;
   }
 
-  // Text block cleanly shifted right so it never overlaps the paintbrush
-  const textCenterX = hasMascot ? stampW * 0.16 : 0;
+  // Text block strictly bounded inside the inner frame
+  const textAreaRight = innerRight - innerW * 0.04;
+  const textAreaW = Math.max(20, textAreaRight - textAreaLeft);
+  const textCenterX = (textAreaLeft + textAreaRight) / 2;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
-  // 1. Main Title: "ตรวจแล้ว!" with bold pop-art outline + gradient fill
-  const mainFontSize = Math.max(7.5, stampW * 0.155);
-  ctx.font = `900 ${mainFontSize}px "Kanit", "Prompt", sans-serif`;
-  const titleY = -stampH * 0.22;
+  // 1. Main Title: "ตรวจแล้ว!" in cool handwritten script ("Mali") strictly inside frame
+  const mainFontSize = Math.max(7, innerH * 0.28);
+  ctx.font = `italic 700 ${mainFontSize}px "Mali", "Itim", cursive, sans-serif`;
+  const titleY = -innerH * 0.24;
 
   ctx.lineJoin = "round";
   ctx.strokeStyle = "#111827";
-  ctx.lineWidth = Math.max(1.2, mainFontSize * 0.16);
-  ctx.strokeText("ตรวจแล้ว!", textCenterX, titleY);
+  ctx.lineWidth = Math.max(1, mainFontSize * 0.14);
+  ctx.strokeText("ตรวจแล้ว!", textCenterX, titleY, textAreaW);
 
   const grad = ctx.createLinearGradient(textCenterX, titleY - mainFontSize / 2, textCenterX, titleY + mainFontSize / 2);
   grad.addColorStop(0, "#ff2e4c");
-  grad.addColorStop(1, "#dc2626");
+  grad.addColorStop(1, "#be123c");
   ctx.fillStyle = grad;
-  ctx.fillText("ตรวจแล้ว!", textCenterX, titleY);
+  ctx.fillText("ตรวจแล้ว!", textCenterX, titleY, textAreaW);
 
-  // 2. Teacher Pill Badge: "ครูเก๋" (dark pill + neon-lime text)
-  const teacherFontSize = Math.max(6.5, stampH * 0.2);
-  ctx.font = `700 ${teacherFontSize}px "Kanit", "Sarabun", sans-serif`;
+  // 2. Teacher Pill Badge: "ครูเก๋" in handwritten script inside dark pop-art pill
+  const teacherFontSize = Math.max(6, innerH * 0.2);
+  ctx.font = `700 ${teacherFontSize}px "Mali", "Itim", cursive, sans-serif`;
   const teacherText = "ครูเก๋";
-  const pillW = Math.min(stampW * 0.48, Math.max(stampW * 0.34, ctx.measureText(teacherText).width + stampW * 0.1));
-  const pillH = stampH * 0.25;
-  const pillY = stampH * 0.08;
+  const measuredPillW = ctx.measureText(teacherText).width + innerW * 0.12;
+  const pillW = Math.min(textAreaW * 0.92, Math.max(textAreaW * 0.56, measuredPillW));
+  const pillH = innerH * 0.28;
+  const pillY = innerH * 0.07;
 
   ctx.fillStyle = "#111827";
   ctx.beginPath();
@@ -139,14 +149,14 @@ function drawStamp(
   ctx.fill();
 
   ctx.fillStyle = "#bef264";
-  ctx.fillText(teacherText, textCenterX, pillY + 0.5);
+  ctx.fillText(teacherText, textCenterX, pillY + 0.5, pillW * 0.86);
 
-  // 3. Date subtitle with star accents
+  // 3. Date subtitle in handwritten script strictly inside frame
   if (dateText) {
-    ctx.fillStyle = "#4b5563";
-    const subFontSize = Math.max(5.5, stampH * 0.145);
-    ctx.font = `700 ${subFontSize}px "Kanit", "Sarabun", sans-serif`;
-    ctx.fillText(`★ ${dateText} ★`, textCenterX, stampH * 0.33);
+    ctx.fillStyle = "#374151";
+    const subFontSize = Math.max(5, innerH * 0.155);
+    ctx.font = `600 ${subFontSize}px "Mali", "Itim", cursive, sans-serif`;
+    ctx.fillText(`★ ${dateText} ★`, textCenterX, innerH * 0.34, textAreaW);
   }
 
   ctx.restore();
@@ -279,9 +289,14 @@ export default function ImageAnnotator({ images, initialIndex = 0, title, onDone
   const isDirty = (s: ImageState, i: number) => s.strokes.length > 0 || (s.base === "original" && hasExisting(i));
   const anyDirty = states.some(isDirty);
 
-  // Preload cute mascot image for stamp
+  // Preload cute mascot image & handwritten Mali font for stamp
   useEffect(() => {
     let cancelled = false;
+    if (typeof document !== "undefined" && (document as any).fonts?.load) {
+      (document as any).fonts.load('700 16px "Mali"').then(() => {
+        if (!cancelled) setMascotReady((v) => !v ? true : v);
+      }).catch(() => {});
+    }
     loadImage("/images/stamp-mascot.jpg")
       .then((img) => {
         if (!cancelled) {
