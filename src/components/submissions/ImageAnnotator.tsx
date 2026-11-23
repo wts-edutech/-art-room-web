@@ -234,6 +234,7 @@ export default function ImageAnnotator({ images, initialIndex = 0, title, onDone
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const activePointer = useRef<number | null>(null);
   const liveStroke = useRef<Stroke | null>(null);
+  const autoSavingRef = useRef(false);
   const statesRef = useRef(states);
   statesRef.current = states;
 
@@ -330,6 +331,7 @@ export default function ImageAnnotator({ images, initialIndex = 0, title, onDone
     e.preventDefault();
 
     if (tool === "stamp") {
+      if (isExporting || autoSavingRef.current) return;
       const pt = toPoint(e);
       const stampStroke: Stroke = {
         tool: "stamp",
@@ -338,7 +340,14 @@ export default function ImageAnnotator({ images, initialIndex = 0, title, onDone
         stampSubText: stampSubText.trim(),
         stampColor,
       };
-      updateActive((s) => ({ ...s, strokes: [...s.strokes, stampStroke] }));
+      const nextStates = statesRef.current.map((s, i) =>
+        i === activeIdx ? { ...s, strokes: [...s.strokes, stampStroke] } : s
+      );
+      autoSavingRef.current = true;
+      setStates(nextStates);
+      setTimeout(() => {
+        handleDone(nextStates);
+      }, 260);
       return;
     }
 
@@ -404,12 +413,13 @@ export default function ImageAnnotator({ images, initialIndex = 0, title, onDone
     onCancel();
   };
 
-  const handleDone = async () => {
+  const handleDone = async (overrideStates?: ImageState[]) => {
+    const targetStates = Array.isArray(overrideStates) ? overrideStates : statesRef.current;
     setIsExporting(true);
     try {
       const changes: Record<number, string | null> = {};
       for (let i = 0; i < images.length; i++) {
-        const s = states[i];
+        const s = targetStates[i];
         if (!isDirty(s, i)) continue;
         const url = s.base === "original" ? images[i].originalUrl : images[i].currentUrl;
         if (s.strokes.length === 0) {
@@ -422,6 +432,7 @@ export default function ImageAnnotator({ images, initialIndex = 0, title, onDone
       onDone(changes);
     } catch (err) {
       console.error(err);
+      autoSavingRef.current = false;
       swalAlert("ไม่สามารถรวมภาพที่เขียนได้ กรุณาลองใหม่อีกครั้ง");
     } finally {
       setIsExporting(false);
@@ -517,7 +528,7 @@ export default function ImageAnnotator({ images, initialIndex = 0, title, onDone
           </button>
           <button
             type="button"
-            onClick={handleDone}
+            onClick={() => handleDone()}
             disabled={isExporting}
             className="h-11 px-4 sm:px-5 rounded-xl bg-orange-500 hover:bg-orange-600 disabled:opacity-60 text-white text-sm font-bold flex items-center gap-1.5 cursor-pointer shadow-lg"
           >
