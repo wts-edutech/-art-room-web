@@ -48,8 +48,8 @@ function drawStamp(
   mascotImg?: HTMLImageElement | null
 ) {
   const longSide = Math.max(w, h);
-  const stampW = Math.max(145, longSide * 0.3);
-  const stampH = stampW * 0.43;
+  const stampW = Math.max(96, longSide * 0.19);
+  const stampH = stampW * 0.44;
   const cx = pt.x * w;
   const cy = pt.y * h;
   const radius = stampH * 0.24;
@@ -109,13 +109,13 @@ function drawStamp(
   ctx.textBaseline = "middle";
 
   // 1. Main Title: "ตรวจแล้ว!" with bold pop-art outline + gradient fill
-  const mainFontSize = Math.max(13, stampH * 0.32);
+  const mainFontSize = Math.max(10, stampH * 0.31);
   ctx.font = `900 ${mainFontSize}px "Kanit", "Prompt", sans-serif`;
   const titleY = -stampH * 0.22;
 
   ctx.lineJoin = "round";
   ctx.strokeStyle = "#111827";
-  ctx.lineWidth = Math.max(2, mainFontSize * 0.16);
+  ctx.lineWidth = Math.max(1.5, mainFontSize * 0.16);
   ctx.strokeText("ตรวจแล้ว!", textCenterX, titleY);
 
   const grad = ctx.createLinearGradient(textCenterX, titleY - mainFontSize / 2, textCenterX, titleY + mainFontSize / 2);
@@ -124,11 +124,11 @@ function drawStamp(
   ctx.fillStyle = grad;
   ctx.fillText("ตรวจแล้ว!", textCenterX, titleY);
 
-  // 2. Teacher Pill Badge: "ครูผู้สอน ครูเก๋" (dark pill + neon-lime/white text)
-  const teacherFontSize = Math.max(8.5, stampH * 0.185);
+  // 2. Teacher Pill Badge: "ครูเก๋" (dark pill + neon-lime text)
+  const teacherFontSize = Math.max(8, stampH * 0.2);
   ctx.font = `700 ${teacherFontSize}px "Kanit", "Sarabun", sans-serif`;
-  const teacherText = "ครูผู้สอน • ครูเก๋";
-  const pillW = Math.min(stampW * 0.56, ctx.measureText(teacherText).width + stampW * 0.09);
+  const teacherText = "ครูเก๋";
+  const pillW = Math.min(stampW * 0.48, Math.max(stampW * 0.34, ctx.measureText(teacherText).width + stampW * 0.1));
   const pillH = stampH * 0.25;
   const pillY = stampH * 0.08;
 
@@ -143,7 +143,7 @@ function drawStamp(
   // 3. Date subtitle with star accents
   if (dateText) {
     ctx.fillStyle = "#4b5563";
-    const subFontSize = Math.max(7.5, stampH * 0.145);
+    const subFontSize = Math.max(6.5, stampH * 0.145);
     ctx.font = `700 ${subFontSize}px "Kanit", "Sarabun", sans-serif`;
     ctx.fillText(`★ ${dateText} ★`, textCenterX, stampH * 0.33);
   }
