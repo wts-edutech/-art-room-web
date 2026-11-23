@@ -44,36 +44,42 @@ function drawStamp(
   pt: Point,
   w: number,
   h: number,
-  dateText?: string
+  dateText?: string,
+  mascotImg?: HTMLImageElement | null
 ) {
   const longSide = Math.max(w, h);
-  const stampW = Math.max(84, longSide * 0.19);
-  const stampH = stampW * 0.46;
+  const stampW = Math.max(125, longSide * 0.27);
+  const stampH = stampW * 0.44;
   const cx = pt.x * w;
   const cy = pt.y * h;
-  const radius = stampH * 0.16;
+  const radius = stampH * 0.24;
 
   ctx.save();
   ctx.globalCompositeOperation = "source-over";
   ctx.translate(cx, cy);
-  ctx.rotate((-10 * Math.PI) / 180);
+  ctx.rotate((-6 * Math.PI) / 180);
 
-  // Subtle translucent white backing so stamp is readable even on dark artwork
-  ctx.fillStyle = "rgba(255, 255, 255, 0.86)";
+  // Cute white rounded card with soft shadow
+  ctx.shadowColor = "rgba(0, 0, 0, 0.16)";
+  ctx.shadowBlur = Math.max(4, stampW * 0.03);
+  ctx.shadowOffsetY = Math.max(2, stampW * 0.012);
+  ctx.fillStyle = "rgba(255, 255, 255, 0.96)";
   ctx.beginPath();
   ctx.roundRect(-stampW / 2, -stampH / 2, stampW, stampH, radius);
   ctx.fill();
+  ctx.shadowColor = "transparent";
 
-  // Outer thick stamp border
+  // Outer thick stamp border (cute rose-red)
   ctx.strokeStyle = STAMP_COLOR;
-  ctx.lineWidth = Math.max(2, stampW * 0.028);
+  ctx.lineWidth = Math.max(2, stampW * 0.022);
   ctx.beginPath();
   ctx.roundRect(-stampW / 2, -stampH / 2, stampW, stampH, radius);
   ctx.stroke();
 
-  // Inner thin stamp border
-  const inset = Math.max(3, stampW * 0.032);
-  ctx.lineWidth = Math.max(1, stampW * 0.01);
+  // Inner dashed/thin cute border
+  const inset = Math.max(3, stampW * 0.026);
+  ctx.lineWidth = Math.max(1, stampW * 0.008);
+  ctx.setLineDash([Math.max(3, stampW * 0.02), Math.max(2, stampW * 0.015)]);
   ctx.beginPath();
   ctx.roundRect(
     -stampW / 2 + inset,
@@ -83,21 +89,39 @@ function drawStamp(
     Math.max(2, radius - inset * 0.5)
   );
   ctx.stroke();
+  ctx.setLineDash([]);
+
+  const hasMascot = Boolean(mascotImg && mascotImg.complete && mascotImg.naturalWidth > 0);
+  if (hasMascot && mascotImg) {
+    const iconSize = stampH * 0.78;
+    const iconX = -stampW / 2 + inset * 2 + iconSize * 0.08;
+    const iconY = -iconSize / 2;
+    ctx.drawImage(mascotImg, iconX, iconY, iconSize, iconSize);
+  }
+
+  // Text block on the right (or centered if mascot not loaded yet)
+  const textCenterX = hasMascot ? stampW * 0.14 : 0;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
 
   // Main text: ✓ ตรวจแล้ว
   ctx.fillStyle = STAMP_COLOR;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  const mainFontSize = Math.max(14, stampH * 0.42);
+  const mainFontSize = Math.max(12, stampH * 0.31);
   ctx.font = `800 ${mainFontSize}px "Kanit", "Sarabun", sans-serif`;
-  const mainY = dateText ? -stampH * 0.1 : 0;
-  ctx.fillText("✓ ตรวจแล้ว", 0, mainY);
+  ctx.fillText("✓ ตรวจแล้ว", textCenterX, -stampH * 0.21);
+
+  // Teacher name: ครูผู้สอน ครูเก๋
+  ctx.fillStyle = "#9f1239";
+  const teacherFontSize = Math.max(9, stampH * 0.21);
+  ctx.font = `700 ${teacherFontSize}px "Kanit", "Sarabun", sans-serif`;
+  ctx.fillText("ครูผู้สอน ครูเก๋", textCenterX, stampH * 0.07);
 
   // Date subtitle
   if (dateText) {
-    const subFontSize = Math.max(9, stampH * 0.21);
+    ctx.fillStyle = "#e11d48";
+    const subFontSize = Math.max(8, stampH * 0.16);
     ctx.font = `600 ${subFontSize}px "Sarabun", sans-serif`;
-    ctx.fillText(dateText, 0, stampH * 0.23);
+    ctx.fillText(dateText, textCenterX, stampH * 0.29);
   }
 
   ctx.restore();
@@ -129,11 +153,17 @@ function drawSegment(
   ctx.stroke();
 }
 
-function drawStroke(ctx: CanvasRenderingContext2D, stroke: Stroke, w: number, h: number) {
+function drawStroke(
+  ctx: CanvasRenderingContext2D,
+  stroke: Stroke,
+  w: number,
+  h: number,
+  mascotImg?: HTMLImageElement | null
+) {
   const pts = stroke.points;
   if (pts.length === 0) return;
   if (stroke.tool === "stamp") {
-    drawStamp(ctx, pts[0], w, h, stroke.stampDate);
+    drawStamp(ctx, pts[0], w, h, stroke.stampDate, mascotImg);
     return;
   }
   if (pts.length === 1) {
@@ -143,12 +173,12 @@ function drawStroke(ctx: CanvasRenderingContext2D, stroke: Stroke, w: number, h:
   for (let i = 1; i < pts.length; i++) drawSegment(ctx, stroke, pts[i - 1], pts[i], w, h);
 }
 
-function renderStrokes(canvas: HTMLCanvasElement, strokes: Stroke[]) {
+function renderStrokes(canvas: HTMLCanvasElement, strokes: Stroke[], mascotImg?: HTMLImageElement | null) {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
   ctx.globalCompositeOperation = "source-over";
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  for (const s of strokes) drawStroke(ctx, s, canvas.width, canvas.height);
+  for (const s of strokes) drawStroke(ctx, s, canvas.width, canvas.height, mascotImg);
   ctx.globalCompositeOperation = "source-over";
 }
 
@@ -164,7 +194,10 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 
 /** รวมภาพพื้น + เส้นที่เขียน → JPEG data URL */
 async function flatten(baseUrl: string, strokes: Stroke[]): Promise<string> {
-  const img = await loadImage(baseUrl);
+  const [img, mascotImg] = await Promise.all([
+    loadImage(baseUrl),
+    loadImage("/images/stamp-mascot.jpg").catch(() => null),
+  ]);
   const scale = Math.min(1, MAX_EXPORT_DIM / Math.max(img.naturalWidth, img.naturalHeight));
   const w = Math.max(1, Math.round(img.naturalWidth * scale));
   const h = Math.max(1, Math.round(img.naturalHeight * scale));
@@ -180,7 +213,7 @@ async function flatten(baseUrl: string, strokes: Stroke[]): Promise<string> {
   const layer = document.createElement("canvas");
   layer.width = w;
   layer.height = h;
-  renderStrokes(layer, strokes);
+  renderStrokes(layer, strokes, mascotImg);
   ctx.drawImage(layer, 0, 0);
 
   return out.toDataURL("image/jpeg", 0.85);
@@ -206,6 +239,8 @@ export default function ImageAnnotator({ images, initialIndex = 0, title, onDone
 
   const stageRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const mascotImgRef = useRef<HTMLImageElement | null>(null);
+  const [mascotReady, setMascotReady] = useState(false);
   const activePointer = useRef<number | null>(null);
   const liveStroke = useRef<Stroke | null>(null);
   const statesRef = useRef(states);
@@ -218,6 +253,22 @@ export default function ImageAnnotator({ images, initialIndex = 0, title, onDone
 
   const isDirty = (s: ImageState, i: number) => s.strokes.length > 0 || (s.base === "original" && hasExisting(i));
   const anyDirty = states.some(isDirty);
+
+  // Preload cute mascot image for stamp
+  useEffect(() => {
+    let cancelled = false;
+    loadImage("/images/stamp-mascot.jpg")
+      .then((img) => {
+        if (!cancelled) {
+          mascotImgRef.current = img;
+          setMascotReady(true);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // ล็อกการเลื่อนหน้าขณะเขียน
   useEffect(() => {
@@ -251,13 +302,13 @@ export default function ImageAnnotator({ images, initialIndex = 0, title, onDone
     const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
     canvas.width = Math.round(box.w * dpr);
     canvas.height = Math.round(box.h * dpr);
-    renderStrokes(canvas, statesRef.current[activeIdx]?.strokes || []);
-  }, [box, activeIdx]);
+    renderStrokes(canvas, statesRef.current[activeIdx]?.strokes || [], mascotImgRef.current);
+  }, [box, activeIdx, mascotReady]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (canvas && canvas.width) renderStrokes(canvas, activeState?.strokes || []);
-  }, [activeState?.strokes]);
+    if (canvas && canvas.width) renderStrokes(canvas, activeState?.strokes || [], mascotImgRef.current);
+  }, [activeState?.strokes, mascotReady]);
 
   useEffect(() => {
     setNatural(null);
