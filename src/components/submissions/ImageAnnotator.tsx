@@ -48,115 +48,100 @@ function drawStamp(
   mascotImg?: HTMLImageElement | null
 ) {
   const longSide = Math.max(w, h);
-  // 2.5 x 2 cm relative to A4 worksheet (2.5 / 29.7 ≈ 8.5%, aspect 2 / 2.5 = 0.8)
-  const stampW = Math.max(64, longSide * 0.085);
-  const stampH = stampW * 0.8;
+  // Compact circular stamp (~2.3 cm on A4)
+  const r = Math.max(34, longSide * 0.044);
   const cx = pt.x * w;
   const cy = pt.y * h;
-  const radius = stampH * 0.24;
 
   ctx.save();
   ctx.globalCompositeOperation = "source-over";
   ctx.translate(cx, cy);
-  ctx.rotate((-6 * Math.PI) / 180);
+  ctx.rotate((-8 * Math.PI) / 180);
 
-  // Pop-art comic hard offset shadow
-  const shadowOffset = Math.max(2.5, stampW * 0.016);
+  // Pop-art comic offset shadow
+  const shadowOffset = Math.max(2, r * 0.05);
   ctx.fillStyle = "rgba(17, 24, 39, 0.88)";
   ctx.beginPath();
-  ctx.roundRect(-stampW / 2 + shadowOffset, -stampH / 2 + shadowOffset, stampW, stampH, radius);
+  ctx.arc(shadowOffset, shadowOffset, r, 0, Math.PI * 2);
   ctx.fill();
 
-  // Crisp white card background
+  // Crisp white circular background
   ctx.fillStyle = "rgba(255, 255, 255, 0.98)";
   ctx.beginPath();
-  ctx.roundRect(-stampW / 2, -stampH / 2, stampW, stampH, radius);
+  ctx.arc(0, 0, r, 0, Math.PI * 2);
   ctx.fill();
 
-  // Bold comic ink outer border
+  // Bold comic ink outer circle border
   ctx.strokeStyle = "#111827";
-  ctx.lineWidth = Math.max(2.2, stampW * 0.02);
+  ctx.lineWidth = Math.max(1.8, r * 0.05);
   ctx.beginPath();
-  ctx.roundRect(-stampW / 2, -stampH / 2, stampW, stampH, radius);
+  ctx.arc(0, 0, r, 0, Math.PI * 2);
   ctx.stroke();
 
-  // Inner dashed red accent border
-  const inset = Math.max(3, stampW * 0.028);
-  const innerW = stampW - inset * 2;
-  const innerH = stampH - inset * 2;
-  const innerLeft = -stampW / 2 + inset;
-  const innerRight = stampW / 2 - inset;
-
+  // Inner dashed red accent circle border
+  const inset = Math.max(2.5, r * 0.08);
+  const innerR = r - inset;
   ctx.strokeStyle = STAMP_COLOR;
-  ctx.lineWidth = Math.max(1.1, stampW * 0.009);
-  ctx.setLineDash([Math.max(3, stampW * 0.022), Math.max(2, stampW * 0.014)]);
+  ctx.lineWidth = Math.max(1, r * 0.025);
+  ctx.setLineDash([Math.max(2.5, r * 0.09), Math.max(2, r * 0.06)]);
   ctx.beginPath();
-  ctx.roundRect(
-    innerLeft,
-    -stampH / 2 + inset,
-    innerW,
-    innerH,
-    Math.max(2, radius - inset * 0.5)
-  );
+  ctx.arc(0, 0, innerR, 0, Math.PI * 2);
   ctx.stroke();
   ctx.setLineDash([]);
 
+  // Clip everything inside the inner circle so nothing overflows
+  ctx.beginPath();
+  ctx.arc(0, 0, innerR - 1, 0, Math.PI * 2);
+  ctx.clip();
+
   const hasMascot = Boolean(mascotImg && mascotImg.complete && mascotImg.naturalWidth > 0);
-  let textAreaLeft = innerLeft + innerW * 0.05;
   if (hasMascot && mascotImg) {
-    const iconSize = innerH * 0.78;
-    const iconX = innerLeft + innerW * 0.02;
-    const iconY = -iconSize / 2;
-    ctx.drawImage(mascotImg, iconX, iconY, iconSize, iconSize);
-    textAreaLeft = iconX + iconSize + innerW * 0.02;
+    const iconSize = innerR * 0.78;
+    ctx.drawImage(mascotImg, -iconSize / 2, -innerR * 0.86, iconSize, iconSize);
   }
 
-  // Text block strictly bounded inside the inner frame
-  const textAreaRight = innerRight - innerW * 0.04;
-  const textAreaW = Math.max(20, textAreaRight - textAreaLeft);
-  const textCenterX = (textAreaLeft + textAreaRight) / 2;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
-  // 1. Main Title: "ตรวจแล้ว!" in cool handwritten script ("Mali") strictly inside frame
-  const mainFontSize = Math.max(7, innerH * 0.28);
+  // 1. Main Title: "ตรวจแล้ว!" in handwritten script ("Mali")
+  const mainMaxW = innerR * 1.56;
+  const mainFontSize = Math.max(7.5, innerR * 0.36);
   ctx.font = `italic 700 ${mainFontSize}px "Mali", "Itim", cursive, sans-serif`;
-  const titleY = -innerH * 0.24;
+  const titleY = hasMascot ? innerR * 0.06 : -innerR * 0.25;
 
   ctx.lineJoin = "round";
   ctx.strokeStyle = "#111827";
   ctx.lineWidth = Math.max(1, mainFontSize * 0.14);
-  ctx.strokeText("ตรวจแล้ว!", textCenterX, titleY, textAreaW);
+  ctx.strokeText("ตรวจแล้ว!", 0, titleY, mainMaxW);
 
-  const grad = ctx.createLinearGradient(textCenterX, titleY - mainFontSize / 2, textCenterX, titleY + mainFontSize / 2);
+  const grad = ctx.createLinearGradient(0, titleY - mainFontSize / 2, 0, titleY + mainFontSize / 2);
   grad.addColorStop(0, "#ff2e4c");
   grad.addColorStop(1, "#be123c");
   ctx.fillStyle = grad;
-  ctx.fillText("ตรวจแล้ว!", textCenterX, titleY, textAreaW);
+  ctx.fillText("ตรวจแล้ว!", 0, titleY, mainMaxW);
 
-  // 2. Teacher Pill Badge: "ครูเก๋" in handwritten script inside dark pop-art pill
-  const teacherFontSize = Math.max(6, innerH * 0.2);
+  // 2. Teacher Pill Badge: "ครูเก๋" in handwritten script inside dark pill
+  const teacherFontSize = Math.max(6, innerR * 0.24);
   ctx.font = `700 ${teacherFontSize}px "Mali", "Itim", cursive, sans-serif`;
   const teacherText = "ครูเก๋";
-  const measuredPillW = ctx.measureText(teacherText).width + innerW * 0.12;
-  const pillW = Math.min(textAreaW * 0.92, Math.max(textAreaW * 0.56, measuredPillW));
-  const pillH = innerH * 0.28;
-  const pillY = innerH * 0.07;
+  const pillW = Math.min(innerR * 1.25, Math.max(innerR * 0.78, ctx.measureText(teacherText).width + innerR * 0.28));
+  const pillH = innerR * 0.31;
+  const pillY = hasMascot ? innerR * 0.42 : innerR * 0.12;
 
   ctx.fillStyle = "#111827";
   ctx.beginPath();
-  ctx.roundRect(textCenterX - pillW / 2, pillY - pillH / 2, pillW, pillH, pillH / 2);
+  ctx.roundRect(-pillW / 2, pillY - pillH / 2, pillW, pillH, pillH / 2);
   ctx.fill();
 
   ctx.fillStyle = "#bef264";
-  ctx.fillText(teacherText, textCenterX, pillY + 0.5, pillW * 0.86);
+  ctx.fillText(teacherText, 0, pillY + 0.5, pillW * 0.86);
 
-  // 3. Date subtitle in handwritten script strictly inside frame
+  // 3. Date subtitle in handwritten script
   if (dateText) {
     ctx.fillStyle = "#374151";
-    const subFontSize = Math.max(5, innerH * 0.155);
+    const subFontSize = Math.max(5, innerR * 0.17);
     ctx.font = `600 ${subFontSize}px "Mali", "Itim", cursive, sans-serif`;
-    ctx.fillText(`★ ${dateText} ★`, textCenterX, innerH * 0.34, textAreaW);
+    ctx.fillText(dateText, 0, hasMascot ? innerR * 0.72 : innerR * 0.48, innerR * 1.15);
   }
 
   ctx.restore();
