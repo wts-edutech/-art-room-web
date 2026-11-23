@@ -128,10 +128,12 @@ export default function ScorebookTab() {
       const data: any = await res.json();
 
       const stuList: StudentRow[] = Array.isArray(data.students) ? data.students : [];
+      const assList: AssignmentCol[] = Array.isArray(data.assignments) ? data.assignments : [];
+      const subList: SubmissionItem[] = Array.isArray(data.submissions) ? data.submissions : [];
       setStudents(stuList);
-      setAssignments(Array.isArray(data.assignments) ? data.assignments : []);
+      setAssignments(assList);
       setQuizzes(Array.isArray(data.quizzes) ? data.quizzes : []);
-      setSubmissions(Array.isArray(data.submissions) ? data.submissions : []);
+      setSubmissions(subList);
       setQuizAttempts(Array.isArray(data.quizAttempts) ? data.quizAttempts : []);
       setSubjects(Array.isArray(data.subjects) ? data.subjects : []);
 
@@ -145,8 +147,18 @@ export default function ScorebookTab() {
 
       setSelectedClassroom((prev) => {
         if (prev) return prev;
-        const rooms = Array.from(
-          new Set(stuList.map((s) => (s.classroom || "").trim()).filter(Boolean))
+        const taughtSet = new Set<string>();
+        for (const a of assList) {
+          if (a.isActive === false) continue;
+          for (const r of parseJsonArray(a.classrooms)) taughtSet.add(r);
+        }
+        for (const s of subList) {
+          if (s.classroom && s.classroom.trim()) taughtSet.add(s.classroom.trim());
+        }
+        const rooms = (
+          taughtSet.size > 0
+            ? Array.from(taughtSet)
+            : Array.from(new Set(stuList.map((s) => (s.classroom || "").trim()).filter(Boolean)))
         ).sort(compareClassrooms);
         return rooms[0] || "all";
       });
@@ -175,11 +187,25 @@ export default function ScorebookTab() {
   }, [isLive, fetchScorebook]);
 
   const classroomOptions = useMemo(() => {
-    const rooms = Array.from(
+    const taughtSet = new Set<string>();
+    for (const a of assignments) {
+      if (a.isActive === false) continue;
+      for (const r of parseJsonArray(a.classrooms)) {
+        taughtSet.add(r);
+      }
+    }
+    for (const s of submissions) {
+      if (s.classroom && s.classroom.trim()) {
+        taughtSet.add(s.classroom.trim());
+      }
+    }
+    if (taughtSet.size > 0) {
+      return Array.from(taughtSet).sort(compareClassrooms);
+    }
+    return Array.from(
       new Set(students.map((s) => (s.classroom || "").trim()).filter(Boolean))
     ).sort(compareClassrooms);
-    return rooms;
-  }, [students]);
+  }, [assignments, submissions, students]);
 
   const subjectMap = useMemo(() => {
     const m = new Map<string, any>();
