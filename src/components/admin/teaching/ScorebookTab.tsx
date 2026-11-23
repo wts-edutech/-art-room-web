@@ -161,9 +161,6 @@ export default function ScorebookTab() {
           if (a.isActive === false) continue;
           for (const r of parseJsonArray(a.classrooms)) taughtSet.add(r);
         }
-        for (const s of subList) {
-          if (s.classroom && s.classroom.trim()) taughtSet.add(s.classroom.trim());
-        }
         const rooms = (
           taughtSet.size > 0
             ? Array.from(taughtSet)
@@ -203,18 +200,13 @@ export default function ScorebookTab() {
         taughtSet.add(r);
       }
     }
-    for (const s of submissions) {
-      if (s.classroom && s.classroom.trim()) {
-        taughtSet.add(s.classroom.trim());
-      }
-    }
     if (taughtSet.size > 0) {
       return Array.from(taughtSet).sort(compareClassrooms);
     }
     return Array.from(
       new Set(students.map((s) => (s.classroom || "").trim()).filter(Boolean))
     ).sort(compareClassrooms);
-  }, [assignments, submissions, students]);
+  }, [assignments, students]);
 
   const subjectMap = useMemo(() => {
     const m = new Map<string, any>();
