@@ -297,6 +297,23 @@ export default function ImageAnnotator({ images, initialIndex = 0, title, onDone
     [activeIdx]
   );
 
+  // Sync changes in color / preset / text / subtitle to the most recent stamp on the active image
+  const updateLatestStamp = useCallback(
+    (patch: Partial<Pick<Stroke, "stampColor" | "stampText" | "stampSubText">>) => {
+      updateActive((s) => {
+        for (let i = s.strokes.length - 1; i >= 0; i--) {
+          if (s.strokes[i].tool === "stamp") {
+            const next = [...s.strokes];
+            next[i] = { ...next[i], ...patch };
+            return { ...s, strokes: next };
+          }
+        }
+        return s;
+      });
+    },
+    [updateActive]
+  );
+
   const toPoint = (e: { clientX: number; clientY: number; pressure: number; pointerType: string }): Point => {
     const rect = canvasRef.current!.getBoundingClientRect();
     const p = e.pointerType === "pen" ? (e.pressure > 0 ? e.pressure : 0.5) : 0.5;
@@ -520,7 +537,10 @@ export default function ImageAnnotator({ images, initialIndex = 0, title, onDone
               <button
                 key={c.id}
                 type="button"
-                onClick={() => setStampColor(c.hex)}
+                onClick={() => {
+                  setStampColor(c.hex);
+                  updateLatestStamp({ stampColor: c.hex });
+                }}
                 className={`px-2 py-0.5 rounded-lg font-bold text-[11px] flex items-center gap-1 cursor-pointer transition-all ${
                   stampColor === c.hex ? "bg-white text-gray-900 shadow-sm" : "text-gray-200 hover:bg-white/15"
                 }`}
@@ -540,7 +560,10 @@ export default function ImageAnnotator({ images, initialIndex = 0, title, onDone
                 <button
                   key={preset}
                   type="button"
-                  onClick={() => setStampText(val)}
+                  onClick={() => {
+                    setStampText(val);
+                    updateLatestStamp({ stampText: val });
+                  }}
                   className={`px-2.5 py-1 rounded-lg font-bold text-[11px] cursor-pointer transition-all ${
                     active ? "bg-orange-500 text-white shadow-sm" : "bg-white/10 text-gray-200 hover:bg-white/20"
                   }`}
@@ -556,7 +579,11 @@ export default function ImageAnnotator({ images, initialIndex = 0, title, onDone
             <input
               type="text"
               value={stampText}
-              onChange={(e) => setStampText(e.target.value)}
+              onChange={(e) => {
+                const v = e.target.value;
+                setStampText(v);
+                updateLatestStamp({ stampText: v.trim() || "✓ ตรวจแล้ว" });
+              }}
               maxLength={24}
               placeholder="ข้อความหลัก..."
               className="h-7 w-28 sm:w-32 px-2.5 rounded-lg bg-white/95 text-gray-900 font-bold text-[11px] outline-none focus:ring-2 focus:ring-orange-400"
@@ -564,7 +591,11 @@ export default function ImageAnnotator({ images, initialIndex = 0, title, onDone
             <input
               type="text"
               value={stampSubText}
-              onChange={(e) => setStampSubText(e.target.value)}
+              onChange={(e) => {
+                const v = e.target.value;
+                setStampSubText(v);
+                updateLatestStamp({ stampSubText: v.trim() });
+              }}
               maxLength={28}
               placeholder="บรรทัดล่าง (เช่น ครู/คะแนน)..."
               className="h-7 w-32 sm:w-40 px-2.5 rounded-lg bg-white/90 text-gray-800 font-medium text-[11px] outline-none focus:ring-2 focus:ring-orange-400"
