@@ -48,8 +48,8 @@ function drawStamp(
   mascotImg?: HTMLImageElement | null
 ) {
   const longSide = Math.max(w, h);
-  const stampW = Math.max(125, longSide * 0.27);
-  const stampH = stampW * 0.44;
+  const stampW = Math.max(145, longSide * 0.3);
+  const stampH = stampW * 0.43;
   const cx = pt.x * w;
   const cy = pt.y * h;
   const radius = stampH * 0.24;
@@ -59,27 +59,31 @@ function drawStamp(
   ctx.translate(cx, cy);
   ctx.rotate((-6 * Math.PI) / 180);
 
-  // Cute white rounded card with soft shadow
-  ctx.shadowColor = "rgba(0, 0, 0, 0.16)";
-  ctx.shadowBlur = Math.max(4, stampW * 0.03);
-  ctx.shadowOffsetY = Math.max(2, stampW * 0.012);
-  ctx.fillStyle = "rgba(255, 255, 255, 0.96)";
+  // Pop-art comic hard offset shadow
+  const shadowOffset = Math.max(2.5, stampW * 0.016);
+  ctx.fillStyle = "rgba(17, 24, 39, 0.88)";
+  ctx.beginPath();
+  ctx.roundRect(-stampW / 2 + shadowOffset, -stampH / 2 + shadowOffset, stampW, stampH, radius);
+  ctx.fill();
+
+  // Crisp white card background
+  ctx.fillStyle = "rgba(255, 255, 255, 0.98)";
   ctx.beginPath();
   ctx.roundRect(-stampW / 2, -stampH / 2, stampW, stampH, radius);
   ctx.fill();
-  ctx.shadowColor = "transparent";
 
-  // Outer thick stamp border (cute rose-red)
-  ctx.strokeStyle = STAMP_COLOR;
-  ctx.lineWidth = Math.max(2, stampW * 0.022);
+  // Bold comic ink outer border
+  ctx.strokeStyle = "#111827";
+  ctx.lineWidth = Math.max(2.2, stampW * 0.02);
   ctx.beginPath();
   ctx.roundRect(-stampW / 2, -stampH / 2, stampW, stampH, radius);
   ctx.stroke();
 
-  // Inner dashed/thin cute border
-  const inset = Math.max(3, stampW * 0.026);
-  ctx.lineWidth = Math.max(1, stampW * 0.008);
-  ctx.setLineDash([Math.max(3, stampW * 0.02), Math.max(2, stampW * 0.015)]);
+  // Inner dashed red accent border
+  const inset = Math.max(3.5, stampW * 0.024);
+  ctx.strokeStyle = STAMP_COLOR;
+  ctx.lineWidth = Math.max(1.2, stampW * 0.009);
+  ctx.setLineDash([Math.max(3.5, stampW * 0.022), Math.max(2, stampW * 0.014)]);
   ctx.beginPath();
   ctx.roundRect(
     -stampW / 2 + inset,
@@ -94,34 +98,54 @@ function drawStamp(
   const hasMascot = Boolean(mascotImg && mascotImg.complete && mascotImg.naturalWidth > 0);
   if (hasMascot && mascotImg) {
     const iconSize = stampH * 0.78;
-    const iconX = -stampW / 2 + inset * 2 + iconSize * 0.08;
+    const iconX = -stampW / 2 + inset * 1.8;
     const iconY = -iconSize / 2;
     ctx.drawImage(mascotImg, iconX, iconY, iconSize, iconSize);
   }
 
-  // Text block on the right (or centered if mascot not loaded yet)
-  const textCenterX = hasMascot ? stampW * 0.14 : 0;
+  // Text block cleanly shifted right so it never overlaps the paintbrush
+  const textCenterX = hasMascot ? stampW * 0.17 : 0;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
-  // Main text: ✓ ตรวจแล้ว
-  ctx.fillStyle = STAMP_COLOR;
-  const mainFontSize = Math.max(12, stampH * 0.31);
-  ctx.font = `800 ${mainFontSize}px "Kanit", "Sarabun", sans-serif`;
-  ctx.fillText("✓ ตรวจแล้ว", textCenterX, -stampH * 0.21);
+  // 1. Main Title: "ตรวจแล้ว!" with bold pop-art outline + gradient fill
+  const mainFontSize = Math.max(13, stampH * 0.32);
+  ctx.font = `900 ${mainFontSize}px "Kanit", "Prompt", sans-serif`;
+  const titleY = -stampH * 0.22;
 
-  // Teacher name: ครูผู้สอน ครูเก๋
-  ctx.fillStyle = "#9f1239";
-  const teacherFontSize = Math.max(9, stampH * 0.21);
+  ctx.lineJoin = "round";
+  ctx.strokeStyle = "#111827";
+  ctx.lineWidth = Math.max(2, mainFontSize * 0.16);
+  ctx.strokeText("ตรวจแล้ว!", textCenterX, titleY);
+
+  const grad = ctx.createLinearGradient(textCenterX, titleY - mainFontSize / 2, textCenterX, titleY + mainFontSize / 2);
+  grad.addColorStop(0, "#ff2e4c");
+  grad.addColorStop(1, "#dc2626");
+  ctx.fillStyle = grad;
+  ctx.fillText("ตรวจแล้ว!", textCenterX, titleY);
+
+  // 2. Teacher Pill Badge: "ครูผู้สอน ครูเก๋" (dark pill + neon-lime/white text)
+  const teacherFontSize = Math.max(8.5, stampH * 0.185);
   ctx.font = `700 ${teacherFontSize}px "Kanit", "Sarabun", sans-serif`;
-  ctx.fillText("ครูผู้สอน ครูเก๋", textCenterX, stampH * 0.07);
+  const teacherText = "ครูผู้สอน • ครูเก๋";
+  const pillW = Math.min(stampW * 0.56, ctx.measureText(teacherText).width + stampW * 0.09);
+  const pillH = stampH * 0.25;
+  const pillY = stampH * 0.08;
 
-  // Date subtitle
+  ctx.fillStyle = "#111827";
+  ctx.beginPath();
+  ctx.roundRect(textCenterX - pillW / 2, pillY - pillH / 2, pillW, pillH, pillH / 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#bef264";
+  ctx.fillText(teacherText, textCenterX, pillY + 0.5);
+
+  // 3. Date subtitle with star accents
   if (dateText) {
-    ctx.fillStyle = "#e11d48";
-    const subFontSize = Math.max(8, stampH * 0.16);
-    ctx.font = `600 ${subFontSize}px "Sarabun", sans-serif`;
-    ctx.fillText(dateText, textCenterX, stampH * 0.29);
+    ctx.fillStyle = "#4b5563";
+    const subFontSize = Math.max(7.5, stampH * 0.145);
+    ctx.font = `700 ${subFontSize}px "Kanit", "Sarabun", sans-serif`;
+    ctx.fillText(`★ ${dateText} ★`, textCenterX, stampH * 0.33);
   }
 
   ctx.restore();
