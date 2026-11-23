@@ -24,18 +24,22 @@ export async function GET() {
 
     const db = getDb();
 
-    // Fetch lightweight fields in parallel (explicitly excluding heavy base64 image columns)
+    // Fetch only the minimal columns needed for the assignment scorebook
     const [
-      allClassrooms,
       allSubjects,
       allAssignments,
-      allQuizzes,
       allStudents,
       allSubmissions,
-      allQuizAttempts,
     ] = await Promise.all([
-      db.select().from(classrooms).orderBy(asc(classrooms.name)),
-      db.select().from(subjects).orderBy(asc(subjects.code)),
+      db
+        .select({
+          id: subjects.id,
+          code: subjects.code,
+          name: subjects.name,
+          gradeLevel: subjects.gradeLevel,
+        })
+        .from(subjects)
+        .orderBy(asc(subjects.code)),
       db
         .select({
           id: assignments.id,
@@ -44,26 +48,11 @@ export async function GET() {
           classrooms: assignments.classrooms,
           targetStudents: assignments.targetStudents,
           maxScore: assignments.maxScore,
-          dueDate: assignments.dueDate,
           isActive: assignments.isActive,
           createdAt: assignments.createdAt,
         })
         .from(assignments)
         .orderBy(asc(assignments.createdAt)),
-      db
-        .select({
-          id: quizzes.id,
-          code: quizzes.code,
-          title: quizzes.title,
-          gradeLevel: quizzes.gradeLevel,
-          totalQuestions: quizzes.totalQuestions,
-          maxScore: quizzes.maxScore,
-          isActive: quizzes.isActive,
-          targetClassrooms: quizzes.targetClassrooms,
-          createdAt: quizzes.createdAt,
-        })
-        .from(quizzes)
-        .orderBy(asc(quizzes.createdAt)),
       db
         .select({
           id: students.id,
@@ -82,36 +71,18 @@ export async function GET() {
           classroom: submissions.classroom,
           score: submissions.score,
           status: submissions.status,
-          isLate: submissions.isLate,
           submittedAt: submissions.submittedAt,
-          updatedAt: submissions.updatedAt,
         })
         .from(submissions)
         .orderBy(desc(submissions.submittedAt)),
-      db
-        .select({
-          id: quizAttempts.id,
-          quizId: quizAttempts.quizId,
-          studentId: quizAttempts.studentId,
-          classroom: quizAttempts.classroom,
-          score: quizAttempts.score,
-          totalQuestions: quizAttempts.totalQuestions,
-          submittedAt: quizAttempts.submittedAt,
-          status: quizAttempts.status,
-        })
-        .from(quizAttempts)
-        .orderBy(desc(quizAttempts.submittedAt)),
     ]);
 
     return NextResponse.json(
       {
-        classrooms: allClassrooms || [],
         subjects: allSubjects || [],
         assignments: allAssignments || [],
-        quizzes: allQuizzes || [],
         students: allStudents || [],
         submissions: allSubmissions || [],
-        quizAttempts: allQuizAttempts || [],
         serverTime: new Date().toISOString(),
       },
       {

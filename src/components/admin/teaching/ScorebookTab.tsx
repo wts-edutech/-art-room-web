@@ -117,9 +117,12 @@ export default function ScorebookTab() {
 
   const fetchScorebook = useCallback(async (silent: boolean = false) => {
     if (!silent) setIsRefreshing(true);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
     try {
       const res = await fetch(`/api/admin/scorebook?_t=${Date.now()}`, {
         cache: "no-store",
+        signal: controller.signal,
       });
       if (!res.ok) return;
       const data: any = await res.json();
@@ -150,6 +153,7 @@ export default function ScorebookTab() {
     } catch (err) {
       console.error("Scorebook fetch error:", err);
     } finally {
+      clearTimeout(timeoutId);
       setLoading(false);
       setIsRefreshing(false);
     }
