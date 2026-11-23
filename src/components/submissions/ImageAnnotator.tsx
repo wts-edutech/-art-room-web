@@ -18,11 +18,22 @@ export interface AnnotatorImage {
 
 type Tool = "stamp" | "pen" | "eraser";
 type Point = { x: number; y: number; p: number };
-type Stroke = { tool: Tool; points: Point[]; stampDate?: string };
+type Stroke = {
+  tool: Tool;
+  points: Point[];
+  stampText?: string;
+  stampSubText?: string;
+  stampColor?: string;
+};
 type ImageState = { base: "current" | "original"; strokes: Stroke[] };
 
 const PEN_COLOR = "#ef2b2b";
-const STAMP_COLOR = "#dc2626";
+const STAMP_COLORS = [
+  { id: "red", label: "แดง", hex: "#dc2626" },
+  { id: "blue", label: "น้ำเงิน", hex: "#2563eb" },
+  { id: "green", label: "เขียว", hex: "#16a34a" },
+] as const;
+const STAMP_PRESETS = ["ตรวจแล้ว", "ดีมาก", "เยี่ยม", "ปรับปรุง"];
 const PEN_WIDTH = 0.0045; // สัดส่วนของด้านยาวของภาพ
 const ERASER_WIDTH = 0.035;
 const MAX_EXPORT_DIM = 2000;
@@ -44,7 +55,9 @@ function drawStamp(
   pt: Point,
   w: number,
   h: number,
-  dateText?: string
+  stampText: string = "✓ ตรวจแล้ว",
+  stampSubText?: string,
+  stampColor: string = "#dc2626"
 ) {
   const longSide = Math.max(w, h);
   const stampW = Math.max(48, longSide * 0.105);
@@ -52,6 +65,8 @@ function drawStamp(
   const cx = pt.x * w;
   const cy = pt.y * h;
   const radius = stampH * 0.14;
+  const inset = Math.max(2.5, stampW * 0.045);
+  const innerMaxTextW = stampW - inset * 3.2;
 
   ctx.save();
   ctx.globalCompositeOperation = "source-over";
@@ -59,20 +74,19 @@ function drawStamp(
   ctx.rotate((-10 * Math.PI) / 180);
 
   // Subtle translucent white backing so stamp is readable even on dark artwork
-  ctx.fillStyle = "rgba(255, 255, 255, 0.86)";
+  ctx.fillStyle = "rgba(255, 255, 255, 0.88)";
   ctx.beginPath();
   ctx.roundRect(-stampW / 2, -stampH / 2, stampW, stampH, radius);
   ctx.fill();
 
   // Outer thick stamp border
-  ctx.strokeStyle = STAMP_COLOR;
+  ctx.strokeStyle = stampColor;
   ctx.lineWidth = Math.max(1.5, stampW * 0.032);
   ctx.beginPath();
   ctx.roundRect(-stampW / 2, -stampH / 2, stampW, stampH, radius);
   ctx.stroke();
 
   // Inner thin stamp border
-  const inset = Math.max(2.5, stampW * 0.045);
   ctx.lineWidth = Math.max(0.8, stampW * 0.012);
   ctx.beginPath();
   ctx.roundRect(
@@ -84,20 +98,21 @@ function drawStamp(
   );
   ctx.stroke();
 
-  // Main text: ✓ ตรวจแล้ว
-  ctx.fillStyle = STAMP_COLOR;
+  // Main text (auto-fit inside inner box)
+  ctx.fillStyle = stampColor;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
+  const label = stampText.trim() || "ตรวจแล้ว";
   const mainFontSize = Math.max(9, stampW * 0.175);
   ctx.font = `800 ${mainFontSize}px "Kanit", "Sarabun", sans-serif`;
-  const mainY = dateText ? -stampH * 0.12 : 0;
-  ctx.fillText("✓ ตรวจแล้ว", 0, mainY);
+  const mainY = stampSubText ? -stampH * 0.12 : 0;
+  ctx.fillText(label, 0, mainY, innerMaxTextW);
 
-  // Date subtitle
-  if (dateText) {
+  // Subtitle (date / teacher / score)
+  if (stampSubText && stampSubText.trim()) {
     const subFontSize = Math.max(7, stampW * 0.105);
     ctx.font = `600 ${subFontSize}px "Sarabun", sans-serif`;
-    ctx.fillText(dateText, 0, stampH * 0.2);
+    ctx.fillText(stampSubText.trim(), 0, stampH * 0.2, innerMaxTextW);
   }
 
   ctx.restore();
@@ -133,7 +148,15 @@ function drawStroke(ctx: CanvasRenderingContext2D, stroke: Stroke, w: number, h:
   const pts = stroke.points;
   if (pts.length === 0) return;
   if (stroke.tool === "stamp") {
-    drawStamp(ctx, pts[0], w, h, stroke.stampDate);
+    drawStamp(
+      ctx,
+      pts[0],
+      w,
+      h,
+      stroke.stampText || "✓ ตรวจแล้ว",
+      stroke.stampSubText,
+      stroke.stampColor || "#dc2626"
+    );
     return;
   }
   if (pts.length === 1) {
@@ -198,6 +221,9 @@ interface ImageAnnotatorProps {
 export default function ImageAnnotator({ images, initialIndex = 0, title, onDone, onCancel }: ImageAnnotatorProps) {
   const [activeIdx, setActiveIdx] = useState(Math.min(initialIndex, Math.max(0, images.length - 1)));
   const [tool, setTool] = useState<Tool>("stamp");
+  const [stampColor, setStampColor] = useState<string>(STAMP_COLORS[0].hex);
+  const [stampText, setStampText] = useState<string>("✓ ตรวจแล้ว");
+  const [stampSubText, setStampSubText] = useState<string>(() => getThaiShortDate());
   const [states, setStates] = useState<ImageState[]>(() => images.map(() => ({ base: "current", strokes: [] })));
   const [natural, setNatural] = useState<{ w: number; h: number } | null>(null);
   const [box, setBox] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
@@ -288,7 +314,13 @@ export default function ImageAnnotator({ images, initialIndex = 0, title, onDone
 
     if (tool === "stamp") {
       const pt = toPoint(e);
-      const stampStroke: Stroke = { tool: "stamp", points: [pt], stampDate: getThaiShortDate() };
+      const stampStroke: Stroke = {
+        tool: "stamp",
+        points: [pt],
+        stampText: stampText.trim() || "✓ ตรวจแล้ว",
+        stampSubText: stampSubText.trim(),
+        stampColor,
+      };
       updateActive((s) => ({ ...s, strokes: [...s.strokes, stampStroke] }));
       return;
     }
@@ -411,9 +443,9 @@ export default function ImageAnnotator({ images, initialIndex = 0, title, onDone
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-          <button type="button" onClick={() => setTool("stamp")} className={toolBtn(tool === "stamp")} title="ตราปั๊ม ตรวจแล้ว">
-            <Stamp className="w-4 h-4" style={{ color: tool === "stamp" ? STAMP_COLOR : undefined }} />
-            <span>ตราปั๊มตรวจแล้ว</span>
+          <button type="button" onClick={() => setTool("stamp")} className={toolBtn(tool === "stamp")} title="ตราปั๊มตรวจงาน">
+            <Stamp className="w-4 h-4" style={{ color: tool === "stamp" ? stampColor : undefined }} />
+            <span>ตราปั๊มตรวจงาน</span>
           </button>
           <button type="button" onClick={() => setTool("pen")} className={toolBtn(tool === "pen")} title="ปากกาแดง">
             <PenLine className="w-4 h-4" style={{ color: tool === "pen" ? PEN_COLOR : undefined }} />
@@ -477,6 +509,69 @@ export default function ImageAnnotator({ images, initialIndex = 0, title, onDone
           </button>
         </div>
       </div>
+
+      {/* Stamp customization sub-bar */}
+      {tool === "stamp" && (
+        <div className="flex flex-wrap items-center justify-center gap-2 px-3 sm:px-5 py-2 bg-black/45 border-b border-white/10 text-xs">
+          {/* Color picker */}
+          <div className="flex items-center gap-1.5 bg-white/10 px-2.5 py-1 rounded-xl">
+            <span className="text-gray-300 font-semibold text-[11px]">สีตรา:</span>
+            {STAMP_COLORS.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setStampColor(c.hex)}
+                className={`px-2 py-0.5 rounded-lg font-bold text-[11px] flex items-center gap-1 cursor-pointer transition-all ${
+                  stampColor === c.hex ? "bg-white text-gray-900 shadow-sm" : "text-gray-200 hover:bg-white/15"
+                }`}
+              >
+                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: c.hex }} />
+                <span>{c.label}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Preset texts */}
+          <div className="flex items-center gap-1 flex-wrap">
+            {STAMP_PRESETS.map((preset) => {
+              const val = preset === "ตรวจแล้ว" ? "✓ ตรวจแล้ว" : preset;
+              const active = stampText === val;
+              return (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => setStampText(val)}
+                  className={`px-2.5 py-1 rounded-lg font-bold text-[11px] cursor-pointer transition-all ${
+                    active ? "bg-orange-500 text-white shadow-sm" : "bg-white/10 text-gray-200 hover:bg-white/20"
+                  }`}
+                >
+                  {preset}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Custom main & sub text */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <input
+              type="text"
+              value={stampText}
+              onChange={(e) => setStampText(e.target.value)}
+              maxLength={24}
+              placeholder="ข้อความหลัก..."
+              className="h-7 w-28 sm:w-32 px-2.5 rounded-lg bg-white/95 text-gray-900 font-bold text-[11px] outline-none focus:ring-2 focus:ring-orange-400"
+            />
+            <input
+              type="text"
+              value={stampSubText}
+              onChange={(e) => setStampSubText(e.target.value)}
+              maxLength={28}
+              placeholder="บรรทัดล่าง (เช่น ครู/คะแนน)..."
+              className="h-7 w-32 sm:w-40 px-2.5 rounded-lg bg-white/90 text-gray-800 font-medium text-[11px] outline-none focus:ring-2 focus:ring-orange-400"
+            />
+          </div>
+        </div>
+      )}
 
       {/* Drawing stage */}
       <div ref={stageRef} className="relative flex-1 min-h-0 m-2 sm:m-4 flex items-center justify-center overflow-hidden">
