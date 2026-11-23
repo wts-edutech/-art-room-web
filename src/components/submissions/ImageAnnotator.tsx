@@ -48,8 +48,9 @@ function drawStamp(
   mascotImg?: HTMLImageElement | null
 ) {
   const longSide = Math.max(w, h);
-  const stampW = Math.max(72, longSide * 0.13);
-  const stampH = stampW * 0.44;
+  // 4 x 2.5 cm relative to A4 worksheet (4 / 29.7 ≈ 13.5%, aspect 2.5 / 4 = 0.625)
+  const stampW = Math.max(72, longSide * 0.135);
+  const stampH = stampW * 0.625;
   const cx = pt.x * w;
   const cy = pt.y * h;
   const radius = stampH * 0.24;
