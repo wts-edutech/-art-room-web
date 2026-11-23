@@ -19,6 +19,11 @@ import {
   Clock,
   HelpCircle,
   ClipboardList,
+  MessageCircle,
+  Copy,
+  Check,
+  Send,
+  X,
 } from "lucide-react";
 
 interface StudentRow {
@@ -114,6 +119,10 @@ export default function ScorebookTab() {
 
   const [selectedClassroom, setSelectedClassroom] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [isLineModalOpen, setIsLineModalOpen] = useState(false);
+  const [lineTargetMode, setLineTargetMode] = useState<string>("all");
+  const [lineCustomText, setLineCustomText] = useState<string>("");
+  const [copiedLine, setCopiedLine] = useState(false);
 
   const fetchScorebook = useCallback(async (silent: boolean = false) => {
     if (!silent) setIsRefreshing(true);
@@ -395,6 +404,78 @@ export default function ScorebookTab() {
     return { total, allDone, hasMissing, avgScore };
   }, [tableRows]);
 
+  // Build LINE reminder message whenever modal opens or mode/room changes
+  const generatedLineMessage = useMemo(() => {
+    const roomLabel = selectedClassroom === "all" ? "ทุกห้องเรียน" : `ห้อง ${selectedClassroom}`;
+    const todayStr = new Date().toLocaleDateString("th-TH", {
+      day: "numeric",
+      month: "short",
+      year: "2-digit",
+    });
+
+    if (lineTargetMode === "all") {
+      const missingStudents = tableRows.filter((r) => r.missingCount > 0);
+      if (missingStudents.length === 0) {
+        return `✅ แจ้งผลส่งงานศิลปะ (${roomLabel})\nข้อมูล ณ วันที่ ${todayStr}\n\n🎉 นักเรียนทุกคนส่งงานครบทุกชิ้นแล้วครับ/ค่ะ!`;
+      }
+      const lines = [
+        `📢 แจ้งเตือนติดตามงานค้างส่ง (${roomLabel})`,
+        `📅 ข้อมูล ณ วันที่ ${todayStr} • ค้างส่ง ${missingStudents.length} จาก ${tableRows.length} คน`,
+        ``,
+        ...missingStudents.map(
+          (r) =>
+            `• เลขที่ ${r.orderNo} ${r.student.name}${selectedClassroom === "all" && r.student.classroom ? ` (${r.student.classroom})` : ""} — ขาด ${r.missingCount} งาน: ${r.missingTitles.join(", ")}`
+        ),
+        ``,
+        `📲 ส่งงานได้ที่เว็บไซต์ห้องเรียนศิลปะ: https://artroom-wts.com/submissions`,
+      ];
+      return lines.join("\n");
+    }
+
+    const assIdx = colsAssignments.findIndex((a) => a.id === lineTargetMode);
+    const ass = assIdx >= 0 ? colsAssignments[assIdx] : null;
+    if (!ass) return "";
+
+    const missingForAss = tableRows.filter((r) => {
+      const cell = r.assignmentCells[assIdx];
+      return cell && (cell.type === "missing" || cell.type === "resubmit");
+    });
+
+    if (missingForAss.length === 0) {
+      return `✅ แจ้งผลส่งงาน: ${ass.title} (${roomLabel})\n🎉 นักเรียนส่งงานนี้ครบทุกคนแล้วครับ/ค่ะ!`;
+    }
+
+    const lines = [
+      `📢 แจ้งเตือนส่งงาน: ${ass.title}`,
+      `🏫 ${roomLabel} • ยังไม่ส่ง ${missingForAss.length} จาก ${tableRows.length} คน`,
+      ``,
+      ...missingForAss.map((r) => {
+        const isResubmit = r.assignmentCells[assIdx]?.type === "resubmit";
+        return `• เลขที่ ${r.orderNo} ${r.student.name}${isResubmit ? " (ส่งแก้ไข)" : ""}`;
+      }),
+      ``,
+      `📲 ส่งงานได้ที่: https://artroom-wts.com/submissions`,
+    ];
+    return lines.join("\n");
+  }, [selectedClassroom, lineTargetMode, tableRows, colsAssignments]);
+
+  useEffect(() => {
+    if (isLineModalOpen) {
+      setLineCustomText(generatedLineMessage);
+    }
+  }, [isLineModalOpen, generatedLineMessage]);
+
+  const handleCopyLineText = async () => {
+    try {
+      await navigator.clipboard.writeText(lineCustomText);
+      setCopiedLine(true);
+      swalToast("คัดลอกข้อความแจ้งเตือน LINE แล้ว", "success");
+      setTimeout(() => setCopiedLine(false), 2000);
+    } catch {
+      swalWarning("คัดลอกไม่สำเร็จ", "กรุณากดคลุมข้อความแล้วคัดลอกด้วยตนเอง");
+    }
+  };
+
   // Excel Export (Multi-sheet: Scorebook + Missing Work Summary)
   const buildSheetDataForRoom = (room: string, query: string) => {
     const { rows, colsAssignments: rAss, colsQuizzes: rQuiz } = computeRowsForClassroom(room, query);
@@ -572,6 +653,18 @@ export default function ScorebookTab() {
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
               <span>รีเฟรช</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setLineTargetMode("all");
+                setIsLineModalOpen(true);
+              }}
+              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-[#06C755] hover:bg-[#05b34c] text-white shadow-sm flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+            >
+              <MessageCircle className="w-3.5 h-3.5" />
+              <span>แจ้งเตือน LINE ({summaryStats.hasMissing})</span>
             </button>
 
             <button
@@ -805,6 +898,94 @@ export default function ScorebookTab() {
           </table>
         </div>
       </div>
+
+      {/* LINE Reminder Modal */}
+      {isLineModalOpen && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150"
+          onClick={() => setIsLineModalOpen(false)}
+        >
+          <div
+            className="bg-white rounded-3xl max-w-xl w-full shadow-2xl border border-gray-100 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="px-5 py-4 bg-gradient-to-r from-[#06C755] to-emerald-600 text-white flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <MessageCircle className="w-5 h-5" />
+                <div>
+                  <h3 className="font-bold text-base font-kanit">แจ้งเตือนงานค้างทาง LINE</h3>
+                  <p className="text-[11px] text-white/85">
+                    {selectedClassroom === "all" ? "ทุกห้องเรียน" : `ห้อง ${selectedClassroom}`} • ค้างส่ง {summaryStats.hasMissing} จาก {summaryStats.total} คน
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsLineModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center cursor-pointer transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-5 space-y-4">
+              <div>
+                <label className="text-xs font-bold text-gray-700 block mb-1.5">
+                  เลือกรูปแบบข้อความแจ้งเตือน
+                </label>
+                <select
+                  value={lineTargetMode}
+                  onChange={(e) => setLineTargetMode(e.target.value)}
+                  className="w-full h-10 px-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-[#06C755] text-xs font-bold text-gray-800 outline-none"
+                >
+                  <option value="all">สรุปรวมงานค้างทุกชิ้นรายบุคคล ({summaryStats.hasMissing} คน)</option>
+                  {colsAssignments.map((ass, idx) => (
+                    <option key={ass.id} value={ass.id}>
+                      เฉพาะงาน {idx + 1}: {ass.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-gray-700">ข้อความที่จะส่งเข้ากลุ่ม LINE (แก้ไขได้)</label>
+                  <span className="text-[10px] text-gray-400">{lineCustomText.length} ตัวอักษร</span>
+                </div>
+                <textarea
+                  rows={10}
+                  value={lineCustomText}
+                  onChange={(e) => setLineCustomText(e.target.value)}
+                  className="w-full p-3.5 rounded-2xl border border-gray-200 bg-gray-50/70 focus:bg-white focus:border-[#06C755] text-xs leading-relaxed text-gray-800 outline-none font-sans"
+                />
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-1">
+                <button
+                  type="button"
+                  onClick={handleCopyLineText}
+                  className="w-full sm:flex-1 h-11 rounded-xl bg-gray-900 hover:bg-gray-800 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95"
+                >
+                  {copiedLine ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                  <span>{copiedLine ? "คัดลอกเรียบร้อยแล้ว" : "คัดลอกข้อความ"}</span>
+                </button>
+
+                <a
+                  href={`https://line.me/R/msg/text/?${encodeURIComponent(lineCustomText)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full sm:flex-1 h-11 rounded-xl bg-[#06C755] hover:bg-[#05b34c] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-[#06C755]/25 transition-all active:scale-95"
+                >
+                  <Send className="w-4 h-4" />
+                  <span>เปิดแอป LINE เพื่อส่งทันที</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
