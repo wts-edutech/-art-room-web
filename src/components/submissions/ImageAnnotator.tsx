@@ -48,9 +48,9 @@ function drawStamp(
   mascotImg?: HTMLImageElement | null
 ) {
   const longSide = Math.max(w, h);
-  // 4 x 2.5 cm relative to A4 worksheet (4 / 29.7 ≈ 13.5%, aspect 2.5 / 4 = 0.625)
-  const stampW = Math.max(72, longSide * 0.135);
-  const stampH = stampW * 0.625;
+  // 2.5 x 2 cm relative to A4 worksheet (2.5 / 29.7 ≈ 8.5%, aspect 2 / 2.5 = 0.8)
+  const stampW = Math.max(64, longSide * 0.085);
+  const stampH = stampW * 0.8;
   const cx = pt.x * w;
   const cy = pt.y * h;
   const radius = stampH * 0.24;
@@ -98,19 +98,19 @@ function drawStamp(
 
   const hasMascot = Boolean(mascotImg && mascotImg.complete && mascotImg.naturalWidth > 0);
   if (hasMascot && mascotImg) {
-    const iconSize = stampH * 0.78;
-    const iconX = -stampW / 2 + inset * 1.8;
+    const iconSize = stampH * 0.66;
+    const iconX = -stampW / 2 + inset * 1.5;
     const iconY = -iconSize / 2;
     ctx.drawImage(mascotImg, iconX, iconY, iconSize, iconSize);
   }
 
   // Text block cleanly shifted right so it never overlaps the paintbrush
-  const textCenterX = hasMascot ? stampW * 0.17 : 0;
+  const textCenterX = hasMascot ? stampW * 0.16 : 0;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
   // 1. Main Title: "ตรวจแล้ว!" with bold pop-art outline + gradient fill
-  const mainFontSize = Math.max(8, stampH * 0.31);
+  const mainFontSize = Math.max(7.5, stampW * 0.155);
   ctx.font = `900 ${mainFontSize}px "Kanit", "Prompt", sans-serif`;
   const titleY = -stampH * 0.22;
 
