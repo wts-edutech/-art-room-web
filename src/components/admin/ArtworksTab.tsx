@@ -492,15 +492,15 @@ export default function ArtworksTab() {
               <p className="text-xs text-slate-400 mt-1">เพิ่มผลงานนักเรียนใหม่ได้จากแบบฟอร์มด้านข้าง</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="columns-1 sm:columns-2 xl:columns-3 gap-4 space-y-4">
               {(Array.isArray(artworks) ? artworks : []).map((artwork) => (
-                <div key={artwork.id} className="flex flex-col bg-white rounded-2xl overflow-hidden border border-slate-200/90 shadow-2xs hover:shadow-md hover:border-orange-200 transition-all duration-200 group">
-                  <div className="w-full aspect-[4/5] max-h-[300px] sm:max-h-[330px] bg-slate-900/5 relative overflow-hidden flex items-center justify-center">
+                <div key={artwork.id} className="break-inside-avoid flex flex-col bg-white rounded-2xl overflow-hidden border border-slate-200/90 shadow-2xs hover:shadow-md hover:border-orange-200 transition-all duration-200 group">
+                  <div className="w-full bg-slate-900/5 relative overflow-hidden flex items-center justify-center">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img 
                       src={artwork.imageUrl} 
                       alt={artwork.title} 
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                      className="w-full h-auto object-contain group-hover:scale-105 transition-transform duration-300 block" 
                       onError={(e) => (e.currentTarget.src = "https://placehold.co/600x400/eeeeee/999999?text=Image+Not+Found")} 
                     />
                   </div>
