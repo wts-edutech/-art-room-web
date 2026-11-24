@@ -19,6 +19,7 @@ export default function Navbar() {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isTeachersEnabled, setIsTeachersEnabled] = useState(true);
   const [isAwardsEnabled, setIsAwardsEnabled] = useState(true);
+  const [missingTasksCount, setMissingTasksCount] = useState<number | null>(null);
   const isAdmin = userRole === "admin" || userRole === "teacher";
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -36,9 +37,29 @@ export default function Navbar() {
     const name = localStorage.getItem("artroom_author_name");
     const role = localStorage.getItem("artroom_role");
     const avatar = localStorage.getItem("artroom_avatar");
+    const studentId = localStorage.getItem("artroom_student_id");
+    const classroom = localStorage.getItem("artroom_classroom") || localStorage.getItem("artroom_student_grade") || "";
     setUserName(name);
     setUserRole(role);
     setUserAvatar(avatar);
+
+    if (role === "student" && studentId) {
+      Promise.all([
+        fetch(`/api/assignments?activeOnly=true&classroom=${encodeURIComponent(classroom)}&studentId=${encodeURIComponent(studentId)}`).then((r) => (r.ok ? r.json() : [])).catch(() => []),
+        fetch(`/api/submissions?studentId=${encodeURIComponent(studentId)}`).then((r) => (r.ok ? r.json() : [])).catch(() => []),
+      ]).then(([assList, subList]) => {
+        if (!Array.isArray(assList)) return;
+        const subs = Array.isArray(subList) ? subList : [];
+        const subMap = new Map<string, any>();
+        for (const s of subs) {
+          if (s?.assignmentId && !subMap.has(s.assignmentId)) subMap.set(s.assignmentId, s);
+        }
+        const missing = assList.filter((a: any) => !subMap.has(a.id) || subMap.get(a.id)?.status === "resubmit").length;
+        setMissingTasksCount(missing);
+      }).catch(() => {});
+    } else {
+      setMissingTasksCount(null);
+    }
   };
 
   useEffect(() => {
@@ -193,13 +214,23 @@ export default function Navbar() {
             สื่อการสอน
           </Link>
 
-          {/* 3. ส่งงาน (NEW) */}
+          {/* 3. ส่งงาน (with live missing-work badge for students) */}
           <Link 
             href="/submissions" 
             className={`h-full flex items-center gap-1 px-1 lg:px-1.5 xl:px-2 border-b-[3px] transition-colors whitespace-nowrap flex-shrink-0 ${pathname.startsWith("/submissions") ? "border-red-500 text-red-500 font-bold" : "border-transparent hover:border-red-500 hover:text-red-500"}`}
           >
             <span>ส่งงาน</span>
-            <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-orange-100 text-orange-700">NEW</span>
+            {missingTasksCount !== null && missingTasksCount > 0 ? (
+              <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-rose-500 text-white animate-pulse shadow-2xs">
+                ค้าง {missingTasksCount}
+              </span>
+            ) : missingTasksCount === 0 ? (
+              <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-700">
+                ครบ
+              </span>
+            ) : (
+              <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-orange-100 text-orange-700">NEW</span>
+            )}
           </Link>
 
           {/* 4. ผลงานนักเรียน Dropdown Menu */}

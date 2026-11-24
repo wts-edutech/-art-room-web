@@ -3,7 +3,8 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import * as XLSX from "xlsx";
 import { compareClassrooms } from "@/components/admin/StudentsTab";
-import { swalToast, swalWarning } from "@/lib/swal";
+import ImageAnnotator, { AnnotatorImage } from "@/components/submissions/ImageAnnotator";
+import { swalToast, swalWarning, swalError } from "@/lib/swal";
 import {
   Table2,
   Download,
@@ -24,6 +25,9 @@ import {
   Check,
   Send,
   X,
+  PenLine,
+  Save,
+  ExternalLink,
 } from "lucide-react";
 
 interface StudentRow {
@@ -123,6 +127,92 @@ export default function ScorebookTab() {
   const [lineTargetMode, setLineTargetMode] = useState<string>("all");
   const [lineCustomText, setLineCustomText] = useState<string>("");
   const [copiedLine, setCopiedLine] = useState(false);
+
+  // Quick Inline Grading & Stamp Modal State
+  const [quickGradeTarget, setQuickGradeTarget] = useState<{
+    student: StudentRow;
+    assignment: AssignmentCol;
+  } | null>(null);
+  const [quickSubDetail, setQuickSubDetail] = useState<any | null>(null);
+  const [loadingQuickSub, setLoadingQuickSub] = useState(false);
+  const [quickScore, setQuickScore] = useState<string>("");
+  const [quickStatus, setQuickStatus] = useState<string>("graded");
+  const [quickFeedback, setQuickFeedback] = useState<string>("");
+  const [isQuickSaving, setIsQuickSaving] = useState(false);
+  const [isQuickAnnotating, setIsQuickAnnotating] = useState(false);
+  const [quickPendingAnnotations, setQuickPendingAnnotations] = useState<Record<number, string | null>>({});
+  const [quickActiveImgIdx, setQuickActiveImgIdx] = useState(0);
+
+  const openQuickGradeModal = async (student: StudentRow, assignment: AssignmentCol) => {
+    const lightSub = subLookup.get(`${student.id}__${assignment.id}`);
+    setQuickGradeTarget({ student, assignment });
+    setQuickScore(
+      lightSub?.score !== null && lightSub?.score !== undefined
+        ? String(lightSub.score)
+        : String(assignment.maxScore || 10)
+    );
+    setQuickStatus(lightSub?.status === "resubmit" ? "resubmit" : "graded");
+    setQuickFeedback("");
+    setQuickPendingAnnotations({});
+    setQuickActiveImgIdx(0);
+    setQuickSubDetail(null);
+    setLoadingQuickSub(true);
+
+    try {
+      const res = await fetch(
+        `/api/submissions?assignmentId=${encodeURIComponent(assignment.id)}&studentId=${encodeURIComponent(student.id)}`,
+        { cache: "no-store" }
+      );
+      if (res.ok) {
+        const list = await res.json();
+        const found = Array.isArray(list) && list.length > 0 ? list[0] : null;
+        if (found) {
+          setQuickSubDetail(found);
+          if (found.score !== null && found.score !== undefined) {
+            setQuickScore(String(found.score));
+          }
+          if (found.feedback) {
+            setQuickFeedback(found.feedback);
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Failed to fetch quick submission detail:", e);
+    } finally {
+      setLoadingQuickSub(false);
+    }
+  };
+
+  const handleSaveQuickGrade = async () => {
+    if (!quickSubDetail?.id) return;
+    setIsQuickSaving(true);
+    try {
+      const res = await fetch("/api/submissions", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: quickSubDetail.id,
+          score: quickScore,
+          status: quickStatus,
+          feedback: quickFeedback,
+          annotations: Object.keys(quickPendingAnnotations).length > 0 ? quickPendingAnnotations : undefined,
+        }),
+      });
+      if (res.ok) {
+        swalToast("บันทึกคะแนนเรียบร้อยแล้ว", "success");
+        setQuickGradeTarget(null);
+        setQuickSubDetail(null);
+        fetchScorebook(true);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        swalError("บันทึกไม่สำเร็จ", err.error || "กรุณาลองใหม่อีกครั้ง");
+      }
+    } catch {
+      swalError("เชื่อมต่อไม่สำเร็จ", "ไม่สามารถบันทึกคะแนนได้");
+    } finally {
+      setIsQuickSaving(false);
+    }
+  };
 
   const fetchScorebook = useCallback(async (silent: boolean = false) => {
     if (!silent) setIsRefreshing(true);
@@ -834,33 +924,51 @@ export default function ScorebookTab() {
                       </td>
                     )}
 
-                    {row.assignmentCells.map((cell) => (
-                      <td key={cell.assignmentId} className="py-2 px-2 text-center border-l border-gray-100">
-                        {cell.type === "graded" && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[11px]">
-                            {cell.score}
-                          </span>
-                        )}
-                        {cell.type === "pending" && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 font-semibold text-[10px]">
-                            รอตรวจ
-                          </span>
-                        )}
-                        {cell.type === "resubmit" && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 font-semibold text-[10px]">
-                            ส่งแก้ไข
-                          </span>
-                        )}
-                        {cell.type === "missing" && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-gray-100 text-gray-500 text-[10px]">
-                            ยังไม่ส่ง
-                          </span>
-                        )}
-                        {cell.type === "exempt" && (
-                          <span className="text-[10px] text-gray-300">-</span>
-                        )}
-                      </td>
-                    ))}
+                    {row.assignmentCells.map((cell, cIdx) => {
+                      const assObj = colsAssignments[cIdx];
+                      return (
+                        <td key={cell.assignmentId} className="py-2 px-2 text-center border-l border-gray-100">
+                          {cell.type === "graded" && (
+                            <button
+                              type="button"
+                              onClick={() => assObj && openQuickGradeModal(row.student, assObj)}
+                              title="คลิกเพื่อดูผลงาน / แก้ไขคะแนน"
+                              className="inline-flex items-center px-2.5 py-0.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold text-[11px] cursor-pointer transition-all active:scale-95"
+                            >
+                              {cell.score}
+                            </button>
+                          )}
+                          {cell.type === "pending" && (
+                            <button
+                              type="button"
+                              onClick={() => assObj && openQuickGradeModal(row.student, assObj)}
+                              title="คลิกเพื่อตรวจงานและให้คะแนนทันที"
+                              className="inline-flex items-center px-2 py-0.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-300 font-bold text-[10px] cursor-pointer transition-all active:scale-95 shadow-2xs"
+                            >
+                              รอตรวจ
+                            </button>
+                          )}
+                          {cell.type === "resubmit" && (
+                            <button
+                              type="button"
+                              onClick={() => assObj && openQuickGradeModal(row.student, assObj)}
+                              title="คลิกเพื่อดูผลงาน / แก้ไขสถานะ"
+                              className="inline-flex items-center px-2 py-0.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold text-[10px] cursor-pointer transition-all active:scale-95"
+                            >
+                              ส่งแก้ไข
+                            </button>
+                          )}
+                          {cell.type === "missing" && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-gray-100 text-gray-500 text-[10px]">
+                              ยังไม่ส่ง
+                            </span>
+                          )}
+                          {cell.type === "exempt" && (
+                            <span className="text-[10px] text-gray-300">-</span>
+                          )}
+                        </td>
+                      );
+                    })}
 
                     {row.quizCells.map((cell) => (
                       <td key={cell.quizId} className="py-2 px-2 text-center border-l border-purple-100/70 bg-purple-50/10">
@@ -975,6 +1083,223 @@ export default function ScorebookTab() {
                 </a>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Quick Inline Grading & Stamp Modal */}
+      {quickGradeTarget && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/65 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150"
+          onClick={() => setQuickGradeTarget(null)}
+        >
+          <div
+            className="bg-white rounded-3xl max-w-xl w-full max-h-[90dvh] overflow-y-auto shadow-2xl border border-gray-100 p-5 sm:p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-start justify-between gap-3 pb-3 border-b border-gray-100">
+              <div>
+                <span className="text-[11px] font-bold text-orange-600 bg-orange-50 px-2.5 py-0.5 rounded-full border border-orange-200">
+                  {quickGradeTarget.assignment.title} (เต็ม {quickGradeTarget.assignment.maxScore || 10})
+                </span>
+                <h3 className="font-bold text-gray-900 text-base sm:text-lg font-kanit mt-1.5">
+                  ตรวจงาน: {quickGradeTarget.student.name} ({quickGradeTarget.student.id})
+                </h3>
+                <p className="text-xs text-gray-500">
+                  ห้อง {quickGradeTarget.student.classroom || "-"} • เลขที่ {quickGradeTarget.student.studentNumber || "-"}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setQuickGradeTarget(null)}
+                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center cursor-pointer shrink-0"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {loadingQuickSub ? (
+              <div className="py-12 flex flex-col items-center justify-center gap-2 text-xs text-gray-500">
+                <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+                <span>กำลังโหลดผลงานของนักเรียน...</span>
+              </div>
+            ) : !quickSubDetail ? (
+              <div className="py-8 text-center text-xs text-gray-400">ไม่พบข้อมูลงานที่ส่ง</div>
+            ) : (
+              <>
+                {/* Artwork Image & Stamp Button */}
+                {(() => {
+                  const subImages: string[] =
+                    Array.isArray(quickSubDetail.images) && quickSubDetail.images.length > 0
+                      ? quickSubDetail.images
+                      : quickSubDetail.imageUrl
+                      ? [quickSubDetail.imageUrl]
+                      : [];
+                  const serverAnnotated: (string | null)[] = Array.isArray(quickSubDetail.annotatedImages)
+                    ? quickSubDetail.annotatedImages
+                    : [];
+                  const annotatorImages: AnnotatorImage[] = subImages.map((orig, i) => {
+                    const pending = quickPendingAnnotations[i];
+                    const current =
+                      pending !== undefined
+                        ? pending === null
+                          ? orig
+                          : pending
+                        : serverAnnotated[i] || orig;
+                    return { originalUrl: orig, currentUrl: current };
+                  });
+                  const currentPreview = annotatorImages[quickActiveImgIdx]?.currentUrl || subImages[0];
+
+                  return (
+                    <>
+                      {subImages.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-gray-700">
+                              ภาพถ่ายผลงานศิลปะ {subImages.length > 1 ? `(${quickActiveImgIdx + 1}/${subImages.length})` : ""}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setIsQuickAnnotating(true)}
+                              className="px-3 py-1.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm cursor-pointer active:scale-95"
+                            >
+                              <PenLine className="w-3.5 h-3.5" />
+                              <span>💮 ปั๊มตรวจ / เขียนบนภาพ</span>
+                            </button>
+                          </div>
+
+                          <div className="rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 max-h-80 flex items-center justify-center">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={currentPreview}
+                              alt="ผลงานนักเรียน"
+                              className="max-h-80 w-auto object-contain"
+                            />
+                          </div>
+
+                          {subImages.length > 1 && (
+                            <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                              {subImages.map((_, idx) => (
+                                <button
+                                  key={idx}
+                                  type="button"
+                                  onClick={() => setQuickActiveImgIdx(idx)}
+                                  className={`w-12 h-12 rounded-xl overflow-hidden border-2 cursor-pointer shrink-0 ${
+                                    quickActiveImgIdx === idx ? "border-orange-500" : "border-gray-200 opacity-70"
+                                  }`}
+                                >
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img
+                                    src={annotatorImages[idx]?.currentUrl || subImages[idx]}
+                                    alt={`ภาพที่ ${idx + 1}`}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {isQuickAnnotating && (
+                        <ImageAnnotator
+                          images={annotatorImages}
+                          initialIndex={quickActiveImgIdx}
+                          title={`ผลงานของ ${quickGradeTarget.student.name} (${quickGradeTarget.student.id})`}
+                          onCancel={() => setIsQuickAnnotating(false)}
+                          onDone={(changes) => {
+                            setQuickPendingAnnotations((prev) => ({ ...prev, ...changes }));
+                            setIsQuickAnnotating(false);
+                          }}
+                        />
+                      )}
+                    </>
+                  );
+                })()}
+
+                {quickSubDetail.externalLink && (
+                  <a
+                    href={quickSubDetail.externalLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between p-3 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold hover:bg-blue-100"
+                  >
+                    <span className="truncate">{quickSubDetail.externalLink}</span>
+                    <ExternalLink className="w-4 h-4 shrink-0 ml-2" />
+                  </a>
+                )}
+
+                {quickSubDetail.concept && (
+                  <div className="p-3 rounded-xl bg-orange-50/60 border border-orange-100 text-xs text-gray-800">
+                    <span className="font-bold text-orange-900 block mb-0.5">💡 แนวคิดผลงาน:</span>
+                    {quickSubDetail.concept}
+                  </div>
+                )}
+
+                {/* Score & Status Inputs */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <div>
+                    <label className="text-xs font-bold text-gray-700 block mb-1">
+                      คะแนนที่ได้ (เต็ม {quickGradeTarget.assignment.maxScore || 10})
+                    </label>
+                    <input
+                      type="number"
+                      step="0.5"
+                      min={0}
+                      max={quickGradeTarget.assignment.maxScore || 10}
+                      value={quickScore}
+                      onChange={(e) => setQuickScore(e.target.value)}
+                      className="w-full h-10 px-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-orange-500 text-sm font-bold text-gray-900 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-gray-700 block mb-1">สถานะการตรวจ</label>
+                    <select
+                      value={quickStatus}
+                      onChange={(e) => setQuickStatus(e.target.value)}
+                      className="w-full h-10 px-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-orange-500 text-xs font-bold text-gray-800 outline-none"
+                    >
+                      <option value="graded">✅ ตรวจแล้ว (ให้คะแนน)</option>
+                      <option value="resubmit">🔄 ให้ส่งแก้ไข (Resubmit)</option>
+                      <option value="pending">⏳ รอตรวจ (Pending)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-gray-700 block mb-1">
+                    ข้อเสนอแนะและคำติชมจากครู (Feedback)
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={quickFeedback}
+                    onChange={(e) => setQuickFeedback(e.target.value)}
+                    placeholder="เช่น ผลงานสวยงาม น้ำหนักแสงเงาชัดเจน..."
+                    className="w-full p-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-orange-500 text-xs outline-none"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+                  <button
+                    type="button"
+                    onClick={() => setQuickGradeTarget(null)}
+                    className="px-4 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 text-xs font-bold cursor-pointer"
+                  >
+                    ยกเลิก
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveQuickGrade}
+                    disabled={isQuickSaving}
+                    className="px-5 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold shadow-md shadow-orange-500/20 flex items-center gap-1.5 cursor-pointer disabled:opacity-50 active:scale-95"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    <span>{isQuickSaving ? "กำลังบันทึก..." : "บันทึกคะแนน"}</span>
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

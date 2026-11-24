@@ -39,7 +39,7 @@ export async function POST() {
       .select({ id: submissions.id, studentId: submissions.studentId, assignmentId: submissions.assignmentId, imageUrl: submissions.imageUrl, images: submissions.images })
       .from(submissions)
       .where(BASE64_FILTER)
-      .limit(5)
+      .limit(15)
       .all();
 
     let migrated = 0;

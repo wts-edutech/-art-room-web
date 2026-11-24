@@ -19,14 +19,37 @@ export async function GET(request: Request) {
     const { submissions, quizAttempts } = await import('@/db/schema');
 
     if (id || nameParam) {
+      const isAdmin = await checkIsAdmin();
+      const cookieStore = await cookies();
+      const sessionToken = cookieStore.get('session_token')?.value;
+      const session = sessionToken ? await verifySessionToken(sessionToken) : null;
+      const referer = request.headers.get('referer') || '';
+      const isSameOriginApp = referer.includes('/submissions') || referer.includes('/admin') || referer.includes('/me') || referer.includes('/profile');
+
       const student = id
         ? await db.select().from(students).where(eq(students.id, id)).get()
         : await db.select().from(students).where(eq(students.name, nameParam!.trim())).get();
       if (!student) return NextResponse.json(null);
 
+      const isSelf = session && (session.userId === student.id || session.name === student.name);
+      if (!isAdmin && !isSelf && !isSameOriginApp) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+
       const targetId = student.id;
       const [userSubs, userQuizzes] = await Promise.all([
-        db.select().from(submissions).where(eq(submissions.studentId, targetId)),
+        db
+          .select({
+            id: submissions.id,
+            assignmentId: submissions.assignmentId,
+            classroom: submissions.classroom,
+            concept: submissions.concept,
+            score: submissions.score,
+            status: submissions.status,
+            submittedAt: submissions.submittedAt,
+          })
+          .from(submissions)
+          .where(eq(submissions.studentId, targetId)),
         db.select().from(quizAttempts).where(eq(quizAttempts.studentId, targetId)),
       ]);
 

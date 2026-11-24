@@ -149,6 +149,8 @@ export async function compressImage(
 
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, width, height);
         ctx.drawImage(img, 0, 0, width, height);
 
         // Guard against iOS WebKit silent blank canvas bug
@@ -161,22 +163,35 @@ export async function compressImage(
           return resolve(workingFile);
         }
 
+        const finishWithBlob = (finalBlob: Blob | null, mime: 'image/webp' | 'image/jpeg') => {
+          cleanup();
+          if (!finalBlob || (finalBlob.size < 3000 && workingFile.size > 20000)) {
+            return resolve(workingFile);
+          }
+          const ext = mime === 'image/webp' ? '.webp' : '.jpg';
+          const baseName = workingFile.name.replace(/\.[^/.]+$/, '');
+          const compressedFile = new File([finalBlob], `${baseName}${ext}`, {
+            type: mime,
+            lastModified: Date.now(),
+          });
+          return resolve(compressedFile);
+        };
+
         canvas.toBlob(
           (blob) => {
-            cleanup();
-            // Reject suspiciously tiny blobs (< 3KB for normal photos) that indicate blank encoding
-            if (!blob || (blob.size < 3000 && workingFile.size > 20000)) {
-              return resolve(workingFile);
+            // iOS Safari / WKWebView does not support WebP encoding in canvas.toBlob and silently falls back to huge 1.5MB+ image/png
+            if (
+              !blob ||
+              (outputFormat === 'image/webp' && (blob.type !== 'image/webp' || blob.size > 400000))
+            ) {
+              canvas.toBlob(
+                (jpegBlob) => finishWithBlob(jpegBlob || blob, 'image/jpeg'),
+                'image/jpeg',
+                quality
+              );
+              return;
             }
-
-            const ext = outputFormat === 'image/webp' ? '.webp' : '.jpg';
-            const baseName = workingFile.name.replace(/\.[^/.]+$/, '');
-            const compressedFile = new File([blob], `${baseName}${ext}`, {
-              type: outputFormat,
-              lastModified: Date.now(),
-            });
-
-            return resolve(compressedFile);
+            finishWithBlob(blob, outputFormat);
           },
           outputFormat,
           quality

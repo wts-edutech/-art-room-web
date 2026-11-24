@@ -42,6 +42,7 @@ export default function BottomNavbar() {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isTeachersEnabled, setIsTeachersEnabled] = useState(true);
   const [isAwardsEnabled, setIsAwardsEnabled] = useState(true);
+  const [missingTasksCount, setMissingTasksCount] = useState<number | null>(null);
   const isAdmin = userRole === "admin" || userRole === "teacher";
   const [mounted, setMounted] = useState(false);
   const [isExamActive, setIsExamActive] = useState(false);
@@ -72,9 +73,30 @@ export default function BottomNavbar() {
   };
 
   const updateUserData = () => {
+    const role = localStorage.getItem("artroom_role");
+    const studentId = localStorage.getItem("artroom_student_id");
+    const classroom = localStorage.getItem("artroom_classroom") || localStorage.getItem("artroom_student_grade") || "";
     setUserName(localStorage.getItem("artroom_author_name"));
-    setUserRole(localStorage.getItem("artroom_role"));
+    setUserRole(role);
     setUserAvatar(localStorage.getItem("artroom_avatar"));
+
+    if (role === "student" && studentId) {
+      Promise.all([
+        fetch(`/api/assignments?activeOnly=true&classroom=${encodeURIComponent(classroom)}&studentId=${encodeURIComponent(studentId)}`).then((r) => (r.ok ? r.json() : [])).catch(() => []),
+        fetch(`/api/submissions?studentId=${encodeURIComponent(studentId)}`).then((r) => (r.ok ? r.json() : [])).catch(() => []),
+      ]).then(([assList, subList]) => {
+        if (!Array.isArray(assList)) return;
+        const subs = Array.isArray(subList) ? subList : [];
+        const subMap = new Map<string, any>();
+        for (const s of subs) {
+          if (s?.assignmentId && !subMap.has(s.assignmentId)) subMap.set(s.assignmentId, s);
+        }
+        const missing = assList.filter((a: any) => !subMap.has(a.id) || subMap.get(a.id)?.status === "resubmit").length;
+        setMissingTasksCount(missing);
+      }).catch(() => {});
+    } else {
+      setMissingTasksCount(null);
+    }
   };
 
   useEffect(() => {
@@ -194,9 +216,19 @@ export default function BottomNavbar() {
             >
               <div className={`relative flex items-center justify-center ${isSubmissionsActive ? "scale-110" : ""}`}>
                 <Upload className="w-5 h-5" />
-                <span className="absolute -top-1.5 -right-2.5 px-1 py-0.2 bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[8px] font-extrabold rounded-full scale-90 shadow-2xs">
-                  NEW
-                </span>
+                {missingTasksCount !== null && missingTasksCount > 0 ? (
+                  <span className="absolute -top-1.5 -right-2.5 min-w-[16px] px-1 py-0.2 bg-rose-600 text-white text-[9px] font-extrabold rounded-full text-center shadow-2xs animate-pulse">
+                    {missingTasksCount}
+                  </span>
+                ) : missingTasksCount === 0 ? (
+                  <span className="absolute -top-1.5 -right-2.5 px-1 py-0.2 bg-emerald-500 text-white text-[8px] font-extrabold rounded-full scale-90 shadow-2xs">
+                    ✓
+                  </span>
+                ) : (
+                  <span className="absolute -top-1.5 -right-2.5 px-1 py-0.2 bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[8px] font-extrabold rounded-full scale-90 shadow-2xs">
+                    NEW
+                  </span>
+                )}
               </div>
               <span className="bottom-nav-label text-[10px] leading-tight truncate">ส่งงาน</span>
             </Link>
