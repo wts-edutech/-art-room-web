@@ -1343,10 +1343,8 @@ export default function SubmissionsPage() {
                   })
                 )}
               </div>
-            </>
-          )}
 
-              {/* ACTIVE PRE-TESTS SECTION (BELOW LATEST ASSIGNMENTS) */}
+              {/* ACTIVE PRE-TESTS SECTION (BELOW LATEST ASSIGNMENTS, ONLY IN TO-DO TAB) */}
               {activeQuizzes.length > 0 && (
                 <div className="space-y-3 pt-4">
                   <div className="flex items-center justify-between">
@@ -1504,6 +1502,8 @@ export default function SubmissionsPage() {
                   </div>
                 </div>
               )}
+            </>
+          )}
         </div>
     )}
   </div>
