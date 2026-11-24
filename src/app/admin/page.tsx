@@ -621,7 +621,7 @@ export default function AdminPage() {
                 <div>
                   <p className="text-[9px] sm:text-[10px] text-gray-500 font-bold uppercase tracking-wider">ผู้เข้าชมทั้งหมด</p>
                   <p className="text-sm sm:text-base font-bold font-kanit text-gray-900 leading-none mt-0.5">
-                    {visitorStats.total.toLocaleString()} <span className="text-xs font-normal text-gray-500">คน</span>
+                    {visitorStats.total.toLocaleString()} <span className="text-xs font-normal text-gray-500">ครั้ง</span>
                   </p>
                 </div>
               </div>
@@ -636,7 +636,7 @@ export default function AdminPage() {
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                   </p>
                   <p className="text-sm sm:text-base font-bold font-kanit text-emerald-800 leading-none mt-0.5">
-                    {visitorStats.today.toLocaleString()} <span className="text-xs font-normal text-emerald-600">คน</span>
+                    {visitorStats.today.toLocaleString()} <span className="text-xs font-normal text-emerald-600">ครั้ง</span>
                   </p>
                 </div>
 
