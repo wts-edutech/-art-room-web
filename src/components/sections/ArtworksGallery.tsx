@@ -186,8 +186,8 @@ export default function ArtworksGallery() {
         </div>
       </div>
 
-      {/* Artworks Grid: 2 columns on mobile, 3 on md, 4 on lg */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
+      {/* Artworks Masonry Grid: preserves each artwork's true portrait / landscape orientation */}
+      <div className="columns-2 md:columns-3 lg:columns-4 gap-3 sm:gap-6 space-y-3 sm:space-y-6">
         {filteredArtworks.map((artwork) => {
           const studentName = artwork.studentName || artwork.author || "ไม่ระบุชื่อ";
           const gradeDisplay = artwork.grade || artwork.year || "ทั่วไป";
@@ -197,12 +197,12 @@ export default function ArtworksGallery() {
             <div 
               key={artwork.id} 
               onClick={() => setSelectedArtwork(artwork)}
-              className="group cursor-pointer flex flex-col h-full"
+              className="group cursor-pointer break-inside-avoid"
             >
-              <div className="bg-white rounded-2xl sm:rounded-3xl overflow-hidden border border-gray-100 shadow-[0_4px_20px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(236,72,153,0.16)] transition-all duration-300 group-hover:-translate-y-1 relative flex flex-col h-full">
+              <div className="bg-white rounded-2xl sm:rounded-3xl overflow-hidden border border-gray-100 shadow-[0_4px_20px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(236,72,153,0.16)] transition-all duration-300 group-hover:-translate-y-1 relative flex flex-col">
                 
-                {/* Artwork Image Container */}
-                <div className="w-full aspect-[4/5] bg-slate-900/5 relative overflow-hidden flex items-center justify-center shrink-0">
+                {/* Artwork Image Container (natural aspect ratio: portrait/landscape) */}
+                <div className="w-full bg-slate-900/5 relative overflow-hidden flex items-center justify-center shrink-0">
                   {/* Floating Classroom Badge */}
                   <div className="absolute top-2 right-2 sm:top-3.5 sm:right-3.5 z-10 px-2 sm:px-3 py-0.5 sm:py-1.5 rounded-full bg-white/95 backdrop-blur-md shadow-xs border border-pink-100 text-pink-600 font-bold text-[10px] sm:text-xs flex items-center gap-1 transition-transform duration-300 group-hover:scale-105">
                     <GraduationCap className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-pink-500 shrink-0" />
@@ -216,7 +216,7 @@ export default function ArtworksGallery() {
                     alt={artwork.title} 
                     loading="lazy"
                     decoding="async"
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 block"
+                    className="w-full h-auto object-contain transition-transform duration-700 group-hover:scale-105 block"
                     onError={(e) => (e.currentTarget.src = "https://placehold.co/600x400/eeeeee/999999?text=Image+Not+Found")}
                   />
 
