@@ -41,6 +41,7 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
   const [isLoading, setIsLoading] = useState(true);
 
   // Filter Selection
+  const [selectedGradeFilter, setSelectedGradeFilter] = useState<string>("all");
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string>(preselectedAssignmentId || "");
   const [selectedClassroom, setSelectedClassroom] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -160,6 +161,36 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
   useEffect(() => {
     fetchSubmissions(true);
   }, [selectedAssignmentId, assignments.length]);
+
+  const getAssignmentGrade = (a: any): string => {
+    const firstRoom = Array.isArray(a?.classroomsList) && a.classroomsList.length > 0 ? String(a.classroomsList[0]) : "";
+    const mRoom = firstRoom.match(/ม\.?\s*([1-6])/);
+    if (mRoom) return `ม.${mRoom[1]}`;
+    const subjGrade = String(a?.subject?.gradeLevel || "");
+    const mSubj = subjGrade.match(/ม\.?\s*([1-6])/);
+    if (mSubj) return `ม.${mSubj[1]}`;
+    const sid = String(a?.subjectId || "");
+    if (sid.includes("23")) return "ม.3";
+    if (sid.includes("31")) return "ม.4";
+    return "อื่นๆ";
+  };
+
+  const availableGrades = Array.from(new Set(assignments.map(getAssignmentGrade))).sort((a, b) =>
+    a.localeCompare(b, "th", { numeric: true })
+  );
+
+  const filteredAssignmentsByGrade =
+    selectedGradeFilter === "all"
+      ? assignments
+      : assignments.filter((a) => getAssignmentGrade(a) === selectedGradeFilter);
+
+  const groupedAssignments = availableGrades
+    .filter((g) => selectedGradeFilter === "all" || g === selectedGradeFilter)
+    .map((grade) => ({
+      grade,
+      items: filteredAssignmentsByGrade.filter((a) => getAssignmentGrade(a) === grade),
+    }))
+    .filter((g) => g.items.length > 0);
 
   const currentAssignment = assignments.find((a) => a.id === selectedAssignmentId);
 
@@ -452,7 +483,49 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
           {/* Filters Bar */}
           <div className="bg-white rounded-xl p-3 shadow-xs border border-gray-200/90 flex flex-col md:flex-row md:items-center justify-between gap-2.5">
         <div className="flex flex-wrap items-center gap-2 flex-1">
-          {/* Assignment Selector */}
+          {/* Grade Level Quick Filter Pills */}
+          {availableGrades.length > 1 && (
+            <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
+              <button
+                type="button"
+                onClick={() => setSelectedGradeFilter("all")}
+                className={`px-2.5 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                  selectedGradeFilter === "all"
+                    ? "bg-white text-orange-600 shadow-2xs"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                ทั้งหมด
+              </button>
+              {availableGrades.map((g) => (
+                <button
+                  key={g}
+                  type="button"
+                  onClick={() => {
+                    setSelectedGradeFilter(g);
+                    const firstInGrade = assignments.find((a) => getAssignmentGrade(a) === g);
+                    if (firstInGrade && getAssignmentGrade(currentAssignment) !== g) {
+                      setSelectedAssignmentId(firstInGrade.id);
+                      if (firstInGrade.classroomsList?.length > 0) {
+                        setSelectedClassroom(firstInGrade.classroomsList[0]);
+                      } else {
+                        setSelectedClassroom("");
+                      }
+                    }
+                  }}
+                  className={`px-2.5 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                    selectedGradeFilter === g
+                      ? "bg-white text-orange-600 shadow-2xs"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  {g}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Assignment Selector (Grouped by Grade) */}
           <div className="w-full sm:w-auto">
             <select
               value={selectedAssignmentId}
@@ -467,10 +540,14 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
               }}
               className="h-10 px-3 rounded-lg border border-gray-200 bg-white hover:border-gray-300 focus:border-orange-500 outline-none text-sm font-semibold text-gray-800 transition-colors cursor-pointer"
             >
-              {assignments.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.title} ({a.maxScore} คะแนน)
-                </option>
+              {groupedAssignments.map((group) => (
+                <optgroup key={group.grade} label={`ระดับชั้น ${group.grade}`}>
+                  {group.items.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      [{group.grade}] {a.title} ({a.maxScore} คะแนน)
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </select>
           </div>
