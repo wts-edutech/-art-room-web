@@ -366,3 +366,27 @@ body.exam-mode-active #cookie-consent {
   white-space: pre-line;
   line-height: 1.6 !important;
 }
+
+/* ==========================================================================
+   TCASFOLIO A4 PRINT STYLES (/portfolio)
+   ========================================================================== */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
+  body:has(#tcasfolio-printable-area) .bottom-nav,
+  body:has(#tcasfolio-printable-area) .floating-social-sidebar,
+  body:has(#tcasfolio-printable-area) #cookie-consent {
+    display: none !important;
+  }
+
+  #tcasfolio-printable-area {
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Sparkles, ArrowRight, BookOpen } from "lucide-react";
+import { Sparkles, ArrowRight, FolderKanban } from "lucide-react";
 
 interface AiModelSettings {
   title: string;
@@ -109,14 +109,14 @@ export default function HeroSection() {
             </a>
           )}
 
-          {/* Quick link to start learning / view materials */}
+          {/* Quick link to create student portfolio (TCASFOLIO style) */}
           <Link
-            href="/materials"
-            className="w-full sm:w-auto min-h-[48px] px-6 py-3.5 inline-flex items-center justify-center gap-2 rounded-full bg-white/90 hover:bg-white active:bg-gray-100 text-gray-800 font-bold text-xs sm:text-sm border border-gray-200 transition-all duration-200 shadow-xs active:scale-95 cursor-pointer max-w-sm sm:max-w-none"
+            href="/portfolio"
+            className="w-full sm:w-auto min-h-[48px] px-6 py-3.5 inline-flex items-center justify-center gap-2 rounded-full bg-white/95 hover:bg-white active:bg-gray-100 text-gray-800 font-bold text-xs sm:text-sm border border-gray-200 transition-all duration-200 shadow-xs active:scale-95 cursor-pointer max-w-sm sm:max-w-none group"
           >
-            <BookOpen className="w-4 h-4 text-red-600 shrink-0" />
-            <span>เข้าสู่คลังสื่อการสอน</span>
-            <ArrowRight className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+            <FolderKanban className="w-4 h-4 text-red-600 shrink-0 group-hover:scale-110 transition-transform" />
+            <span>สร้างแฟ้มสะสมผลงาน (Portfolio)</span>
+            <ArrowRight className="w-3.5 h-3.5 text-gray-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
           </Link>
         </div>
       </div>

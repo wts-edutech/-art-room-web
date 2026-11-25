@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { 
   Palette, 
   Sparkles, 
@@ -16,7 +17,8 @@ import {
   X,
   ChevronRight,
   Eye,
-  Lock
+  Lock,
+  FolderKanban
 } from "lucide-react";
 import { optimizeImageUrl } from "@/lib/image-utils";
 
@@ -123,8 +125,16 @@ export default function StudentArtworkAlbum({
           </div>
         </div>
 
-        {/* Print Dossier Button */}
-        <div className="flex items-center gap-2 self-end sm:self-center">
+        {/* Print Dossier & Portfolio Builder Buttons */}
+        <div className="flex flex-wrap items-center gap-2 self-end sm:self-center">
+          <Link
+            href="/portfolio"
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-bold text-xs shadow-sm active:scale-95 transition-all cursor-pointer"
+            title="เปิดระบบสร้างแฟ้มสะสมผลงานแบบ TCASFOLIO"
+          >
+            <FolderKanban className="w-4 h-4" />
+            <span>สร้างแฟ้มสะสมผลงาน (Portfolio)</span>
+          </Link>
           <button
             type="button"
             onClick={handlePrint}
