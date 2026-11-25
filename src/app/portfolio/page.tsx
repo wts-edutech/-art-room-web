@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { compressImage, fileToDataUrl } from "@/lib/image-compressor";
 import { swalToast, swalConfirm, swalSuccess } from "@/lib/swal";
+import StudentAccessGuard from "@/components/auth/StudentAccessGuard";
 
 export type LayoutType =
   | "a4-landscape"
@@ -354,7 +355,12 @@ const DEFAULT_STATE: PortfolioState = {
   ],
 };
 
-const STORAGE_KEY = "artroom_tcasfolio_builder_v1";
+const STORAGE_KEY_PREFIX = "artroom_tcasfolio_builder_v1";
+
+function getStudentStorageKey(studentId?: string): string {
+  const cleanId = (studentId || "").trim();
+  return cleanId ? `${STORAGE_KEY_PREFIX}_${cleanId}` : STORAGE_KEY_PREFIX;
+}
 
 const LEVEL_OPTIONS = [
   "ระดับนานาชาติ",
@@ -368,18 +374,30 @@ const LEVEL_OPTIONS = [
 const COST_OPTIONS = ["ไม่มีค่าใช้จ่าย", "มีค่าใช้จ่าย"];
 
 export default function PortfolioBuilderPage() {
+  return (
+    <StudentAccessGuard
+      zoneTitle="ระบบสร้างแฟ้มสะสมผลงาน (Portfolio) เฉพาะนักเรียน"
+      zoneDescription="ระบบจัดทำแฟ้มสะสมผลงานรายบุคคล (Portfolio) สงวนสิทธิ์เฉพาะนักเรียนโรงเรียนวชิรธรรมสาธิต โดยนักเรียนแต่ละคนจะเข้าถึงและมองเห็นเฉพาะข้อมูล ผลงานศิลปะ และเกียรติบัตรของตนเองเท่านั้น กรุณาเข้าสู่ระบบด้วยรหัสประจำตัวนักเรียนก่อนเข้าใช้งาน"
+    >
+      <PortfolioBuilderContent />
+    </StudentAccessGuard>
+  );
+}
+
+function PortfolioBuilderContent() {
   const [state, setState] = useState<PortfolioState>(DEFAULT_STATE);
+  const [currentStudentId, setCurrentStudentId] = useState<string>("");
+  const [currentStudentName, setCurrentStudentName] = useState<string>("");
   const [isLoaded, setIsLoaded] = useState(false);
   const [activeEntryId, setActiveEntryId] = useState<string | null>(null);
   const [openToolbarDropdown, setOpenToolbarDropdown] = useState<"layout" | "fit" | null>(null);
 
-  // Import from Art Room DB modal state
+  // Import from Art Room DB modal state (Strictly student's own items)
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [importTab, setImportTab] = useState<"submissions" | "awards" | "artworks" | "activities">("submissions");
+  const [importTab, setImportTab] = useState<"submissions" | "awards" | "artworks">("submissions");
   const [studentSubmissions, setStudentSubmissions] = useState<any[]>([]);
   const [schoolAwards, setSchoolAwards] = useState<any[]>([]);
   const [schoolArtworks, setSchoolArtworks] = useState<any[]>([]);
-  const [schoolActivities, setSchoolActivities] = useState<any[]>([]);
   const [isLoadingImport, setIsLoadingImport] = useState(false);
 
   // Image picker modal for a specific slot
@@ -391,36 +409,48 @@ export default function PortfolioBuilderPage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [pendingUploadCallback, setPendingUploadCallback] = useState<((dataUrl: string) => void) | null>(null);
 
-  // Load saved state + sync logged-in student profile
+  // Load saved state scoped strictly to the logged-in student ID
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const studentId = (localStorage.getItem("artroom_student_id") || "").trim();
+      const name = (localStorage.getItem("artroom_author_name") || "").trim();
+      const email = localStorage.getItem("artroom_author_email") || "";
+      const phone = localStorage.getItem("artroom_phone") || "";
+      const avatar = localStorage.getItem("artroom_avatar") || "";
+
+      setCurrentStudentId(studentId);
+      setCurrentStudentName(name);
+
+      const storageKey = getStudentStorageKey(studentId);
+      const saved = localStorage.getItem(storageKey);
+
       if (saved) {
         const parsed = JSON.parse(saved);
         setState((prev) => ({
           ...prev,
           ...parsed,
           sections: { ...prev.sections, ...(parsed.sections || {}) },
-          profile: { ...prev.profile, ...(parsed.profile || {}) },
+          profile: {
+            ...prev.profile,
+            ...(parsed.profile || {}),
+            fullNameTh: parsed.profile?.fullNameTh || name || prev.profile.fullNameTh,
+          },
         }));
       } else {
-        // Pre-fill from logged-in student in Art Room if available
-        const name = localStorage.getItem("artroom_author_name");
-        const email = localStorage.getItem("artroom_author_email");
-        const phone = localStorage.getItem("artroom_phone");
-        const avatar = localStorage.getItem("artroom_avatar");
-        if (name) {
-          setState((prev) => ({
-            ...prev,
-            profile: {
-              ...prev.profile,
-              fullNameTh: name,
-              email: email || prev.profile.email,
-              phone: phone || prev.profile.phone,
-              photoUrl: avatar && (avatar.startsWith("data:") || avatar.startsWith("http") || avatar.startsWith("/")) ? avatar : prev.profile.photoUrl,
-            },
-          }));
-        }
+        // Initialize fresh portfolio for this logged-in student
+        setState((prev) => ({
+          ...prev,
+          profile: {
+            ...prev.profile,
+            fullNameTh: name || prev.profile.fullNameTh,
+            email: email || (studentId ? `${studentId}@wts.ac.th` : prev.profile.email),
+            phone: phone || prev.profile.phone,
+            photoUrl:
+              avatar && (avatar.startsWith("data:") || avatar.startsWith("http") || avatar.startsWith("/"))
+                ? avatar
+                : prev.profile.photoUrl,
+          },
+        }));
       }
     } catch (e) {
       console.error("Failed to load portfolio state:", e);
@@ -429,47 +459,70 @@ export default function PortfolioBuilderPage() {
     }
   }, []);
 
-  // Auto-save whenever state changes
+  // Auto-save whenever state changes (isolated per student ID)
   useEffect(() => {
-    if (!isLoaded) return;
+    if (!isLoaded || !currentStudentId) return;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      const storageKey = getStudentStorageKey(currentStudentId);
+      localStorage.setItem(storageKey, JSON.stringify(state));
     } catch (e) {
       console.warn("Could not save portfolio to localStorage (quota):", e);
     }
-  }, [state, isLoaded]);
+  }, [state, isLoaded, currentStudentId]);
 
-  // Fetch Art Room repository items for easy import
+  // Helper to check if an award/artwork belongs to the logged-in student
+  const isOwnedByCurrentStudent = (authorOrStudentField: string | undefined | null, sName: string, sId: string): boolean => {
+    const raw = (authorOrStudentField || "").trim();
+    if (!raw) return false;
+    if (sId && raw.includes(sId)) return true;
+    if (!sName) return false;
+    const cleanTarget = raw.replace(/^(เด็กชาย|เด็กหญิง|ด\.ช\.|ด\.ญ\.|นาย|นางสาว|น\.ส\.)\s*/g, "").trim();
+    const cleanStudent = sName.replace(/^(เด็กชาย|เด็กหญิง|ด\.ช\.|ด\.ญ\.|นาย|นางสาว|น\.ส\.)\s*/g, "").trim();
+    if (!cleanStudent) return false;
+    return raw.includes(cleanStudent) || cleanTarget.includes(cleanStudent);
+  };
+
+  // Fetch ONLY this student's own items from Art Room repository
   const loadArtRoomRepository = async () => {
     setIsLoadingImport(true);
     try {
-      const studentId = localStorage.getItem("artroom_student_id") || "";
-      const studentName = localStorage.getItem("artroom_author_name") || "";
+      const studentId = (localStorage.getItem("artroom_student_id") || currentStudentId).trim();
+      const studentName = (localStorage.getItem("artroom_author_name") || currentStudentName).trim();
 
-      const [subsRes, awardsRes, artworksRes, actRes] = await Promise.all([
-        studentId
-          ? fetch(`/api/submissions?studentId=${encodeURIComponent(studentId)}&_t=${Date.now()}`).then((r) => (r.ok ? r.json() : [])).catch(() => [])
-          : Promise.resolve([]),
+      if (!studentId) {
+        setStudentSubmissions([]);
+        setSchoolAwards([]);
+        setSchoolArtworks([]);
+        return;
+      }
+
+      const [subsRes, awardsRes, artworksRes] = await Promise.all([
+        fetch(`/api/submissions?studentId=${encodeURIComponent(studentId)}&_t=${Date.now()}`)
+          .then((r) => (r.ok ? r.json() : []))
+          .catch(() => []),
         fetch("/api/awards").then((r) => (r.ok ? r.json() : [])).catch(() => []),
         fetch("/api/artworks").then((r) => (r.ok ? r.json() : [])).catch(() => []),
-        fetch("/api/activities").then((r) => (r.ok ? r.json() : [])).catch(() => []),
       ]);
 
-      setStudentSubmissions(Array.isArray(subsRes) ? subsRes : []);
+      // 1. Student's own submissions (strictly filtered by studentId)
+      const mySubs = (Array.isArray(subsRes) ? subsRes : []).filter(
+        (s: any) => String(s.studentId || "").trim() === studentId
+      );
+      setStudentSubmissions(mySubs);
+
+      // 2. Only awards belonging to this student
       const allAwards = Array.isArray(awardsRes) ? awardsRes : [];
-      // Prioritize student's own awards if logged in
-      if (studentName) {
-        const sortedAwards = [...allAwards].sort((a, b) => {
-          const aMatch = (a.student || "").includes(studentName) ? -1 : 1;
-          const bMatch = (b.student || "").includes(studentName) ? -1 : 1;
-          return aMatch - bMatch;
-        });
-        setSchoolAwards(sortedAwards);
-      } else {
-        setSchoolAwards(allAwards);
-      }
-      setSchoolArtworks(Array.isArray(artworksRes) ? artworksRes : []);
-      setSchoolActivities(Array.isArray(actRes) ? actRes : []);
+      const myAwards = allAwards.filter((a: any) =>
+        isOwnedByCurrentStudent(a.student, studentName, studentId)
+      );
+      setSchoolAwards(myAwards);
+
+      // 3. Only gallery artworks belonging to this student
+      const allArtworks = Array.isArray(artworksRes) ? artworksRes : [];
+      const myArtworks = allArtworks.filter((art: any) =>
+        isOwnedByCurrentStudent(art.author, studentName, studentId)
+      );
+      setSchoolArtworks(myArtworks);
     } catch (err) {
       console.error("Error loading repository:", err);
     } finally {
@@ -511,17 +564,26 @@ export default function PortfolioBuilderPage() {
 
   const handleSaveManual = () => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      swalSuccess("บันทึกแฟ้มสะสมผลงานแล้ว!", "ข้อมูลทั้งหมดถูกบันทึกไว้ในเบราว์เซอร์เรียบร้อย", 1600);
+      const storageKey = getStudentStorageKey(currentStudentId);
+      localStorage.setItem(storageKey, JSON.stringify(state));
+      swalSuccess("บันทึกแฟ้มสะสมผลงานแล้ว!", `ข้อมูลแฟ้มสะสมผลงานของ ${currentStudentName || "คุณ"} ถูกบันทึกเรียบร้อย`, 1600);
     } catch {
       swalToast("บันทึกไม่สำเร็จ รูปภาพอาจมีขนาดใหญ่เกินไป", "error");
     }
   };
 
   const handleResetDefault = async () => {
-    if (await swalConfirm("ต้องการล้างข้อมูลและคืนค่าเริ่มต้นของแฟ้มสะสมผลงานหรือไม่?")) {
-      setState(DEFAULT_STATE);
-      localStorage.removeItem(STORAGE_KEY);
+    if (await swalConfirm("ต้องการล้างข้อมูลและคืนค่าเริ่มต้นของแฟ้มสะสมผลงานของคุณหรือไม่?")) {
+      const storageKey = getStudentStorageKey(currentStudentId);
+      localStorage.removeItem(storageKey);
+      setState({
+        ...DEFAULT_STATE,
+        profile: {
+          ...DEFAULT_STATE.profile,
+          fullNameTh: currentStudentName || DEFAULT_STATE.profile.fullNameTh,
+          email: currentStudentId ? `${currentStudentId}@wts.ac.th` : DEFAULT_STATE.profile.email,
+        },
+      });
       swalToast("คืนค่าเริ่มต้นเรียบร้อยแล้ว", "info");
     }
   };
@@ -2576,10 +2638,10 @@ export default function PortfolioBuilderPage() {
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-900 text-sm sm:text-base">
-                    ดึงข้อมูลผลงาน รางวัล และกิจกรรมจากคลัง ART ROOM
+                    คลังผลงานและรางวัลส่วนตัวของ {currentStudentName || "ฉัน"} ({currentStudentId})
                   </h3>
                   <p className="text-xs text-slate-500">
-                    คลิกเลือกรายการที่ต้องการ ระบบจะนำชื่อ รายละเอียด และรูปภาพมาจัดลงพอร์ตให้อัตโนมัติ
+                    แสดงเฉพาะชิ้นงานและเกียรติบัตรของคุณเท่านั้น คลิกเพื่อนำข้อมูลใส่พอร์ตได้ทันที
                   </p>
                 </div>
               </div>
@@ -2592,13 +2654,12 @@ export default function PortfolioBuilderPage() {
               </button>
             </div>
 
-            {/* Category Tabs */}
+            {/* Category Tabs (Only student's own items) */}
             <div className="px-5 pt-3 border-b border-slate-100 flex items-center gap-2 overflow-x-auto text-xs">
               {[
-                { id: "submissions", label: `งานศิลปะของฉัน (${studentSubmissions.length})` },
-                { id: "awards", label: `รางวัล/เกียรติบัตร (${schoolAwards.length})` },
-                { id: "artworks", label: `หอศิลป์โรงเรียน (${schoolArtworks.length})` },
-                { id: "activities", label: `กิจกรรม (${schoolActivities.length})` },
+                { id: "submissions", label: `งานศิลปะที่ฉันส่ง (${studentSubmissions.length})` },
+                { id: "awards", label: `รางวัล/เกียรติบัตรของฉัน (${schoolAwards.length})` },
+                { id: "artworks", label: `ผลงานในหอศิลป์ของฉัน (${schoolArtworks.length})` },
               ].map((t) => (
                 <button
                   key={t.id}
@@ -2697,158 +2758,117 @@ export default function PortfolioBuilderPage() {
                   </div>
                 )
               ) : importTab === "awards" ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {schoolAwards.map((aw) => (
-                    <div
-                      key={aw.id}
-                      className="p-3 rounded-2xl border border-slate-200 hover:border-teal-500 flex items-center gap-3 justify-between"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        {(aw.certificateUrl || aw.imageUrl) && (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={aw.certificateUrl || aw.imageUrl}
-                            alt={aw.title}
-                            className="w-14 h-14 rounded-xl object-cover shrink-0 bg-slate-100"
-                          />
-                        )}
-                        <div className="min-w-0">
-                          <div className="font-bold text-xs text-slate-900 truncate">{aw.title}</div>
-                          <div className="text-[11px] text-emerald-700 font-semibold truncate">
-                            {aw.awardLevel || "รางวัลเกียรติคุณ"} • {aw.student}
-                          </div>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          addEntry("4.1", {
-                            title: aw.title,
-                            level: aw.competitionLevel || "ระดับชาติ",
-                            dateStr: aw.date || aw.year || "2569",
-                            organization: aw.organization || "โรงเรียนวชิรธรรมสาธิต",
-                            awardResult: aw.awardLevel || "รางวัลชนะเลิศ",
-                            description:
-                              aw.description ||
-                              `ได้รับรางวัลจากการเข้าร่วมการแข่งขันรายการ ${aw.title}`,
-                            layout: "hero-1-4",
-                            images: [
-                              aw.certificateUrl || aw.imageUrl || "",
-                              aw.imageUrl || "",
-                              "",
-                              "",
-                              "",
-                            ],
-                          });
-                          setIsImportModalOpen(false);
-                          swalToast("นำเข้ารางวัลลงในหมวด 4.1 เรียบร้อย!", "success");
-                        }}
-                        className="px-3 py-1.5 rounded-xl bg-[#0d9488] hover:bg-[#0f766e] text-white font-bold text-xs shrink-0 no-min-h"
-                      >
-                        + นำใส่พอร์ต
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              ) : importTab === "artworks" ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {schoolArtworks.map((art) => (
-                    <div
-                      key={art.id}
-                      className="p-3 rounded-2xl border border-slate-200 hover:border-teal-500 flex items-center gap-3 justify-between"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        {art.imageUrl && (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={art.imageUrl}
-                            alt={art.title}
-                            className="w-14 h-14 rounded-xl object-cover shrink-0 bg-slate-100"
-                          />
-                        )}
-                        <div className="min-w-0">
-                          <div className="font-bold text-xs text-slate-900 truncate">{art.title}</div>
-                          <div className="text-[11px] text-slate-500 truncate">
-                            เทคนิค: {art.technique || "ทัศนศิลป์"} • {art.author}
-                          </div>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          addEntry("4.2", {
-                            title: art.title,
-                            level: "ระดับสถานศึกษา",
-                            dateStr: art.year || "ปีการศึกษา 2569",
-                            organization: "หอศิลป์จำลอง โรงเรียนวชิรธรรมสาธิต",
-                            awardResult: `ผลงานจัดแสดงในหอศิลป์ (เทคนิค: ${art.technique || "ทัศนศิลป์"})`,
-                            description: `สร้างสรรค์ผลงานทัศนศิลป์หัวข้อ "${art.title}" ด้วยเทคนิค${art.technique || "สีและสื่อผสม"} ขนาด ${art.dimensions || "มาตรฐาน"}`,
-                            layout: "4-3",
-                            images: [art.imageUrl || ""],
-                          });
-                          setIsImportModalOpen(false);
-                          swalToast("นำเข้าผลงานศิลปะลงในหมวด 4.2 เรียบร้อย!", "success");
-                        }}
-                        className="px-3 py-1.5 rounded-xl bg-[#0d9488] hover:bg-[#0f766e] text-white font-bold text-xs shrink-0 no-min-h"
-                      >
-                        + นำใส่พอร์ต
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {schoolActivities.map((act) => {
-                    const gallery = Array.isArray(act.images) ? act.images : [];
-                    return (
+                schoolAwards.length === 0 ? (
+                  <div className="py-10 text-center text-slate-400 text-xs">
+                    ยังไม่มีรายการรางวัลหรือเกียรติบัตรที่เป็นชื่อของคุณในระบบ
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {schoolAwards.map((aw) => (
                       <div
-                        key={act.id}
+                        key={aw.id}
                         className="p-3 rounded-2xl border border-slate-200 hover:border-teal-500 flex items-center gap-3 justify-between"
                       >
                         <div className="flex items-center gap-3 min-w-0">
-                          {act.imageUrl && (
+                          {(aw.certificateUrl || aw.imageUrl) && (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
-                              src={act.imageUrl}
-                              alt={act.title}
+                              src={aw.certificateUrl || aw.imageUrl}
+                              alt={aw.title}
                               className="w-14 h-14 rounded-xl object-cover shrink-0 bg-slate-100"
                             />
                           )}
                           <div className="min-w-0">
-                            <div className="font-bold text-xs text-slate-900 truncate">{act.title}</div>
-                            <div className="text-[11px] text-slate-500 truncate">{act.date}</div>
+                            <div className="font-bold text-xs text-slate-900 truncate">{aw.title}</div>
+                            <div className="text-[11px] text-emerald-700 font-semibold truncate">
+                              {aw.awardLevel || "รางวัลเกียรติคุณ"} • {aw.student}
+                            </div>
                           </div>
                         </div>
                         <button
                           type="button"
                           onClick={() => {
-                            addEntry("4.3", {
-                              title: act.title,
-                              level: "ระดับสถานศึกษา",
-                              dateStr: act.date || "ปีการศึกษา 2569",
-                              organization: act.location || "โรงเรียนวชิรธรรมสาธิต",
-                              awardResult: "เข้าร่วมกิจกรรมสร้างสรรค์",
-                              description: act.description || `เข้าร่วมกิจกรรม ${act.title}`,
+                            addEntry("4.1", {
+                              title: aw.title,
+                              level: aw.competitionLevel || "ระดับชาติ",
+                              dateStr: aw.date || aw.year || "2569",
+                              organization: aw.organization || "โรงเรียนวชิรธรรมสาธิต",
+                              awardResult: aw.awardLevel || "รางวัลชนะเลิศ",
+                              description:
+                                aw.description ||
+                                `ได้รับรางวัลจากการเข้าร่วมการแข่งขันรายการ ${aw.title}`,
                               layout: "hero-1-4",
                               images: [
-                                act.certificateUrl || act.imageUrl || "",
-                                gallery[0] || act.imageUrl || "",
-                                gallery[1] || "",
-                                gallery[2] || "",
-                                gallery[3] || "",
+                                aw.certificateUrl || aw.imageUrl || "",
+                                aw.imageUrl || "",
+                                "",
+                                "",
+                                "",
                               ],
                             });
                             setIsImportModalOpen(false);
-                            swalToast("นำเข้ากิจกรรมลงในหมวด 4.3 เรียบร้อย!", "success");
+                            swalToast("นำเข้ารางวัลลงในหมวด 4.1 เรียบร้อย!", "success");
                           }}
                           className="px-3 py-1.5 rounded-xl bg-[#0d9488] hover:bg-[#0f766e] text-white font-bold text-xs shrink-0 no-min-h"
                         >
                           + นำใส่พอร์ต
                         </button>
                       </div>
-                    );
-                  })}
-                </div>
+                    ))}
+                  </div>
+                )
+              ) : (
+                schoolArtworks.length === 0 ? (
+                  <div className="py-10 text-center text-slate-400 text-xs">
+                    ยังไม่มีผลงานของคุณที่จัดแสดงในหอศิลป์โรงเรียน
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {schoolArtworks.map((art) => (
+                      <div
+                        key={art.id}
+                        className="p-3 rounded-2xl border border-slate-200 hover:border-teal-500 flex items-center gap-3 justify-between"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          {art.imageUrl && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={art.imageUrl}
+                              alt={art.title}
+                              className="w-14 h-14 rounded-xl object-cover shrink-0 bg-slate-100"
+                            />
+                          )}
+                          <div className="min-w-0">
+                            <div className="font-bold text-xs text-slate-900 truncate">{art.title}</div>
+                            <div className="text-[11px] text-slate-500 truncate">
+                              เทคนิค: {art.technique || "ทัศนศิลป์"} • {art.author}
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            addEntry("4.2", {
+                              title: art.title,
+                              level: "ระดับสถานศึกษา",
+                              dateStr: art.year || "ปีการศึกษา 2569",
+                              organization: "หอศิลป์จำลอง โรงเรียนวชิรธรรมสาธิต",
+                              awardResult: `ผลงานจัดแสดงในหอศิลป์ (เทคนิค: ${art.technique || "ทัศนศิลป์"})`,
+                              description: `สร้างสรรค์ผลงานทัศนศิลป์หัวข้อ "${art.title}" ด้วยเทคนิค${art.technique || "สีและสื่อผสม"} ขนาด ${art.dimensions || "มาตรฐาน"}`,
+                              layout: "4-3",
+                              images: [art.imageUrl || ""],
+                            });
+                            setIsImportModalOpen(false);
+                            swalToast("นำเข้าผลงานศิลปะลงในหมวด 4.2 เรียบร้อย!", "success");
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-[#0d9488] hover:bg-[#0f766e] text-white font-bold text-xs shrink-0 no-min-h"
+                        >
+                          + นำใส่พอร์ต
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )
               )}
             </div>
           </div>
