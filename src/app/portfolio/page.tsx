@@ -1802,9 +1802,15 @@ export default function PortfolioBuilderPage() {
             {/* ============================================================= */}
             {state.sections.sec1_cover && (
               <div className="space-y-4">
-                {/* Header Row with Applied Major + Applicant Photo on Right */}
+                {/* Header Row with Title + Applied Major + Applicant Photo on Right */}
                 <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
                   <div className="space-y-3 flex-1">
+                    <div>
+                      <h1 className="text-lg sm:text-xl font-extrabold text-[#13426b] leading-tight">
+                        แฟ้มสะสมผลงาน ประจำปี {state.academicYear}
+                      </h1>
+                    </div>
+
                     {/* Applied Major Box */}
                     <div className="space-y-1.5">
                       <div className="text-xs font-extrabold text-slate-800">สาขาวิชาที่สมัคร</div>
