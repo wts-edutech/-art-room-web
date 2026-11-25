@@ -1200,19 +1200,9 @@ export default function PortfolioBuilderPage() {
             <ArrowLeft className="w-4 h-4" />
           </Link>
 
-          {/* TCASFOLIO + ART ROOM Badge */}
+          {/* Major Info in Top Bar */}
           <div className="flex items-center gap-2 min-w-0">
-            <div className="flex items-center font-black tracking-tight text-base sm:text-lg shrink-0">
-              <span className="text-[#13426b]">TCAS</span>
-              <span className="ml-1 px-1.5 py-0.5 rounded bg-gradient-to-r from-[#0d9488] to-[#0284c7] text-white text-xs font-extrabold">
-                TF
-              </span>
-            </div>
-            <span className="font-extrabold text-[#0d9488] text-xs sm:text-sm tracking-wide hidden sm:inline">
-              TCASFOLIO
-            </span>
-            <span className="text-slate-300 hidden sm:inline">|</span>
-            <span className="text-xs sm:text-sm text-slate-600 font-medium truncate">
+            <span className="text-xs sm:text-sm text-slate-700 font-bold truncate">
               {state.university} - {state.faculty} ({state.major})
             </span>
           </div>
@@ -1618,13 +1608,7 @@ export default function PortfolioBuilderPage() {
             className="max-w-[820px] mx-auto bg-white rounded-sm shadow-2xl p-5 sm:p-10 space-y-6 text-slate-900 print:shadow-none print:max-w-none print:p-4 print:rounded-none"
           >
             {/* Top Running Header */}
-            <div className="flex items-center justify-between pb-2 border-b border-slate-200 text-[11px] text-slate-500">
-              <div className="flex items-center gap-1.5 font-extrabold text-[#13426b]">
-                <span>TCAS</span>
-                <span className="px-1 py-0.2 rounded bg-gradient-to-r from-[#0d9488] to-[#0284c7] text-white text-[9px]">
-                  TF
-                </span>
-              </div>
+            <div className="flex items-center justify-end pb-2 border-b border-slate-200 text-[11px] text-slate-500">
               <div className="flex items-center gap-1">
                 <span>แฟ้มสะสมผลงาน ประจำปี</span>
                 <input
@@ -1641,28 +1625,11 @@ export default function PortfolioBuilderPage() {
             {/* ============================================================= */}
             {state.sections.sec1_cover && (
               <div className="space-y-4">
-                {/* Header Row with TCASFOLIO Title + Applicant Photo on Right */}
+                {/* Header Row with Applied Major + Applicant Photo on Right */}
                 <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
                   <div className="space-y-3 flex-1">
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center font-black text-2xl sm:text-3xl tracking-tight text-[#13426b]">
-                        <span>TCAS</span>
-                        <span className="ml-1.5 px-2 py-0.5 rounded-lg bg-gradient-to-r from-[#0d9488] to-[#0284c7] text-white text-lg">
-                          TF
-                        </span>
-                      </div>
-                      <div>
-                        <h1 className="text-base sm:text-lg font-extrabold text-[#13426b] leading-tight">
-                          TCASFOLIO แฟ้มสะสมผลงาน ประจำปี {state.academicYear}
-                        </h1>
-                        <p className="text-[11px] text-slate-500">
-                          ระบบสร้างแฟ้มสะสมผลงานมาตรฐาน • โรงเรียนวชิรธรรมสาธิต (ART ROOM)
-                        </p>
-                      </div>
-                    </div>
-
                     {/* Applied Major Box */}
-                    <div className="space-y-1.5 pt-1">
+                    <div className="space-y-1.5">
                       <div className="text-xs font-extrabold text-slate-800">สาขาวิชาที่สมัคร</div>
                       <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50/80 border border-slate-200/80">
                         <div
