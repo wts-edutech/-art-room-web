@@ -31,12 +31,14 @@ import {
   Check,
   Building2,
   Copy,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Pencil
 } from "lucide-react";
 import { compressImage, fileToDataUrl } from "@/lib/image-compressor";
 import { swalToast, swalConfirm, swalSuccess } from "@/lib/swal";
 
 export type LayoutType =
+  | "a4-landscape"
   | "a4-full"
   | "16-9"
   | "4-3"
@@ -70,6 +72,7 @@ export interface PortfolioEntry {
   learned: string;
   layout: LayoutType;
   fitMode: FitMode;
+  showImages?: boolean;
   images: string[];
 }
 
@@ -159,8 +162,9 @@ const LAYOUT_OPTIONS: {
   items: { value: LayoutType; label: string; slots: number }[];
 }[] = [
   {
-    group: "รูปเดี่ยว (1 รูป)",
+    group: "1 รูป",
     items: [
+      { value: "a4-landscape", label: "เต็มหน้า A4 (แนวนอน)", slots: 1 },
       { value: "a4-full", label: "เต็มหน้า A4 (แนวตั้ง)", slots: 1 },
       { value: "16-9", label: "เต็มกว้าง 16:9", slots: 1 },
       { value: "4-3", label: "เต็มกว้าง 4:3", slots: 1 },
@@ -367,6 +371,7 @@ export default function PortfolioBuilderPage() {
   const [state, setState] = useState<PortfolioState>(DEFAULT_STATE);
   const [isLoaded, setIsLoaded] = useState(false);
   const [activeEntryId, setActiveEntryId] = useState<string | null>(null);
+  const [openToolbarDropdown, setOpenToolbarDropdown] = useState<"layout" | "fit" | null>(null);
 
   // Import from Art Room DB modal state
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -550,35 +555,24 @@ export default function PortfolioBuilderPage() {
 
   const addEntry = (category: "4.1" | "4.2" | "4.3", prefill?: Partial<PortfolioEntry>) => {
     const newId = `entry_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-    const defaultLayout: LayoutType = prefill?.layout || "hero-1-4";
+    const defaultLayout: LayoutType = prefill?.layout || "16-9";
     const slots = getSlotCountForLayout(defaultLayout);
     const initialImages = Array.from({ length: slots }, (_, idx) => prefill?.images?.[idx] || "");
 
     const newEntry: PortfolioEntry = {
       id: newId,
       category,
-      title:
-        prefill?.title ||
-        (category === "4.1"
-          ? "ชื่อรางวัล / เกียรติบัตรที่ได้รับ..."
-          : category === "4.2"
-          ? "ชื่อผลงานศิลปะ / โครงงานที่ภาคภูมิใจ..."
-          : "ชื่อกิจกรรมที่เข้าร่วม..."),
-      level: prefill?.level || "ระดับชาติ",
-      costType: prefill?.costType || "ไม่มีค่าใช้จ่าย",
-      dateStr: prefill?.dateStr || "ระบุวันที่ เช่น 18-21 มิถุนายน 2569",
-      organization: prefill?.organization || "โรงเรียนวชิรธรรมสาธิต / หน่วยงานผู้จัด",
-      awardResult:
-        prefill?.awardResult ||
-        (category === "4.1"
-          ? "รางวัลชนะเลิศ / เหรียญทอง"
-          : category === "4.2"
-          ? "ผลงานสร้างสรรค์ดีเด่น"
-          : "แกนนำนักเรียน / ผู้เข้าร่วมกิจกรรม"),
-      description: prefill?.description || "แตะเพื่อพิมพ์รายละเอียดของผลงานหรือกิจกรรม...",
-      learned: prefill?.learned || "แตะเพื่อพิมพ์สิ่งที่ได้เรียนรู้และทักษะที่ได้รับ...",
+      title: prefill?.title ?? "",
+      level: prefill?.level ?? "",
+      costType: prefill?.costType ?? "",
+      dateStr: prefill?.dateStr ?? "",
+      organization: prefill?.organization ?? "",
+      awardResult: prefill?.awardResult ?? "",
+      description: prefill?.description ?? "",
+      learned: prefill?.learned ?? "",
       layout: defaultLayout,
       fitMode: prefill?.fitMode || "cover",
+      showImages: prefill?.showImages ?? Boolean(prefill?.images?.some(Boolean)),
       images: initialImages,
     };
 
@@ -656,18 +650,43 @@ export default function PortfolioBuilderPage() {
   };
 
   const adjustEntrySlots = (entry: PortfolioEntry, delta: -1 | 1) => {
-    const currentSlots = getSlotCountForLayout(entry.layout);
-    const targetSlots = Math.max(1, Math.min(6, currentSlots + delta));
-    if (targetSlots === currentSlots) return;
-    const mapBySlot: Record<number, LayoutType> = {
-      1: "16-9",
-      2: "grid-4-3-2",
-      3: "hero-1-2",
-      4: "table-2x2",
-      5: "hero-1-4",
-      6: "grid-4-3-6",
-    };
-    updateEntry(entry.id, { layout: mapBySlot[targetSlots] || "hero-1-4" });
+    const isShowing = entry.showImages !== false;
+    if (delta === -1 && isShowing) {
+      const currentSlots = getSlotCountForLayout(entry.layout);
+      if (currentSlots <= 1) {
+        updateEntry(entry.id, { showImages: false });
+        return;
+      }
+      const targetSlots = currentSlots - 1;
+      const mapBySlot: Record<number, LayoutType> = {
+        1: "16-9",
+        2: "grid-4-3-2",
+        3: "hero-1-2",
+        4: "table-2x2",
+        5: "hero-1-4",
+        6: "grid-4-3-6",
+      };
+      updateEntry(entry.id, { layout: mapBySlot[targetSlots] || "16-9", showImages: true });
+      return;
+    }
+
+    if (delta === 1) {
+      if (!isShowing) {
+        updateEntry(entry.id, { showImages: true });
+        return;
+      }
+      const currentSlots = getSlotCountForLayout(entry.layout);
+      const targetSlots = Math.min(6, currentSlots + 1);
+      const mapBySlot: Record<number, LayoutType> = {
+        1: "16-9",
+        2: "grid-4-3-2",
+        3: "hero-1-2",
+        4: "table-2x2",
+        5: "hero-1-4",
+        6: "grid-4-3-6",
+      };
+      updateEntry(entry.id, { layout: mapBySlot[targetSlots] || "hero-1-4", showImages: true });
+    }
   };
 
   // Warning checks like TCASFOLIO banner
@@ -784,6 +803,8 @@ export default function PortfolioBuilderPage() {
     };
 
     switch (entry.layout) {
+      case "a4-landscape":
+        return <div className="grid grid-cols-1 gap-2.5">{renderSlot(0, "aspect-[1.414/1] max-h-[420px]")}</div>;
       case "a4-full":
         return <div className="grid grid-cols-1 gap-2.5">{renderSlot(0, "aspect-[1/1.35] max-h-[520px]")}</div>;
       case "16-9":
@@ -898,185 +919,318 @@ export default function PortfolioBuilderPage() {
     const catEntries = state.entries.filter((e) => e.category === catKey);
 
     return (
-      <div className="space-y-5 pt-3">
-        {/* Dark Navy Pill Header matching TCASFOLIO */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="inline-flex items-center gap-2">
-            <span className="px-4 py-1.5 rounded-full bg-[#13426b] text-white font-bold text-xs sm:text-sm shadow-2xs">
-              {badgeTitle}
-            </span>
-            <span className="w-5 h-5 rounded-full border border-[#13426b] text-[#13426b] flex items-center justify-center text-[11px] font-bold print:hidden">
-              i
-            </span>
-          </div>
-
-          <div className="flex items-center gap-1.5 print:hidden">
-            <button
-              type="button"
-              onClick={() => {
-                setIsImportModalOpen(true);
-                loadArtRoomRepository();
-              }}
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 text-[11px] font-bold transition-colors no-min-h"
-            >
-              <FolderOpen className="w-3.5 h-3.5" />
-              <span>ดึงจากคลัง ART ROOM</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => addEntry(catKey)}
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#0d9488] hover:bg-[#0f766e] text-white text-[11px] font-bold transition-colors no-min-h"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>เพิ่มหัวข้อ</span>
-            </button>
-          </div>
-        </div>
-
+      <div className="space-y-4 pt-3">
         {catEntries.length === 0 ? (
-          <div className="p-6 rounded-2xl border border-dashed border-slate-300 text-center text-slate-400 text-xs print:hidden">
-            ยังไม่มีรายการใน{badgeTitle} กดปุ่ม <strong>+ เพิ่มหัวข้อ</strong> หรือ <strong>ดึงจากคลัง ART ROOM</strong>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="inline-flex items-center gap-2">
+                <span className="px-4 py-1.5 rounded-lg bg-[#13426b] text-white font-bold text-xs sm:text-sm shadow-2xs">
+                  {badgeTitle}
+                </span>
+                <span className="w-5 h-5 rounded-full border border-[#13426b] text-[#13426b] flex items-center justify-center text-[11px] font-serif italic font-bold print:hidden">
+                  i
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 print:hidden">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsImportModalOpen(true);
+                    loadArtRoomRepository();
+                  }}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 text-[11px] font-bold transition-colors no-min-h"
+                >
+                  <FolderOpen className="w-3.5 h-3.5" />
+                  <span>ดึงจากคลัง ART ROOM</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => addEntry(catKey)}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#0d9488] hover:bg-[#0f766e] text-white text-[11px] font-bold transition-colors no-min-h"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>เพิ่มหัวข้อ</span>
+                </button>
+              </div>
+            </div>
+            <div className="p-6 rounded-2xl border border-dashed border-slate-300 text-center text-slate-400 text-xs print:hidden">
+              ยังไม่มีรายการใน{badgeTitle} กดปุ่ม <strong>+ เพิ่มหัวข้อ</strong> หรือ <strong>ดึงจากคลัง ART ROOM</strong>
+            </div>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-5">
             {catEntries.map((entry, idx) => {
               const isSelected = activeEntryId === entry.id;
               const stats = getEntryTextStats(entry);
+              const isImagesVisible = entry.showImages !== false;
 
               return (
                 <div
                   key={entry.id}
-                  onClick={() => setActiveEntryId(entry.id)}
-                  className={`relative rounded-2xl p-3.5 sm:p-4 transition-all break-inside-avoid ${
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (activeEntryId !== entry.id) {
+                      setActiveEntryId(entry.id);
+                      setOpenToolbarDropdown(null);
+                    } else {
+                      setOpenToolbarDropdown(null);
+                    }
+                  }}
+                  className={`relative rounded-xl p-3.5 sm:p-4 transition-all break-inside-avoid ${
                     isSelected
-                      ? "ring-2 ring-[#0d9488] bg-teal-50/10 print:ring-0 print:bg-transparent"
-                      : "hover:bg-slate-50/60 border border-transparent hover:border-slate-200 print:border-none"
+                      ? "border-[2px] border-[#0d9488] bg-white print:border-none"
+                      : "border-[2px] border-transparent hover:border-slate-200 print:border-none"
                   }`}
                 >
-                  {/* Floating Dark Action Toolbar (Exact TCASFOLIO look) */}
+                  {/* Floating Dark Action Toolbar (Exact 1:1 TCASFOLIO Replica) */}
                   {isSelected && (
                     <div
                       onClick={(e) => e.stopPropagation()}
-                      className="sticky top-16 z-30 -mt-2 mb-3 mx-auto w-fit max-w-full bg-[#111827] text-white rounded-xl px-3 py-1.5 shadow-xl flex flex-wrap items-center gap-2 text-xs border border-slate-700 print:hidden"
+                      className=" -mt-12 mb-3 mx-auto w-fit max-w-full bg-[#111827] text-white rounded-2xl px-3.5 py-2 shadow-2xl flex flex-wrap items-center gap-2.5 text-xs border border-slate-800 relative z-40 print:hidden select-none"
                     >
-                      {/* Word & Char Count */}
-                      <div className="flex items-center gap-1.5 pr-2 border-r border-slate-700 text-[11px] text-slate-300">
-                        <FileText className="w-3.5 h-3.5 text-teal-400" />
+                      {/* 1. Pencil Icon + Word & Character Counter */}
+                      <div className="flex items-center gap-1.5 pr-3 border-r border-slate-700 text-xs text-slate-200 whitespace-nowrap">
+                        <Pencil className="w-3.5 h-3.5 text-slate-300 shrink-0" />
                         <span>
-                          <strong className="text-white">{stats.words}</strong> คำ -{" "}
-                          <strong className="text-white">{stats.chars}</strong> ตัวอักษร (ไม่รวมช่องว่าง)
+                          <strong className="text-white font-bold">{stats.words}</strong> คำ -{" "}
+                          <strong className="text-white font-bold">{stats.chars}</strong> ตัวอักษร (ไม่รวมช่องว่าง)
                         </span>
                       </div>
 
-                      {/* Slot Count - / + */}
-                      <div className="flex items-center bg-slate-800 rounded-lg overflow-hidden border border-slate-700">
+                      {/* 2. Segmented [ - | ImageIcon | + ] Button Group */}
+                      <div className="flex items-center bg-[#262f3f] rounded-lg border border-slate-600/80 overflow-hidden h-8">
                         <button
                           type="button"
                           onClick={() => adjustEntrySlots(entry, -1)}
-                          className="px-2 py-1 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors no-min-h"
-                          title="ลดจำนวนช่องรูป"
+                          className="w-8 h-full flex items-center justify-center hover:bg-slate-700 text-slate-300 hover:text-white transition-colors border-r border-slate-600/80 text-sm font-medium no-min-h"
+                          title="ซ่อนรูปภาพ / ลดจำนวนช่องรูป"
                         >
                           −
                         </button>
-                        <span className="px-2 py-1 text-[11px] font-bold text-teal-300 flex items-center gap-1">
-                          <ImageIcon className="w-3.5 h-3.5" />
-                          {getSlotCountForLayout(entry.layout)}
-                        </span>
+                        <button
+                          type="button"
+                          onClick={() => updateEntry(entry.id, { showImages: !isImagesVisible })}
+                          className={`w-9 h-full flex items-center justify-center transition-colors border-r border-slate-600/80 no-min-h ${
+                            isImagesVisible ? "text-white bg-slate-700/60" : "text-slate-400 hover:text-white"
+                          }`}
+                          title="เปิด/ปิดส่วนรูปภาพประกอบ"
+                        >
+                          <ImageIcon className="w-4 h-4" />
+                        </button>
                         <button
                           type="button"
                           onClick={() => adjustEntrySlots(entry, 1)}
-                          className="px-2 py-1 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors no-min-h"
-                          title="เพิ่มจำนวนช่องรูป"
+                          className="w-8 h-full flex items-center justify-center hover:bg-slate-700 text-slate-300 hover:text-white transition-colors text-sm font-medium no-min-h"
+                          title="แสดงรูปภาพ / เพิ่มจำนวนช่องรูป"
                         >
                           +
                         </button>
                       </div>
 
-                      {/* Layout Selector Dropdown */}
-                      <select
-                        value={entry.layout}
-                        onChange={(e) => updateEntry(entry.id, { layout: e.target.value as LayoutType })}
-                        className="bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs rounded-lg px-2.5 py-1.5 border border-slate-700 outline-none cursor-pointer"
-                      >
-                        {LAYOUT_OPTIONS.map((grp) => (
-                          <optgroup key={grp.group} label={grp.group} className="bg-slate-900 text-slate-300">
-                            {grp.items.map((opt) => (
-                              <option
-                                key={opt.value}
-                                value={opt.value}
-                                className="bg-slate-800 text-white py-1"
-                              >
-                                {opt.label}
-                              </option>
+                      {/* 3. Custom Dark Dropdown: Layout Selector */}
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setOpenToolbarDropdown(openToolbarDropdown === "layout" ? null : "layout")
+                          }
+                          className="h-8 px-3 rounded-lg bg-[#262f3f] hover:bg-slate-700 text-white font-bold text-xs border border-slate-600/80 flex items-center justify-between gap-3 min-w-[148px] transition-colors no-min-h"
+                        >
+                          <span className="truncate">{getLayoutLabel(entry.layout)}</span>
+                          <svg
+                            className="w-3.5 h-3.5 text-slate-300 shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
+
+                        {openToolbarDropdown === "layout" && (
+                          <div className="absolute left-0 top-full mt-1 w-48 max-h-80 overflow-y-auto bg-[#172133] border border-slate-600 shadow-2xl z-50 py-1 text-xs">
+                            {LAYOUT_OPTIONS.map((grp) => (
+                              <div key={grp.group}>
+                                <div className="px-3 py-1.5 font-extrabold text-white bg-[#172133] select-none">
+                                  {grp.group}
+                                </div>
+                                {grp.items.map((opt) => {
+                                  const isOptSelected = entry.layout === opt.value;
+                                  return (
+                                    <button
+                                      key={opt.value}
+                                      type="button"
+                                      onClick={() => {
+                                        updateEntry(entry.id, {
+                                          layout: opt.value,
+                                          showImages: true,
+                                        });
+                                        setOpenToolbarDropdown(null);
+                                      }}
+                                      className={`w-full text-left pl-6 pr-3 py-1.5 font-bold transition-colors block no-min-h ${
+                                        isOptSelected
+                                          ? "bg-[#1967d2] text-white"
+                                          : "text-slate-100 hover:bg-[#1967d2]/80 hover:text-white"
+                                      }`}
+                                    >
+                                      {opt.label}
+                                    </button>
+                                  );
+                                })}
+                              </div>
                             ))}
-                          </optgroup>
-                        ))}
-                      </select>
+                          </div>
+                        )}
+                      </div>
 
-                      {/* Fit Mode Dropdown */}
-                      <select
-                        value={entry.fitMode}
-                        onChange={(e) => updateEntry(entry.id, { fitMode: e.target.value as FitMode })}
-                        className="bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs rounded-lg px-2.5 py-1.5 border border-slate-700 outline-none cursor-pointer"
-                      >
-                        <option value="cover">ตัดตามสัดส่วน</option>
-                        <option value="contain">แสดงเต็มภาพ</option>
-                      </select>
+                      {/* 4. Custom Dark Dropdown: Fit Mode (แสดงเต็มรูป / ตัดตามสัดส่วน) */}
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setOpenToolbarDropdown(openToolbarDropdown === "fit" ? null : "fit")
+                          }
+                          className="h-8 px-3 rounded-lg bg-[#262f3f] hover:bg-slate-700 text-white font-bold text-xs border border-slate-600/80 flex items-center justify-between gap-2.5 min-w-[116px] transition-colors no-min-h"
+                        >
+                          <span>{entry.fitMode === "contain" ? "แสดงเต็มรูป" : "ตัดตามสัดส่วน"}</span>
+                          <svg
+                            className="w-3.5 h-3.5 text-slate-300 shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
 
-                      {/* Move Up / Down & Delete */}
-                      <div className="flex items-center gap-1 pl-1 border-l border-slate-700">
+                        {openToolbarDropdown === "fit" && (
+                          <div className="absolute left-0 top-full mt-1 w-32 bg-[#172133] border border-slate-600 shadow-2xl z-50 py-0.5 text-xs">
+                            {[
+                              { value: "contain", label: "แสดงเต็มรูป" },
+                              { value: "cover", label: "ตัดตามสัดส่วน" },
+                            ].map((m) => {
+                              const isModeSelected = entry.fitMode === m.value;
+                              return (
+                                <button
+                                  key={m.value}
+                                  type="button"
+                                  onClick={() => {
+                                    updateEntry(entry.id, { fitMode: m.value as FitMode });
+                                    setOpenToolbarDropdown(null);
+                                  }}
+                                  className={`w-full text-left px-3 py-1.5 font-bold transition-colors block no-min-h ${
+                                    isModeSelected
+                                      ? "bg-[#1967d2] text-white"
+                                      : "text-slate-100 hover:bg-[#1967d2]/80 hover:text-white"
+                                  }`}
+                                >
+                                  {m.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 5. Up / Down / Trash Icons */}
+                      <div className="flex items-center gap-1.5 pl-2 border-l border-slate-700">
                         <button
                           type="button"
                           onClick={() => moveEntry(entry.id, "up")}
-                          className="p-1.5 rounded-lg hover:bg-slate-700 text-slate-300 hover:text-white transition-colors no-min-h"
+                          className="p-1.5 rounded-lg hover:bg-slate-700 text-slate-200 hover:text-white transition-colors no-min-h"
                           title="เลื่อนขึ้น"
                         >
-                          <ArrowUp className="w-3.5 h-3.5" />
+                          <ArrowUp className="w-4 h-4" />
                         </button>
                         <button
                           type="button"
                           onClick={() => moveEntry(entry.id, "down")}
-                          className="p-1.5 rounded-lg hover:bg-slate-700 text-slate-300 hover:text-white transition-colors no-min-h"
+                          className="p-1.5 rounded-lg hover:bg-slate-700 text-slate-200 hover:text-white transition-colors no-min-h"
                           title="เลื่อนลง"
                         >
-                          <ArrowDown className="w-3.5 h-3.5" />
+                          <ArrowDown className="w-4 h-4" />
                         </button>
                         <button
                           type="button"
                           onClick={() => deleteEntry(entry.id)}
-                          className="p-1.5 rounded-lg hover:bg-red-600/80 text-red-400 hover:text-white transition-colors no-min-h"
+                          className="p-1.5 rounded-lg hover:bg-red-600/80 text-slate-200 hover:text-white transition-colors no-min-h"
                           title="ลบหัวข้อนี้"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Category Header Pill INSIDE First Entry Box (Exact TCASFOLIO layout) */}
+                  {idx === 0 && (
+                    <div className="flex items-center justify-between gap-2 mb-3.5">
+                      <div className="inline-flex items-center gap-2">
+                        <span className="px-3.5 py-1.5 rounded-lg bg-[#13426b] text-white font-bold text-xs sm:text-sm shadow-2xs">
+                          {badgeTitle}
+                        </span>
+                        <span className="w-5 h-5 rounded-full border border-[#13426b] text-[#13426b] flex items-center justify-center text-[11px] font-serif italic font-bold print:hidden">
+                          i
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 print:hidden">
+                        <button
+                          type="button"
+                          onClick={(ev) => {
+                            ev.stopPropagation();
+                            setIsImportModalOpen(true);
+                            loadArtRoomRepository();
+                          }}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 text-[11px] font-bold transition-colors no-min-h"
+                        >
+                          <FolderOpen className="w-3.5 h-3.5" />
+                          <span>ดึงจากคลัง ART ROOM</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(ev) => {
+                            ev.stopPropagation();
+                            addEntry(catKey);
+                          }}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#0d9488] hover:bg-[#0f766e] text-white text-[11px] font-bold transition-colors no-min-h"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>เพิ่มหัวข้อ</span>
                         </button>
                       </div>
                     </div>
                   )}
 
                   {/* Entry Number & Title */}
-                  <div className="flex items-start gap-2.5 mb-2">
-                    <span className="w-6 h-6 rounded-full bg-amber-400 text-slate-950 font-extrabold text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                  <div className="flex items-center gap-2.5 mb-2">
+                    <span className="w-6 h-6 rounded-full bg-[#f59e0b] text-slate-950 font-extrabold text-xs flex items-center justify-center shrink-0 shadow-2xs">
                       {idx + 1}
                     </span>
                     <input
                       type="text"
                       value={entry.title}
                       onChange={(e) => updateEntry(entry.id, { title: e.target.value })}
-                      placeholder="แตะเพื่อใส่หัวข้อผลงาน / รางวัล / กิจกรรม..."
-                      className="w-full font-bold text-sm sm:text-base text-[#0f2942] bg-transparent border-b border-transparent focus:border-teal-500 outline-none leading-snug"
+                      placeholder="แตะเพื่อใส่หัวข้อ..."
+                      className="w-full font-bold text-sm sm:text-base text-[#0f2942] placeholder:text-slate-400 placeholder:font-bold bg-transparent border-b border-transparent focus:border-teal-500 outline-none leading-snug"
                     />
                   </div>
 
-                  {/* Metadata Badges Row: Level, Cost, Date, Organization */}
-                  <div className="flex flex-wrap items-center gap-2 mb-2.5 pl-8 text-xs">
+                  {/* Metadata Badges Row: Level? (Red Dashed if empty), Cost? (Red Dashed if empty), Date, Organization */}
+                  <div className="flex flex-wrap items-center gap-2 mb-2.5 text-xs">
                     {/* Level pill */}
                     <select
                       value={entry.level}
                       onChange={(e) => updateEntry(entry.id, { level: e.target.value })}
-                      className="px-2.5 py-0.5 rounded-full bg-blue-50 text-[#13426b] font-bold text-[11px] border border-blue-200/80 outline-none cursor-pointer appearance-none text-center"
+                      className={`px-3 py-0.5 rounded-full font-bold text-[11px] outline-none cursor-pointer appearance-none text-center transition-colors ${
+                        !entry.level
+                          ? "border border-dashed border-red-500 text-red-600 bg-white print:hidden"
+                          : "bg-slate-100 text-[#13426b] border border-slate-200"
+                      }`}
                     >
+                      <option value="">ระดับ?</option>
                       {LEVEL_OPTIONS.map((lv) => (
-                        <option key={lv} value={lv}>
+                        <option key={lv} value={lv} className="text-slate-800">
                           {lv}
                         </option>
                       ))}
@@ -1086,86 +1240,109 @@ export default function PortfolioBuilderPage() {
                     <select
                       value={entry.costType}
                       onChange={(e) => updateEntry(entry.id, { costType: e.target.value })}
-                      className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[11px] border border-emerald-200/80 outline-none cursor-pointer appearance-none text-center"
+                      className={`px-3 py-0.5 rounded-full font-bold text-[11px] outline-none cursor-pointer appearance-none text-center transition-colors ${
+                        !entry.costType
+                          ? "border border-dashed border-red-500 text-red-600 bg-white print:hidden"
+                          : entry.costType === "ไม่มีค่าใช้จ่าย"
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200/80"
+                          : "bg-amber-50 text-amber-800 border border-amber-200/80"
+                      }`}
                     >
+                      <option value="">ค่าใช้จ่าย?</option>
                       {COST_OPTIONS.map((c) => (
-                        <option key={c} value={c}>
+                        <option key={c} value={c} className="text-slate-800">
                           {c}
                         </option>
                       ))}
                     </select>
 
-                    {/* Date */}
-                    <div className="inline-flex items-center gap-1 text-[11.5px] text-slate-700">
-                      <span className="font-bold text-[#0d9488]">วันที่:</span>
-                      <input
-                        type="text"
-                        value={entry.dateStr}
-                        onChange={(e) => updateEntry(entry.id, { dateStr: e.target.value })}
-                        placeholder="เช่น 18-21 มิถุนายน 2569"
-                        className="bg-transparent border-b border-transparent focus:border-teal-500 outline-none text-slate-700 w-36 sm:w-44"
-                      />
-                    </div>
-
-                    <span className="text-slate-300">•</span>
+                    {/* Date (Show input when filled or selected) */}
+                    {(entry.dateStr || isSelected) && (
+                      <div
+                        className={`inline-flex items-center gap-1 text-[11.5px] text-slate-700 ${
+                          !entry.dateStr ? "print:hidden" : ""
+                        }`}
+                      >
+                        <span className="font-bold text-[#0d9488]">วันที่:</span>
+                        <input
+                          type="text"
+                          value={entry.dateStr}
+                          onChange={(e) => updateEntry(entry.id, { dateStr: e.target.value })}
+                          placeholder="ระบุวันที่..."
+                          className="bg-transparent border-b border-transparent focus:border-teal-500 outline-none text-slate-700 w-32 sm:w-40"
+                        />
+                      </div>
+                    )}
 
                     {/* Organization */}
-                    <input
-                      type="text"
-                      value={entry.organization}
-                      onChange={(e) => updateEntry(entry.id, { organization: e.target.value })}
-                      placeholder="หน่วยงานผู้จัด / โรงเรียนวชิรธรรมสาธิต"
-                      className="bg-transparent border-b border-transparent focus:border-teal-500 outline-none text-[11.5px] text-slate-500 flex-1 min-w-[180px]"
-                    />
-                  </div>
-
-                  {/* Award Result / Rank */}
-                  <div className="pl-8 space-y-1.5 text-xs sm:text-[13px] leading-relaxed">
-                    <div className="flex flex-wrap items-baseline gap-1.5">
-                      <span className="font-bold text-[#0d9488] shrink-0">
-                        {catKey === "4.1" ? "ผลรางวัล / อันดับ :" : "บทบาท / ผลการประเมิน :"}
-                      </span>
+                    {(entry.organization || isSelected) && (
                       <input
                         type="text"
-                        value={entry.awardResult}
-                        onChange={(e) => updateEntry(entry.id, { awardResult: e.target.value })}
-                        placeholder="ระบุผลรางวัล หรือบทบาทหน้าที่..."
-                        className="font-bold text-slate-800 bg-transparent border-b border-transparent focus:border-teal-500 outline-none flex-1 min-w-[220px]"
+                        value={entry.organization}
+                        onChange={(e) => updateEntry(entry.id, { organization: e.target.value })}
+                        placeholder="• หน่วยงานผู้จัด..."
+                        className={`bg-transparent border-b border-transparent focus:border-teal-500 outline-none text-[11.5px] text-slate-500 flex-1 min-w-[150px] ${
+                          !entry.organization ? "print:hidden" : ""
+                        }`}
                       />
-                    </div>
+                    )}
+                  </div>
 
-                    {/* Description Paragraph */}
-                    <div>
+                  {/* Details & Description Area (Exact TCASFOLIO Teal Label + Placeholder) */}
+                  <div className="space-y-1.5 text-xs sm:text-[13px] leading-relaxed">
+                    {(entry.awardResult || (isSelected && catKey === "4.1" && entry.title)) && (
+                      <div
+                        className={`flex flex-wrap items-baseline gap-1.5 ${
+                          !entry.awardResult ? "print:hidden" : ""
+                        }`}
+                      >
+                        <span className="font-bold text-[#0d9488] shrink-0">
+                          ผลรางวัล / อันดับ :
+                        </span>
+                        <input
+                          type="text"
+                          value={entry.awardResult}
+                          onChange={(e) => updateEntry(entry.id, { awardResult: e.target.value })}
+                          placeholder="แตะเพื่อพิมพ์ผลรางวัล / อันดับ..."
+                          className="font-bold text-slate-800 placeholder:text-slate-400 placeholder:font-normal bg-transparent border-b border-transparent focus:border-teal-500 outline-none flex-1 min-w-[200px]"
+                        />
+                      </div>
+                    )}
+
+                    {/* รายละเอียด : */}
+                    <div className="space-y-0.5">
+                      <div className="font-bold text-[#0d9488] text-xs">รายละเอียด :</div>
                       <textarea
-                        rows={2}
+                        rows={entry.description ? 3 : 1}
                         value={entry.description}
                         onChange={(e) => updateEntry(entry.id, { description: e.target.value })}
-                        placeholder="แตะเพื่อพิมพ์รายละเอียดของผลงาน โครงการ หรือกิจกรรม..."
-                        className="w-full bg-transparent border border-transparent focus:border-slate-200 rounded-lg p-1 -ml-1 text-slate-700 outline-none resize-y leading-relaxed"
+                        placeholder="แตะเพื่อพิมพ์รายละเอียด..."
+                        className="w-full bg-transparent border-0 p-0 text-slate-700 placeholder:text-slate-400 outline-none resize-y leading-relaxed"
                       />
                     </div>
 
-                    {/* What I Learned Paragraph */}
-                    <div className="flex items-start gap-1">
-                      <textarea
-                        rows={2}
-                        value={entry.learned}
-                        onChange={(e) => updateEntry(entry.id, { learned: e.target.value })}
-                        placeholder="โดยได้เรียนรู้ : แตะเพื่อพิมพ์สิ่งที่ได้เรียนรู้และทักษะที่ได้รับ..."
-                        className="w-full bg-transparent border border-transparent focus:border-slate-200 rounded-lg p-1 -ml-1 text-slate-700 outline-none resize-y leading-relaxed"
-                      />
-                    </div>
+                    {/* โดยได้เรียนรู้ (optional or if filled) */}
+                    {entry.learned && (
+                      <div className="pt-0.5">
+                        <textarea
+                          rows={2}
+                          value={entry.learned}
+                          onChange={(e) => updateEntry(entry.id, { learned: e.target.value })}
+                          placeholder="โดยได้เรียนรู้ : แตะเพื่อพิมพ์สิ่งที่ได้เรียนรู้..."
+                          className="w-full bg-transparent border-0 p-0 text-slate-700 placeholder:text-slate-400 outline-none resize-y leading-relaxed"
+                        />
+                      </div>
+                    )}
 
-                    {/* Image Gallery Label (Hidden in Print) */}
-                    <div className="text-[11px] text-slate-400 pt-1 pb-0.5 print:hidden flex items-center justify-between">
-                      <span>
-                        <strong className="text-[#0d9488]">ภาพประกอบ :</strong> รูปแบบ{" "}
-                        <strong>{getLayoutLabel(entry.layout)}</strong> ({getSlotCountForLayout(entry.layout)} ช่อง) — แตะที่กรอบเพื่อเลือกรูปภาพ
-                      </span>
-                    </div>
-
-                    {/* Dynamic Photo Layout */}
-                    <div className="pt-1">{renderEntryImageGrid(entry)}</div>
+                    {/* Image Gallery Section (Toggled by - / Image / + buttons in toolbar) */}
+                    {isImagesVisible && (
+                      <div className="pt-2 space-y-1.5">
+                        <div className="text-xs text-slate-500 print:hidden">
+                          <strong className="text-[#0d9488]">ภาพประกอบ :</strong> สูงสุดไม่เกิน 6 รูป
+                        </div>
+                        <div>{renderEntryImageGrid(entry)}</div>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
