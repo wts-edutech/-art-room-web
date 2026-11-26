@@ -72,7 +72,7 @@ export async function GET(request: Request) {
       ...item,
       imageUrl:
         item.imageUrl === 'has_blob'
-          ? `/api/artworks/image?id=${encodeURIComponent(item.id)}`
+          ? `/api/media?type=artwork&id=${encodeURIComponent(item.id)}`
           : item.imageUrl,
       studentName: item.author || item.studentName || '',
       grade: item.year || item.grade || 'ทั่วไป',
@@ -176,7 +176,7 @@ export async function PUT(request: Request) {
     const imageFile = formData.get('image') || formData.get('coverImage');
     if (imageFile && typeof imageFile === 'object' && 'arrayBuffer' in imageFile && (imageFile as any).size > 0) {
       imageUrl = await fileToStoredMedia(imageFile as File, `artworks/${id}/image_${Date.now()}`);
-    } else if (imageUrl.includes('/api/artworks/image')) {
+    } else if (imageUrl.includes('/api/media?type=artwork') || imageUrl.includes('/api/artworks/image')) {
       // Preserve existing stored blob/R2 image when client echoes proxy URL unchanged
       imageUrl = '';
     } else if (imageUrl.startsWith('data:')) {

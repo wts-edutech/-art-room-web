@@ -95,11 +95,11 @@ export async function GET(request: Request) {
       ...item,
       imageUrl:
         item.imageUrl === 'has_blob'
-          ? `/api/awards/image?id=${encodeURIComponent(item.id)}&field=image`
+          ? `/api/media?type=award&id=${encodeURIComponent(item.id)}&field=image`
           : item.imageUrl,
       certificateUrl:
         item.certificateUrl === 'has_blob'
-          ? `/api/awards/image?id=${encodeURIComponent(item.id)}&field=certificate`
+          ? `/api/media?type=award&id=${encodeURIComponent(item.id)}&field=certificate`
           : item.certificateUrl,
     }));
 

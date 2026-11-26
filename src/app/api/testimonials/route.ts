@@ -36,11 +36,11 @@ export async function GET(request: Request) {
       ...item,
       imageUrl:
         item.imageUrl === 'has_blob'
-          ? `/api/testimonials/image?id=${encodeURIComponent(item.id)}&field=image`
+          ? `/api/media?type=testimonial&id=${encodeURIComponent(item.id)}&field=image`
           : item.imageUrl,
       univImageUrl:
         item.univImageUrl === 'has_blob'
-          ? `/api/testimonials/image?id=${encodeURIComponent(item.id)}&field=univ`
+          ? `/api/media?type=testimonial&id=${encodeURIComponent(item.id)}&field=univ`
           : item.univImageUrl,
     }));
 
@@ -110,14 +110,14 @@ export async function PUT(request: Request) {
       if (body.imageUrl !== undefined) {
         if (body.imageUrl === '__CLEAR__') {
           updates.imageUrl = null;
-        } else if (typeof body.imageUrl === 'string' && !body.imageUrl.includes('/api/testimonials/image')) {
+        } else if (typeof body.imageUrl === 'string' && !body.imageUrl.includes('/api/media?type=testimonial') && !body.imageUrl.includes('/api/testimonials/image')) {
           updates.imageUrl = await offloadDataUrl(body.imageUrl, `testimonials/${id}/image_${Date.now()}`);
         }
       }
       if (body.univImageUrl !== undefined) {
         if (body.univImageUrl === '__CLEAR__') {
           updates.univImageUrl = null;
-        } else if (typeof body.univImageUrl === 'string' && !body.univImageUrl.includes('/api/testimonials/image')) {
+        } else if (typeof body.univImageUrl === 'string' && !body.univImageUrl.includes('/api/media?type=testimonial') && !body.univImageUrl.includes('/api/testimonials/image')) {
           updates.univImageUrl = await offloadDataUrl(body.univImageUrl, `testimonials/${id}/univ_${Date.now()}`);
         }
       }
@@ -150,7 +150,7 @@ export async function PUT(request: Request) {
             updates[fieldName] = null;
           } else if (
             (fieldName === 'imageUrl' || fieldName === 'univImageUrl') &&
-            value.includes('/api/testimonials/image')
+            (value.includes('/api/media?type=testimonial') || value.includes('/api/testimonials/image'))
           ) {
             // Preserve existing stored blob/R2 image when client echoes proxy URL unchanged
             continue;

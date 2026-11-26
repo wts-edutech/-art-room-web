@@ -68,7 +68,7 @@ function toClientLogoSettings(settings: LogoSettings): LogoSettings {
     publicUrl = resolveR2Url(publicUrl) || DEFAULT_SETTINGS.logoUrl;
   } else if (publicUrl?.startsWith('data:')) {
     const v = encodeURIComponent(settings.updatedAt || '1');
-    publicUrl = `/api/settings/media?type=logo&v=${v}`;
+    publicUrl = `/api/media?type=setting&name=logo&v=${v}`;
   }
   return { ...settings, logoUrl: publicUrl };
 }
@@ -167,7 +167,7 @@ export async function POST(request: Request) {
     }
 
     let resolvedLogoUrl = payload.logoUrl?.trim() || existingStoredLogo;
-    if (resolvedLogoUrl.includes('/api/settings/media')) {
+    if (resolvedLogoUrl.includes('/api/media?type=setting') || resolvedLogoUrl.includes('/api/settings/media')) {
       resolvedLogoUrl = existingStoredLogo;
     } else if (resolvedLogoUrl.startsWith('/api/media?key=')) {
       try {

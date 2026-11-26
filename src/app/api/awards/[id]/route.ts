@@ -79,7 +79,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       updates.imageUrl = await fileToStoredMedia(imageFile as File, `awards/${id}/image_${Date.now()}`);
     } else if (formData.has('imageUrl')) {
       const incoming = (formData.get('imageUrl') as string) || '';
-      if (!incoming.includes('/api/awards/image')) {
+      if (!incoming.includes('/api/media?type=award') && !incoming.includes('/api/awards/image')) {
         updates.imageUrl = incoming.startsWith('data:')
           ? await offloadDataUrl(incoming, `awards/${id}/image_${Date.now()}`)
           : incoming;
@@ -92,7 +92,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       updates.certificateUrl = await fileToStoredMedia(certFile as File, `awards/${id}/cert_${Date.now()}`);
     } else if (formData.has('certificateUrl')) {
       const incoming = (formData.get('certificateUrl') as string) || '';
-      if (!incoming.includes('/api/awards/image')) {
+      if (!incoming.includes('/api/media?type=award') && !incoming.includes('/api/awards/image')) {
         updates.certificateUrl = incoming.startsWith('data:')
           ? await offloadDataUrl(incoming, `awards/${id}/cert_${Date.now()}`)
           : incoming;

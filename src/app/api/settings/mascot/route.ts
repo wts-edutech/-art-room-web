@@ -57,7 +57,7 @@ function toClientMascotSettings(settings: MascotSettings): MascotSettings {
     publicUrl = resolveR2Url(publicUrl) || DEFAULT_MASCOT_SETTINGS.mascotUrl;
   } else if (publicUrl?.startsWith('data:')) {
     const v = encodeURIComponent(settings.updatedAt || '1');
-    publicUrl = `/api/settings/media?type=mascot&v=${v}`;
+    publicUrl = `/api/media?type=setting&name=mascot&v=${v}`;
   }
   return { ...settings, mascotUrl: publicUrl };
 }
@@ -145,7 +145,7 @@ export async function POST(request: Request) {
     }
 
     let resolvedMascotUrl = payload.mascotUrl?.trim() || existingStoredMascot;
-    if (resolvedMascotUrl.includes('/api/settings/media')) {
+    if (resolvedMascotUrl.includes('/api/media?type=setting') || resolvedMascotUrl.includes('/api/settings/media')) {
       resolvedMascotUrl = existingStoredMascot;
     } else if (resolvedMascotUrl.startsWith('/api/media?key=')) {
       try {

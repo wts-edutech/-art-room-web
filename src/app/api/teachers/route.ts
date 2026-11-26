@@ -198,11 +198,11 @@ function lightenTeacherItem(item: any) {
     const itemId = encodeURIComponent(String(a?.id ?? idx));
     return {
       ...a,
-      imageUrl: toLightMediaUrl(a?.imageUrl, `/api/teachers/image?id=${tid}&section=award&itemId=${itemId}&field=imageUrl`),
-      coverImage: toLightMediaUrl(a?.coverImage, `/api/teachers/image?id=${tid}&section=award&itemId=${itemId}&field=coverImage`),
+      imageUrl: toLightMediaUrl(a?.imageUrl, `/api/media?type=teacher&id=${tid}&section=award&itemId=${itemId}&field=imageUrl`),
+      coverImage: toLightMediaUrl(a?.coverImage, `/api/media?type=teacher&id=${tid}&section=award&itemId=${itemId}&field=coverImage`),
       images: Array.isArray(a?.images)
         ? a.images.map((img: any, imgIdx: number) =>
-            toLightMediaUrl(img, `/api/teachers/image?id=${tid}&section=award&itemId=${itemId}&field=images&index=${imgIdx}`)
+            toLightMediaUrl(img, `/api/media?type=teacher&id=${tid}&section=award&itemId=${itemId}&field=images&index=${imgIdx}`)
           )
         : a?.images,
     };
@@ -212,7 +212,7 @@ function lightenTeacherItem(item: any) {
     const itemId = encodeURIComponent(String(a?.id ?? idx));
     return {
       ...a,
-      imageUrl: toLightMediaUrl(a?.imageUrl, `/api/teachers/image?id=${tid}&section=activity&itemId=${itemId}`),
+      imageUrl: toLightMediaUrl(a?.imageUrl, `/api/media?type=teacher&id=${tid}&section=activity&itemId=${itemId}`),
     };
   });
 
@@ -220,14 +220,14 @@ function lightenTeacherItem(item: any) {
     const itemId = encodeURIComponent(String(inno?.id ?? idx));
     return {
       ...inno,
-      coverImageUrl: toLightMediaUrl(inno?.coverImageUrl, `/api/teachers/image?id=${tid}&section=innovation&itemId=${itemId}&field=coverImageUrl`),
-      pdfUrl: toLightMediaUrl(inno?.pdfUrl, `/api/teachers/image?id=${tid}&section=innovation&itemId=${itemId}&field=pdfUrl`),
+      coverImageUrl: toLightMediaUrl(inno?.coverImageUrl, `/api/media?type=teacher&id=${tid}&section=innovation&itemId=${itemId}&field=coverImageUrl`),
+      pdfUrl: toLightMediaUrl(inno?.pdfUrl, `/api/media?type=teacher&id=${tid}&section=innovation&itemId=${itemId}&field=pdfUrl`),
     };
   });
 
   return {
     ...item,
-    imageUrl: toLightMediaUrl(item.imageUrl, `/api/teachers/image?id=${tid}&section=avatar`),
+    imageUrl: toLightMediaUrl(item.imageUrl, `/api/media?type=teacher&id=${tid}&section=avatar`),
     education: safeJsonParse(item.education, DEFAULT_KRU_KAE.education),
     experience: safeJsonParse(item.experience, DEFAULT_KRU_KAE.experience),
     awards,
@@ -236,10 +236,10 @@ function lightenTeacherItem(item: any) {
   };
 }
 
-/** Resolve echoed /api/teachers/image or /api/media URLs back to existing stored values, and offload new data: URLs to R2 */
+/** Resolve echoed /api/media?type=teacher or /api/media?key= URLs back to existing stored values, and offload new data: URLs to R2 */
 async function resolveAndOffloadMedia(val: any, existingVal: any, r2KeyBase: string): Promise<any> {
   if (!val || typeof val !== 'string') return val;
-  if (val.includes('/api/teachers/image')) {
+  if (val.includes('/api/media?type=teacher') || val.includes('/api/teachers/image')) {
     return existingVal || val;
   }
   if (val.startsWith('/api/media?key=')) {
