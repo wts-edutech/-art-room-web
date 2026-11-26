@@ -40,7 +40,7 @@ import StudentAccessGuard from "@/components/auth/StudentAccessGuard";
 import {
   PortfolioConfigSettings,
   DEFAULT_PORTFOLIO_CONFIG,
-} from "@/app/api/settings/portfolio-config/route";
+} from "@/lib/portfolio-config";
 
 export type LayoutType =
   | "a4-landscape"
@@ -166,45 +166,45 @@ const LAYOUT_OPTIONS: {
   group: string;
   items: { value: LayoutType; label: string; slots: number }[];
 }[] = [
-  {
-    group: "1 รูป",
-    items: [
-      { value: "a4-landscape", label: "เต็มหน้า A4 (แนวนอน)", slots: 1 },
-      { value: "a4-full", label: "เต็มหน้า A4 (แนวตั้ง)", slots: 1 },
-      { value: "16-9", label: "เต็มกว้าง 16:9", slots: 1 },
-      { value: "4-3", label: "เต็มกว้าง 4:3", slots: 1 },
-      { value: "4-5", label: "แนวตั้ง 4:5", slots: 1 },
-      { value: "1-1", label: "จัตุรัส 1:1", slots: 1 },
-    ],
-  },
-  {
-    group: "หลายรูป - แนวนอน 4:3",
-    items: [
-      { value: "grid-4-3-2", label: "2 ช่อง", slots: 2 },
-      { value: "grid-4-3-3", label: "3 ช่อง", slots: 3 },
-      { value: "grid-4-3-4", label: "4 ช่อง", slots: 4 },
-      { value: "grid-4-3-6", label: "6 ช่อง", slots: 6 },
-    ],
-  },
-  {
-    group: "หลายรูป - แนวตั้ง 4:5",
-    items: [
-      { value: "grid-4-5-2", label: "2 รูป", slots: 2 },
-      { value: "grid-4-5-3", label: "3 รูป", slots: 3 },
-      { value: "grid-4-5-4", label: "4 รูป", slots: 4 },
-      { value: "grid-4-5-5", label: "5 รูป", slots: 5 },
-      { value: "grid-4-5-6", label: "6 รูป", slots: 6 },
-    ],
-  },
-  {
-    group: "ตาราง / เด่น",
-    items: [
-      { value: "table-2x2", label: "ตาราง 2×2 (1:1)", slots: 4 },
-      { value: "hero-1-2", label: "เด่น (1 + 2 เล็ก)", slots: 3 },
-      { value: "hero-1-4", label: "เด่น (1 + 4 เล็ก)", slots: 5 },
-    ],
-  },
-];
+    {
+      group: "1 รูป",
+      items: [
+        { value: "a4-landscape", label: "เต็มหน้า A4 (แนวนอน)", slots: 1 },
+        { value: "a4-full", label: "เต็มหน้า A4 (แนวตั้ง)", slots: 1 },
+        { value: "16-9", label: "เต็มกว้าง 16:9", slots: 1 },
+        { value: "4-3", label: "เต็มกว้าง 4:3", slots: 1 },
+        { value: "4-5", label: "แนวตั้ง 4:5", slots: 1 },
+        { value: "1-1", label: "จัตุรัส 1:1", slots: 1 },
+      ],
+    },
+    {
+      group: "หลายรูป - แนวนอน 4:3",
+      items: [
+        { value: "grid-4-3-2", label: "2 ช่อง", slots: 2 },
+        { value: "grid-4-3-3", label: "3 ช่อง", slots: 3 },
+        { value: "grid-4-3-4", label: "4 ช่อง", slots: 4 },
+        { value: "grid-4-3-6", label: "6 ช่อง", slots: 6 },
+      ],
+    },
+    {
+      group: "หลายรูป - แนวตั้ง 4:5",
+      items: [
+        { value: "grid-4-5-2", label: "2 รูป", slots: 2 },
+        { value: "grid-4-5-3", label: "3 รูป", slots: 3 },
+        { value: "grid-4-5-4", label: "4 รูป", slots: 4 },
+        { value: "grid-4-5-5", label: "5 รูป", slots: 5 },
+        { value: "grid-4-5-6", label: "6 รูป", slots: 6 },
+      ],
+    },
+    {
+      group: "ตาราง / เด่น",
+      items: [
+        { value: "table-2x2", label: "ตาราง 2×2 (1:1)", slots: 4 },
+        { value: "hero-1-2", label: "เด่น (1 + 2 เล็ก)", slots: 3 },
+        { value: "hero-1-4", label: "เด่น (1 + 4 เล็ก)", slots: 5 },
+      ],
+    },
+  ];
 
 export function getSlotCountForLayout(layout: LayoutType): number {
   for (const g of LAYOUT_OPTIONS) {
@@ -458,7 +458,7 @@ function PortfolioBuilderContent() {
               if (isMounted) setSysConfig(fetchedCfg);
             }
           }
-        } catch {}
+        } catch { }
 
         // 1. Try loading from D1 Server API (/api/portfolios) first
         let loadedFromServer = false;
@@ -686,7 +686,7 @@ function PortfolioBuilderContent() {
     try {
       const storageKey = getStudentStorageKey(currentStudentId);
       localStorage.setItem(storageKey, JSON.stringify(state));
-    } catch {}
+    } catch { }
     const ok = await saveToBackend();
     if (ok) {
       swalSuccess(
@@ -707,7 +707,7 @@ function PortfolioBuilderContent() {
     try {
       const storageKey = getStudentStorageKey(currentStudentId);
       localStorage.setItem(storageKey, JSON.stringify(state));
-    } catch {}
+    } catch { }
     const ok = await saveToBackend("submitted");
     if (ok) {
       swalSuccess(
@@ -908,8 +908,8 @@ function PortfolioBuilderContent() {
       e.category === "4.1"
         ? "หมวด 4.1 - รางวัล / เกียรติบัตร"
         : e.category === "4.2"
-        ? "หมวด 4.2 - ผลงาน"
-        : "หมวด 4.3 - กิจกรรม";
+          ? "หมวด 4.2 - ผลงาน"
+          : "หมวด 4.3 - กิจกรรม";
     const isCatEnabled =
       (e.category === "4.1" && state.sections.sec4_1_awards) ||
       (e.category === "4.2" && state.sections.sec4_2_works) ||
@@ -951,8 +951,8 @@ function PortfolioBuilderContent() {
     const noSpaceChars = combined.replace(/\s+/g, "").length;
     const words = combined
       ? combined
-          .split(/\s+/)
-          .filter(Boolean).length
+        .split(/\s+/)
+        .filter(Boolean).length
       : 0;
     return { words, chars: noSpaceChars };
   };
@@ -973,9 +973,8 @@ function PortfolioBuilderContent() {
             setActiveEntryId(entry.id);
             setSlotPickerTarget({ entryId: entry.id, slotIndex: slotIdx });
           }}
-          className={`relative group/slot rounded-xl overflow-hidden bg-[#f1f5f9] border border-slate-200/90 hover:border-teal-500 transition-all flex flex-col items-center justify-center cursor-pointer select-none ${extraClass} ${
-            !imgUrl ? "print:hidden" : ""
-          }`}
+          className={`relative group/slot rounded-xl overflow-hidden bg-[#f1f5f9] border border-slate-200/90 hover:border-teal-500 transition-all flex flex-col items-center justify-center cursor-pointer select-none ${extraClass} ${!imgUrl ? "print:hidden" : ""
+            }`}
         >
           {imgUrl ? (
             <>
@@ -1186,11 +1185,10 @@ function PortfolioBuilderContent() {
                       setOpenToolbarDropdown(null);
                     }
                   }}
-                  className={`relative rounded-xl p-3.5 sm:p-4 transition-all break-inside-avoid ${
-                    isSelected
-                      ? "border-[2px] border-[#0d9488] bg-white print:border-none"
-                      : "border-[2px] border-transparent hover:border-slate-200 print:border-none"
-                  }`}
+                  className={`relative rounded-xl p-3.5 sm:p-4 transition-all break-inside-avoid ${isSelected
+                    ? "border-[2px] border-[#0d9488] bg-white print:border-none"
+                    : "border-[2px] border-transparent hover:border-slate-200 print:border-none"
+                    }`}
                 >
                   {/* Floating Dark Action Toolbar (Exact 1:1 TCASFOLIO Replica) */}
                   {isSelected && (
@@ -1220,9 +1218,8 @@ function PortfolioBuilderContent() {
                         <button
                           type="button"
                           onClick={() => updateEntry(entry.id, { showImages: !isImagesVisible })}
-                          className={`w-9 h-full flex items-center justify-center transition-colors border-r border-slate-600/80 no-min-h ${
-                            isImagesVisible ? "text-white bg-slate-700/60" : "text-slate-400 hover:text-white"
-                          }`}
+                          className={`w-9 h-full flex items-center justify-center transition-colors border-r border-slate-600/80 no-min-h ${isImagesVisible ? "text-white bg-slate-700/60" : "text-slate-400 hover:text-white"
+                            }`}
                           title="เปิด/ปิดส่วนรูปภาพประกอบ"
                         >
                           <ImageIcon className="w-4 h-4" />
@@ -1277,11 +1274,10 @@ function PortfolioBuilderContent() {
                                         });
                                         setOpenToolbarDropdown(null);
                                       }}
-                                      className={`w-full text-left pl-6 pr-3 py-1.5 font-bold transition-colors block no-min-h ${
-                                        isOptSelected
-                                          ? "bg-[#1967d2] text-white"
-                                          : "text-slate-100 hover:bg-[#1967d2]/80 hover:text-white"
-                                      }`}
+                                      className={`w-full text-left pl-6 pr-3 py-1.5 font-bold transition-colors block no-min-h ${isOptSelected
+                                        ? "bg-[#1967d2] text-white"
+                                        : "text-slate-100 hover:bg-[#1967d2]/80 hover:text-white"
+                                        }`}
                                     >
                                       {opt.label}
                                     </button>
@@ -1328,11 +1324,10 @@ function PortfolioBuilderContent() {
                                     updateEntry(entry.id, { fitMode: m.value as FitMode });
                                     setOpenToolbarDropdown(null);
                                   }}
-                                  className={`w-full text-left px-3 py-1.5 font-bold transition-colors block no-min-h ${
-                                    isModeSelected
-                                      ? "bg-[#1967d2] text-white"
-                                      : "text-slate-100 hover:bg-[#1967d2]/80 hover:text-white"
-                                  }`}
+                                  className={`w-full text-left px-3 py-1.5 font-bold transition-colors block no-min-h ${isModeSelected
+                                    ? "bg-[#1967d2] text-white"
+                                    : "text-slate-100 hover:bg-[#1967d2]/80 hover:text-white"
+                                    }`}
                                 >
                                   {m.label}
                                 </button>
@@ -1432,11 +1427,10 @@ function PortfolioBuilderContent() {
                     <select
                       value={entry.level}
                       onChange={(e) => updateEntry(entry.id, { level: e.target.value })}
-                      className={`px-3 py-0.5 rounded-full font-bold text-[11px] outline-none cursor-pointer appearance-none text-center transition-colors ${
-                        !entry.level
-                          ? "border border-dashed border-red-500 text-red-600 bg-white print:hidden"
-                          : "bg-slate-100 text-[#13426b] border border-slate-200"
-                      }`}
+                      className={`px-3 py-0.5 rounded-full font-bold text-[11px] outline-none cursor-pointer appearance-none text-center transition-colors ${!entry.level
+                        ? "border border-dashed border-red-500 text-red-600 bg-white print:hidden"
+                        : "bg-slate-100 text-[#13426b] border border-slate-200"
+                        }`}
                     >
                       <option value="">ระดับ?</option>
                       {(sysConfig.levelOptions?.length ? sysConfig.levelOptions : LEVEL_OPTIONS).map((lv) => (
@@ -1450,13 +1444,12 @@ function PortfolioBuilderContent() {
                     <select
                       value={entry.costType}
                       onChange={(e) => updateEntry(entry.id, { costType: e.target.value })}
-                      className={`px-3 py-0.5 rounded-full font-bold text-[11px] outline-none cursor-pointer appearance-none text-center transition-colors ${
-                        !entry.costType
-                          ? "border border-dashed border-red-500 text-red-600 bg-white print:hidden"
-                          : entry.costType === "ไม่มีค่าใช้จ่าย"
+                      className={`px-3 py-0.5 rounded-full font-bold text-[11px] outline-none cursor-pointer appearance-none text-center transition-colors ${!entry.costType
+                        ? "border border-dashed border-red-500 text-red-600 bg-white print:hidden"
+                        : entry.costType === "ไม่มีค่าใช้จ่าย"
                           ? "bg-emerald-50 text-emerald-700 border border-emerald-200/80"
                           : "bg-amber-50 text-amber-800 border border-amber-200/80"
-                      }`}
+                        }`}
                     >
                       <option value="">ค่าใช้จ่าย?</option>
                       {(sysConfig.costOptions?.length ? sysConfig.costOptions : COST_OPTIONS).map((c) => (
@@ -1469,9 +1462,8 @@ function PortfolioBuilderContent() {
                     {/* Date (Show input when filled or selected) */}
                     {(entry.dateStr || isSelected) && (
                       <div
-                        className={`inline-flex items-center gap-1 text-[11.5px] text-slate-700 ${
-                          !entry.dateStr ? "print:hidden" : ""
-                        }`}
+                        className={`inline-flex items-center gap-1 text-[11.5px] text-slate-700 ${!entry.dateStr ? "print:hidden" : ""
+                          }`}
                       >
                         <span className="font-bold text-[#0d9488]">วันที่:</span>
                         <input
@@ -1491,9 +1483,8 @@ function PortfolioBuilderContent() {
                         value={entry.organization}
                         onChange={(e) => updateEntry(entry.id, { organization: e.target.value })}
                         placeholder="• หน่วยงานผู้จัด..."
-                        className={`bg-transparent border-b border-transparent focus:border-teal-500 outline-none text-[11.5px] text-slate-500 flex-1 min-w-[150px] ${
-                          !entry.organization ? "print:hidden" : ""
-                        }`}
+                        className={`bg-transparent border-b border-transparent focus:border-teal-500 outline-none text-[11.5px] text-slate-500 flex-1 min-w-[150px] ${!entry.organization ? "print:hidden" : ""
+                          }`}
                       />
                     )}
                   </div>
@@ -1502,9 +1493,8 @@ function PortfolioBuilderContent() {
                   <div className="space-y-1.5 text-xs sm:text-[13px] leading-relaxed">
                     {(entry.awardResult || (isSelected && catKey === "4.1" && entry.title)) && (
                       <div
-                        className={`flex flex-wrap items-baseline gap-1.5 ${
-                          !entry.awardResult ? "print:hidden" : ""
-                        }`}
+                        className={`flex flex-wrap items-baseline gap-1.5 ${!entry.awardResult ? "print:hidden" : ""
+                          }`}
                       >
                         <span className="font-bold text-[#0d9488] shrink-0">
                           {sysConfig.entryAwardResultLabel || "ผลรางวัล / อันดับ :"}
@@ -2004,13 +1994,12 @@ function PortfolioBuilderContent() {
 
             {(teacherFeedback || portfolioStatus === "approved" || portfolioStatus === "revision") && (
               <div
-                className={`p-3.5 rounded-xl border text-xs flex items-start gap-2.5 shadow-xs ${
-                  portfolioStatus === "approved"
-                    ? "bg-emerald-50 border-emerald-200 text-emerald-900"
-                    : portfolioStatus === "revision"
+                className={`p-3.5 rounded-xl border text-xs flex items-start gap-2.5 shadow-xs ${portfolioStatus === "approved"
+                  ? "bg-emerald-50 border-emerald-200 text-emerald-900"
+                  : portfolioStatus === "revision"
                     ? "bg-rose-50 border-rose-200 text-rose-900"
                     : "bg-blue-50 border-blue-200 text-blue-900"
-                }`}
+                  }`}
               >
                 <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
                 <div className="space-y-0.5">
@@ -2019,8 +2008,8 @@ function PortfolioBuilderContent() {
                     {portfolioStatus === "approved"
                       ? "✅ ตรวจผ่านแล้ว"
                       : portfolioStatus === "revision"
-                      ? "⚠️ ให้แก้ไขเพิ่มเติม"
-                      : "⏳ ส่งให้ครูตรวจแล้ว"}
+                        ? "⚠️ ให้แก้ไขเพิ่มเติม"
+                        : "⏳ ส่งให้ครูตรวจแล้ว"}
                   </div>
                   {teacherFeedback && (
                     <div>
@@ -2057,54 +2046,48 @@ function PortfolioBuilderContent() {
           {/* =============================================================== */}
           <div
             id="tcasfolio-printable-area"
-            className="max-w-[820px] mx-auto bg-white rounded-sm shadow-2xl p-5 sm:p-10 space-y-6 text-slate-900 print:shadow-none print:max-w-none print:p-4 print:rounded-none"
+            className="max-w-[820px] mx-auto bg-white rounded-sm shadow-2xl p-5 sm:p-10 space-y-6 text-slate-900 print:shadow-none print:max-w-none print:p-4 print:rounded-none overflow-hidden"
           >
-            {/* Top Running Header */}
-            <div className="flex items-center justify-end pb-2 border-b border-slate-200 text-[11px] text-slate-500">
-              <div className="flex items-center gap-1">
-                <span>{sysConfig.topRightHeaderLabel || "แฟ้มสะสมผลงาน ประจำปี"}</span>
-                <input
-                  type="text"
-                  value={state.academicYear}
-                  onChange={(e) => setState({ ...state, academicYear: e.target.value })}
-                  className="w-10 font-bold text-slate-700 bg-transparent border-b border-transparent focus:border-teal-500 outline-none text-center"
-                />
+            {/* Top Running Header (shown only when Cover Banner is hidden) */}
+            {!state.sections.sec1_cover && (
+              <div className="flex items-center justify-end pb-2 border-b border-slate-200 text-[11px] text-slate-500">
+                <div className="flex items-center gap-1">
+                  <span>{sysConfig.topRightHeaderLabel || "แฟ้มสะสมผลงาน ประจำปี"}</span>
+                  <input
+                    type="text"
+                    value={state.academicYear}
+                    onChange={(e) => setState({ ...state, academicYear: e.target.value })}
+                    className="w-10 font-bold text-slate-700 bg-transparent border-b border-transparent focus:border-teal-500 outline-none text-center"
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             {/* ============================================================= */}
             {/* หมวด 1: ข้อมูลผู้สมัคร (Cover & Applicant Profile Table) */}
             {/* ============================================================= */}
             {state.sections.sec1_cover && (
               <div className="space-y-5">
-                {/* Modern Orange/Warm Hero Banner Header (Matching Reference Image 1) */}
-                <div className="relative rounded-2xl border border-[#ea580c]/20 bg-gradient-to-br from-white via-[#fff9f5] to-[#ffedd5]/65 p-4 sm:p-6 overflow-hidden shadow-xs">
-                  {/* Soft Curved Background Graphic */}
-                  <div className="absolute -top-20 -right-12 w-72 h-72 rounded-full bg-gradient-to-bl from-[#fb923c]/25 via-[#fdba74]/15 to-transparent pointer-events-none" />
-                  <div className="absolute -bottom-16 right-8 w-52 h-52 rounded-full border border-[#ea580c]/30 pointer-events-none" />
+                {/* Full-Bleed Orange/Warm Hero Banner Header (Matching Reference Image 1) */}
+                <div className="relative -mx-5 -mt-5 sm:-mx-10 sm:-mt-10 print:-mx-4 print:-mt-4 px-5 sm:px-10 pt-7 sm:pt-9 pb-7 bg-gradient-to-br from-[#fffdfb] via-[#fff5ee] to-[#ffe6d4]/75 overflow-hidden">
+                  {/* Soft Curved Background Arch (Top-Right Sweep) */}
+                  <div className="absolute -top-12 right-0 w-[62%] h-[115%] rounded-bl-[260px] bg-gradient-to-bl from-[#fed7aa]/55 via-[#ffedd5]/45 to-transparent pointer-events-none" />
+                  {/* Thin Decorative Orange Ellipse Ring (Bottom-Right) */}
+                  <div className="hidden sm:block absolute -bottom-16 right-4 w-56 h-36 rounded-full border border-[#f26532]/55 pointer-events-none" />
 
-                  {/* Decorative 4-Point Orange Star */}
-                  <svg
-                    className="absolute bottom-14 right-12 w-7 h-7 text-[#ea580c] pointer-events-none hidden sm:block"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                  >
-                    <path d="M12 0C12.8 7.5 16.5 11.2 24 12C16.5 12.8 12.8 16.5 12 24C11.2 16.5 7.5 12.8 0 12C7.5 11.2 11.2 7.5 12 0Z" />
-                  </svg>
-
-                  {/* Right Vertical Orange Ribbon Tab ("PORTFOLIO") */}
-                  <div className="absolute top-0 right-0 h-40 w-10 sm:w-11 bg-gradient-to-b from-[#ea580c] to-[#c2410c] rounded-bl-2xl shadow-md flex items-center justify-center select-none pointer-events-none z-10">
+                  {/* Right Vertical Orange Ribbon Tab ("PORTFOLIO") flush to top-right corner */}
+                  <div className="absolute top-0 right-0 h-40 sm:h-44 w-10 sm:w-11 bg-gradient-to-b from-[#ea580c] to-[#c2410c] rounded-bl-2xl shadow-md flex items-center justify-center select-none pointer-events-none z-20">
                     <span className="-rotate-90 text-white font-extrabold tracking-[0.2em] text-xs sm:text-sm whitespace-nowrap">
                       PORTFOLIO
                     </span>
                   </div>
 
                   {/* Main Flex Row: Left Portrait Photo + Right Title & Personal Info Card */}
-                  <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-stretch gap-5 sm:gap-6 pr-0 sm:pr-10">
+                  <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-stretch gap-5 sm:gap-7 pr-0 sm:pr-10">
                     {/* Left: Student Portrait Photo */}
                     <div
                       onClick={() => triggerImageUpload((url) => updateProfile("photoUrl", url))}
-                      className="w-36 h-44 sm:w-44 sm:h-52 rounded-2xl bg-slate-200/80 border-2 border-white shadow-md overflow-hidden flex flex-col items-center justify-center shrink-0 cursor-pointer group relative"
+                      className="w-36 h-40 sm:w-44 sm:h-48 rounded-2xl bg-[#e5e7eb] border-2 border-white shadow-md overflow-hidden flex flex-col items-center justify-center shrink-0 cursor-pointer group relative"
                       title="คลิกเพื่ออัปโหลดรูปถ่ายผู้สมัคร"
                     >
                       {state.profile.photoUrl ? (
@@ -2130,7 +2113,7 @@ function PortfolioBuilderContent() {
                     {/* Right: PORTFOLIO Heading + แฟ้มสะสมผลงาน + Personal Info Card */}
                     <div className="flex-1 flex flex-col justify-between w-full text-center sm:text-left space-y-3">
                       <div>
-                        <div className="text-3xl sm:text-4xl font-black tracking-wide text-[#ea580c] leading-none">
+                        <div className="text-4xl sm:text-[42px] font-black tracking-wide text-[#f26532] leading-none">
                           PORTFOLIO
                         </div>
                         <div className="text-base sm:text-lg font-bold text-[#1e293b] mt-1.5 flex items-center justify-center sm:justify-start gap-1.5">
@@ -2139,52 +2122,61 @@ function PortfolioBuilderContent() {
                             type="text"
                             value={state.academicYear}
                             onChange={(e) => setState({ ...state, academicYear: e.target.value })}
-                            className="w-14 font-bold text-[#1e293b] bg-transparent border-b border-transparent focus:border-[#ea580c] outline-none"
+                            className="w-14 font-bold text-[#1e293b] bg-transparent border-b border-transparent focus:border-[#f26532] outline-none"
                           />
                         </div>
                       </div>
 
-                      {/* Orange Folder-Tab Personal Summary Box */}
-                      <div className="text-left">
-                        <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-t-xl bg-gradient-to-r from-[#dc2626] to-[#ea580c] text-white font-bold text-xs shadow-2xs">
+                      {/* Orange Folder-Tab Personal Summary Box + 4-Point Star Accent */}
+                      <div className="relative text-left">
+                        <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-t-xl bg-gradient-to-r from-[#d9381e] to-[#f26532] text-white font-bold text-xs shadow-2xs">
                           <User className="w-3.5 h-3.5" />
                           <span>{sysConfig.sec1PersonalTitle || "ข้อมูลส่วนตัว"}</span>
                         </div>
-                        <div className="bg-white/95 backdrop-blur-xs rounded-b-2xl rounded-tr-2xl border border-[#ea580c]/50 p-3.5 sm:p-4 shadow-xs grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+                        <div className="relative bg-white/95 backdrop-blur-xs rounded-b-2xl rounded-tr-2xl border border-[#f26532]/85 p-3.5 sm:p-4 shadow-sm grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-2.5 text-xs sm:text-[13px]">
+                          {/* Decorative 4-Point Orange Star on top-right corner of card */}
+                          <svg
+                            className="absolute -top-3.5 right-3 w-7 h-7 text-[#f26532] pointer-events-none hidden sm:block drop-shadow-2xs"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                          >
+                            <path d="M12 0C12.8 7.5 16.5 11.2 24 12C16.5 12.8 12.8 16.5 12 24C11.2 16.5 7.5 12.8 0 12C7.5 11.2 11.2 7.5 12 0Z" />
+                          </svg>
+
                           <div className="flex items-baseline gap-2">
-                            <span className="text-[#ea580c] font-bold shrink-0">ชื่อ-นามสกุล</span>
+                            <span className="text-[#f26532] font-bold shrink-0">ชื่อ-นามสกุล</span>
                             <input
                               type="text"
                               value={state.profile.fullNameTh}
                               onChange={(e) => updateProfile("fullNameTh", e.target.value)}
-                              className="font-bold text-slate-900 bg-transparent border-b border-transparent focus:border-[#ea580c] outline-none w-full"
+                              className="font-semibold text-slate-900 bg-transparent border-b border-transparent focus:border-[#f26532] outline-none w-full"
                             />
                           </div>
                           <div className="flex items-baseline gap-2">
-                            <span className="text-[#ea580c] font-bold shrink-0">เลขประจำตัว</span>
+                            <span className="text-[#f26532] font-bold shrink-0">เลขประจำตัว</span>
                             <input
                               type="text"
                               value={state.profile.citizenId}
                               onChange={(e) => updateProfile("citizenId", e.target.value)}
-                              className="font-bold text-slate-900 bg-transparent border-b border-transparent focus:border-[#ea580c] outline-none w-full"
+                              className="font-semibold text-slate-900 bg-transparent border-b border-transparent focus:border-[#f26532] outline-none w-full"
                             />
                           </div>
                           <div className="flex items-baseline gap-2">
-                            <span className="text-[#ea580c] font-bold shrink-0">สถานศึกษา</span>
+                            <span className="text-[#f26532] font-bold shrink-0">สถานศึกษา</span>
                             <input
                               type="text"
                               value={state.profile.schoolName}
                               onChange={(e) => updateProfile("schoolName", e.target.value)}
-                              className="font-bold text-slate-900 bg-transparent border-b border-transparent focus:border-[#ea580c] outline-none w-full"
+                              className="font-semibold text-slate-900 bg-transparent border-b border-transparent focus:border-[#f26532] outline-none w-full"
                             />
                           </div>
                           <div className="flex items-baseline gap-2">
-                            <span className="text-[#ea580c] font-bold shrink-0">จังหวัด</span>
+                            <span className="text-[#f26532] font-bold shrink-0">จังหวัด</span>
                             <input
                               type="text"
                               value={state.profile.schoolProvince}
                               onChange={(e) => updateProfile("schoolProvince", e.target.value)}
-                              className="font-bold text-slate-900 bg-transparent border-b border-transparent focus:border-[#ea580c] outline-none w-full"
+                              className="font-semibold text-slate-900 bg-transparent border-b border-transparent focus:border-[#f26532] outline-none w-full"
                             />
                           </div>
                         </div>
@@ -2198,12 +2190,12 @@ function PortfolioBuilderContent() {
                   <div className="text-xs font-extrabold text-slate-800">
                     {sysConfig.appliedMajorLabel || "สาขาวิชาที่สมัคร"}
                   </div>
-                  <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50/80 border border-slate-200/80">
+                  <div className="flex items-start gap-3 p-3 rounded-xl bg-[#fffaf7] border border-[#f26532]/25">
                     <div
                       onClick={() =>
                         triggerImageUpload((url) => setState({ ...state, universityLogo: url }))
                       }
-                      className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center overflow-hidden shrink-0 cursor-pointer group relative"
+                      className="w-12 h-12 rounded-xl bg-white border border-[#f26532]/20 flex items-center justify-center overflow-hidden shrink-0 cursor-pointer group relative"
                       title="คลิกเพื่อเปลี่ยนตราสถาบัน/โรงเรียน"
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -2214,7 +2206,7 @@ function PortfolioBuilderContent() {
                       />
                     </div>
                     <div className="space-y-0.5 text-xs flex-1">
-                      <div className="font-extrabold text-[#13426b] text-sm">{state.university}</div>
+                      <div className="font-extrabold text-[#c2410c] text-sm">{state.university}</div>
                       <div className="font-semibold text-slate-700">{state.faculty} • {state.major}</div>
                       <div className="text-slate-500 text-[11px]">{state.projectRound}</div>
                     </div>
@@ -2223,7 +2215,7 @@ function PortfolioBuilderContent() {
 
                 {/* Section 1 Pill */}
                 <div>
-                  <span className="inline-block px-4 py-1 rounded-full bg-[#13426b] text-white font-bold text-xs">
+                  <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-gradient-to-r from-[#d9381e] to-[#f26532] text-white font-bold text-xs shadow-2xs">
                     {sysConfig.sec1Title || "หมวด 1 • ข้อมูลผู้สมัคร"}
                   </span>
                 </div>
@@ -2959,11 +2951,10 @@ function PortfolioBuilderContent() {
                   key={t.id}
                   type="button"
                   onClick={() => setImportTab(t.id as any)}
-                  className={`px-3.5 py-2 rounded-t-xl font-bold border-b-2 transition-colors whitespace-nowrap no-min-h ${
-                    importTab === t.id
-                      ? "border-[#0d9488] text-[#0d9488] bg-teal-50/50"
-                      : "border-transparent text-slate-500 hover:text-slate-800"
-                  }`}
+                  className={`px-3.5 py-2 rounded-t-xl font-bold border-b-2 transition-colors whitespace-nowrap no-min-h ${importTab === t.id
+                    ? "border-[#0d9488] text-[#0d9488] bg-teal-50/50"
+                    : "border-transparent text-slate-500 hover:text-slate-800"
+                    }`}
                 >
                   {t.label}
                 </button>

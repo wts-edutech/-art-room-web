@@ -31,7 +31,7 @@ import { swalToast, swalConfirm, swalSuccess, swalError } from "@/lib/swal";
 import {
   PortfolioConfigSettings,
   DEFAULT_PORTFOLIO_CONFIG,
-} from "@/app/api/settings/portfolio-config/route";
+} from "@/lib/portfolio-config";
 
 interface PortfolioSummaryItem {
   studentId: string;
