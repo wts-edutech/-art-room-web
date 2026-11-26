@@ -2076,69 +2076,148 @@ function PortfolioBuilderContent() {
             {/* หมวด 1: ข้อมูลผู้สมัคร (Cover & Applicant Profile Table) */}
             {/* ============================================================= */}
             {state.sections.sec1_cover && (
-              <div className="space-y-4">
-                {/* Header Row with Title + Applied Major + Applicant Photo on Right */}
-                <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
-                  <div className="space-y-3 flex-1">
-                    <div>
-                      <h1 className="text-lg sm:text-xl font-extrabold text-[#13426b] leading-tight">
-                        {sysConfig.coverMainTitle || "แฟ้มสะสมผลงาน ประจำปี"} {state.academicYear}
-                      </h1>
-                    </div>
+              <div className="space-y-5">
+                {/* Modern Orange/Warm Hero Banner Header (Matching Reference Image 1) */}
+                <div className="relative rounded-2xl border border-[#ea580c]/20 bg-gradient-to-br from-white via-[#fff9f5] to-[#ffedd5]/65 p-4 sm:p-6 overflow-hidden shadow-xs">
+                  {/* Soft Curved Background Graphic */}
+                  <div className="absolute -top-20 -right-12 w-72 h-72 rounded-full bg-gradient-to-bl from-[#fb923c]/25 via-[#fdba74]/15 to-transparent pointer-events-none" />
+                  <div className="absolute -bottom-16 right-8 w-52 h-52 rounded-full border border-[#ea580c]/30 pointer-events-none" />
 
-                    {/* Applied Major Box */}
-                    <div className="space-y-1.5">
-                      <div className="text-xs font-extrabold text-slate-800">
-                        {sysConfig.appliedMajorLabel || "สาขาวิชาที่สมัคร"}
-                      </div>
-                      <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50/80 border border-slate-200/80">
-                        <div
-                          onClick={() =>
-                            triggerImageUpload((url) => setState({ ...state, universityLogo: url }))
-                          }
-                          className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center overflow-hidden shrink-0 cursor-pointer group relative"
-                          title="คลิกเพื่อเปลี่ยนตราสถาบัน/โรงเรียน"
-                        >
+                  {/* Decorative 4-Point Orange Star */}
+                  <svg
+                    className="absolute bottom-14 right-12 w-7 h-7 text-[#ea580c] pointer-events-none hidden sm:block"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path d="M12 0C12.8 7.5 16.5 11.2 24 12C16.5 12.8 12.8 16.5 12 24C11.2 16.5 7.5 12.8 0 12C7.5 11.2 11.2 7.5 12 0Z" />
+                  </svg>
+
+                  {/* Right Vertical Orange Ribbon Tab ("PORTFOLIO") */}
+                  <div className="absolute top-0 right-0 h-40 w-10 sm:w-11 bg-gradient-to-b from-[#ea580c] to-[#c2410c] rounded-bl-2xl shadow-md flex items-center justify-center select-none pointer-events-none z-10">
+                    <span className="-rotate-90 text-white font-extrabold tracking-[0.2em] text-xs sm:text-sm whitespace-nowrap">
+                      PORTFOLIO
+                    </span>
+                  </div>
+
+                  {/* Main Flex Row: Left Portrait Photo + Right Title & Personal Info Card */}
+                  <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-stretch gap-5 sm:gap-6 pr-0 sm:pr-10">
+                    {/* Left: Student Portrait Photo */}
+                    <div
+                      onClick={() => triggerImageUpload((url) => updateProfile("photoUrl", url))}
+                      className="w-36 h-44 sm:w-44 sm:h-52 rounded-2xl bg-slate-200/80 border-2 border-white shadow-md overflow-hidden flex flex-col items-center justify-center shrink-0 cursor-pointer group relative"
+                      title="คลิกเพื่ออัปโหลดรูปถ่ายผู้สมัคร"
+                    >
+                      {state.profile.photoUrl ? (
+                        <>
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
-                            src={state.universityLogo || "/artroom-logo.png"}
-                            alt="Logo"
-                            className="w-10 h-10 object-contain"
+                            src={state.profile.photoUrl}
+                            alt={state.profile.fullNameTh}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold print:hidden">
+                            เปลี่ยนรูปถ่าย
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-center p-4 text-slate-500">
+                          <User className="w-12 h-12 mx-auto mb-1.5 stroke-[1.5]" />
+                          <span className="text-[11px] font-bold block">คลิกใส่รูปถ่ายผู้สมัคร</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Right: PORTFOLIO Heading + แฟ้มสะสมผลงาน + Personal Info Card */}
+                    <div className="flex-1 flex flex-col justify-between w-full text-center sm:text-left space-y-3">
+                      <div>
+                        <div className="text-3xl sm:text-4xl font-black tracking-wide text-[#ea580c] leading-none">
+                          PORTFOLIO
+                        </div>
+                        <div className="text-base sm:text-lg font-bold text-[#1e293b] mt-1.5 flex items-center justify-center sm:justify-start gap-1.5">
+                          <span>{sysConfig.coverMainTitle || "แฟ้มสะสมผลงาน"}</span>
+                          <input
+                            type="text"
+                            value={state.academicYear}
+                            onChange={(e) => setState({ ...state, academicYear: e.target.value })}
+                            className="w-14 font-bold text-[#1e293b] bg-transparent border-b border-transparent focus:border-[#ea580c] outline-none"
                           />
                         </div>
-                        <div className="space-y-0.5 text-xs flex-1">
-                          <div className="font-extrabold text-[#13426b] text-sm">{state.university}</div>
-                          <div className="font-semibold text-slate-700">{state.faculty} • {state.major}</div>
-                          <div className="text-slate-500 text-[11px]">{state.projectRound}</div>
+                      </div>
+
+                      {/* Orange Folder-Tab Personal Summary Box */}
+                      <div className="text-left">
+                        <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-t-xl bg-gradient-to-r from-[#dc2626] to-[#ea580c] text-white font-bold text-xs shadow-2xs">
+                          <User className="w-3.5 h-3.5" />
+                          <span>{sysConfig.sec1PersonalTitle || "ข้อมูลส่วนตัว"}</span>
+                        </div>
+                        <div className="bg-white/95 backdrop-blur-xs rounded-b-2xl rounded-tr-2xl border border-[#ea580c]/50 p-3.5 sm:p-4 shadow-xs grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-[#ea580c] font-bold shrink-0">ชื่อ-นามสกุล</span>
+                            <input
+                              type="text"
+                              value={state.profile.fullNameTh}
+                              onChange={(e) => updateProfile("fullNameTh", e.target.value)}
+                              className="font-bold text-slate-900 bg-transparent border-b border-transparent focus:border-[#ea580c] outline-none w-full"
+                            />
+                          </div>
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-[#ea580c] font-bold shrink-0">เลขประจำตัว</span>
+                            <input
+                              type="text"
+                              value={state.profile.citizenId}
+                              onChange={(e) => updateProfile("citizenId", e.target.value)}
+                              className="font-bold text-slate-900 bg-transparent border-b border-transparent focus:border-[#ea580c] outline-none w-full"
+                            />
+                          </div>
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-[#ea580c] font-bold shrink-0">สถานศึกษา</span>
+                            <input
+                              type="text"
+                              value={state.profile.schoolName}
+                              onChange={(e) => updateProfile("schoolName", e.target.value)}
+                              className="font-bold text-slate-900 bg-transparent border-b border-transparent focus:border-[#ea580c] outline-none w-full"
+                            />
+                          </div>
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-[#ea580c] font-bold shrink-0">จังหวัด</span>
+                            <input
+                              type="text"
+                              value={state.profile.schoolProvince}
+                              onChange={(e) => updateProfile("schoolProvince", e.target.value)}
+                              className="font-bold text-slate-900 bg-transparent border-b border-transparent focus:border-[#ea580c] outline-none w-full"
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
+                </div>
 
-                  {/* Student Portrait Photo (3:4 Ratio) */}
-                  <div
-                    onClick={() => triggerImageUpload((url) => updateProfile("photoUrl", url))}
-                    className="w-28 h-36 sm:w-32 sm:h-40 rounded-2xl bg-sky-100 border-2 border-slate-200 overflow-hidden flex flex-col items-center justify-center shrink-0 cursor-pointer group relative self-center sm:self-start shadow-xs"
-                    title="คลิกเพื่ออัปโหลดรูปถ่ายชุดนักเรียน"
-                  >
-                    {state.profile.photoUrl ? (
-                      <>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={state.profile.photoUrl}
-                          alt={state.profile.fullNameTh}
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[11px] font-bold print:hidden">
-                          เปลี่ยนรูปถ่าย
-                        </div>
-                      </>
-                    ) : (
-                      <div className="text-center p-3 text-sky-700/80">
-                        <User className="w-10 h-10 mx-auto mb-1 stroke-[1.5]" />
-                        <span className="text-[10px] font-bold block">คลิกใส่รูปถ่ายผู้สมัคร</span>
-                      </div>
-                    )}
+                {/* Applied Major Box (สาขาวิชาที่สมัคร) */}
+                <div className="space-y-1.5">
+                  <div className="text-xs font-extrabold text-slate-800">
+                    {sysConfig.appliedMajorLabel || "สาขาวิชาที่สมัคร"}
+                  </div>
+                  <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50/80 border border-slate-200/80">
+                    <div
+                      onClick={() =>
+                        triggerImageUpload((url) => setState({ ...state, universityLogo: url }))
+                      }
+                      className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center overflow-hidden shrink-0 cursor-pointer group relative"
+                      title="คลิกเพื่อเปลี่ยนตราสถาบัน/โรงเรียน"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={state.universityLogo || "/artroom-logo.png"}
+                        alt="Logo"
+                        className="w-10 h-10 object-contain"
+                      />
+                    </div>
+                    <div className="space-y-0.5 text-xs flex-1">
+                      <div className="font-extrabold text-[#13426b] text-sm">{state.university}</div>
+                      <div className="font-semibold text-slate-700">{state.faculty} • {state.major}</div>
+                      <div className="text-slate-500 text-[11px]">{state.projectRound}</div>
+                    </div>
                   </div>
                 </div>
 
