@@ -22,6 +22,8 @@ const DEFAULT_SETTINGS: AiModelSettings = {
 
 export default function HeroSection() {
   const [settings, setSettings] = useState<AiModelSettings>(DEFAULT_SETTINGS);
+  const [portfolioBtnText, setPortfolioBtnText] = useState("สร้างแฟ้มสะสมผลงาน (Portfolio)");
+  const [portfolioBtnVisible, setPortfolioBtnVisible] = useState(true);
 
   useEffect(() => {
     fetch("/api/settings/ai-model")
@@ -41,6 +43,16 @@ export default function HeroSection() {
       .catch((err) => {
         console.warn("Using default Hero button settings:", err);
       });
+
+    fetch("/api/settings/portfolio-config")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((cfg: any) => {
+        if (cfg) {
+          if (cfg.heroButtonText) setPortfolioBtnText(cfg.heroButtonText);
+          if (cfg.heroButtonVisible !== undefined) setPortfolioBtnVisible(Boolean(cfg.heroButtonVisible));
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const getSizeClasses = (size?: string) => {
@@ -110,14 +122,16 @@ export default function HeroSection() {
           )}
 
           {/* Quick link to create student portfolio (TCASFOLIO style) */}
-          <Link
-            href="/portfolio"
-            className="w-full sm:w-auto min-h-[48px] px-6 py-3.5 inline-flex items-center justify-center gap-2 rounded-full bg-white/95 hover:bg-white active:bg-gray-100 text-gray-800 font-bold text-xs sm:text-sm border border-gray-200 transition-all duration-200 shadow-xs active:scale-95 cursor-pointer max-w-sm sm:max-w-none group"
-          >
-            <FolderKanban className="w-4 h-4 text-red-600 shrink-0 group-hover:scale-110 transition-transform" />
-            <span>สร้างแฟ้มสะสมผลงาน (Portfolio)</span>
-            <ArrowRight className="w-3.5 h-3.5 text-gray-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
-          </Link>
+          {portfolioBtnVisible && (
+            <Link
+              href="/portfolio"
+              className="w-full sm:w-auto min-h-[48px] px-6 py-3.5 inline-flex items-center justify-center gap-2 rounded-full bg-white/95 hover:bg-white active:bg-gray-100 text-gray-800 font-bold text-xs sm:text-sm border border-gray-200 transition-all duration-200 shadow-xs active:scale-95 cursor-pointer max-w-sm sm:max-w-none group"
+            >
+              <FolderKanban className="w-4 h-4 text-red-600 shrink-0 group-hover:scale-110 transition-transform" />
+              <span>{portfolioBtnText}</span>
+              <ArrowRight className="w-3.5 h-3.5 text-gray-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
+            </Link>
+          )}
         </div>
       </div>
     </section>

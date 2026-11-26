@@ -37,6 +37,10 @@ import {
 import { compressImage, fileToDataUrl } from "@/lib/image-compressor";
 import { swalToast, swalConfirm, swalSuccess } from "@/lib/swal";
 import StudentAccessGuard from "@/components/auth/StudentAccessGuard";
+import {
+  PortfolioConfigSettings,
+  DEFAULT_PORTFOLIO_CONFIG,
+} from "@/app/api/settings/portfolio-config/route";
 
 export type LayoutType =
   | "a4-landscape"
@@ -386,6 +390,7 @@ export default function PortfolioBuilderPage() {
 
 function PortfolioBuilderContent() {
   const [state, setState] = useState<PortfolioState>(DEFAULT_STATE);
+  const [sysConfig, setSysConfig] = useState<PortfolioConfigSettings>(DEFAULT_PORTFOLIO_CONFIG);
   const [currentStudentId, setCurrentStudentId] = useState<string>("");
   const [currentStudentName, setCurrentStudentName] = useState<string>("");
   const [currentClassroom, setCurrentClassroom] = useState<string>("");
@@ -442,6 +447,19 @@ function PortfolioBuilderContent() {
         setCurrentStudentName(name);
         setCurrentClassroom(classroom);
 
+        // 0. Load global admin portfolio labels & default config
+        let fetchedCfg = DEFAULT_PORTFOLIO_CONFIG;
+        try {
+          const cfgRes = await fetch("/api/settings/portfolio-config", { cache: "no-store" });
+          if (cfgRes.ok) {
+            const cfgData: any = await cfgRes.json();
+            if (cfgData) {
+              fetchedCfg = { ...DEFAULT_PORTFOLIO_CONFIG, ...cfgData };
+              if (isMounted) setSysConfig(fetchedCfg);
+            }
+          }
+        } catch {}
+
         // 1. Try loading from D1 Server API (/api/portfolios) first
         let loadedFromServer = false;
         if (targetStudentId) {
@@ -494,19 +512,30 @@ function PortfolioBuilderContent() {
               },
             }));
           } else {
-            // Initialize fresh portfolio for this logged-in student
+            // Initialize fresh portfolio for this logged-in student using admin default config
             setState((prev) => ({
               ...prev,
+              academicYear: fetchedCfg.defaultAcademicYear || prev.academicYear,
+              university: fetchedCfg.defaultUniversity || prev.university,
+              faculty: fetchedCfg.defaultFaculty || prev.faculty,
+              major: fetchedCfg.defaultMajor || prev.major,
+              projectRound: fetchedCfg.defaultProjectRound || prev.projectRound,
               profile: {
                 ...prev.profile,
                 fullNameTh: name || prev.profile.fullNameTh,
                 email: email || (targetStudentId ? `${targetStudentId}@wts.ac.th` : prev.profile.email),
                 phone: phone || prev.profile.phone,
+                schoolName: fetchedCfg.defaultSchoolName || prev.profile.schoolName,
+                schoolProvince: fetchedCfg.defaultSchoolProvince || prev.profile.schoolProvince,
+                studyPlan: fetchedCfg.defaultStudyPlan || prev.profile.studyPlan,
                 photoUrl:
                   avatar && (avatar.startsWith("data:") || avatar.startsWith("http") || avatar.startsWith("/"))
                     ? avatar
                     : prev.profile.photoUrl,
               },
+              questions: prev.questions.map((q, idx) =>
+                idx === 0 && fetchedCfg.defaultQuestion1 ? { ...q, question: fetchedCfg.defaultQuestion1 } : q
+              ),
             }));
           }
         }
@@ -1410,7 +1439,7 @@ function PortfolioBuilderContent() {
                       }`}
                     >
                       <option value="">ระดับ?</option>
-                      {LEVEL_OPTIONS.map((lv) => (
+                      {(sysConfig.levelOptions?.length ? sysConfig.levelOptions : LEVEL_OPTIONS).map((lv) => (
                         <option key={lv} value={lv} className="text-slate-800">
                           {lv}
                         </option>
@@ -1430,7 +1459,7 @@ function PortfolioBuilderContent() {
                       }`}
                     >
                       <option value="">ค่าใช้จ่าย?</option>
-                      {COST_OPTIONS.map((c) => (
+                      {(sysConfig.costOptions?.length ? sysConfig.costOptions : COST_OPTIONS).map((c) => (
                         <option key={c} value={c} className="text-slate-800">
                           {c}
                         </option>
@@ -1478,7 +1507,7 @@ function PortfolioBuilderContent() {
                         }`}
                       >
                         <span className="font-bold text-[#0d9488] shrink-0">
-                          ผลรางวัล / อันดับ :
+                          {sysConfig.entryAwardResultLabel || "ผลรางวัล / อันดับ :"}
                         </span>
                         <input
                           type="text"
@@ -1492,7 +1521,9 @@ function PortfolioBuilderContent() {
 
                     {/* รายละเอียด : */}
                     <div className="space-y-0.5">
-                      <div className="font-bold text-[#0d9488] text-xs">รายละเอียด :</div>
+                      <div className="font-bold text-[#0d9488] text-xs">
+                        {sysConfig.entryDetailLabel || "รายละเอียด :"}
+                      </div>
                       <textarea
                         rows={entry.description ? 3 : 1}
                         value={entry.description}
@@ -1519,7 +1550,9 @@ function PortfolioBuilderContent() {
                     {isImagesVisible && (
                       <div className="pt-2 space-y-1.5">
                         <div className="text-xs text-slate-500 print:hidden">
-                          <strong className="text-[#0d9488]">ภาพประกอบ :</strong> สูงสุดไม่เกิน 6 รูป
+                          <strong className="text-[#0d9488]">
+                            {sysConfig.entryGalleryLabel || "ภาพประกอบ : สูงสุดไม่เกิน 6 รูป"}
+                          </strong>
                         </div>
                         <div>{renderEntryImageGrid(entry)}</div>
                       </div>
@@ -1678,7 +1711,7 @@ function PortfolioBuilderContent() {
             <div>
               <span className="text-xs font-bold text-slate-700 block">หน้าที่ใช้</span>
               <span className="text-[11px] font-semibold text-[#0d9488]">
-                หลักสูตรนี้ไม่จำกัดจำนวนหน้า
+                {sysConfig.pageLimitNoticeText || "หลักสูตรนี้ไม่จำกัดจำนวนหน้า"}
               </span>
             </div>
             <span className="text-base font-black text-[#13426b]">
@@ -2029,7 +2062,7 @@ function PortfolioBuilderContent() {
             {/* Top Running Header */}
             <div className="flex items-center justify-end pb-2 border-b border-slate-200 text-[11px] text-slate-500">
               <div className="flex items-center gap-1">
-                <span>แฟ้มสะสมผลงาน ประจำปี</span>
+                <span>{sysConfig.topRightHeaderLabel || "แฟ้มสะสมผลงาน ประจำปี"}</span>
                 <input
                   type="text"
                   value={state.academicYear}
@@ -2049,13 +2082,15 @@ function PortfolioBuilderContent() {
                   <div className="space-y-3 flex-1">
                     <div>
                       <h1 className="text-lg sm:text-xl font-extrabold text-[#13426b] leading-tight">
-                        แฟ้มสะสมผลงาน ประจำปี {state.academicYear}
+                        {sysConfig.coverMainTitle || "แฟ้มสะสมผลงาน ประจำปี"} {state.academicYear}
                       </h1>
                     </div>
 
                     {/* Applied Major Box */}
                     <div className="space-y-1.5">
-                      <div className="text-xs font-extrabold text-slate-800">สาขาวิชาที่สมัคร</div>
+                      <div className="text-xs font-extrabold text-slate-800">
+                        {sysConfig.appliedMajorLabel || "สาขาวิชาที่สมัคร"}
+                      </div>
                       <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50/80 border border-slate-200/80">
                         <div
                           onClick={() =>
@@ -2110,7 +2145,7 @@ function PortfolioBuilderContent() {
                 {/* Section 1 Pill */}
                 <div>
                   <span className="inline-block px-4 py-1 rounded-full bg-[#13426b] text-white font-bold text-xs">
-                    หมวด 1 • ข้อมูลผู้สมัคร
+                    {sysConfig.sec1Title || "หมวด 1 • ข้อมูลผู้สมัคร"}
                   </span>
                 </div>
 
@@ -2120,7 +2155,7 @@ function PortfolioBuilderContent() {
                   {state.sections.sec1_personal && (
                     <div>
                       <div className="bg-slate-100/90 px-3 py-1.5 font-extrabold text-[#13426b] border-b border-slate-300">
-                        ข้อมูลส่วนตัว
+                        {sysConfig.sec1PersonalTitle || "ข้อมูลส่วนตัว"}
                       </div>
                       <div className="p-2.5 grid grid-cols-2 sm:grid-cols-4 gap-2 border-b border-slate-200">
                         <div>
@@ -2218,7 +2253,7 @@ function PortfolioBuilderContent() {
                   {state.sections.sec1_parent && (
                     <div>
                       <div className="bg-slate-100/90 px-3 py-1.5 font-extrabold text-[#13426b] border-b border-slate-300">
-                        ข้อมูลผู้ปกครอง
+                        {sysConfig.sec1ParentTitle || "ข้อมูลผู้ปกครอง"}
                       </div>
                       <div className="p-2.5 grid grid-cols-2 sm:grid-cols-4 gap-2 border-b border-slate-300">
                         <div>
@@ -2265,7 +2300,7 @@ function PortfolioBuilderContent() {
                   {state.sections.sec1_address && (
                     <div>
                       <div className="bg-slate-100/90 px-3 py-1.5 font-extrabold text-[#13426b] border-b border-slate-300">
-                        ที่อยู่ติดต่อได้
+                        {sysConfig.sec1AddressTitle || "ที่อยู่ติดต่อได้"}
                       </div>
                       <div className="p-2.5 grid grid-cols-2 sm:grid-cols-5 gap-2 border-b border-slate-300">
                         <div className="sm:col-span-2">
@@ -2312,7 +2347,7 @@ function PortfolioBuilderContent() {
                   {state.sections.sec1_education && (
                     <div>
                       <div className="bg-slate-100/90 px-3 py-1.5 font-extrabold text-[#13426b] border-b border-slate-300">
-                        ข้อมูลการศึกษา
+                        {sysConfig.sec1EducationTitle || "ข้อมูลการศึกษา"}
                       </div>
                       <div className="p-2.5 grid grid-cols-2 gap-2 border-b border-slate-200">
                         <div>
@@ -2381,7 +2416,7 @@ function PortfolioBuilderContent() {
                 {state.sections.sec1_subjectGrades && (
                   <div className="rounded-xl border border-slate-300 overflow-hidden text-xs">
                     <div className="bg-slate-100/90 px-3 py-1.5 font-extrabold text-[#13426b] border-b border-slate-300">
-                      ผลการเรียนตามกลุ่มสาระการเรียนรู้
+                      {sysConfig.sec1SubjectGradesTitle || "ผลการเรียนตามกลุ่มสาระการเรียนรู้"}
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-slate-200">
                       {state.subjectGrades.map((sg, i) => (
@@ -2473,7 +2508,7 @@ function PortfolioBuilderContent() {
             {state.sections.sec2_essay && (
               <div className="space-y-3 pt-4 border-t border-slate-200 break-inside-avoid">
                 <span className="inline-block px-4 py-1.5 rounded-full bg-[#13426b] text-white font-bold text-xs sm:text-sm">
-                  หมวด 2 • เรียงความ / เหตุผลในการสมัคร
+                  {sysConfig.sec2Title || "หมวด 2 • เรียงความ / เหตุผลในการสมัคร"}
                 </span>
                 <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50/40 space-y-2">
                   <input
@@ -2504,7 +2539,7 @@ function PortfolioBuilderContent() {
               <div className="space-y-3 pt-4 border-t border-slate-200 break-inside-avoid">
                 <div className="flex items-center justify-between">
                   <span className="inline-block px-4 py-1.5 rounded-full bg-[#13426b] text-white font-bold text-xs sm:text-sm">
-                    หมวด 3 • หนังสือรับรอง / เอกสารแนบ
+                    {sysConfig.sec3Title || "หมวด 3 • หนังสือรับรอง / เอกสารแนบ"}
                   </span>
                   <button
                     type="button"
@@ -2582,13 +2617,13 @@ function PortfolioBuilderContent() {
             {/* หมวด 4.1, 4.2, 4.3: รางวัล / ผลงาน / กิจกรรม */}
             {/* ============================================================= */}
             {state.sections.sec4_1_awards &&
-              renderCategorySection("4.1", "หมวด 4.1 - รางวัล / เกียรติบัตร")}
+              renderCategorySection("4.1", sysConfig.sec4_1Title || "หมวด 4.1 - รางวัล / เกียรติบัตร")}
 
             {state.sections.sec4_2_works &&
-              renderCategorySection("4.2", "หมวด 4.2 - ผลงานศิลปะ / โครงงาน")}
+              renderCategorySection("4.2", sysConfig.sec4_2Title || "หมวด 4.2 - ผลงานศิลปะ / โครงงาน")}
 
             {state.sections.sec4_3_activities &&
-              renderCategorySection("4.3", "หมวด 4.3 - กิจกรรม")}
+              renderCategorySection("4.3", sysConfig.sec4_3Title || "หมวด 4.3 - กิจกรรม")}
 
             {/* ============================================================= */}
             {/* หมวด 5: คำถามเพิ่มเติมของหลักสูตร */}
@@ -2597,7 +2632,7 @@ function PortfolioBuilderContent() {
               <div className="space-y-4 pt-4 border-t border-slate-200 break-inside-avoid">
                 <div className="flex items-center justify-between">
                   <span className="inline-block px-4 py-1.5 rounded-full bg-[#13426b] text-white font-bold text-xs sm:text-sm">
-                    หมวด 5 - คำถามเพิ่มเติมของหลักสูตร
+                    {sysConfig.sec5Title || "หมวด 5 - คำถามเพิ่มเติมของหลักสูตร"}
                   </span>
                   <button
                     type="button"
