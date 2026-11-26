@@ -73,6 +73,7 @@ export default function SubmitWorkModal({
   const [aiSuccessMessage, setAiSuccessMessage] = useState("");
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editorFile, setEditorFile] = useState<File | null>(null);
+  const [isAutoOpenedEditor, setIsAutoOpenedEditor] = useState(false);
   const [isAiProcessing, setIsAiProcessing] = useState(false);
   const [isCompressing, setIsCompressing] = useState(false);
   const [submissionResult, setSubmissionResult] = useState<{
@@ -190,6 +191,7 @@ export default function SubmitWorkModal({
   };
 
   const handleOpenEditor = async () => {
+    setIsAutoOpenedEditor(false);
     if (currentFile) {
       setEditorFile(currentFile);
       setIsEditorOpen(true);
@@ -204,26 +206,19 @@ export default function SubmitWorkModal({
     }
   };
 
-  const handleEditorSave = (editedFile: File) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result as string;
-      setImageFiles(prev => {
-        const next = [...prev];
-        next[activeSlot] = editedFile;
-        return next;
-      });
-      setImagePreviews(prev => {
-        const next = [...prev];
-        next[activeSlot] = dataUrl;
-        return next;
-      });
-      setIsEditorOpen(false);
-      setAiSuccessMessage(`✂️ ปรับแต่งรูปภาพช่องที่ ${activeSlot + 1} เรียบร้อยแล้ว!`);
-      swalToast(`ปรับแต่งรูปภาพช่องที่ ${activeSlot + 1} เรียบร้อยแล้ว`, "success");
-      setTimeout(() => setAiSuccessMessage(""), 4000);
-    };
-    reader.readAsDataURL(editedFile);
+  const handleEditorSave = async (editedFile: File) => {
+    setIsEditorOpen(false);
+    setIsAutoOpenedEditor(false);
+    await processAndSetImage(editedFile);
+    setAiSuccessMessage(`✂️ ครอบตัดขอบภาพช่องที่ ${activeSlot + 1} เรียบร้อยแล้ว!`);
+    swalToast(`ครอบตัดภาพช่องที่ ${activeSlot + 1} เรียบร้อยแล้ว`, "success");
+    setTimeout(() => setAiSuccessMessage(""), 4000);
+  };
+
+  const handleSkipAutoCrop = async (rawFile: File) => {
+    setIsEditorOpen(false);
+    setIsAutoOpenedEditor(false);
+    await processAndSetImage(rawFile);
   };
 
   // 1-Click AI Auto Enhance: balances contrast, vibrance, brightness, and details
@@ -411,10 +406,24 @@ export default function SubmitWorkModal({
     }
   };
 
+  // Open interactive smart cropper immediately when student captures/picks an image
+  const openCropperForNewUpload = (file: File) => {
+    const isImageFile = file.type.startsWith("image/") || /\.(heic|heif|jpg|jpeg|png|webp|gif)$/i.test(file.name || "");
+    if (!isImageFile) {
+      setErrorMsg("กรุณาเลือกไฟล์รูปภาพที่ถูกต้อง (JPG, PNG, WebP, HEIC)");
+      return;
+    }
+    setErrorMsg("");
+    setEditorFile(file);
+    setIsAutoOpenedEditor(true);
+    setIsEditorOpen(true);
+  };
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (file) {
-      processAndSetImage(file);
+      openCropperForNewUpload(file);
     }
   };
 
@@ -1200,11 +1209,11 @@ export default function SubmitWorkModal({
                       type="button"
                       disabled={isAiProcessing}
                       onClick={handleOpenEditor}
-                      className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-orange-50 text-gray-800 hover:text-orange-600 font-semibold text-xs border border-gray-300 hover:border-orange-300 shadow-2xs transition-all cursor-pointer"
-                      title="ครอบตัดภาพให้พอดีกับหน้าจอ"
+                      className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-700 font-bold text-xs border border-orange-300 shadow-2xs transition-all cursor-pointer"
+                      title="ครอบตัดขอบพื้นโต๊ะหรือจัดกรอบภาพใหม่"
                     >
-                      <Crop className="w-3.5 h-3.5 text-orange-500" />
-                      <span>ครอปภาพ / ปรับแต่ง</span>
+                      <Crop className="w-3.5 h-3.5 text-orange-600" />
+                      <span>✂️ ครอปตัดขอบโต๊ะ / ปรับภาพ</span>
                     </button>
 
                     <button
@@ -1279,7 +1288,7 @@ export default function SubmitWorkModal({
                   onDrop={(e) => {
                     e.preventDefault();
                     const file = e.dataTransfer.files?.[0];
-                    if (file) processAndSetImage(file);
+                    if (file) openCropperForNewUpload(file);
                   }}
                   className={`border-2 border-dashed rounded-2xl p-5 flex flex-col items-center justify-center text-center cursor-pointer transition-all group ${
                     isCompressing
@@ -1380,15 +1389,20 @@ export default function SubmitWorkModal({
         </form>
       </div>
 
-      {/* Shared Image Editor & Aspect Ratio Cropping Modal */}
+      {/* Shared Image Editor & Smart Desk-Trimming Cropper Modal */}
       {isEditorOpen && (
         <ImageEditorModal
           isOpen={isEditorOpen}
           file={editorFile}
-          onClose={() => setIsEditorOpen(false)}
+          onClose={() => {
+            setIsEditorOpen(false);
+            setIsAutoOpenedEditor(false);
+          }}
           onSave={handleEditorSave}
-          title="ปรับแต่งและครอบตัดภาพผลงานศิลปะ"
-          defaultAspectRatio="4:5"
+          onSkipCrop={isAutoOpenedEditor ? handleSkipAutoCrop : undefined}
+          title={`✂️ ครอบตัดขอบโต๊ะ & จัดกรอบผลงาน (ช่องที่ ${activeSlot + 1})`}
+          defaultAspectRatio="free"
+          autoDetectArtwork={true}
         />
       )}
     </div>

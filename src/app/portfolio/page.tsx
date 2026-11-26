@@ -37,6 +37,7 @@ import {
 import { compressImage, fileToDataUrl } from "@/lib/image-compressor";
 import { swalToast, swalConfirm, swalSuccess } from "@/lib/swal";
 import StudentAccessGuard from "@/components/auth/StudentAccessGuard";
+import ImageEditorModal from "@/components/common/ImageEditorModal";
 import {
   PortfolioConfigSettings,
   DEFAULT_PORTFOLIO_CONFIG,
@@ -418,6 +419,8 @@ function PortfolioBuilderContent() {
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [pendingUploadCallback, setPendingUploadCallback] = useState<((dataUrl: string) => void) | null>(null);
+  const [cropperFile, setCropperFile] = useState<File | null>(null);
+  const [isCropperOpen, setIsCropperOpen] = useState<boolean>(false);
 
   // Load saved state scoped strictly to the logged-in student ID (or query ?studentId= for Admin)
   useEffect(() => {
@@ -631,18 +634,17 @@ function PortfolioBuilderContent() {
     }
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !pendingUploadCallback) return;
+  const finalizePortfolioImageFile = async (targetFile: File, cropped: boolean) => {
+    if (!pendingUploadCallback) return;
     try {
-      const compressedFile = await compressImage(file, {
+      const compressedFile = await compressImage(targetFile, {
         maxWidth: 1400,
         maxHeight: 1400,
         quality: 0.82,
       });
       const dataUrl = await fileToDataUrl(compressedFile);
       pendingUploadCallback(dataUrl);
-      swalToast("อัปโหลดรูปภาพเรียบร้อย", "success");
+      swalToast(cropped ? "ครอบตัดและอัปโหลดรูปภาพเรียบร้อย" : "อัปโหลดรูปภาพเรียบร้อย", "success");
     } catch (err) {
       console.error("Image upload error:", err);
       const reader = new FileReader();
@@ -651,8 +653,19 @@ function PortfolioBuilderContent() {
           pendingUploadCallback(reader.result);
         }
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(targetFile);
+    } finally {
+      setIsCropperOpen(false);
+      setCropperFile(null);
     }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !pendingUploadCallback) return;
+    setCropperFile(file);
+    setIsCropperOpen(true);
   };
 
   const saveToBackend = async (nextStatus?: "draft" | "submitted") => {
@@ -3159,6 +3172,20 @@ function PortfolioBuilderContent() {
           </div>
         </div>
       )}
+      {/* Smart Desk-Trimming & Interactive Cropper for Portfolio Uploads */}
+      <ImageEditorModal
+        isOpen={isCropperOpen}
+        file={cropperFile}
+        onClose={() => {
+          setIsCropperOpen(false);
+          setCropperFile(null);
+        }}
+        onSave={(editedFile) => finalizePortfolioImageFile(editedFile, true)}
+        onSkipCrop={(rawFile) => finalizePortfolioImageFile(rawFile, false)}
+        title="✂️ ครอบตัดขอบโต๊ะ & จัดกรอบรูปสำหรับแฟ้มสะสมผลงาน"
+        defaultAspectRatio="free"
+        autoDetectArtwork={true}
+      />
     </div>
   );
 }

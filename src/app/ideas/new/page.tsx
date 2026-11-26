@@ -294,6 +294,7 @@ export default function NewIdeaPage() {
   const handleCoverChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setErrorMsg("");
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (file) {
       try {
         const compressed = await compressImage(file, { maxWidth: 1920, maxHeight: 1920, quality: 0.82 });
@@ -301,6 +302,8 @@ export default function NewIdeaPage() {
       } catch {
         setCoverImage(file);
       }
+      setEditingTarget("cover");
+      setIsEditorOpen(true);
     }
   };
 
@@ -1042,7 +1045,7 @@ export default function NewIdeaPage() {
             ? "ปรับแต่งและครอบตัดรูปภาพหน้าปก"
             : "ปรับแต่งรูปภาพไฟล์แนบ"
         }
-        defaultAspectRatio={editingTarget === "cover" ? "16:9" : "original"}
+        defaultAspectRatio="free"
         onClose={() => {
           setIsEditorOpen(false);
           setEditingTarget(null);
