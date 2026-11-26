@@ -27,15 +27,15 @@ async function queryIdeasLight(db: ReturnType<typeof getDb>, isAdmin: boolean) {
     category: ideas.category,
     authorName: ideas.authorName,
     authorEmail: ideas.authorEmail,
-    likes: ideas.likes,
+    link: ideas.link,
     status: ideas.status,
     isFeatured: ideas.isFeatured,
     createdAt: ideas.createdAt,
-    imageUrl: sql<string | null>`CASE
-      WHEN image_url IS NULL OR image_url = '' THEN NULL
-      WHEN image_url LIKE 'data:%' THEN 'has_blob'
-      ELSE image_url
-    END`.as('imageUrl'),
+    coverImageUrl: sql<string | null>`CASE
+      WHEN cover_image_url IS NULL OR cover_image_url = '' THEN NULL
+      WHEN cover_image_url LIKE 'data:%' THEN 'has_blob'
+      ELSE cover_image_url
+    END`.as('coverImageUrl'),
     filesHasBlob: sql<number>`CASE WHEN files LIKE '%data:%' THEN 1 ELSE 0 END`.as('filesHasBlob'),
     filesCount: sql<number>`CASE
       WHEN files IS NULL OR files = '' THEN 0
@@ -156,6 +156,11 @@ export async function GET(request: Request) {
       const isStudentPrefix = /^(เด็กชาย|เด็กหญิง|ด\.ช\.|ด\.ญ\.|นาย|นางสาว|น\.ส\.)/.test((idea.authorName || '').trim());
       const authorRole = matchedStudent || isStudentPrefix ? 'student' : 'teacher';
 
+      const resolvedCover =
+        idea.coverImageUrl === 'has_blob'
+          ? `/api/media?type=idea&id=${iid}&field=image`
+          : resolveR2Url(idea.coverImageUrl);
+
       return {
         id: idea.id,
         title: idea.title,
@@ -163,13 +168,11 @@ export async function GET(request: Request) {
         category: idea.category,
         authorName: idea.authorName,
         authorEmail: idea.authorEmail,
-        likes: idea.likes,
+        link: idea.link,
         status: idea.status,
         createdAt: idea.createdAt,
-        imageUrl:
-          idea.imageUrl === 'has_blob'
-            ? `/api/media?type=idea&id=${iid}&field=image`
-            : resolveR2Url(idea.imageUrl),
+        coverImageUrl: resolvedCover,
+        imageUrl: resolvedCover,
         isFeatured: idea.isFeatured ? 1 : 0,
         files: safeFiles,
         commentsCount: commentCountMap[idea.id] || 0,
@@ -215,12 +218,16 @@ export async function POST(request: Request) {
             size: value.size,
             type: value.type,
           });
+        } else if (key === 'image' || key === 'coverImage' || key === 'imageUrl' || key === 'coverImageUrl') {
+          newEntry.coverImageUrl = storedUrl;
         } else {
-          newEntry[key === 'image' || key === 'coverImage' ? (key === 'coverImage' ? 'coverImageUrl' : 'imageUrl') : key] = storedUrl;
+          newEntry[key] = storedUrl;
         }
       } else if (typeof value === 'string' && key !== 'image' && key !== 'coverImage') {
-        if (key === 'imageUrl' && value.startsWith('data:')) {
-          newEntry.imageUrl = await offloadDataUrl(value, `ideas/${id}/img_${stamp}`);
+        if ((key === 'imageUrl' || key === 'coverImageUrl') && value.startsWith('data:')) {
+          newEntry.coverImageUrl = await offloadDataUrl(value, `ideas/${id}/img_${stamp}`);
+        } else if (key === 'imageUrl' || key === 'coverImageUrl') {
+          newEntry.coverImageUrl = value;
         } else {
           newEntry[key] = value;
         }

@@ -169,10 +169,36 @@ export async function GET(request: Request) {
       if (field === 'file') {
         const row: any = await d1.prepare('SELECT files FROM ideas WHERE id = ?').bind(id).first();
         if (typeof row?.files === 'string' && row.files.startsWith('data:')) {
+          scheduleLazyR2Offload(d1, row.files, `ideas/${id}/file_0`, 'UPDATE ideas SET files = ? WHERE id = ?', id);
           const res = await serveStoredMedia(row.files, request, { selfPath: '/api/media' });
           return res || new Response('File not found', { status: 404 });
         }
         const list = safeParseArray(row?.files);
+        if (typeof row?.files === 'string' && row.files.includes('data:')) {
+          try {
+            const ctx = getRequestContext()?.ctx;
+            if (ctx && typeof ctx.waitUntil === 'function') {
+              ctx.waitUntil(
+                (async () => {
+                  try {
+                    const migrated = await Promise.all(
+                      list.map(async (f: any, fIdx: number) => {
+                        if (typeof f === 'string' && f.startsWith('data:')) {
+                          return offloadDataUrl(f, `ideas/${id}/file_${fIdx}`);
+                        }
+                        if (f && typeof f === 'object' && typeof f.url === 'string' && f.url.startsWith('data:')) {
+                          return { ...f, url: await offloadDataUrl(f.url, `ideas/${id}/file_${fIdx}`) };
+                        }
+                        return f;
+                      })
+                    );
+                    await d1.prepare('UPDATE ideas SET files = ? WHERE id = ?').bind(JSON.stringify(migrated), id).run();
+                  } catch {}
+                })()
+              );
+            }
+          } catch {}
+        }
         const entry = list[index] || list[0];
         const res = await serveStoredMedia(entry?.url || entry, request, {
           selfPath: '/api/media',
@@ -181,8 +207,8 @@ export async function GET(request: Request) {
         return res || new Response('File not found', { status: 404 });
       }
 
-      const row: any = await d1.prepare('SELECT image_url AS target FROM ideas WHERE id = ?').bind(id).first();
-      scheduleLazyR2Offload(d1, row?.target, `ideas/${id}/img`, 'UPDATE ideas SET image_url = ? WHERE id = ?', id);
+      const row: any = await d1.prepare('SELECT cover_image_url AS target FROM ideas WHERE id = ?').bind(id).first();
+      scheduleLazyR2Offload(d1, row?.target, `ideas/${id}/cover`, 'UPDATE ideas SET cover_image_url = ? WHERE id = ?', id);
       const res = await serveStoredMedia(row?.target, request, { selfPath: '/api/media' });
       return res || new Response('Image not found', { status: 404 });
     }

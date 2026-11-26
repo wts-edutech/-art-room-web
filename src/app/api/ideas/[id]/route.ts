@@ -5,6 +5,17 @@ import { getDb } from '@/db';
 import { ideas, comments, students } from '@/db/schema';
 import { eq, desc, inArray } from 'drizzle-orm';
 import { checkIsAdmin } from '@/lib/api-auth';
+import { resolveR2Url } from '@/lib/media-response';
+
+function toPublicAvatar(raw: any, sid?: string | null): string {
+  if (!raw) return '';
+  const v = String(raw).trim();
+  if (!v) return '';
+  if (v.startsWith('data:')) {
+    return sid ? `/api/media?type=student&id=${encodeURIComponent(sid)}` : v;
+  }
+  return resolveR2Url(v) || v;
+}
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> | { id: string } }) {
   try {
@@ -53,11 +64,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     
     const ideaComments = await db.select().from(comments).where(eq(comments.ideaId, id)).orderBy(desc(comments.time));
     
+    const iid = encodeURIComponent(id);
     let safeFiles: any[] = [];
     if (ideaData.files) {
       if (typeof ideaData.files === 'string') {
         if (ideaData.files.startsWith('data:')) {
-          safeFiles = [{ name: 'ไฟล์แนบ', url: ideaData.files }];
+          safeFiles = [{ name: 'ไฟล์แนบ', url: `/api/media?type=idea&id=${iid}&field=file&index=0` }];
         } else {
           try { safeFiles = JSON.parse(ideaData.files); } catch(e) {}
         }
@@ -65,6 +77,20 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         safeFiles = ideaData.files;
       }
     }
+    safeFiles = safeFiles.map((f: any, idx: number) => {
+      if (typeof f === 'string') {
+        const u = f.startsWith('data:') ? `/api/media?type=idea&id=${iid}&field=file&index=${idx}` : (resolveR2Url(f) || f);
+        return { name: `ไฟล์แนบ ${idx + 1}`, url: u };
+      }
+      if (f && typeof f === 'object') {
+        const rawUrl = String(f.url || '');
+        const u = rawUrl.startsWith('data:')
+          ? `/api/media?type=idea&id=${iid}&field=file&index=${idx}`
+          : (resolveR2Url(rawUrl) || rawUrl);
+        return { ...f, url: u };
+      }
+      return f;
+    });
     
     const studentMapById = new Map<string, string>();
     const studentMapByName = new Map<string, string>();
@@ -91,12 +117,13 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       
       const studResults = await Promise.all(studPromises);
       for (const s of studResults.flat()) {
-        if (s.avatar) {
-          studentMapById.set(s.id, s.avatar);
-          studentMapByName.set(s.name.trim(), s.avatar);
+        const resolvedAvatar = toPublicAvatar(s.avatar, s.id);
+        if (resolvedAvatar) {
+          studentMapById.set(s.id, resolvedAvatar);
+          studentMapByName.set(s.name.trim(), resolvedAvatar);
         }
         if ((cleanIdeaAuthorId && s.id === cleanIdeaAuthorId) || (cleanIdeaAuthorName && s.name.trim() === cleanIdeaAuthorName)) {
-          authorStudentInfo = s;
+          authorStudentInfo = { ...s, avatar: resolvedAvatar };
         }
       }
     } catch (e) {}
@@ -105,8 +132,16 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const isStudentPrefix = /^(เด็กชาย|เด็กหญิง|ด\.ช\.|ด\.ญ\.|นาย|นางสาว|น\.ส\.)/.test((ideaData.authorName || '').trim());
     const authorRole = authorStudentInfo || isStudentPrefix ? 'student' : 'teacher';
 
+    const resolvedCover = ideaData.coverImageUrl
+      ? (ideaData.coverImageUrl.startsWith('data:')
+          ? `/api/media?type=idea&id=${iid}&field=image`
+          : (resolveR2Url(ideaData.coverImageUrl) || ideaData.coverImageUrl))
+      : null;
+
     const ideaWithComments = {
       ...ideaData,
+      coverImageUrl: resolvedCover,
+      imageUrl: resolvedCover,
       files: safeFiles,
       authorAvatar: authorStudentInfo?.avatar || '',
       authorClassroom: authorStudentInfo?.classroom || '',
@@ -115,7 +150,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       authorRole,
       comments: ideaComments.map((c: any) => {
         const cleanId = (c.authorEmail || '').replace(/@.*$/, '').trim();
-        const liveAvatar = studentMapById.get(cleanId) || studentMapByName.get(c.author?.trim()) || c.authorImage || '';
+        const liveAvatar = studentMapById.get(cleanId) || studentMapByName.get(c.author?.trim()) || toPublicAvatar(c.authorImage, cleanId) || '';
         return {
           id: c.id,
           authorName: c.author,
