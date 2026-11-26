@@ -5,6 +5,7 @@ import { getDb } from '@/db';
 import { assignments, subjects } from '@/db/schema';
 import { eq, desc, sql } from 'drizzle-orm';
 import { checkIsAdmin } from '@/lib/api-auth';
+import { R2_PREFIX, offloadDataUrl } from '@/lib/r2-storage';
 
 let migrationDone = false;
 async function ensureAssignmentColumns(db: any) {
@@ -104,7 +105,11 @@ export async function GET(request: Request) {
 
     const enriched = list.map(item => ({
       ...item,
-      imageUrl: item.imageUrl ? (item.imageUrl.startsWith('data:') ? `/api/assignments/image?id=${encodeURIComponent(item.id)}` : item.imageUrl) : null,
+      imageUrl: item.imageUrl
+        ? item.imageUrl.startsWith('data:') || item.imageUrl.startsWith(R2_PREFIX) || item.imageUrl.includes('/api/assignments/image')
+          ? `/api/assignments/image?id=${encodeURIComponent(item.id)}`
+          : item.imageUrl
+        : null,
       classroomsList: parseJsonArray(item.classrooms),
       targetStudentsList: parseJsonArray(item.targetStudents),
       subject: subjectMap.get(item.subjectId) || {
@@ -157,6 +162,10 @@ export async function POST(request: Request) {
     const roomsArray = parseJsonArray(targetRooms);
     const studentsArray = parseJsonArray(targetStudents);
 
+    const storedImageUrl = imageUrl
+      ? await offloadDataUrl(String(imageUrl).trim(), `assignments/${id}/cover_${Date.now()}`)
+      : null;
+
     const newAssignment = {
       id,
       title: title.trim(),
@@ -166,7 +175,7 @@ export async function POST(request: Request) {
       targetStudents: studentsArray.length > 0 ? JSON.stringify(studentsArray) : null,
       maxScore: Number(maxScore) || 10,
       dueDate: dueDate ? String(dueDate) : null,
-      imageUrl: imageUrl ? String(imageUrl).trim() : null,
+      imageUrl: storedImageUrl,
       attachmentUrl: attachmentUrl ? String(attachmentUrl).trim() : null,
       attachmentName: attachmentName ? String(attachmentName).trim() : null,
       attachmentSize: attachmentSize ? String(attachmentSize).trim() : null,
@@ -228,7 +237,15 @@ export async function PUT(request: Request) {
     }
     if (maxScore !== undefined) updateData.maxScore = Number(maxScore) || 10;
     if (dueDate !== undefined) updateData.dueDate = dueDate ? String(dueDate) : null;
-    if (imageUrl !== undefined) updateData.imageUrl = imageUrl ? String(imageUrl).trim() : null;
+    if (imageUrl !== undefined) {
+      const trimmedImg = imageUrl ? String(imageUrl).trim() : '';
+      // Preserve existing stored image if client sends back the proxy URL unchanged
+      if (!trimmedImg.includes('/api/assignments/image')) {
+        updateData.imageUrl = trimmedImg
+          ? await offloadDataUrl(trimmedImg, `assignments/${id}/cover_${Date.now()}`)
+          : null;
+      }
+    }
     if (attachmentUrl !== undefined) updateData.attachmentUrl = attachmentUrl ? String(attachmentUrl).trim() : null;
     if (attachmentName !== undefined) updateData.attachmentName = attachmentName ? String(attachmentName).trim() : null;
     if (attachmentSize !== undefined) updateData.attachmentSize = attachmentSize ? String(attachmentSize).trim() : null;

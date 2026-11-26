@@ -323,7 +323,7 @@ export default function AssignmentsTab({ onGoToGrading }: { onGoToGrading?: (ass
     }
 
     try {
-      const payload = {
+      const payload: Record<string, any> = {
         id: editingId,
         title,
         description,
@@ -333,13 +333,17 @@ export default function AssignmentsTab({ onGoToGrading }: { onGoToGrading?: (ass
         maxScore: Number(maxScore) || 10,
         dueDate: dueDate || null,
         isActive,
-        imageUrl: imageUrl || null,
         attachmentUrl: attachmentUrl || null,
         attachmentName: attachmentName || null,
         attachmentSize: attachmentSize || null,
         attachmentType: attachmentType || null,
         externalLink: externalLink || null,
       };
+
+      // Avoid overwriting existing stored data/R2 image with the proxy URL when editing
+      if (!(editingId && typeof imageUrl === "string" && imageUrl.startsWith("/api/assignments/image"))) {
+        payload.imageUrl = imageUrl || null;
+      }
 
       const res = await fetch("/api/assignments", {
         method: editingId ? "PUT" : "POST",
