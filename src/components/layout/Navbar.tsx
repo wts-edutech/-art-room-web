@@ -10,6 +10,11 @@ import { resolveUserAvatar } from "@/lib/art-avatars";
 import { performGlobalLogout, syncAuthWithServer } from "@/lib/client-auth";
 import { useSiteLogo } from "@/context/LogoContext";
 import { optimizeImageUrl } from "@/lib/image-utils";
+import {
+  fetchSiteVisibilityFlags,
+  fetchStudentMissingTasksCount,
+  invalidateStudentMissingTasksCache,
+} from "@/lib/nav-data-cache";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -33,7 +38,7 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const updateUserData = () => {
+  const updateUserData = (forceMissingRefresh = false) => {
     const name = localStorage.getItem("artroom_author_name");
     const role = localStorage.getItem("artroom_role");
     const avatar = localStorage.getItem("artroom_avatar");
@@ -44,19 +49,11 @@ export default function Navbar() {
     setUserAvatar(avatar);
 
     if (role === "student" && studentId) {
-      Promise.all([
-        fetch(`/api/assignments?activeOnly=true&classroom=${encodeURIComponent(classroom)}&studentId=${encodeURIComponent(studentId)}`).then((r) => (r.ok ? r.json() : [])).catch(() => []),
-        fetch(`/api/submissions?studentId=${encodeURIComponent(studentId)}`).then((r) => (r.ok ? r.json() : [])).catch(() => []),
-      ]).then(([assList, subList]) => {
-        if (!Array.isArray(assList)) return;
-        const subs = Array.isArray(subList) ? subList : [];
-        const subMap = new Map<string, any>();
-        for (const s of subs) {
-          if (s?.assignmentId && !subMap.has(s.assignmentId)) subMap.set(s.assignmentId, s);
-        }
-        const missing = assList.filter((a: any) => !subMap.has(a.id) || subMap.get(a.id)?.status === "resubmit").length;
-        setMissingTasksCount(missing);
-      }).catch(() => {});
+      fetchStudentMissingTasksCount(studentId, classroom, forceMissingRefresh)
+        .then((missing) => {
+          if (missing !== null) setMissingTasksCount(missing);
+        })
+        .catch(() => {});
     } else {
       setMissingTasksCount(null);
     }
@@ -80,36 +77,29 @@ export default function Navbar() {
   useEffect(() => {
     updateUserData();
 
-    // Verify and sync with server session token
+    // Verify and sync with server session token (deduplicated)
     syncAuthWithServer().then(() => {
       updateUserData();
     });
 
+    const onProfileUpdated = () => {
+      invalidateStudentMissingTasksCache();
+      updateUserData(true);
+    };
+
     // Listen for profile changes from ProfileSettingsModal or other tabs
-    window.addEventListener("artroom_profile_updated", updateUserData);
+    window.addEventListener("artroom_profile_updated", onProfileUpdated);
 
-    // Check if teachers directory is enabled by admin
-    fetch('/api/teachers/status')
-      .then(res => res.json())
-      .then((data: any) => {
-        if (data && typeof data.enabled === 'boolean') {
-          setIsTeachersEnabled(data.enabled);
-        }
-      })
-      .catch(() => {});
-
-    // Check if awards page is enabled by admin
-    fetch('/api/awards/status')
-      .then(res => res.json())
-      .then((data: any) => {
-        if (data && typeof data.enabled === 'boolean') {
-          setIsAwardsEnabled(data.enabled);
-        }
+    // Fetch visibility flags once (shared with BottomNavbar)
+    fetchSiteVisibilityFlags()
+      .then(({ teachersEnabled, awardsEnabled }) => {
+        setIsTeachersEnabled(teachersEnabled);
+        setIsAwardsEnabled(awardsEnabled);
       })
       .catch(() => {});
 
     return () => {
-      window.removeEventListener("artroom_profile_updated", updateUserData);
+      window.removeEventListener("artroom_profile_updated", onProfileUpdated);
     };
   }, []);
 

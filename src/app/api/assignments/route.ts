@@ -5,29 +5,24 @@ import { getDb } from '@/db';
 import { assignments, subjects } from '@/db/schema';
 import { eq, desc, sql } from 'drizzle-orm';
 import { checkIsAdmin } from '@/lib/api-auth';
-import { R2_PREFIX, offloadDataUrl } from '@/lib/r2-storage';
+import { offloadDataUrl } from '@/lib/r2-storage';
 
 let migrationDone = false;
 async function ensureAssignmentColumns(db: any) {
   if (migrationDone) return;
-  try {
-    await db.run(sql`ALTER TABLE assignments ADD COLUMN image_url TEXT`);
-  } catch {}
-  try {
-    await db.run(sql`ALTER TABLE assignments ADD COLUMN attachment_url TEXT`);
-  } catch {}
-  try {
-    await db.run(sql`ALTER TABLE assignments ADD COLUMN attachment_name TEXT`);
-  } catch {}
-  try {
-    await db.run(sql`ALTER TABLE assignments ADD COLUMN attachment_size TEXT`);
-  } catch {}
-  try {
-    await db.run(sql`ALTER TABLE assignments ADD COLUMN attachment_type TEXT`);
-  } catch {}
-  try {
-    await db.run(sql`ALTER TABLE assignments ADD COLUMN external_link TEXT`);
-  } catch {}
+  const cols = [
+    sql`ALTER TABLE assignments ADD COLUMN image_url TEXT`,
+    sql`ALTER TABLE assignments ADD COLUMN attachment_url TEXT`,
+    sql`ALTER TABLE assignments ADD COLUMN attachment_name TEXT`,
+    sql`ALTER TABLE assignments ADD COLUMN attachment_size TEXT`,
+    sql`ALTER TABLE assignments ADD COLUMN attachment_type TEXT`,
+    sql`ALTER TABLE assignments ADD COLUMN external_link TEXT`,
+  ];
+  for (const stmt of cols) {
+    try {
+      await db.run(stmt);
+    } catch {}
+  }
   migrationDone = true;
 }
 
@@ -57,6 +52,39 @@ function parseJsonArray(val: any): string[] {
   return [];
 }
 
+async function queryAssignmentsLight(db: ReturnType<typeof getDb>) {
+  return db
+    .select({
+      id: assignments.id,
+      title: assignments.title,
+      description: assignments.description,
+      subjectId: assignments.subjectId,
+      classrooms: assignments.classrooms,
+      targetStudents: assignments.targetStudents,
+      maxScore: assignments.maxScore,
+      dueDate: assignments.dueDate,
+      // Only fetch a flag or non-blob URL so D1 never transfers multi-MB base64 strings
+      imageUrl: sql<string | null>`CASE
+        WHEN image_url IS NULL OR image_url = '' THEN NULL
+        WHEN image_url LIKE 'data:%' OR image_url LIKE 'r2:%' OR image_url LIKE '%/api/assignments/image%' THEN 'has_image'
+        ELSE image_url
+      END`.as('imageUrl'),
+      attachmentName: assignments.attachmentName,
+      attachmentSize: assignments.attachmentSize,
+      attachmentType: assignments.attachmentType,
+      externalLink: assignments.externalLink,
+      isActive: assignments.isActive,
+      createdAt: assignments.createdAt,
+      attachmentUrl: sql<string | null>`CASE
+        WHEN attachment_url IS NULL OR attachment_url = '' THEN NULL
+        WHEN attachment_url LIKE 'data:%' OR attachment_url LIKE 'r2:%' OR attachment_url LIKE '%/api/assignments/image%' THEN 'has_attachment'
+        ELSE attachment_url
+      END`.as('attachmentUrl'),
+    })
+    .from(assignments)
+    .orderBy(desc(assignments.createdAt));
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -66,8 +94,14 @@ export async function GET(request: Request) {
     const activeOnly = searchParams.get('activeOnly') === 'true';
 
     const db = getDb();
-    await ensureAssignmentColumns(db);
-    const all = await db.select().from(assignments).orderBy(desc(assignments.createdAt));
+    let all;
+    try {
+      all = await queryAssignmentsLight(db);
+    } catch {
+      await ensureAssignmentColumns(db);
+      all = await queryAssignmentsLight(db);
+    }
+
     let list = all || [];
 
     if (activeOnly) {
@@ -80,36 +114,33 @@ export async function GET(request: Request) {
     if (studentId) {
       list = list.filter(a => {
         const targets = parseJsonArray(a.targetStudents);
-        // If assignment specifies specific students, only targeted students can see it
         if (targets.length > 0) {
           return targets.includes(studentId);
         }
-
-        // Otherwise, check classroom assignment
         if (!classroom) return true;
         const rooms = parseJsonArray(a.classrooms);
-        if (rooms.length === 0) return true; // all classrooms if empty
+        if (rooms.length === 0) return true;
         return rooms.includes(classroom);
       });
     } else if (classroom) {
       list = list.filter(a => {
         const rooms = parseJsonArray(a.classrooms);
-        if (rooms.length === 0) return true; // all classrooms if empty
+        if (rooms.length === 0) return true;
         return rooms.includes(classroom);
       });
     }
 
-    // Attach subject info if available
     const subjectsList = await db.select().from(subjects);
     const subjectMap = new Map(subjectsList.map(s => [s.id, s]));
 
     const enriched = list.map(item => ({
       ...item,
-      imageUrl: item.imageUrl
-        ? item.imageUrl.startsWith('data:') || item.imageUrl.startsWith(R2_PREFIX) || item.imageUrl.includes('/api/assignments/image')
-          ? `/api/assignments/image?id=${encodeURIComponent(item.id)}`
-          : item.imageUrl
-        : null,
+      imageUrl: item.imageUrl === 'has_image'
+        ? `/api/assignments/image?id=${encodeURIComponent(item.id)}`
+        : item.imageUrl,
+      attachmentUrl: item.attachmentUrl === 'has_attachment'
+        ? `/api/assignments/image?id=${encodeURIComponent(item.id)}&field=attachment`
+        : item.attachmentUrl,
       classroomsList: parseJsonArray(item.classrooms),
       targetStudentsList: parseJsonArray(item.targetStudents),
       subject: subjectMap.get(item.subjectId) || {
@@ -120,7 +151,11 @@ export async function GET(request: Request) {
       },
     }));
 
-    return NextResponse.json(enriched);
+    return NextResponse.json(enriched, {
+      headers: {
+        'Cache-Control': 'private, max-age=15, stale-while-revalidate=60',
+      },
+    });
   } catch (error) {
     console.error("GET /api/assignments error:", error);
     return NextResponse.json([]);
@@ -162,9 +197,10 @@ export async function POST(request: Request) {
     const roomsArray = parseJsonArray(targetRooms);
     const studentsArray = parseJsonArray(targetStudents);
 
-    const storedImageUrl = imageUrl
-      ? await offloadDataUrl(String(imageUrl).trim(), `assignments/${id}/cover_${Date.now()}`)
-      : null;
+    const [storedImageUrl, storedAttachmentUrl] = await Promise.all([
+      imageUrl ? offloadDataUrl(String(imageUrl).trim(), `assignments/${id}/cover_${Date.now()}`) : Promise.resolve(null),
+      attachmentUrl ? offloadDataUrl(String(attachmentUrl).trim(), `assignments/${id}/att_${Date.now()}`) : Promise.resolve(null),
+    ]);
 
     const newAssignment = {
       id,
@@ -176,7 +212,7 @@ export async function POST(request: Request) {
       maxScore: Number(maxScore) || 10,
       dueDate: dueDate ? String(dueDate) : null,
       imageUrl: storedImageUrl,
-      attachmentUrl: attachmentUrl ? String(attachmentUrl).trim() : null,
+      attachmentUrl: storedAttachmentUrl,
       attachmentName: attachmentName ? String(attachmentName).trim() : null,
       attachmentSize: attachmentSize ? String(attachmentSize).trim() : null,
       attachmentType: attachmentType ? String(attachmentType).trim() : null,
@@ -237,6 +273,7 @@ export async function PUT(request: Request) {
     }
     if (maxScore !== undefined) updateData.maxScore = Number(maxScore) || 10;
     if (dueDate !== undefined) updateData.dueDate = dueDate ? String(dueDate) : null;
+
     if (imageUrl !== undefined) {
       const trimmedImg = imageUrl ? String(imageUrl).trim() : '';
       // Preserve existing stored image if client sends back the proxy URL unchanged
@@ -246,7 +283,15 @@ export async function PUT(request: Request) {
           : null;
       }
     }
-    if (attachmentUrl !== undefined) updateData.attachmentUrl = attachmentUrl ? String(attachmentUrl).trim() : null;
+    if (attachmentUrl !== undefined) {
+      const trimmedAtt = attachmentUrl ? String(attachmentUrl).trim() : '';
+      // Preserve existing stored attachment if client sends back the proxy URL unchanged
+      if (!trimmedAtt.includes('/api/assignments/image')) {
+        updateData.attachmentUrl = trimmedAtt
+          ? await offloadDataUrl(trimmedAtt, `assignments/${id}/att_${Date.now()}`)
+          : null;
+      }
+    }
     if (attachmentName !== undefined) updateData.attachmentName = attachmentName ? String(attachmentName).trim() : null;
     if (attachmentSize !== undefined) updateData.attachmentSize = attachmentSize ? String(attachmentSize).trim() : null;
     if (attachmentType !== undefined) updateData.attachmentType = attachmentType ? String(attachmentType).trim() : null;

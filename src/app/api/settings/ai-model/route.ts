@@ -3,6 +3,7 @@ export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { checkIsAdmin } from '@/lib/api-auth';
 import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getCacheHeaders } from '@/lib/media-response';
 
 export interface AiModelButtonSettings {
   title: string;
@@ -48,19 +49,23 @@ async function ensureSettingsTable(d1: any) {
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const headers = getCacheHeaders(request);
   try {
     const d1 = await getD1();
     if (!d1) {
-      return NextResponse.json(memorySettings);
+      return NextResponse.json(memorySettings, { headers });
     }
 
-    await ensureSettingsTable(d1);
-
-    const stmt = d1.prepare(`
-      SELECT value FROM site_settings WHERE key = 'hero_ai_model_button'
-    `);
-    const result: any = typeof stmt.first === 'function' ? await stmt.first() : (await stmt.all?.())?.results?.[0];
+    let result: any = null;
+    try {
+      const stmt = d1.prepare(`
+        SELECT value FROM site_settings WHERE key = 'hero_ai_model_button'
+      `);
+      result = typeof stmt.first === 'function' ? await stmt.first() : (await stmt.all?.())?.results?.[0];
+    } catch {
+      await ensureSettingsTable(d1);
+    }
 
     if (result?.value) {
       try {
@@ -74,10 +79,10 @@ export async function GET() {
       }
     }
 
-    return NextResponse.json(memorySettings);
+    return NextResponse.json(memorySettings, { headers });
   } catch (error) {
     console.error("GET /api/settings/ai-model error:", error);
-    return NextResponse.json(memorySettings);
+    return NextResponse.json(memorySettings, { headers });
   }
 }
 

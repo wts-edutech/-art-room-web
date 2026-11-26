@@ -3,11 +3,15 @@ export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { artworks } from '@/db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, sql } from 'drizzle-orm';
 import { checkIsAdmin } from '@/lib/api-auth';
 import { getRequestContext } from '@cloudflare/next-on-pages';
+import { offloadDataUrl } from '@/lib/r2-storage';
+import { fileToStoredMedia, getCacheHeaders } from '@/lib/media-response';
 
+let artworksTableEnsured = false;
 async function ensureArtworksTable() {
+  if (artworksTableEnsured) return;
   try {
     const ctx = getRequestContext();
     const d1 = (ctx?.env as any)?.DB;
@@ -28,20 +32,48 @@ async function ensureArtworksTable() {
 
     try { await d1.prepare(`ALTER TABLE artworks ADD COLUMN technique TEXT`).run(); } catch (_) {}
     try { await d1.prepare(`ALTER TABLE artworks ADD COLUMN dimensions TEXT`).run(); } catch (_) {}
+    artworksTableEnsured = true;
   } catch (e) {
     console.error("ensureArtworksTable error:", e);
   }
 }
 
-export async function GET() {
+async function queryArtworksLight(db: ReturnType<typeof getDb>) {
+  return db
+    .select({
+      id: artworks.id,
+      title: artworks.title,
+      author: artworks.author,
+      year: artworks.year,
+      technique: artworks.technique,
+      dimensions: artworks.dimensions,
+      createdAt: artworks.createdAt,
+      imageUrl: sql<string>`CASE
+        WHEN image_url LIKE 'data:%' OR image_url LIKE 'r2:%' THEN 'has_blob'
+        ELSE image_url
+      END`.as('imageUrl'),
+    })
+    .from(artworks)
+    .orderBy(desc(artworks.createdAt));
+}
+
+export async function GET(request: Request) {
   try {
-    await ensureArtworksTable();
     const db = getDb();
-    const all = await db.select().from(artworks).orderBy(desc(artworks.createdAt));
-    
-    // Normalize properties so both frontend and admin receive studentName, grade, technique, dimensions
+    let all;
+    try {
+      all = await queryArtworksLight(db);
+    } catch {
+      await ensureArtworksTable();
+      all = await queryArtworksLight(db);
+    }
+
     const normalized = all.map((item: any) => ({
       ...item,
+      imageUrl:
+        item.imageUrl === 'has_blob'
+          ? `/api/artworks/image?id=${encodeURIComponent(item.id)}`
+          : item.imageUrl,
       studentName: item.author || item.studentName || '',
       grade: item.year || item.grade || 'ทั่วไป',
       author: item.author || item.studentName || '',
@@ -49,8 +81,8 @@ export async function GET() {
       technique: item.technique || '',
       dimensions: item.dimensions || '',
     }));
-    
-    return NextResponse.json(normalized);
+
+    return NextResponse.json(normalized, { headers: getCacheHeaders(request, true) });
   } catch (error: any) {
     console.error("GET /api/artworks error:", error);
     return NextResponse.json({ error: error?.message || 'Failed to fetch' }, { status: 500 });
@@ -64,7 +96,8 @@ export async function POST(request: Request) {
     }
     await ensureArtworksTable();
     const db = getDb();
-    
+
+    const id = Date.now().toString();
     let title = '';
     let studentName = '';
     let grade = '';
@@ -81,6 +114,9 @@ export async function POST(request: Request) {
       technique = body.technique || '';
       dimensions = body.dimensions || '';
       imageUrl = body.imageUrl || '';
+      if (imageUrl.startsWith('data:')) {
+        imageUrl = await offloadDataUrl(imageUrl, `artworks/${id}/image_${Date.now()}`);
+      }
     } else {
       const formData = await request.formData();
       title = (formData.get('title') as string) || '';
@@ -92,15 +128,14 @@ export async function POST(request: Request) {
 
       const imageFile = formData.get('image') || formData.get('coverImage');
       if (imageFile && typeof imageFile === 'object' && 'arrayBuffer' in imageFile && (imageFile as any).size > 0) {
-        const bytes = await (imageFile as any).arrayBuffer();
-        const base64 = Buffer.from(bytes).toString('base64');
-        const mime = (imageFile as any).type || 'image/jpeg';
-        imageUrl = `data:${mime};base64,${base64}`;
+        imageUrl = await fileToStoredMedia(imageFile as File, `artworks/${id}/image_${Date.now()}`);
+      } else if (imageUrl.startsWith('data:')) {
+        imageUrl = await offloadDataUrl(imageUrl, `artworks/${id}/image_${Date.now()}`);
       }
     }
 
     const newEntry = {
-      id: Date.now().toString(),
+      id,
       title,
       author: studentName,
       imageUrl: imageUrl || '',
@@ -109,7 +144,7 @@ export async function POST(request: Request) {
       dimensions,
       createdAt: new Date().toISOString()
     };
-    
+
     await db.insert(artworks).values(newEntry as any);
     return NextResponse.json(newEntry, { status: 201 });
   } catch (error: any) {
@@ -127,7 +162,7 @@ export async function PUT(request: Request) {
     await ensureArtworksTable();
     const formData = await request.formData();
     const db = getDb();
-    
+
     const id = formData.get('id') as string;
     if (!id) return NextResponse.json({ error: 'ID is required' }, { status: 400 });
 
@@ -140,10 +175,12 @@ export async function PUT(request: Request) {
     let imageUrl = (formData.get('imageUrl') as string) || '';
     const imageFile = formData.get('image') || formData.get('coverImage');
     if (imageFile && typeof imageFile === 'object' && 'arrayBuffer' in imageFile && (imageFile as any).size > 0) {
-      const bytes = await (imageFile as any).arrayBuffer();
-      const base64 = Buffer.from(bytes).toString('base64');
-      const mime = (imageFile as any).type || 'image/jpeg';
-      imageUrl = `data:${mime};base64,${base64}`;
+      imageUrl = await fileToStoredMedia(imageFile as File, `artworks/${id}/image_${Date.now()}`);
+    } else if (imageUrl.includes('/api/artworks/image')) {
+      // Preserve existing stored blob/R2 image when client echoes proxy URL unchanged
+      imageUrl = '';
+    } else if (imageUrl.startsWith('data:')) {
+      imageUrl = await offloadDataUrl(imageUrl, `artworks/${id}/image_${Date.now()}`);
     }
 
     const updateData: any = {
@@ -183,7 +220,7 @@ export async function DELETE(request: Request) {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     if (!id) return NextResponse.json({ error: 'ID is required' }, { status: 400 });
-    
+
     const db = getDb();
     await db.delete(artworks).where(eq(artworks.id, id));
     return NextResponse.json({ success: true });

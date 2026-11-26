@@ -56,7 +56,7 @@ export default function NewsTab() {
   const fetchNewsData = async () => {
     setIsNewsLoading(true);
     try {
-      const res = await fetch("/api/news");
+      const res = await fetch("/api/news?fresh=1", { cache: "no-store" });
       const data = await res.json();
       setNewsList(Array.isArray(data) ? data : []);
     } catch (error) {

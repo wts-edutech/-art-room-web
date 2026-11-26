@@ -3,6 +3,7 @@ export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { checkIsAdmin } from '@/lib/api-auth';
 import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getCacheHeaders } from '@/lib/media-response';
 
 async function getD1() {
   try {
@@ -31,26 +32,30 @@ async function ensureSettingsTable(d1: any) {
 // In-memory fallback if D1 is not available (e.g. local build)
 let memoryTeachersEnabled = false;
 
-export async function GET() {
+export async function GET(request: Request) {
+  const headers = getCacheHeaders(request);
   try {
     const d1 = await getD1();
     if (!d1) {
-      return NextResponse.json({ enabled: memoryTeachersEnabled });
+      return NextResponse.json({ enabled: memoryTeachersEnabled }, { headers });
     }
 
-    await ensureSettingsTable(d1);
-
-    const stmt = d1.prepare(`
-      SELECT value FROM site_settings WHERE key = 'teachers_enabled'
-    `);
-    const result: any = typeof stmt.first === 'function' ? await stmt.first() : (await stmt.all?.())?.results?.[0];
+    let result: any = null;
+    try {
+      const stmt = d1.prepare(`
+        SELECT value FROM site_settings WHERE key = 'teachers_enabled'
+      `);
+      result = typeof stmt.first === 'function' ? await stmt.first() : (await stmt.all?.())?.results?.[0];
+    } catch {
+      await ensureSettingsTable(d1);
+    }
 
     const enabled = result?.value === 'true';
-    return NextResponse.json({ enabled });
+    return NextResponse.json({ enabled }, { headers });
 
   } catch (error) {
     console.error("GET /api/teachers/status error:", error);
-    return NextResponse.json({ enabled: false });
+    return NextResponse.json({ enabled: false }, { headers });
   }
 }
 

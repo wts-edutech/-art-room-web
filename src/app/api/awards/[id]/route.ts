@@ -6,8 +6,12 @@ import { awards } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { checkIsAdmin } from '@/lib/api-auth';
 import { getRequestContext } from '@cloudflare/next-on-pages';
+import { offloadDataUrl } from '@/lib/r2-storage';
+import { fileToStoredMedia } from '@/lib/media-response';
 
+let awardsTableEnsured = false;
 async function ensureAwardsTable() {
+  if (awardsTableEnsured) return;
   try {
     const ctx = getRequestContext();
     const d1 = (ctx?.env as any)?.DB;
@@ -40,6 +44,7 @@ async function ensureAwardsTable() {
         // column already exists
       }
     }
+    awardsTableEnsured = true;
   } catch (e) {
     console.error("ensureAwardsTable error:", e);
   }
@@ -55,7 +60,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     const id = resolvedParams.id;
     const formData = await request.formData();
     const db = getDb();
-    
+
     const updates: any = {};
     if (formData.has('title')) updates.title = formData.get('title') as string;
     if (formData.has('student')) updates.student = formData.get('student') as string;
@@ -71,29 +76,33 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     // Award Image
     const imageFile = formData.get('image') || formData.get('coverImage');
     if (imageFile && typeof imageFile === 'object' && 'arrayBuffer' in imageFile && (imageFile as any).size > 0) {
-      const bytes = await (imageFile as any).arrayBuffer();
-      const base64 = Buffer.from(bytes).toString('base64');
-      const mime = (imageFile as any).type || 'image/jpeg';
-      updates.imageUrl = `data:${mime};base64,${base64}`;
+      updates.imageUrl = await fileToStoredMedia(imageFile as File, `awards/${id}/image_${Date.now()}`);
     } else if (formData.has('imageUrl')) {
-      updates.imageUrl = formData.get('imageUrl') as string;
+      const incoming = (formData.get('imageUrl') as string) || '';
+      if (!incoming.includes('/api/awards/image')) {
+        updates.imageUrl = incoming.startsWith('data:')
+          ? await offloadDataUrl(incoming, `awards/${id}/image_${Date.now()}`)
+          : incoming;
+      }
     }
 
     // Certificate File
     const certFile = formData.get('certificate');
     if (certFile && typeof certFile === 'object' && 'arrayBuffer' in certFile && (certFile as any).size > 0) {
-      const bytes = await (certFile as any).arrayBuffer();
-      const base64 = Buffer.from(bytes).toString('base64');
-      const mime = (certFile as any).type || 'image/jpeg';
-      updates.certificateUrl = `data:${mime};base64,${base64}`;
+      updates.certificateUrl = await fileToStoredMedia(certFile as File, `awards/${id}/cert_${Date.now()}`);
     } else if (formData.has('certificateUrl')) {
-      updates.certificateUrl = formData.get('certificateUrl') as string;
+      const incoming = (formData.get('certificateUrl') as string) || '';
+      if (!incoming.includes('/api/awards/image')) {
+        updates.certificateUrl = incoming.startsWith('data:')
+          ? await offloadDataUrl(incoming, `awards/${id}/cert_${Date.now()}`)
+          : incoming;
+      }
     }
 
     if (Object.keys(updates).length > 0) {
       await db.update(awards).set(updates).where(eq(awards.id, id));
     }
-    
+
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error("PUT /api/awards/[id] error:", error);
@@ -111,7 +120,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     const resolvedParams = await params;
     const id = resolvedParams.id;
     const db = getDb();
-    
+
     await db.delete(awards).where(eq(awards.id, id));
     return NextResponse.json({ success: true });
   } catch (error: any) {

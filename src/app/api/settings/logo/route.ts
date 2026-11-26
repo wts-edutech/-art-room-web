@@ -3,6 +3,8 @@ export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { checkIsAdmin } from '@/lib/api-auth';
 import { getRequestContext } from '@cloudflare/next-on-pages';
+import { R2_PREFIX, offloadDataUrl } from '@/lib/r2-storage';
+import { getCacheHeaders, resolveR2Url } from '@/lib/media-response';
 
 export interface LogoSettings {
   logoUrl: string;
@@ -33,18 +35,19 @@ const DEFAULT_SETTINGS: LogoSettings = {
 };
 
 let memorySettings: LogoSettings = { ...DEFAULT_SETTINGS };
+let settingsTableEnsured = false;
 
 async function getD1() {
   try {
     const ctx = getRequestContext();
-    return ctx?.env?.DB || null;
+    return (ctx?.env as any)?.DB || null;
   } catch {
     return null;
   }
 }
 
 async function ensureSettingsTable(d1: any) {
-  if (!d1) return;
+  if (!d1 || settingsTableEnsured) return;
   try {
     await d1.prepare(`
       CREATE TABLE IF NOT EXISTS site_settings (
@@ -53,29 +56,38 @@ async function ensureSettingsTable(d1: any) {
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP
       )
     `).run();
+    settingsTableEnsured = true;
   } catch (err) {
     console.warn("ensureSettingsTable note:", err);
   }
 }
 
-export async function GET() {
-  const headers = {
-    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-    'Pragma': 'no-cache',
-    'Expires': '0',
-  };
+function toClientLogoSettings(settings: LogoSettings): LogoSettings {
+  let publicUrl = settings.logoUrl;
+  if (publicUrl?.startsWith(R2_PREFIX)) {
+    publicUrl = resolveR2Url(publicUrl) || DEFAULT_SETTINGS.logoUrl;
+  } else if (publicUrl?.startsWith('data:')) {
+    const v = encodeURIComponent(settings.updatedAt || '1');
+    publicUrl = `/api/settings/media?type=logo&v=${v}`;
+  }
+  return { ...settings, logoUrl: publicUrl };
+}
+
+export async function GET(request: Request) {
+  const headers = getCacheHeaders(request);
   try {
     const d1 = await getD1();
     if (!d1) {
-      return NextResponse.json(memorySettings, { headers });
+      return NextResponse.json(toClientLogoSettings(memorySettings), { headers });
     }
 
-    await ensureSettingsTable(d1);
-
-    const stmt = d1.prepare(`
-      SELECT value FROM site_settings WHERE key = 'site_logo_settings'
-    `);
-    const result: any = typeof stmt.first === 'function' ? await stmt.first() : (await stmt.all?.())?.results?.[0];
+    let result: any = null;
+    try {
+      const stmt = d1.prepare(`SELECT value FROM site_settings WHERE key = 'site_logo_settings'`);
+      result = typeof stmt.first === 'function' ? await stmt.first() : (await stmt.all?.())?.results?.[0];
+    } catch {
+      await ensureSettingsTable(d1);
+    }
 
     if (result?.value) {
       try {
@@ -92,10 +104,10 @@ export async function GET() {
       }
     }
 
-    return NextResponse.json(memorySettings, { headers });
+    return NextResponse.json(toClientLogoSettings(memorySettings), { headers });
   } catch (error) {
     console.error("GET /api/settings/logo error:", error);
-    return NextResponse.json(memorySettings, { headers });
+    return NextResponse.json(toClientLogoSettings(memorySettings), { headers });
   }
 }
 
@@ -138,10 +150,38 @@ export async function POST(request: Request) {
       payload = await request.json().catch(() => ({}));
     }
 
+    const d1 = await getD1();
+    let existingStoredLogo = memorySettings.logoUrl || DEFAULT_SETTINGS.logoUrl;
+    if (d1) {
+      await ensureSettingsTable(d1);
+      const existingRow: any = await d1
+        .prepare(`SELECT value FROM site_settings WHERE key = 'site_logo_settings'`)
+        .first()
+        .catch(() => null);
+      if (existingRow?.value) {
+        try {
+          const parsed = JSON.parse(existingRow.value);
+          if (parsed?.logoUrl) existingStoredLogo = parsed.logoUrl;
+        } catch {}
+      }
+    }
+
+    let resolvedLogoUrl = payload.logoUrl?.trim() || existingStoredLogo;
+    if (resolvedLogoUrl.includes('/api/settings/media')) {
+      resolvedLogoUrl = existingStoredLogo;
+    } else if (resolvedLogoUrl.startsWith('/api/media?key=')) {
+      try {
+        const k = new URL(resolvedLogoUrl, 'https://local.invalid').searchParams.get('key');
+        if (k) resolvedLogoUrl = `${R2_PREFIX}${k}`;
+      } catch {}
+    } else if (resolvedLogoUrl.startsWith('data:')) {
+      resolvedLogoUrl = await offloadDataUrl(resolvedLogoUrl, `settings/logo_${Date.now()}`);
+    }
+
     const updatedAt = new Date().toISOString();
 
     const newSettings: LogoSettings = {
-      logoUrl: payload.logoUrl?.trim() || memorySettings.logoUrl || DEFAULT_SETTINGS.logoUrl,
+      logoUrl: resolvedLogoUrl,
       logoAlt: (payload.logoAlt ?? memorySettings.logoAlt ?? DEFAULT_SETTINGS.logoAlt).trim(),
       brandNamePrefix: (payload.brandNamePrefix ?? memorySettings.brandNamePrefix ?? DEFAULT_SETTINGS.brandNamePrefix).trim(),
       brandNameSuffix: (payload.brandNameSuffix ?? memorySettings.brandNameSuffix ?? DEFAULT_SETTINGS.brandNameSuffix).trim(),
@@ -156,9 +196,7 @@ export async function POST(request: Request) {
 
     memorySettings = newSettings;
 
-    const d1 = await getD1();
     if (d1) {
-      await ensureSettingsTable(d1);
       await d1.prepare(`
         INSERT INTO site_settings (key, value, updated_at) 
         VALUES ('site_logo_settings', ?, ?)
@@ -168,7 +206,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      settings: newSettings,
+      settings: toClientLogoSettings(newSettings),
       message: 'บันทึกการตั้งค่ารูปโลโก้และตราโรงเรียนเรียบร้อยแล้ว',
     });
   } catch (error) {

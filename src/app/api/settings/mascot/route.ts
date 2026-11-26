@@ -3,12 +3,13 @@ export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { checkIsAdmin } from '@/lib/api-auth';
 import { getRequestContext } from '@cloudflare/next-on-pages';
-import { offloadDataUrl } from '@/lib/r2-storage';
+import { R2_PREFIX, offloadDataUrl } from '@/lib/r2-storage';
+import { getCacheHeaders, resolveR2Url } from '@/lib/media-response';
 
 interface MascotSettings {
   mascotUrl: string;
   mascotAlt: string;
-  size: number; // in pixels (width, e.g. 64)
+  size: number;
   showTooltip: boolean;
   tooltipText: string;
   updatedAt?: string;
@@ -23,18 +24,19 @@ const DEFAULT_MASCOT_SETTINGS: MascotSettings = {
 };
 
 let memorySettings: MascotSettings = { ...DEFAULT_MASCOT_SETTINGS };
+let settingsTableEnsured = false;
 
 async function getD1() {
   try {
     const ctx = getRequestContext();
-    return ctx?.env?.DB || null;
+    return (ctx?.env as any)?.DB || null;
   } catch {
     return null;
   }
 }
 
 async function ensureSettingsTable(d1: any) {
-  if (!d1) return;
+  if (!d1 || settingsTableEnsured) return;
   try {
     await d1.prepare(`
       CREATE TABLE IF NOT EXISTS site_settings (
@@ -43,27 +45,38 @@ async function ensureSettingsTable(d1: any) {
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP
       )
     `).run();
+    settingsTableEnsured = true;
   } catch (err) {
     console.warn("ensureSettingsTable note:", err);
   }
 }
 
-export async function GET() {
-  const headers = {
-    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-    'Pragma': 'no-cache',
-    'Expires': '0',
-  };
+function toClientMascotSettings(settings: MascotSettings): MascotSettings {
+  let publicUrl = settings.mascotUrl;
+  if (publicUrl?.startsWith(R2_PREFIX)) {
+    publicUrl = resolveR2Url(publicUrl) || DEFAULT_MASCOT_SETTINGS.mascotUrl;
+  } else if (publicUrl?.startsWith('data:')) {
+    const v = encodeURIComponent(settings.updatedAt || '1');
+    publicUrl = `/api/settings/media?type=mascot&v=${v}`;
+  }
+  return { ...settings, mascotUrl: publicUrl };
+}
+
+export async function GET(request: Request) {
+  const headers = getCacheHeaders(request);
   try {
     const d1 = await getD1();
     if (!d1) {
-      return NextResponse.json(memorySettings, { headers });
+      return NextResponse.json(toClientMascotSettings(memorySettings), { headers });
     }
 
-    await ensureSettingsTable(d1);
-
-    const stmt = d1.prepare(`SELECT value FROM site_settings WHERE key = 'site_mascot_settings'`);
-    const result: any = typeof stmt.first === 'function' ? await stmt.first() : (await stmt.all?.())?.results?.[0];
+    let result: any = null;
+    try {
+      const stmt = d1.prepare(`SELECT value FROM site_settings WHERE key = 'site_mascot_settings'`);
+      result = typeof stmt.first === 'function' ? await stmt.first() : (await stmt.all?.())?.results?.[0];
+    } catch {
+      await ensureSettingsTable(d1);
+    }
 
     if (result?.value) {
       try {
@@ -77,10 +90,10 @@ export async function GET() {
       }
     }
 
-    return NextResponse.json(memorySettings, { headers });
+    return NextResponse.json(toClientMascotSettings(memorySettings), { headers });
   } catch (error) {
     console.error("GET /api/settings/mascot error:", error);
-    return NextResponse.json(memorySettings, { headers });
+    return NextResponse.json(toClientMascotSettings(memorySettings), { headers });
   }
 }
 
@@ -115,10 +128,38 @@ export async function POST(request: Request) {
       payload = await request.json().catch(() => ({}));
     }
 
+    const d1 = await getD1();
+    let existingStoredMascot = memorySettings.mascotUrl || DEFAULT_MASCOT_SETTINGS.mascotUrl;
+    if (d1) {
+      await ensureSettingsTable(d1);
+      const existingRow: any = await d1
+        .prepare(`SELECT value FROM site_settings WHERE key = 'site_mascot_settings'`)
+        .first()
+        .catch(() => null);
+      if (existingRow?.value) {
+        try {
+          const parsed = JSON.parse(existingRow.value);
+          if (parsed?.mascotUrl) existingStoredMascot = parsed.mascotUrl;
+        } catch {}
+      }
+    }
+
+    let resolvedMascotUrl = payload.mascotUrl?.trim() || existingStoredMascot;
+    if (resolvedMascotUrl.includes('/api/settings/media')) {
+      resolvedMascotUrl = existingStoredMascot;
+    } else if (resolvedMascotUrl.startsWith('/api/media?key=')) {
+      try {
+        const k = new URL(resolvedMascotUrl, 'https://local.invalid').searchParams.get('key');
+        if (k) resolvedMascotUrl = `${R2_PREFIX}${k}`;
+      } catch {}
+    } else if (resolvedMascotUrl.startsWith('data:')) {
+      resolvedMascotUrl = await offloadDataUrl(resolvedMascotUrl, `settings/mascot_${Date.now()}`);
+    }
+
     const updatedAt = new Date().toISOString();
 
     const newSettings: MascotSettings = {
-      mascotUrl: payload.mascotUrl?.trim() || memorySettings.mascotUrl || DEFAULT_MASCOT_SETTINGS.mascotUrl,
+      mascotUrl: resolvedMascotUrl,
       mascotAlt: (payload.mascotAlt ?? memorySettings.mascotAlt ?? DEFAULT_MASCOT_SETTINGS.mascotAlt).trim(),
       tooltipText: (payload.tooltipText ?? memorySettings.tooltipText ?? DEFAULT_MASCOT_SETTINGS.tooltipText).trim(),
       showTooltip: payload.showTooltip !== undefined ? Boolean(payload.showTooltip) : (memorySettings.showTooltip ?? true),
@@ -128,9 +169,7 @@ export async function POST(request: Request) {
 
     memorySettings = newSettings;
 
-    const d1 = await getD1();
     if (d1) {
-      await ensureSettingsTable(d1);
       await d1.prepare(`
         INSERT INTO site_settings (key, value, updated_at) 
         VALUES ('site_mascot_settings', ?, ?)
@@ -141,11 +180,10 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       message: "อัปเดตการตั้งค่ามาสคอตเลื่อนขึ้นด้านบนสำเร็จ",
-      settings: newSettings,
+      settings: toClientMascotSettings(newSettings),
     });
   } catch (error: any) {
     console.error("POST /api/settings/mascot error:", error);
     return NextResponse.json({ error: error?.message || "บันทึกการตั้งค่าไม่สำเร็จ" }, { status: 500 });
   }
 }
-

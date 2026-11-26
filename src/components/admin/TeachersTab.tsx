@@ -128,13 +128,13 @@ export default function TeachersTab() {
     setIsLoading(true);
     try {
       // 1. Fetch Front-end Visibility Status
-      fetch("/api/teachers/status")
+      fetch("/api/teachers/status?fresh=1", { cache: "no-store" })
         .then(r => r.json())
         .then(d => setIsTeachersEnabled(!!d?.enabled))
         .catch(() => {});
 
       // 2. Fetch Teacher Profile Data
-      const res = await fetch("/api/teachers");
+      const res = await fetch("/api/teachers?fresh=1", { cache: "no-store" });
       const data = await res.json();
       const list = Array.isArray(data) ? data : [];
       

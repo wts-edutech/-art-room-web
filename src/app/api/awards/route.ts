@@ -3,11 +3,15 @@ export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { awards } from '@/db/schema';
-import { desc } from 'drizzle-orm';
+import { desc, sql } from 'drizzle-orm';
 import { checkIsAdmin } from '@/lib/api-auth';
 import { getRequestContext } from '@cloudflare/next-on-pages';
+import { offloadDataUrl } from '@/lib/r2-storage';
+import { fileToStoredMedia, getCacheHeaders } from '@/lib/media-response';
 
+let awardsTableEnsured = false;
 async function ensureAwardsTable() {
+  if (awardsTableEnsured) return;
   try {
     const ctx = getRequestContext();
     const d1 = (ctx?.env as any)?.DB;
@@ -40,17 +44,66 @@ async function ensureAwardsTable() {
         // column already exists
       }
     }
+    awardsTableEnsured = true;
   } catch (e) {
     console.error("ensureAwardsTable error:", e);
   }
 }
 
-export async function GET() {
+async function queryAwardsLight(db: ReturnType<typeof getDb>) {
+  return db
+    .select({
+      id: awards.id,
+      title: awards.title,
+      student: awards.student,
+      grade: awards.grade,
+      description: awards.description,
+      year: awards.year,
+      date: awards.date,
+      awardLevel: awards.awardLevel,
+      competitionLevel: awards.competitionLevel,
+      organization: awards.organization,
+      isHighlight: awards.isHighlight,
+      createdAt: awards.createdAt,
+      imageUrl: sql<string | null>`CASE
+        WHEN image_url IS NULL OR image_url = '' THEN NULL
+        WHEN image_url LIKE 'data:%' OR image_url LIKE 'r2:%' THEN 'has_blob'
+        ELSE image_url
+      END`.as('imageUrl'),
+      certificateUrl: sql<string | null>`CASE
+        WHEN certificate_url IS NULL OR certificate_url = '' THEN NULL
+        WHEN certificate_url LIKE 'data:%' OR certificate_url LIKE 'r2:%' THEN 'has_blob'
+        ELSE certificate_url
+      END`.as('certificateUrl'),
+    })
+    .from(awards)
+    .orderBy(desc(awards.createdAt));
+}
+
+export async function GET(request: Request) {
   try {
-    await ensureAwardsTable();
     const db = getDb();
-    const all = await db.select().from(awards).orderBy(desc(awards.createdAt));
-    return NextResponse.json(all);
+    let all;
+    try {
+      all = await queryAwardsLight(db);
+    } catch {
+      await ensureAwardsTable();
+      all = await queryAwardsLight(db);
+    }
+
+    const normalized = all.map((item) => ({
+      ...item,
+      imageUrl:
+        item.imageUrl === 'has_blob'
+          ? `/api/awards/image?id=${encodeURIComponent(item.id)}&field=image`
+          : item.imageUrl,
+      certificateUrl:
+        item.certificateUrl === 'has_blob'
+          ? `/api/awards/image?id=${encodeURIComponent(item.id)}&field=certificate`
+          : item.certificateUrl,
+    }));
+
+    return NextResponse.json(normalized, { headers: getCacheHeaders(request, true) });
   } catch (error: any) {
     console.error("GET /api/awards error:", error);
     return NextResponse.json({ error: error?.message || 'Failed to fetch' }, { status: 500 });
@@ -65,7 +118,8 @@ export async function POST(request: Request) {
     await ensureAwardsTable();
     const formData = await request.formData();
     const db = getDb();
-    
+
+    const id = Date.now().toString();
     const title = (formData.get('title') as string) || '';
     const student = (formData.get('student') as string) || '';
     const grade = (formData.get('grade') as string) || '';
@@ -82,24 +136,22 @@ export async function POST(request: Request) {
     let imageUrl = (formData.get('imageUrl') as string) || '';
     const imageFile = formData.get('image') || formData.get('coverImage');
     if (imageFile && typeof imageFile === 'object' && 'arrayBuffer' in imageFile && (imageFile as any).size > 0) {
-      const bytes = await (imageFile as any).arrayBuffer();
-      const base64 = Buffer.from(bytes).toString('base64');
-      const mime = (imageFile as any).type || 'image/jpeg';
-      imageUrl = `data:${mime};base64,${base64}`;
+      imageUrl = await fileToStoredMedia(imageFile as File, `awards/${id}/image_${Date.now()}`);
+    } else if (imageUrl.startsWith('data:')) {
+      imageUrl = await offloadDataUrl(imageUrl, `awards/${id}/image_${Date.now()}`);
     }
 
     // Handle Certificate File
     let certificateUrl = (formData.get('certificateUrl') as string) || '';
     const certFile = formData.get('certificate');
     if (certFile && typeof certFile === 'object' && 'arrayBuffer' in certFile && (certFile as any).size > 0) {
-      const bytes = await (certFile as any).arrayBuffer();
-      const base64 = Buffer.from(bytes).toString('base64');
-      const mime = (certFile as any).type || 'image/jpeg';
-      certificateUrl = `data:${mime};base64,${base64}`;
+      certificateUrl = await fileToStoredMedia(certFile as File, `awards/${id}/cert_${Date.now()}`);
+    } else if (certificateUrl.startsWith('data:')) {
+      certificateUrl = await offloadDataUrl(certificateUrl, `awards/${id}/cert_${Date.now()}`);
     }
 
     const newEntry = {
-      id: Date.now().toString(),
+      id,
       title,
       student,
       grade,
@@ -114,7 +166,7 @@ export async function POST(request: Request) {
       isHighlight,
       createdAt: new Date().toISOString()
     };
-    
+
     await db.insert(awards).values(newEntry as any);
     return NextResponse.json(newEntry, { status: 201 });
   } catch (error: any) {

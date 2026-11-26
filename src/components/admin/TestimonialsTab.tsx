@@ -39,7 +39,7 @@ export default function TestimonialsTab() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/testimonials");
+      const res = await fetch("/api/testimonials?fresh=1", { cache: "no-store" });
       const data = await res.json();
       setTestimonials(Array.isArray(data) ? data : []);
     } catch (error) {

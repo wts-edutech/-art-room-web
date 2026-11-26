@@ -57,9 +57,10 @@ export function MascotProvider({ children }: { children: React.ReactNode }) {
 
   const [isLoading, setIsLoading] = useState(true);
 
-  const refreshMascotSettings = useCallback(async () => {
+  const refreshMascotSettings = useCallback(async (forceFresh = false) => {
     try {
-      const res = await fetch(`/api/settings/mascot?t=${Date.now()}`, { cache: "no-store" });
+      const url = forceFresh ? `/api/settings/mascot?fresh=1&t=${Date.now()}` : `/api/settings/mascot`;
+      const res = await fetch(url, forceFresh ? { cache: "no-store" } : undefined);
       if (res.ok) {
         const data = await res.json();
         const rawUrl = data.mascotUrl === "/images/artroom-mascot-transparent.png"
@@ -106,28 +107,20 @@ export function MascotProvider({ children }: { children: React.ReactNode }) {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(e.detail));
         } catch {}
       } else {
-        refreshMascotSettings();
-      }
-    };
-
-    const handleVisibilityOrFocus = () => {
-      if (document.visibilityState === "visible") {
-        refreshMascotSettings();
+        refreshMascotSettings(true);
       }
     };
 
     window.addEventListener("storage", handleStorageChange);
     window.addEventListener("artroom_mascot_updated" as any, handleCustomUpdate);
-    window.addEventListener("focus", handleVisibilityOrFocus);
-    document.addEventListener("visibilitychange", handleVisibilityOrFocus);
 
     return () => {
       window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener("artroom_mascot_updated" as any, handleCustomUpdate);
-      window.removeEventListener("focus", handleVisibilityOrFocus);
-      document.removeEventListener("visibilitychange", handleVisibilityOrFocus);
     };
   }, [refreshMascotSettings]);
+
+  const forceRefreshMascot = useCallback(() => refreshMascotSettings(true), [refreshMascotSettings]);
 
   const updateLocalSettings = useCallback((partial: Partial<MascotSettings>) => {
     setMascotSettings((prev) => {
@@ -155,7 +148,7 @@ export function MascotProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         resolvedMascotSrc,
         updateLocalSettings,
-        refreshMascotSettings,
+        refreshMascotSettings: forceRefreshMascot,
       }}
     >
       {children}

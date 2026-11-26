@@ -63,7 +63,7 @@ export default function ArtworksTab() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/artworks");
+      const res = await fetch("/api/artworks?fresh=1", { cache: "no-store" });
       const data = await res.json();
       setArtworks(Array.isArray(data) ? data : []);
     } catch (error) {

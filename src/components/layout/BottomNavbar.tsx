@@ -31,6 +31,11 @@ import {
 import ProfileSettingsModal from "@/components/modals/ProfileSettingsModal";
 import { resolveUserAvatar } from "@/lib/art-avatars";
 import { performGlobalLogout } from "@/lib/client-auth";
+import {
+  fetchSiteVisibilityFlags,
+  fetchStudentMissingTasksCount,
+  invalidateStudentMissingTasksCache,
+} from "@/lib/nav-data-cache";
 
 export default function BottomNavbar() {
   const pathname = usePathname();
@@ -72,7 +77,7 @@ export default function BottomNavbar() {
     }));
   };
 
-  const updateUserData = () => {
+  const updateUserData = (forceMissingRefresh = false) => {
     const role = localStorage.getItem("artroom_role");
     const studentId = localStorage.getItem("artroom_student_id");
     const classroom = localStorage.getItem("artroom_classroom") || localStorage.getItem("artroom_student_grade") || "";
@@ -81,19 +86,11 @@ export default function BottomNavbar() {
     setUserAvatar(localStorage.getItem("artroom_avatar"));
 
     if (role === "student" && studentId) {
-      Promise.all([
-        fetch(`/api/assignments?activeOnly=true&classroom=${encodeURIComponent(classroom)}&studentId=${encodeURIComponent(studentId)}`).then((r) => (r.ok ? r.json() : [])).catch(() => []),
-        fetch(`/api/submissions?studentId=${encodeURIComponent(studentId)}`).then((r) => (r.ok ? r.json() : [])).catch(() => []),
-      ]).then(([assList, subList]) => {
-        if (!Array.isArray(assList)) return;
-        const subs = Array.isArray(subList) ? subList : [];
-        const subMap = new Map<string, any>();
-        for (const s of subs) {
-          if (s?.assignmentId && !subMap.has(s.assignmentId)) subMap.set(s.assignmentId, s);
-        }
-        const missing = assList.filter((a: any) => !subMap.has(a.id) || subMap.get(a.id)?.status === "resubmit").length;
-        setMissingTasksCount(missing);
-      }).catch(() => {});
+      fetchStudentMissingTasksCount(studentId, classroom, forceMissingRefresh)
+        .then((missing) => {
+          if (missing !== null) setMissingTasksCount(missing);
+        })
+        .catch(() => {});
     } else {
       setMissingTasksCount(null);
     }
@@ -102,33 +99,28 @@ export default function BottomNavbar() {
   useEffect(() => {
     setMounted(true);
     updateUserData();
-    window.addEventListener("artroom_profile_updated", updateUserData);
-    window.addEventListener("storage", updateUserData);
+
+    const onProfileUpdated = () => {
+      invalidateStudentMissingTasksCache();
+      updateUserData(true);
+    };
+
+    window.addEventListener("artroom_profile_updated", onProfileUpdated);
+    window.addEventListener("storage", onProfileUpdated);
 
     const handleOpenMobileMenu = () => setIsMoreMenuOpen(true);
     window.addEventListener("openMobileMenu", handleOpenMobileMenu);
 
-    fetch("/api/teachers/status")
-      .then((res) => res.json())
-      .then((data: any) => {
-        if (data && typeof data.enabled === "boolean") {
-          setIsTeachersEnabled(data.enabled);
-        }
-      })
-      .catch(() => {});
-
-    fetch("/api/awards/status")
-      .then((res) => res.json())
-      .then((data: any) => {
-        if (data && typeof data.enabled === "boolean") {
-          setIsAwardsEnabled(data.enabled);
-        }
+    fetchSiteVisibilityFlags()
+      .then(({ teachersEnabled, awardsEnabled }) => {
+        setIsTeachersEnabled(teachersEnabled);
+        setIsAwardsEnabled(awardsEnabled);
       })
       .catch(() => {});
 
     return () => {
-      window.removeEventListener("artroom_profile_updated", updateUserData);
-      window.removeEventListener("storage", updateUserData);
+      window.removeEventListener("artroom_profile_updated", onProfileUpdated);
+      window.removeEventListener("storage", onProfileUpdated);
       window.removeEventListener("openMobileMenu", handleOpenMobileMenu);
     };
   }, []);

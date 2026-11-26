@@ -6,9 +6,12 @@ import { usePathname } from "next/navigation";
 
 export default function LiveClock() {
   const pathname = usePathname();
+  const isAdmin = pathname.startsWith("/admin");
   const [time, setTime] = useState<Date | null>(null);
 
   useEffect(() => {
+    if (!isAdmin) return; // Public pages render NavbarLiveClock instead; avoid running an unused 1s timer
+
     const timer = setTimeout(() => {
       setTime(new Date());
     }, 0);
@@ -22,9 +25,9 @@ export default function LiveClock() {
       clearTimeout(timer);
       clearInterval(interval);
     };
-  }, []);
+  }, [isAdmin]);
 
-  if (!time) return null; // Avoid hydration mismatch
+  if (!isAdmin || !time) return null; // Avoid hydration mismatch and public-page work
 
   // Format date and time in Thai with Buddhist Era (Asia/Bangkok timezone)
   const formatThaiDate = (date: Date) => {
@@ -56,9 +59,6 @@ export default function LiveClock() {
       formattedDate = `${parts.join(" ")} พ.ศ. ${year}`;
     }
   }
-  
-  const isAdmin = pathname.startsWith("/admin");
-  if (!isAdmin) return null; // Public pages use unified header inside Navbar to prevent iOS overlap
   
   return (
     <div className="fixed top-0 left-0 right-0 w-full h-8 z-[60] bg-white text-gray-800 border-b border-gray-200">

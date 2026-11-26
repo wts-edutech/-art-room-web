@@ -23,7 +23,7 @@ export default function NewsSection({ featuredNews }: { featuredNews?: any }) {
       return;
     }
 
-    fetch(`/api/news?t=${Date.now()}`, { cache: "no-store" })
+    fetch(`/api/news`)
       .then((res) => (res.ok ? res.json() : []))
       .then((data) => {
         if (Array.isArray(data) && data.length > 0) {

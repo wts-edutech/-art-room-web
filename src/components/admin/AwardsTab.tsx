@@ -144,7 +144,7 @@ export default function AwardsTab() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/awards");
+      const res = await fetch("/api/awards?fresh=1", { cache: "no-store" });
       const data = await res.json();
       setAwards(Array.isArray(data) ? data : []);
     } catch (error) {
@@ -157,7 +157,7 @@ export default function AwardsTab() {
 
   const fetchStatus = async () => {
     try {
-      const res = await fetch("/api/awards/status");
+      const res = await fetch("/api/awards/status?fresh=1", { cache: "no-store" });
       const data = await res.json();
       if (data && typeof data.enabled === "boolean") {
         setIsAwardsEnabled(data.enabled);

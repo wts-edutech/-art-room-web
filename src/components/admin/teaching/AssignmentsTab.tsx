@@ -333,16 +333,18 @@ export default function AssignmentsTab({ onGoToGrading }: { onGoToGrading?: (ass
         maxScore: Number(maxScore) || 10,
         dueDate: dueDate || null,
         isActive,
-        attachmentUrl: attachmentUrl || null,
         attachmentName: attachmentName || null,
         attachmentSize: attachmentSize || null,
         attachmentType: attachmentType || null,
         externalLink: externalLink || null,
       };
 
-      // Avoid overwriting existing stored data/R2 image with the proxy URL when editing
-      if (!(editingId && typeof imageUrl === "string" && imageUrl.startsWith("/api/assignments/image"))) {
+      // Avoid overwriting existing stored data/R2 media with proxy URLs when editing
+      if (!(editingId && typeof imageUrl === "string" && imageUrl.includes("/api/assignments/image"))) {
         payload.imageUrl = imageUrl || null;
+      }
+      if (!(editingId && typeof attachmentUrl === "string" && attachmentUrl.includes("/api/assignments/image"))) {
+        payload.attachmentUrl = attachmentUrl || null;
       }
 
       const res = await fetch("/api/assignments", {

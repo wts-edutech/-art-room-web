@@ -66,9 +66,10 @@ export function LogoProvider({ children }: { children: React.ReactNode }) {
 
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchSettings = useCallback(async () => {
+  const fetchSettings = useCallback(async (forceFresh = false) => {
     try {
-      const res = await fetch(`/api/settings/logo?t=${Date.now()}`, { cache: "no-store" });
+      const url = forceFresh ? `/api/settings/logo?fresh=1&t=${Date.now()}` : `/api/settings/logo`;
+      const res = await fetch(url, forceFresh ? { cache: "no-store" } : undefined);
       if (res.ok) {
         const data: any = await res.json();
         const rawLogoUrl = data.logoUrl;
@@ -122,7 +123,7 @@ export function LogoProvider({ children }: { children: React.ReactNode }) {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(e.detail));
         } catch {}
       } else {
-        fetchSettings();
+        fetchSettings(true);
       }
     };
 
@@ -132,13 +133,15 @@ export function LogoProvider({ children }: { children: React.ReactNode }) {
     };
   }, [fetchSettings]);
 
+  const forceRefreshLogo = useCallback(() => fetchSettings(true), [fetchSettings]);
+
   return (
     <LogoContext.Provider
       value={{
         logoSettings,
         isLoading,
         updateLocalSettings,
-        refreshLogoSettings: fetchSettings,
+        refreshLogoSettings: forceRefreshLogo,
       }}
     >
       {children}

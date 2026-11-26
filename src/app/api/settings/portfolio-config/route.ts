@@ -3,6 +3,7 @@ export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { checkIsAdmin } from '@/lib/api-auth';
 import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getCacheHeaders } from '@/lib/media-response';
 import {
   PortfolioConfigSettings,
   DEFAULT_PORTFOLIO_CONFIG,
@@ -36,18 +37,22 @@ async function ensureSettingsTable(d1: any) {
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const headers = getCacheHeaders(request);
   try {
     const d1 = await getD1();
     if (!d1) {
-      return NextResponse.json(memoryConfig);
+      return NextResponse.json(memoryConfig, { headers });
     }
 
-    await ensureSettingsTable(d1);
-
-    const stmt = d1.prepare(`SELECT value FROM site_settings WHERE key = 'portfolio_config_v1'`);
-    const result: any =
-      typeof stmt.first === 'function' ? await stmt.first() : (await stmt.all?.())?.results?.[0];
+    let result: any = null;
+    try {
+      const stmt = d1.prepare(`SELECT value FROM site_settings WHERE key = 'portfolio_config_v1'`);
+      result =
+        typeof stmt.first === 'function' ? await stmt.first() : (await stmt.all?.())?.results?.[0];
+    } catch {
+      await ensureSettingsTable(d1);
+    }
 
     if (result?.value) {
       try {
@@ -61,10 +66,10 @@ export async function GET() {
       }
     }
 
-    return NextResponse.json(memoryConfig);
+    return NextResponse.json(memoryConfig, { headers });
   } catch (error) {
     console.error('GET /api/settings/portfolio-config error:', error);
-    return NextResponse.json(memoryConfig);
+    return NextResponse.json(memoryConfig, { headers });
   }
 }
 

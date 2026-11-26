@@ -38,7 +38,7 @@ export default function SiteLogoSettingsSection() {
   const fetchCurrentSettings = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/settings/logo");
+      const res = await fetch("/api/settings/logo?fresh=1", { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
         setSettings({

@@ -5,15 +5,18 @@ import { getDb } from '@/db';
 import { news } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { checkIsAdmin } from '@/lib/api-auth';
+import { fileToStoredMedia, getCacheHeaders, resolveR2Url } from '@/lib/media-response';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const db = getDb();
     const all = await db.select().from(news).orderBy(desc(news.createdAt));
-    return NextResponse.json(all, {
-      headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate',
-      },
+    const normalized = all.map((item) => ({
+      ...item,
+      imageUrl: resolveR2Url(item.imageUrl),
+    }));
+    return NextResponse.json(normalized, {
+      headers: getCacheHeaders(request),
     });
   } catch (error) {
     console.error("GET /api/news error:", error);
@@ -33,9 +36,8 @@ export async function POST(request: Request) {
     // Parse form data dynamically
     for (const [key, value] of formData.entries()) {
       if (value instanceof File && value.size > 0) {
-        const bytes = await value.arrayBuffer();
-        const base64 = Buffer.from(bytes).toString('base64');
-        newEntry[key === 'image' || key === 'coverImage' ? (key === 'coverImage' ? 'coverImageUrl' : 'imageUrl') : key] = `data:${value.type};base64,${base64}`;
+        const fieldName = key === 'image' || key === 'coverImage' ? (key === 'coverImage' ? 'coverImageUrl' : 'imageUrl') : key;
+        newEntry[fieldName] = await fileToStoredMedia(value, `news/${newEntry.id}/${fieldName}_${Date.now()}`);
       } else if (typeof value === 'string' && key !== 'image' && key !== 'coverImage') {
         newEntry[key] = value;
       }
@@ -71,9 +73,8 @@ export async function PUT(request: Request) {
     for (const [key, value] of formData.entries()) {
       if (key === 'id') continue;
       if (value instanceof File && value.size > 0) {
-        const bytes = await value.arrayBuffer();
-        const base64 = Buffer.from(bytes).toString('base64');
-        updateData[key === 'image' || key === 'coverImage' ? (key === 'coverImage' ? 'coverImageUrl' : 'imageUrl') : key] = `data:${value.type};base64,${base64}`;
+        const fieldName = key === 'image' || key === 'coverImage' ? (key === 'coverImage' ? 'coverImageUrl' : 'imageUrl') : key;
+        updateData[fieldName] = await fileToStoredMedia(value, `news/${id}/${fieldName}_${Date.now()}`);
       } else if (typeof value === 'string' && key !== 'image' && key !== 'coverImage') {
         updateData[key] = value;
       }

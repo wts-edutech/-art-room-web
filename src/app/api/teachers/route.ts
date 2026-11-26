@@ -3,6 +3,8 @@ export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { checkIsAdmin } from '@/lib/api-auth';
 import { getRequestContext } from '@cloudflare/next-on-pages';
+import { R2_PREFIX, offloadDataUrl } from '@/lib/r2-storage';
+import { getCacheHeaders, resolveR2Url } from '@/lib/media-response';
 
 export const DEFAULT_KRU_KAE = {
   id: "teacher-kae",
@@ -130,14 +132,15 @@ const DEFAULT_TEACHERS = [DEFAULT_KRU_KAE];
 async function getD1() {
   try {
     const ctx = getRequestContext();
-    return ctx?.env?.DB || null;
+    return (ctx?.env as any)?.DB || null;
   } catch {
     return null;
   }
 }
 
+let teachersTableEnsured = false;
 async function ensureTable(d1: any) {
-  if (!d1) return;
+  if (!d1 || teachersTableEnsured) return;
   try {
     await d1.prepare(`
       CREATE TABLE IF NOT EXISTS teachers (
@@ -161,18 +164,17 @@ async function ensureTable(d1: any) {
       )
     `).run();
 
-    // Migrate new columns if older table already exists
     try { await d1.prepare(`ALTER TABLE teachers ADD COLUMN education TEXT`).run(); } catch {}
     try { await d1.prepare(`ALTER TABLE teachers ADD COLUMN experience TEXT`).run(); } catch {}
     try { await d1.prepare(`ALTER TABLE teachers ADD COLUMN awards TEXT`).run(); } catch {}
     try { await d1.prepare(`ALTER TABLE teachers ADD COLUMN activity_images TEXT`).run(); } catch {}
     try { await d1.prepare(`ALTER TABLE teachers ADD COLUMN innovations TEXT`).run(); } catch {}
+    teachersTableEnsured = true;
   } catch (err) {
     console.warn("ensureTable teachers note:", err);
   }
 }
 
-// Safely parse JSON or return default
 function safeJsonParse(val: any, fallback: any = []) {
   if (!val) return fallback;
   if (typeof val === 'object') return val;
@@ -183,52 +185,121 @@ function safeJsonParse(val: any, fallback: any = []) {
   }
 }
 
-export async function GET() {
+function toLightMediaUrl(raw: any, proxyUrl: string): any {
+  if (!raw || typeof raw !== 'string') return raw;
+  if (raw.startsWith(R2_PREFIX)) return resolveR2Url(raw);
+  if (raw.startsWith('data:')) return proxyUrl;
+  return raw;
+}
+
+function lightenTeacherItem(item: any) {
+  const tid = encodeURIComponent(item.id || 'teacher-kae');
+  const awards = safeJsonParse(item.awards, DEFAULT_KRU_KAE.awards).map((a: any, idx: number) => {
+    const itemId = encodeURIComponent(String(a?.id ?? idx));
+    return {
+      ...a,
+      imageUrl: toLightMediaUrl(a?.imageUrl, `/api/teachers/image?id=${tid}&section=award&itemId=${itemId}&field=imageUrl`),
+      coverImage: toLightMediaUrl(a?.coverImage, `/api/teachers/image?id=${tid}&section=award&itemId=${itemId}&field=coverImage`),
+      images: Array.isArray(a?.images)
+        ? a.images.map((img: any, imgIdx: number) =>
+            toLightMediaUrl(img, `/api/teachers/image?id=${tid}&section=award&itemId=${itemId}&field=images&index=${imgIdx}`)
+          )
+        : a?.images,
+    };
+  });
+
+  const activityImages = safeJsonParse(item.activityImages, DEFAULT_KRU_KAE.activityImages).map((a: any, idx: number) => {
+    const itemId = encodeURIComponent(String(a?.id ?? idx));
+    return {
+      ...a,
+      imageUrl: toLightMediaUrl(a?.imageUrl, `/api/teachers/image?id=${tid}&section=activity&itemId=${itemId}`),
+    };
+  });
+
+  const innovations = safeJsonParse(item.innovations, DEFAULT_KRU_KAE.innovations).map((inno: any, idx: number) => {
+    const itemId = encodeURIComponent(String(inno?.id ?? idx));
+    return {
+      ...inno,
+      coverImageUrl: toLightMediaUrl(inno?.coverImageUrl, `/api/teachers/image?id=${tid}&section=innovation&itemId=${itemId}&field=coverImageUrl`),
+      pdfUrl: toLightMediaUrl(inno?.pdfUrl, `/api/teachers/image?id=${tid}&section=innovation&itemId=${itemId}&field=pdfUrl`),
+    };
+  });
+
+  return {
+    ...item,
+    imageUrl: toLightMediaUrl(item.imageUrl, `/api/teachers/image?id=${tid}&section=avatar`),
+    education: safeJsonParse(item.education, DEFAULT_KRU_KAE.education),
+    experience: safeJsonParse(item.experience, DEFAULT_KRU_KAE.experience),
+    awards,
+    activityImages,
+    innovations,
+  };
+}
+
+/** Resolve echoed /api/teachers/image or /api/media URLs back to existing stored values, and offload new data: URLs to R2 */
+async function resolveAndOffloadMedia(val: any, existingVal: any, r2KeyBase: string): Promise<any> {
+  if (!val || typeof val !== 'string') return val;
+  if (val.includes('/api/teachers/image')) {
+    return existingVal || val;
+  }
+  if (val.startsWith('/api/media?key=')) {
+    try {
+      const u = new URL(val, 'https://local.invalid');
+      const k = u.searchParams.get('key');
+      if (k) return `${R2_PREFIX}${k}`;
+    } catch {}
+    return existingVal || val;
+  }
+  if (val.startsWith('data:')) {
+    return offloadDataUrl(val, r2KeyBase);
+  }
+  return val;
+}
+
+const SELECT_TEACHERS_SQL = `
+  SELECT 
+    id, 
+    name, 
+    role, 
+    position, 
+    grades, 
+    specialties, 
+    bio, 
+    image_url as imageUrl, 
+    email, 
+    room_location as roomLocation, 
+    order_index as orderIndex, 
+    education,
+    experience,
+    awards,
+    activity_images as activityImages,
+    innovations,
+    created_at as createdAt
+  FROM teachers 
+  ORDER BY order_index ASC, created_at ASC
+`;
+
+export async function GET(request: Request) {
   try {
     const d1 = await getD1();
     if (!d1) {
-      return NextResponse.json(DEFAULT_TEACHERS);
+      return NextResponse.json(DEFAULT_TEACHERS, { headers: getCacheHeaders(request, true) });
     }
 
-    await ensureTable(d1);
-
-    const result = await d1.prepare(`
-      SELECT 
-        id, 
-        name, 
-        role, 
-        position, 
-        grades, 
-        specialties, 
-        bio, 
-        image_url as imageUrl, 
-        email, 
-        room_location as roomLocation, 
-        order_index as orderIndex, 
-        education,
-        experience,
-        awards,
-        activity_images as activityImages,
-        innovations,
-        created_at as createdAt
-      FROM teachers 
-      ORDER BY order_index ASC, created_at ASC
-    `).all();
+    let result;
+    try {
+      result = await d1.prepare(SELECT_TEACHERS_SQL).all();
+    } catch {
+      await ensureTable(d1);
+      result = await d1.prepare(SELECT_TEACHERS_SQL).all();
+    }
 
     if (!result || !result.results || result.results.length === 0) {
-      return NextResponse.json(DEFAULT_TEACHERS);
+      return NextResponse.json(DEFAULT_TEACHERS, { headers: getCacheHeaders(request, true) });
     }
 
-    const parsed = result.results.map((item: any) => ({
-      ...item,
-      education: safeJsonParse(item.education, DEFAULT_KRU_KAE.education),
-      experience: safeJsonParse(item.experience, DEFAULT_KRU_KAE.experience),
-      awards: safeJsonParse(item.awards, DEFAULT_KRU_KAE.awards),
-      activityImages: safeJsonParse(item.activityImages, DEFAULT_KRU_KAE.activityImages),
-      innovations: safeJsonParse(item.innovations, DEFAULT_KRU_KAE.innovations),
-    }));
-
-    return NextResponse.json(parsed);
+    const parsed = result.results.map((item: any) => lightenTeacherItem(item));
+    return NextResponse.json(parsed, { headers: getCacheHeaders(request, true) });
   } catch (error) {
     console.error("GET /api/teachers error:", error);
     return NextResponse.json(DEFAULT_TEACHERS);
@@ -302,20 +373,80 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'กรุณาระบุชื่อ-นามสกุล' }, { status: 400 });
     }
 
+    // Load existing row so proxy URLs echoed back by Admin preserve stored blobs/R2 refs
+    const existingRow: any = await d1
+      .prepare('SELECT image_url as imageUrl, awards, activity_images as activityImages, innovations FROM teachers WHERE id = ?')
+      .bind(id)
+      .first()
+      .catch(() => null);
+
+    const existingAwards = safeJsonParse(existingRow?.awards, []);
+    const existingActivities = safeJsonParse(existingRow?.activityImages, []);
+    const existingInnovations = safeJsonParse(existingRow?.innovations, []);
+
+    const stamp = Date.now();
     const role = String(data.role || 'หัวหน้ากลุ่มสาระการเรียนรู้ศิลปะ').trim();
     const position = String(data.position || 'ครูชำนาญการพิเศษ').trim();
     const grades = String(data.grades || '').trim();
     const specialties = String(data.specialties || '').trim();
     const bio = String(data.bio || '').trim();
-    const imageUrl = String(data.imageUrl || data.image || '').trim();
+    const rawImageUrl = String(data.imageUrl || data.image || '').trim();
+    const imageUrl = await resolveAndOffloadMedia(rawImageUrl, existingRow?.imageUrl, `teachers/${id}/avatar_${stamp}`);
     const email = String(data.email || '').trim();
     const roomLocation = String(data.roomLocation || '').trim();
     const orderIndex = Number(data.orderIndex) || 1;
     const education = typeof data.education === 'string' ? data.education : JSON.stringify(data.education || []);
     const experience = typeof data.experience === 'string' ? data.experience : JSON.stringify(data.experience || []);
-    const awards = typeof data.awards === 'string' ? data.awards : JSON.stringify(data.awards || []);
-    const activityImages = typeof data.activityImages === 'string' ? data.activityImages : JSON.stringify(data.activityImages || []);
-    const innovations = typeof data.innovations === 'string' ? data.innovations : JSON.stringify(data.innovations || []);
+
+    const incomingAwards = safeJsonParse(data.awards, []);
+    const processedAwards = await Promise.all(
+      incomingAwards.map(async (a: any, idx: number) => {
+        const prev = existingAwards.find((e: any, eIdx: number) => String(e?.id ?? eIdx) === String(a?.id ?? idx));
+        const aId = a?.id || `aw_${idx}`;
+        const nextImages = Array.isArray(a?.images)
+          ? await Promise.all(
+              a.images.map((img: any, imgIdx: number) =>
+                resolveAndOffloadMedia(img, prev?.images?.[imgIdx], `teachers/${id}/awards/${aId}_${stamp}_${imgIdx}`)
+              )
+            )
+          : a?.images;
+        return {
+          ...a,
+          imageUrl: await resolveAndOffloadMedia(a?.imageUrl, prev?.imageUrl, `teachers/${id}/awards/${aId}_img_${stamp}`),
+          coverImage: await resolveAndOffloadMedia(a?.coverImage, prev?.coverImage, `teachers/${id}/awards/${aId}_cov_${stamp}`),
+          images: nextImages,
+        };
+      })
+    );
+
+    const incomingActivities = safeJsonParse(data.activityImages, []);
+    const processedActivities = await Promise.all(
+      incomingActivities.map(async (a: any, idx: number) => {
+        const prev = existingActivities.find((e: any, eIdx: number) => String(e?.id ?? eIdx) === String(a?.id ?? idx));
+        const aId = a?.id || `act_${idx}`;
+        return {
+          ...a,
+          imageUrl: await resolveAndOffloadMedia(a?.imageUrl, prev?.imageUrl, `teachers/${id}/activities/${aId}_${stamp}`),
+        };
+      })
+    );
+
+    const incomingInnovations = safeJsonParse(data.innovations, []);
+    const processedInnovations = await Promise.all(
+      incomingInnovations.map(async (inno: any, idx: number) => {
+        const prev = existingInnovations.find((e: any, eIdx: number) => String(e?.id ?? eIdx) === String(inno?.id ?? idx));
+        const iId = inno?.id || `inno_${idx}`;
+        return {
+          ...inno,
+          coverImageUrl: await resolveAndOffloadMedia(inno?.coverImageUrl, prev?.coverImageUrl, `teachers/${id}/innovations/${iId}_cov_${stamp}`),
+          pdfUrl: await resolveAndOffloadMedia(inno?.pdfUrl, prev?.pdfUrl, `teachers/${id}/innovations/${iId}_pdf_${stamp}`),
+        };
+      })
+    );
+
+    const awardsJson = JSON.stringify(processedAwards);
+    const activityImagesJson = JSON.stringify(processedActivities);
+    const innovationsJson = JSON.stringify(processedInnovations);
     const createdAt = new Date().toISOString();
 
     await d1.prepare(`
@@ -323,10 +454,10 @@ export async function POST(request: Request) {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       id, name, role, position, grades, specialties, bio, imageUrl, email, roomLocation, orderIndex,
-      education, experience, awards, activityImages, innovations, createdAt
+      education, experience, awardsJson, activityImagesJson, innovationsJson, createdAt
     ).run();
 
-    return NextResponse.json({
+    const saved = lightenTeacherItem({
       id,
       name,
       role,
@@ -338,14 +469,15 @@ export async function POST(request: Request) {
       email,
       roomLocation,
       orderIndex,
-      education: safeJsonParse(education),
-      experience: safeJsonParse(experience),
-      awards: safeJsonParse(awards),
-      activityImages: safeJsonParse(activityImages),
-      innovations: safeJsonParse(innovations),
-      createdAt
-    }, { status: 201 });
+      education,
+      experience,
+      awards: awardsJson,
+      activityImages: activityImagesJson,
+      innovations: innovationsJson,
+      createdAt,
+    });
 
+    return NextResponse.json(saved, { status: 201 });
   } catch (error: any) {
     console.error("POST /api/teachers error:", error);
     return NextResponse.json({ error: error?.message || 'Failed to save teacher profile' }, { status: 500 });
@@ -353,7 +485,6 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
-  // Direct delegation to POST handles INSERT OR REPLACE cleanly
   return POST(request);
 }
 
