@@ -3,16 +3,34 @@ export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { lessons } from '@/db/schema';
-import { eq, desc, and } from 'drizzle-orm';
+import { eq, desc, and, sql } from 'drizzle-orm';
 import { checkIsAdmin } from '@/lib/api-auth';
+import { fileToStoredMedia, getCacheHeaders, resolveR2Url } from '@/lib/media-response';
 
 export async function GET(request: Request) {
+  const headers = getCacheHeaders(request, true);
   try {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type') || 'general';
 
     const db = getDb();
-    let query = db.select().from(lessons);
+    const selectFields = {
+      id: lessons.id,
+      title: lessons.title,
+      description: lessons.description,
+      category: lessons.category,
+      videoId: lessons.videoId,
+      type: lessons.type,
+      createdAt: lessons.createdAt,
+      views: lessons.views,
+      ratingSum: lessons.ratingSum,
+      ratingCount: lessons.ratingCount,
+      imageUrl: sql<string | null>`CASE
+        WHEN image_url IS NULL OR image_url = '' THEN NULL
+        WHEN image_url LIKE 'data:%' THEN 'has_blob'
+        ELSE image_url
+      END`.as('imageUrl'),
+    };
 
     const conditions = [];
     if (type && type !== 'all') {
@@ -20,23 +38,21 @@ export async function GET(request: Request) {
     }
 
     const all = conditions.length > 0
-      ? await query.where(and(...conditions)).orderBy(desc(lessons.createdAt))
-      : await query.orderBy(desc(lessons.createdAt));
+      ? await db.select(selectFields).from(lessons).where(and(...conditions)).orderBy(desc(lessons.createdAt))
+      : await db.select(selectFields).from(lessons).orderBy(desc(lessons.createdAt));
 
-    return NextResponse.json(all || [], {
-      headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-      }
-    });
+    const normalized = (all || []).map((item) => ({
+      ...item,
+      imageUrl:
+        item.imageUrl === 'has_blob'
+          ? `/api/media?type=lesson&id=${encodeURIComponent(item.id)}`
+          : resolveR2Url(item.imageUrl) || '',
+    }));
+
+    return NextResponse.json(normalized, { headers });
   } catch (error) {
     console.error("GET /api/lessons error:", error);
-    return NextResponse.json([], {
-      headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate',
-      }
-    });
+    return NextResponse.json([], { headers });
   }
 }
 
@@ -59,14 +75,13 @@ export async function POST(request: Request) {
     const image = formData.get('image') as File | null;
     let imageUrl = (formData.get('imageUrl') as string) || '';
     
+    const newId = Date.now().toString();
     if (image && image.size > 0) {
-      const bytes = await image.arrayBuffer();
-      const base64 = Buffer.from(bytes).toString('base64');
-      imageUrl = `data:${image.type};base64,${base64}`;
+      imageUrl = await fileToStoredMedia(image, `lessons/${newId}/img_${Date.now()}`);
     }
 
     const newEntry = {
-      id: Date.now().toString(),
+      id: newId,
       title,
       description,
       category,

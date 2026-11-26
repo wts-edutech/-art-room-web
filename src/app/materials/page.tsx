@@ -19,12 +19,12 @@ export default function MaterialsPage() {
   useEffect(() => {
     let isMounted = true;
 
-    // Fetch fresh database records with no-store to avoid stale data
+    // Fetch records leveraging Edge + browser HTTP cache for fast load
     Promise.all([
-      fetch("/api/lessons?type=all", { cache: "no-store" })
+      fetch("/api/lessons?type=all")
         .then((res) => res.json())
         .catch(() => []),
-      fetch("/api/downloads", { cache: "no-store" })
+      fetch("/api/downloads")
         .then((res) => res.json())
         .then((data) => {
           if (data && Array.isArray(data.downloads)) return data.downloads;

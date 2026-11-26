@@ -1,8 +1,32 @@
 export const runtime = 'edge';
 
 import { getRequestContext } from '@cloudflare/next-on-pages';
-import { R2_PREFIX } from '@/lib/r2-storage';
+import { R2_PREFIX, offloadDataUrl } from '@/lib/r2-storage';
 import { serveStoredMedia } from '@/lib/media-response';
+
+function scheduleAssignmentLazyOffload(
+  d1: any,
+  rawValue: any,
+  r2KeyBase: string,
+  columnName: 'image_url' | 'attachment_url',
+  id: string
+) {
+  if (!d1 || typeof rawValue !== 'string' || !rawValue.startsWith('data:')) return;
+  try {
+    const ctx = getRequestContext()?.ctx;
+    if (!ctx || typeof ctx.waitUntil !== 'function') return;
+    ctx.waitUntil(
+      (async () => {
+        try {
+          const ref = await offloadDataUrl(rawValue, r2KeyBase);
+          if (ref && ref.startsWith(R2_PREFIX)) {
+            await d1.prepare(`UPDATE assignments SET ${columnName} = ? WHERE id = ?`).bind(ref, id).run();
+          }
+        } catch {}
+      })()
+    );
+  } catch {}
+}
 
 export async function GET(request: Request) {
   try {
@@ -30,6 +54,7 @@ export async function GET(request: Request) {
 
     // Requesting attachment specifically
     if (field === 'attachment' && ass.attachmentUrl) {
+      scheduleAssignmentLazyOffload(d1, ass.attachmentUrl, `assignments/${id}/attachment`, 'attachment_url', id);
       const res = await serveStoredMedia(ass.attachmentUrl, request, {
         selfPath: '/api/assignments/image',
         fileName: ass.attachmentName || null,
@@ -39,6 +64,7 @@ export async function GET(request: Request) {
 
     // 1. Primary imageUrl
     if (ass.imageUrl) {
+      scheduleAssignmentLazyOffload(d1, ass.imageUrl, `assignments/${id}/image`, 'image_url', id);
       const res = await serveStoredMedia(ass.imageUrl, request, {
         selfPath: '/api/assignments/image',
       });
@@ -53,6 +79,7 @@ export async function GET(request: Request) {
         att.startsWith('data:image/') ||
         att.startsWith(R2_PREFIX);
       if (isImageAttachment) {
+        scheduleAssignmentLazyOffload(d1, att, `assignments/${id}/attachment`, 'attachment_url', id);
         const res = await serveStoredMedia(att, request, {
           selfPath: '/api/assignments/image',
         });

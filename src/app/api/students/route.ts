@@ -7,6 +7,7 @@ import { eq, sql } from 'drizzle-orm';
 import { checkIsAdmin } from '@/lib/api-auth';
 import { cookies } from 'next/headers';
 import { verifySessionToken } from '@/lib/auth-utils';
+import { resolveR2Url } from '@/lib/media-response';
 
 export async function GET(request: Request) {
   try {
@@ -26,10 +27,32 @@ export async function GET(request: Request) {
       const referer = request.headers.get('referer') || '';
       const isSameOriginApp = referer.includes('/submissions') || referer.includes('/admin') || referer.includes('/me') || referer.includes('/profile');
 
+      const singleFields = {
+        id: students.id,
+        name: students.name,
+        classroom: students.classroom,
+        gradeLevel: students.gradeLevel,
+        studentNumber: students.studentNumber,
+        academicYearId: students.academicYearId,
+        loginCount: students.loginCount,
+        lastLoginAt: students.lastLoginAt,
+        password: students.password,
+        avatar: sql<string | null>`CASE
+          WHEN avatar IS NULL OR avatar = '' THEN NULL
+          WHEN avatar LIKE 'data:%' THEN 'has_blob'
+          ELSE avatar
+        END`.as('avatar'),
+      };
+
       const student = id
-        ? await db.select().from(students).where(eq(students.id, id)).get()
-        : await db.select().from(students).where(eq(students.name, nameParam!.trim())).get();
+        ? await db.select(singleFields).from(students).where(eq(students.id, id)).get()
+        : await db.select(singleFields).from(students).where(eq(students.name, nameParam!.trim())).get();
       if (!student) return NextResponse.json(null);
+
+      const publicAvatar =
+        student.avatar === 'has_blob'
+          ? `/api/media?type=student&id=${encodeURIComponent(student.id)}`
+          : resolveR2Url(student.avatar) || student.avatar || null;
 
       const isSelf = session && (session.userId === student.id || session.name === student.name);
       if (!isAdmin && !isSelf && !isSameOriginApp) {
@@ -66,6 +89,7 @@ export async function GET(request: Request) {
 
       return NextResponse.json({
         ...student,
+        avatar: publicAvatar,
         password: (student.password && String(student.password).length > 0) ? 'CUSTOM_SET' : null,
         loginCount: student.loginCount || 0,
         lastLoginAt: student.lastLoginAt || null,
@@ -123,27 +147,39 @@ export async function GET(request: Request) {
       return NextResponse.json(lightList || []);
     }
 
-    const [all, allSubmissions, allQuizAttempts] = await Promise.all([
+    // Fast SQL GROUP BY aggregation using indexed student_id (avoids transferring all rows into JS)
+    const [all, subAgg, quizAgg] = await Promise.all([
       studentQuery,
-      db.select({ studentId: submissions.studentId, submittedAt: submissions.submittedAt }).from(submissions),
-      db.select({ studentId: quizAttempts.studentId, submittedAt: quizAttempts.submittedAt }).from(quizAttempts),
+      db
+        .select({
+          studentId: submissions.studentId,
+          count: sql<number>`count(*)`,
+          lastAt: sql<string | null>`max(${submissions.submittedAt})`,
+        })
+        .from(submissions)
+        .groupBy(submissions.studentId),
+      db
+        .select({
+          studentId: quizAttempts.studentId,
+          count: sql<number>`count(*)`,
+          lastAt: sql<string | null>`max(${quizAttempts.submittedAt})`,
+        })
+        .from(quizAttempts)
+        .groupBy(quizAttempts.studentId),
     ]);
 
-    // Build fast lookup maps for submissions and quizzes
     const subMap = new Map<string, { count: number; lastAt: string | null }>();
-    for (const sub of allSubmissions) {
-      if (!sub.studentId) continue;
-      const current = subMap.get(sub.studentId) || { count: 0, lastAt: null };
-      const latest = !current.lastAt || (sub.submittedAt && sub.submittedAt > current.lastAt) ? sub.submittedAt : current.lastAt;
-      subMap.set(sub.studentId, { count: current.count + 1, lastAt: latest });
+    for (const row of subAgg) {
+      if (row.studentId) {
+        subMap.set(row.studentId, { count: Number(row.count) || 0, lastAt: row.lastAt || null });
+      }
     }
 
     const quizMap = new Map<string, { count: number; lastAt: string | null }>();
-    for (const qa of allQuizAttempts) {
-      if (!qa.studentId) continue;
-      const current = quizMap.get(qa.studentId) || { count: 0, lastAt: null };
-      const latest = !current.lastAt || (qa.submittedAt && qa.submittedAt > current.lastAt) ? qa.submittedAt : current.lastAt;
-      quizMap.set(qa.studentId, { count: current.count + 1, lastAt: latest });
+    for (const row of quizAgg) {
+      if (row.studentId) {
+        quizMap.set(row.studentId, { count: Number(row.count) || 0, lastAt: row.lastAt || null });
+      }
     }
 
     let list = all || [];

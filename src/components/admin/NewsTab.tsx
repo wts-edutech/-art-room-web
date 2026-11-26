@@ -70,7 +70,7 @@ export default function NewsTab() {
   const fetchActivitiesData = async () => {
     setIsActivitiesLoading(true);
     try {
-      const res = await fetch("/api/activities");
+      const res = await fetch("/api/activities?fresh=1", { cache: "no-store" });
       const data = await res.json();
       setActivitiesList(Array.isArray(data) ? data : []);
     } catch (error) {

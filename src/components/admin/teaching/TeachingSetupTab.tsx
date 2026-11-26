@@ -56,7 +56,7 @@ export default function TeachingSetupTab() {
   const fetchSubjects = async () => {
     setIsLoadingSubjects(true);
     try {
-      const res = await fetch("/api/subjects");
+      const res = await fetch("/api/subjects?fresh=1", { cache: "no-store" });
       const data = await res.json();
       setSubjects(Array.isArray(data) ? data : []);
     } catch (e) {
@@ -69,7 +69,7 @@ export default function TeachingSetupTab() {
   const fetchClassrooms = async () => {
     setIsLoadingRooms(true);
     try {
-      const res = await fetch("/api/classrooms");
+      const res = await fetch("/api/classrooms?fresh=1", { cache: "no-store" });
       const data = await res.json();
       setClassrooms(Array.isArray(data) ? data : []);
     } catch (e) {

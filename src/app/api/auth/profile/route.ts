@@ -4,8 +4,22 @@ import { NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { students, comments } from '@/db/schema';
 import { eq } from 'drizzle-orm';
-import { cookies } from 'next/headers';
 import { getSession, getAdminSession } from '@/lib/api-auth';
+import { R2_PREFIX, offloadDataUrl } from '@/lib/r2-storage';
+import { resolveR2Url } from '@/lib/media-response';
+
+function toPublicStudentAvatar(rawAvatar: any, studentId?: string | null): string | null {
+  if (!rawAvatar) return null;
+  const val = String(rawAvatar).trim();
+  if (!val) return null;
+  if (val.startsWith('data:')) {
+    return studentId ? `/api/media?type=student&id=${encodeURIComponent(studentId)}` : val;
+  }
+  if (val.startsWith(R2_PREFIX)) {
+    return resolveR2Url(val);
+  }
+  return val;
+}
 
 export async function GET(request: Request) {
   try {
@@ -33,7 +47,7 @@ export async function GET(request: Request) {
         classroom: studentData?.classroom || '',
         gradeLevel: studentData?.gradeLevel || '',
         studentNumber: studentData?.studentNumber || null,
-        avatar: studentData?.avatar || null,
+        avatar: toPublicStudentAvatar(studentData?.avatar, studentSession.userId),
         hasCustomPassword: Boolean(studentData?.password && String(studentData.password).length > 0),
       } : null,
     });
@@ -87,6 +101,20 @@ export async function POST(request: Request) {
       passwordChanged = true;
     }
 
+    // Track resolved public avatar URL to return to client & comments
+    let resolvedPublicAvatar: string | undefined = avatar ? String(avatar).trim() : undefined;
+    if (resolvedPublicAvatar && resolvedPublicAvatar.startsWith('data:')) {
+      const offloaded = await offloadDataUrl(
+        resolvedPublicAvatar,
+        `students/${targetStudentId || 'guest'}/avatar_${Date.now()}`
+      );
+      resolvedPublicAvatar = toPublicStudentAvatar(offloaded, targetStudentId) || resolvedPublicAvatar;
+      // Store offloaded R2 ref in DB if student exists
+      if (targetStudentId) {
+        (body as any).__storedAvatar = offloaded;
+      }
+    }
+
     // If target student ID is known, update database
     if (targetStudentId) {
       try {
@@ -102,11 +130,17 @@ export async function POST(request: Request) {
             }
           }
           if (avatar !== undefined) {
-            updateFields.avatar = String(avatar).trim();
+            let dbAvatar = (body as any).__storedAvatar ?? String(avatar).trim();
+            if (dbAvatar.startsWith('/api/media?type=student') && existing.avatar) {
+              dbAvatar = existing.avatar;
+            }
+            updateFields.avatar = dbAvatar;
+            const commentAvatar = toPublicStudentAvatar(dbAvatar, targetStudentId) || dbAvatar;
+            resolvedPublicAvatar = commentAvatar;
             // Automatically sync all existing comments for this student across all discussion systems!
             try {
               await db.update(comments)
-                .set({ authorImage: String(avatar).trim() })
+                .set({ authorImage: commentAvatar })
                 .where(eq(comments.authorEmail, targetStudentId));
             } catch (cErr) {
               console.warn("Could not batch update comments avatar:", cErr);
@@ -136,7 +170,7 @@ export async function POST(request: Request) {
         displayName: displayName ? String(displayName).trim() : undefined,
         phone: phone ? String(phone).trim() : undefined,
         grade: grade ? String(grade).trim() : undefined,
-        avatar: avatar ? String(avatar).trim() : undefined,
+        avatar: resolvedPublicAvatar,
       },
     });
   } catch (error) {

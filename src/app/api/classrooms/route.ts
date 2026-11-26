@@ -5,8 +5,10 @@ import { getDb } from '@/db';
 import { classrooms } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { checkIsAdmin } from '@/lib/api-auth';
+import { getCacheHeaders } from '@/lib/media-response';
 
 export async function GET(request: Request) {
+  const headers = getCacheHeaders(request, true);
   try {
     const { searchParams } = new URL(request.url);
     const academicYearId = searchParams.get('academicYearId');
@@ -26,10 +28,10 @@ export async function GET(request: Request) {
     // Natural sort: e.g. ม.1/1, ม.1/2, ..., ม.1/10
     list.sort((a, b) => a.name.localeCompare(b.name, 'th', { numeric: true }));
 
-    return NextResponse.json(list);
+    return NextResponse.json(list, { headers });
   } catch (error) {
     console.error("GET /api/classrooms error:", error);
-    return NextResponse.json([]);
+    return NextResponse.json([], { headers });
   }
 }
 

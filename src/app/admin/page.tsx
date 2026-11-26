@@ -3,6 +3,7 @@
 import { swalAlert, swalConfirm } from "@/lib/swal";
 import { useState, useEffect, useMemo, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import dynamic from "next/dynamic";
 import { 
   BookOpen, 
   Award, 
@@ -39,31 +40,39 @@ import {
   FolderKanban
 } from "lucide-react";
 
-// Import tabs
+// Import default landing tab eagerly, lazy-load all other tabs on demand to cut initial /admin JS bundle
 import SubmissionsCenterTab from "@/components/admin/teaching/SubmissionsCenterTab";
-import TeachingSetupTab from "@/components/admin/teaching/TeachingSetupTab";
-import AssignmentsTab from "@/components/admin/teaching/AssignmentsTab";
-import GradingTab from "@/components/admin/teaching/GradingTab";
-import QuizzesTab from "@/components/admin/teaching/QuizzesTab";
-import ScorebookTab from "@/components/admin/teaching/ScorebookTab";
-import PortfoliosAdminTab from "@/components/admin/teaching/PortfoliosAdminTab";
-
-import AwardsTab from "@/components/admin/AwardsTab";
-import ArtworksTab from "@/components/admin/ArtworksTab";
-import NewsTab from "@/components/admin/NewsTab";
-import ActivitiesTab from "@/components/admin/ActivitiesTab";
-import StudentsTab from "@/components/admin/StudentsTab";
-import GuestsTab from "@/components/admin/GuestsTab";
-import TestimonialsTab from "@/components/admin/TestimonialsTab";
-import IdeasTab from "@/components/admin/IdeasTab";
-import TeachersTab from "@/components/admin/TeachersTab";
-import HeroButtonTab from "@/components/admin/HeroButtonTab";
-import CommentsModerationTab from "@/components/admin/CommentsModerationTab";
-import AdminSecurityTab from "@/components/admin/AdminSecurityTab";
-import DownloadsTab from "@/components/admin/DownloadsTab";
-import SiteLogoSettingsSection from "@/components/admin/SiteLogoSettingsSection";
-import MascotSettingsSection from "@/components/admin/MascotSettingsSection";
 import { useSiteLogo } from "@/context/LogoContext";
+
+const TabLoadingFallback = () => (
+  <div className="bg-white rounded-3xl p-10 border border-gray-200/80 shadow-2xs flex items-center justify-center gap-3 text-gray-500 text-sm font-medium">
+    <RefreshCw className="w-4 h-4 animate-spin text-orange-500" />
+    <span>กำลังโหลดโมดูลจัดการข้อมูล...</span>
+  </div>
+);
+
+const TeachingSetupTab = dynamic(() => import("@/components/admin/teaching/TeachingSetupTab"), { ssr: false, loading: TabLoadingFallback });
+const AssignmentsTab = dynamic(() => import("@/components/admin/teaching/AssignmentsTab"), { ssr: false, loading: TabLoadingFallback });
+const GradingTab = dynamic(() => import("@/components/admin/teaching/GradingTab"), { ssr: false, loading: TabLoadingFallback });
+const QuizzesTab = dynamic(() => import("@/components/admin/teaching/QuizzesTab"), { ssr: false, loading: TabLoadingFallback });
+const ScorebookTab = dynamic(() => import("@/components/admin/teaching/ScorebookTab"), { ssr: false, loading: TabLoadingFallback });
+const PortfoliosAdminTab = dynamic(() => import("@/components/admin/teaching/PortfoliosAdminTab"), { ssr: false, loading: TabLoadingFallback });
+
+const AwardsTab = dynamic(() => import("@/components/admin/AwardsTab"), { ssr: false, loading: TabLoadingFallback });
+const ArtworksTab = dynamic(() => import("@/components/admin/ArtworksTab"), { ssr: false, loading: TabLoadingFallback });
+const NewsTab = dynamic(() => import("@/components/admin/NewsTab"), { ssr: false, loading: TabLoadingFallback });
+const ActivitiesTab = dynamic(() => import("@/components/admin/ActivitiesTab"), { ssr: false, loading: TabLoadingFallback });
+const StudentsTab = dynamic(() => import("@/components/admin/StudentsTab"), { ssr: false, loading: TabLoadingFallback });
+const GuestsTab = dynamic(() => import("@/components/admin/GuestsTab"), { ssr: false, loading: TabLoadingFallback });
+const TestimonialsTab = dynamic(() => import("@/components/admin/TestimonialsTab"), { ssr: false, loading: TabLoadingFallback });
+const IdeasTab = dynamic(() => import("@/components/admin/IdeasTab"), { ssr: false, loading: TabLoadingFallback });
+const TeachersTab = dynamic(() => import("@/components/admin/TeachersTab"), { ssr: false, loading: TabLoadingFallback });
+const HeroButtonTab = dynamic(() => import("@/components/admin/HeroButtonTab"), { ssr: false, loading: TabLoadingFallback });
+const CommentsModerationTab = dynamic(() => import("@/components/admin/CommentsModerationTab"), { ssr: false, loading: TabLoadingFallback });
+const AdminSecurityTab = dynamic(() => import("@/components/admin/AdminSecurityTab"), { ssr: false, loading: TabLoadingFallback });
+const DownloadsTab = dynamic(() => import("@/components/admin/DownloadsTab"), { ssr: false, loading: TabLoadingFallback });
+const SiteLogoSettingsSection = dynamic(() => import("@/components/admin/SiteLogoSettingsSection"), { ssr: false, loading: TabLoadingFallback });
+const MascotSettingsSection = dynamic(() => import("@/components/admin/MascotSettingsSection"), { ssr: false, loading: TabLoadingFallback });
 
 type AdminTabKey = 
   | "submissionsCenter" 
@@ -245,7 +254,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     fetchVisitors();
-  }, [fetchVisitors, activeTab]);
+  }, [fetchVisitors]);
 
   const handleLogout = async () => {
     if (!(await swalConfirm("คุณต้องการออกจากระบบจัดการหลังบ้านใช่หรือไม่?"))) return;

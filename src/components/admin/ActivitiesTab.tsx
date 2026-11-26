@@ -238,7 +238,7 @@ export default function ActivitiesTab() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/activities");
+      const res = await fetch("/api/activities?fresh=1", { cache: "no-store" });
       const data = await res.json();
       setActivitiesList(Array.isArray(data) ? data : []);
     } catch (error) {
@@ -251,8 +251,8 @@ export default function ActivitiesTab() {
 
   useEffect(() => {
     fetchData();
-    // Load student roster for smart linking
-    fetch("/api/students")
+    // Load lightweight student roster for smart linking
+    fetch("/api/students?light=true")
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) setStudentsList(data);

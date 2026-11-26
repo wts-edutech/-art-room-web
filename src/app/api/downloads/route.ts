@@ -4,6 +4,8 @@ import { NextResponse } from 'next/server';
 import { checkIsAdmin } from '@/lib/api-auth';
 import { getRequestContext } from '@cloudflare/next-on-pages';
 import { extractGoogleDriveId } from '@/lib/image-utils';
+import { R2_PREFIX, offloadDataUrl } from '@/lib/r2-storage';
+import { getCacheHeaders, resolveR2Url } from '@/lib/media-response';
 
 const DEFAULT_DOWNLOADS = [
   {
@@ -101,8 +103,9 @@ async function getD1() {
   }
 }
 
+let downloadsTablesEnsured = false;
 async function ensureTables(d1: any) {
-  if (!d1) return;
+  if (!d1 || downloadsTablesEnsured) return;
   try {
     await d1.prepare(`
       CREATE TABLE IF NOT EXISTS downloads (
@@ -144,12 +147,35 @@ async function ensureTables(d1: any) {
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP
       )
     `).run();
+    downloadsTablesEnsured = true;
   } catch (err) {
     console.warn("ensureTables downloads note:", err);
   }
 }
 
-export async function GET() {
+const SELECT_DOWNLOADS_LIGHT_SQL = `
+  SELECT 
+    id, 
+    title, 
+    description, 
+    category, 
+    grade, 
+    file_name as fileName, 
+    file_size as fileSize, 
+    CASE WHEN file_url LIKE 'data:%' THEN 'has_blob' ELSE file_url END as fileUrl, 
+    CASE WHEN image_url LIKE 'data:%' THEN 'has_blob' ELSE image_url END as imageUrl,
+    topic,
+    media_type as mediaType,
+    content,
+    downloads_count as downloadsCount, 
+    order_index as orderIndex, 
+    created_at as createdAt
+  FROM downloads 
+  ORDER BY order_index ASC, created_at DESC
+`;
+
+export async function GET(request: Request) {
+  const headers = getCacheHeaders(request);
   try {
     const d1 = await getD1();
     let gradeSettings = { ...memoryGradeSettings };
@@ -158,88 +184,69 @@ export async function GET() {
       return NextResponse.json({
         downloads: DEFAULT_DOWNLOADS,
         gradeSettings
-      });
+      }, { headers });
     }
 
-    await ensureTables(d1);
-
-    // Fetch grade settings
-    const settingsStmt = d1.prepare(`
-      SELECT value FROM site_settings WHERE key = 'downloads_grade_settings'
-    `);
-    const settingsRow: any = typeof settingsStmt.first === 'function' ? await settingsStmt.first() : (await settingsStmt.all?.())?.results?.[0];
-
-    if (settingsRow?.value) {
-      try {
-        gradeSettings = { ...DEFAULT_GRADE_SETTINGS, ...JSON.parse(settingsRow.value) };
-        memoryGradeSettings = gradeSettings;
-      } catch {}
+    let result: any = null;
+    try {
+      const [settingsRow, dlRes] = await Promise.all([
+        d1.prepare(`SELECT value FROM site_settings WHERE key = 'downloads_grade_settings'`).first().catch(() => null),
+        d1.prepare(SELECT_DOWNLOADS_LIGHT_SQL).all(),
+      ]);
+      if (settingsRow?.value) {
+        try {
+          gradeSettings = { ...DEFAULT_GRADE_SETTINGS, ...JSON.parse(settingsRow.value) };
+          memoryGradeSettings = gradeSettings;
+        } catch {}
+      }
+      result = dlRes;
+    } catch {
+      await ensureTables(d1);
+      result = await d1.prepare(SELECT_DOWNLOADS_LIGHT_SQL).all();
     }
-
-    // Fetch downloads
-    const result = await d1.prepare(`
-      SELECT 
-        id, 
-        title, 
-        description, 
-        category, 
-        grade, 
-        file_name as fileName, 
-        file_size as fileSize, 
-        file_url as fileUrl, 
-        image_url as imageUrl,
-        topic,
-        media_type as mediaType,
-        content,
-        downloads_count as downloadsCount, 
-        order_index as orderIndex, 
-        created_at as createdAt
-      FROM downloads 
-      ORDER BY order_index ASC, created_at DESC
-    `).all();
-
-    const noCacheHeaders = {
-      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-      'Pragma': 'no-cache',
-      'Expires': '0',
-    };
 
     if (!result || !result.results || result.results.length === 0) {
       return NextResponse.json({
         downloads: DEFAULT_DOWNLOADS,
         gradeSettings
-      }, { headers: noCacheHeaders });
+      }, { headers });
     }
 
     const sanitizedDownloads = (result.results || []).map((row: any) => {
-      let img = row.imageUrl;
+      const did = encodeURIComponent(row.id);
+      let img = row.imageUrl === 'has_blob'
+        ? `/api/media?type=download&id=${did}&field=image`
+        : resolveR2Url(row.imageUrl);
+
       if (img && (img.includes('drive.google.com') || img.includes('googleusercontent.com'))) {
         const driveId = extractGoogleDriveId(img);
         if (driveId) {
           img = `https://lh3.googleusercontent.com/d/${driveId}=w800`;
         }
       }
+
+      const fileUrl = row.fileUrl === 'has_blob'
+        ? `/api/media?type=download&id=${did}&field=file`
+        : (resolveR2Url(row.fileUrl) || row.fileUrl);
+
       return {
         ...row,
         imageUrl: img,
+        fileUrl,
       };
     });
 
     return NextResponse.json({
       downloads: sanitizedDownloads,
       gradeSettings
-    }, { headers: noCacheHeaders });
+    }, { headers });
 
   } catch (error) {
     console.error("GET /api/downloads error:", error);
     return NextResponse.json({
       downloads: DEFAULT_DOWNLOADS,
       gradeSettings: memoryGradeSettings
-    }, {
-      headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate',
-      }
-    });
+    }, { headers });
   }
 }
 
@@ -336,9 +343,31 @@ export async function POST(request: Request) {
     const grade = String(body.grade || 'all').trim();
     const fileName = String(body.fileName || `${title}.pdf`).trim();
     const fileSize = String(body.fileSize || '1.5 MB').trim();
-    const fileUrl = String(body.fileUrl || '').trim();
+    let fileUrl = String(body.fileUrl || '').trim();
     let imageUrl = body.imageUrl ? String(body.imageUrl).trim() : null;
-    if (imageUrl && (imageUrl.includes('drive.google.com') || imageUrl.includes('googleusercontent.com'))) {
+
+    // Preserve stored D1/R2 media value if Admin echoes back our /api/media proxy URL
+    if (fileUrl.startsWith('/api/media?') || (imageUrl && imageUrl.startsWith('/api/media?'))) {
+      const existingMedia: any = await d1
+        .prepare('SELECT file_url AS fileUrl, image_url AS imageUrl FROM downloads WHERE id = ?')
+        .bind(id)
+        .first();
+      if (existingMedia) {
+        if (fileUrl.startsWith('/api/media?') && existingMedia.fileUrl) {
+          fileUrl = existingMedia.fileUrl;
+        }
+        if (imageUrl && imageUrl.startsWith('/api/media?') && existingMedia.imageUrl) {
+          imageUrl = existingMedia.imageUrl;
+        }
+      }
+    }
+
+    if (fileUrl.startsWith('data:')) {
+      fileUrl = await offloadDataUrl(fileUrl, `downloads/${id}/file_${Date.now()}`);
+    }
+    if (imageUrl && imageUrl.startsWith('data:')) {
+      imageUrl = await offloadDataUrl(imageUrl, `downloads/${id}/img_${Date.now()}`);
+    } else if (imageUrl && (imageUrl.includes('drive.google.com') || imageUrl.includes('googleusercontent.com'))) {
       const driveId = extractGoogleDriveId(imageUrl);
       if (driveId) {
         imageUrl = `https://lh3.googleusercontent.com/d/${driveId}=w800`;
@@ -410,9 +439,31 @@ export async function PUT(request: Request) {
     const grade = String(body.grade || 'all').trim();
     const fileName = String(body.fileName || '').trim();
     const fileSize = String(body.fileSize || '1.0 MB').trim();
-    const fileUrl = String(body.fileUrl || '').trim();
+    let fileUrl = String(body.fileUrl || '').trim();
     let imageUrl = body.imageUrl ? String(body.imageUrl).trim() : null;
-    if (imageUrl && (imageUrl.includes('drive.google.com') || imageUrl.includes('googleusercontent.com'))) {
+
+    // Preserve stored D1/R2 media value if Admin echoes back our /api/media proxy URL
+    if (fileUrl.startsWith('/api/media?') || (imageUrl && imageUrl.startsWith('/api/media?'))) {
+      const existingMedia: any = await d1
+        .prepare('SELECT file_url AS fileUrl, image_url AS imageUrl FROM downloads WHERE id = ?')
+        .bind(id)
+        .first();
+      if (existingMedia) {
+        if (fileUrl.startsWith('/api/media?') && existingMedia.fileUrl) {
+          fileUrl = existingMedia.fileUrl;
+        }
+        if (imageUrl && imageUrl.startsWith('/api/media?') && existingMedia.imageUrl) {
+          imageUrl = existingMedia.imageUrl;
+        }
+      }
+    }
+
+    if (fileUrl.startsWith('data:')) {
+      fileUrl = await offloadDataUrl(fileUrl, `downloads/${id}/file_${Date.now()}`);
+    }
+    if (imageUrl && imageUrl.startsWith('data:')) {
+      imageUrl = await offloadDataUrl(imageUrl, `downloads/${id}/img_${Date.now()}`);
+    } else if (imageUrl && (imageUrl.includes('drive.google.com') || imageUrl.includes('googleusercontent.com'))) {
       const driveId = extractGoogleDriveId(imageUrl);
       if (driveId) {
         imageUrl = `https://lh3.googleusercontent.com/d/${driveId}=w800`;

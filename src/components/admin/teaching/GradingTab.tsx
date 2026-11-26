@@ -1,7 +1,7 @@
 "use client";
 
 import { swalAlert } from "@/lib/swal";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { 
   CheckCircle2, 
@@ -60,6 +60,7 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
   const [isAnnotating, setIsAnnotating] = useState(false);
   const [pendingAnnotations, setPendingAnnotations] = useState<Record<number, string | null>>({});
   const [gradingActiveImgIdx, setGradingActiveImgIdx] = useState(0);
+  const initialLoadedAssIdRef = useRef<string | null>(null);
 
   const fetchInitialData = async () => {
     setIsLoading(true);
@@ -82,6 +83,9 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
       setStudents(Array.isArray(dataStudents) ? dataStudents : []);
 
       const targetAssId = selectedAssignmentId || (assList.length > 0 ? assList[0].id : "");
+      if (targetAssId) {
+        initialLoadedAssIdRef.current = targetAssId;
+      }
       if (assList.length > 0 && !selectedAssignmentId) {
         setSelectedAssignmentId(targetAssId);
       }
@@ -159,8 +163,13 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
   }, []);
 
   useEffect(() => {
+    if (!selectedAssignmentId) return;
+    if (initialLoadedAssIdRef.current === selectedAssignmentId) {
+      initialLoadedAssIdRef.current = null;
+      return;
+    }
     fetchSubmissions(true);
-  }, [selectedAssignmentId, assignments.length]);
+  }, [selectedAssignmentId]);
 
   const getAssignmentGrade = (a: any): string => {
     const firstRoom = Array.isArray(a?.classroomsList) && a.classroomsList.length > 0 ? String(a.classroomsList[0]) : "";

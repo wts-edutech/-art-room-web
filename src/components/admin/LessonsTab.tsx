@@ -23,7 +23,7 @@ export default function LessonsTab() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/lessons");
+      const res = await fetch("/api/lessons?fresh=1", { cache: "no-store" });
       const data = await res.json();
       setLessons(Array.isArray(data) ? data : []);
     } catch (error) {

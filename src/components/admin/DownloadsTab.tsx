@@ -163,7 +163,7 @@ export default function DownloadsTab() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/downloads");
+      const res = await fetch("/api/downloads?fresh=1", { cache: "no-store" });
       const data = await res.json();
       if (data) {
         if (Array.isArray(data.downloads)) {
