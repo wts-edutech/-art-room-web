@@ -16,13 +16,45 @@ import {
 import { checkIsAdmin } from '@/lib/api-auth';
 import { asc, desc } from 'drizzle-orm';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     if (!(await checkIsAdmin())) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { searchParams } = new URL(request.url);
+    const submissionsOnly = searchParams.get('submissionsOnly') === '1';
+
     const db = getDb();
+
+    // Lightweight refresh mode: only fetch submissions (avoids re-scanning ~2,900 students every refresh)
+    if (submissionsOnly) {
+      const allSubmissions = await db
+        .select({
+          id: submissions.id,
+          assignmentId: submissions.assignmentId,
+          studentId: submissions.studentId,
+          classroom: submissions.classroom,
+          score: submissions.score,
+          status: submissions.status,
+          submittedAt: submissions.submittedAt,
+        })
+        .from(submissions)
+        .orderBy(desc(submissions.submittedAt));
+
+      return NextResponse.json(
+        {
+          submissions: allSubmissions || [],
+          submissionsOnly: true,
+          serverTime: new Date().toISOString(),
+        },
+        {
+          headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+          },
+        }
+      );
+    }
 
     // Fetch only the minimal columns needed for the assignment scorebook
     const [

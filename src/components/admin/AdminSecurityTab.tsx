@@ -133,13 +133,15 @@ export default function AdminSecurityTab() {
     fetchSessions();
 
     const interval = setInterval(() => {
-      fetchSessions();
-    }, 8000);
+      if (document.visibilityState === "visible") {
+        fetchSessions();
+      }
+    }, 30_000);
 
     const onFocus = () => {
-      fetchSessions();
-      fetchMasterPin();
-      fetchTeachingPassword();
+      if (document.visibilityState === "visible") {
+        fetchSessions();
+      }
     };
 
     window.addEventListener("focus", onFocus);

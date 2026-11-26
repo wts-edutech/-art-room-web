@@ -111,7 +111,7 @@ function extractGradePrefix(roomOrGrade?: string | null): string {
 export default function ScorebookTab() {
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isLive, setIsLive] = useState(true);
+  const [isLive, setIsLive] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<string>("");
 
   const [students, setStudents] = useState<StudentRow[]>([]);
@@ -219,22 +219,44 @@ export default function ScorebookTab() {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 12000);
     try {
-      const res = await fetch(`/api/admin/scorebook?_t=${Date.now()}`, {
+      // On silent/background refresh, only reload submissions to avoid re-reading ~2,900 students in D1
+      const url = silent
+        ? `/api/admin/scorebook?submissionsOnly=1&_t=${Date.now()}`
+        : `/api/admin/scorebook?_t=${Date.now()}`;
+      const res = await fetch(url, {
         cache: "no-store",
         signal: controller.signal,
       });
       if (!res.ok) return;
       const data: any = await res.json();
 
-      const stuList: StudentRow[] = Array.isArray(data.students) ? data.students : [];
-      const assList: AssignmentCol[] = Array.isArray(data.assignments) ? data.assignments : [];
       const subList: SubmissionItem[] = Array.isArray(data.submissions) ? data.submissions : [];
-      setStudents(stuList);
-      setAssignments(assList);
-      setQuizzes(Array.isArray(data.quizzes) ? data.quizzes : []);
       setSubmissions(subList);
-      setQuizAttempts(Array.isArray(data.quizAttempts) ? data.quizAttempts : []);
-      setSubjects(Array.isArray(data.subjects) ? data.subjects : []);
+
+      if (!data.submissionsOnly) {
+        const stuList: StudentRow[] = Array.isArray(data.students) ? data.students : [];
+        const assList: AssignmentCol[] = Array.isArray(data.assignments) ? data.assignments : [];
+        setStudents(stuList);
+        setAssignments(assList);
+        setQuizzes(Array.isArray(data.quizzes) ? data.quizzes : []);
+        setQuizAttempts(Array.isArray(data.quizAttempts) ? data.quizAttempts : []);
+        setSubjects(Array.isArray(data.subjects) ? data.subjects : []);
+
+        setSelectedClassroom((prev) => {
+          if (prev) return prev;
+          const taughtSet = new Set<string>();
+          for (const a of assList) {
+            if (a.isActive === false) continue;
+            for (const r of parseJsonArray(a.classrooms)) taughtSet.add(r);
+          }
+          const rooms = (
+            taughtSet.size > 0
+              ? Array.from(taughtSet)
+              : Array.from(new Set(stuList.map((s) => (s.classroom || "").trim()).filter(Boolean)))
+          ).sort(compareClassrooms);
+          return rooms[0] || "all";
+        });
+      }
 
       setLastUpdated(
         new Date().toLocaleTimeString("th-TH", {
@@ -243,21 +265,6 @@ export default function ScorebookTab() {
           second: "2-digit",
         })
       );
-
-      setSelectedClassroom((prev) => {
-        if (prev) return prev;
-        const taughtSet = new Set<string>();
-        for (const a of assList) {
-          if (a.isActive === false) continue;
-          for (const r of parseJsonArray(a.classrooms)) taughtSet.add(r);
-        }
-        const rooms = (
-          taughtSet.size > 0
-            ? Array.from(taughtSet)
-            : Array.from(new Set(stuList.map((s) => (s.classroom || "").trim()).filter(Boolean)))
-        ).sort(compareClassrooms);
-        return rooms[0] || "all";
-      });
     } catch (err) {
       console.error("Scorebook fetch error:", err);
     } finally {
@@ -271,14 +278,14 @@ export default function ScorebookTab() {
     fetchScorebook(false);
   }, [fetchScorebook]);
 
-  // Real-time Live Polling every 6 seconds when tab is visible
+  // Optional Live Polling every 60 seconds when enabled & tab is visible (preserves D1 daily read quota)
   useEffect(() => {
     if (!isLive) return;
     const timer = setInterval(() => {
       if (document.visibilityState === "visible") {
         fetchScorebook(true);
       }
-    }, 6000);
+    }, 60_000);
     return () => clearInterval(timer);
   }, [isLive, fetchScorebook]);
 
@@ -698,7 +705,7 @@ export default function ScorebookTab() {
                       isLive ? "bg-emerald-500 animate-pulse" : "bg-gray-400"
                     }`}
                   />
-                  {isLive ? "LIVE อัปเดตอัตโนมัติ (6 วิ)" : "หยุดอัปเดตชั่วคราว"}
+                  {isLive ? "LIVE อัปเดตอัตโนมัติ (60 วิ)" : "โหมดประหยัดโควต้า (กดรีเฟรชเอง)"}
                 </span>
               </div>
               <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-2">
