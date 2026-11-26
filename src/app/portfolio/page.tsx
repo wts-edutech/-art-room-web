@@ -388,6 +388,11 @@ function PortfolioBuilderContent() {
   const [state, setState] = useState<PortfolioState>(DEFAULT_STATE);
   const [currentStudentId, setCurrentStudentId] = useState<string>("");
   const [currentStudentName, setCurrentStudentName] = useState<string>("");
+  const [currentClassroom, setCurrentClassroom] = useState<string>("");
+  const [portfolioStatus, setPortfolioStatus] = useState<"draft" | "submitted" | "approved" | "revision">("draft");
+  const [teacherFeedback, setTeacherFeedback] = useState<string>("");
+  const [isAdminViewing, setIsAdminViewing] = useState<boolean>(false);
+  const [isSavingServer, setIsSavingServer] = useState<boolean>(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const [activeEntryId, setActiveEntryId] = useState<string | null>(null);
   const [openToolbarDropdown, setOpenToolbarDropdown] = useState<"layout" | "fit" | null>(null);
@@ -409,54 +414,113 @@ function PortfolioBuilderContent() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [pendingUploadCallback, setPendingUploadCallback] = useState<((dataUrl: string) => void) | null>(null);
 
-  // Load saved state scoped strictly to the logged-in student ID
+  // Load saved state scoped strictly to the logged-in student ID (or query ?studentId= for Admin)
   useEffect(() => {
-    try {
-      const studentId = (localStorage.getItem("artroom_student_id") || "").trim();
-      const name = (localStorage.getItem("artroom_author_name") || "").trim();
-      const email = localStorage.getItem("artroom_author_email") || "";
-      const phone = localStorage.getItem("artroom_phone") || "";
-      const avatar = localStorage.getItem("artroom_avatar") || "";
+    let isMounted = true;
+    const initPortfolio = async () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const queryStudentId = (params.get("studentId") || "").trim();
+        const role = localStorage.getItem("artroom_role") || "";
+        const isTeacherOrAdmin = role === "admin" || role === "teacher";
 
-      setCurrentStudentId(studentId);
-      setCurrentStudentName(name);
+        const localStudentId = (localStorage.getItem("artroom_student_id") || "").trim();
+        const targetStudentId = queryStudentId || localStudentId;
+        const name = (localStorage.getItem("artroom_author_name") || "").trim();
+        const classroom = (localStorage.getItem("artroom_classroom") || localStorage.getItem("artroom_student_grade") || "").trim();
+        const email = localStorage.getItem("artroom_author_email") || "";
+        const phone = localStorage.getItem("artroom_phone") || "";
+        const avatar = localStorage.getItem("artroom_avatar") || "";
 
-      const storageKey = getStudentStorageKey(studentId);
-      const saved = localStorage.getItem(storageKey);
+        if (queryStudentId && queryStudentId !== localStudentId) {
+          setIsAdminViewing(true);
+        } else if (isTeacherOrAdmin && queryStudentId) {
+          setIsAdminViewing(true);
+        }
 
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        setState((prev) => ({
-          ...prev,
-          ...parsed,
-          sections: { ...prev.sections, ...(parsed.sections || {}) },
-          profile: {
-            ...prev.profile,
-            ...(parsed.profile || {}),
-            fullNameTh: parsed.profile?.fullNameTh || name || prev.profile.fullNameTh,
-          },
-        }));
-      } else {
-        // Initialize fresh portfolio for this logged-in student
-        setState((prev) => ({
-          ...prev,
-          profile: {
-            ...prev.profile,
-            fullNameTh: name || prev.profile.fullNameTh,
-            email: email || (studentId ? `${studentId}@wts.ac.th` : prev.profile.email),
-            phone: phone || prev.profile.phone,
-            photoUrl:
-              avatar && (avatar.startsWith("data:") || avatar.startsWith("http") || avatar.startsWith("/"))
-                ? avatar
-                : prev.profile.photoUrl,
-          },
-        }));
+        setCurrentStudentId(targetStudentId);
+        setCurrentStudentName(name);
+        setCurrentClassroom(classroom);
+
+        // 1. Try loading from D1 Server API (/api/portfolios) first
+        let loadedFromServer = false;
+        if (targetStudentId) {
+          try {
+            const res = await fetch(`/api/portfolios?studentId=${encodeURIComponent(targetStudentId)}`, {
+              cache: "no-store",
+            });
+            if (res.ok) {
+              const data: any = await res.json();
+              if (data?.record && data.record.portfolioJson) {
+                const parsedServer = JSON.parse(data.record.portfolioJson);
+                if (isMounted) {
+                  setState((prev) => ({
+                    ...prev,
+                    ...parsedServer,
+                    sections: { ...prev.sections, ...(parsedServer.sections || {}) },
+                    profile: {
+                      ...prev.profile,
+                      ...(parsedServer.profile || {}),
+                    },
+                  }));
+                  if (data.record.studentName) setCurrentStudentName(data.record.studentName);
+                  if (data.record.classroom) setCurrentClassroom(data.record.classroom);
+                  if (data.record.status) setPortfolioStatus(data.record.status);
+                  if (data.record.teacherFeedback) setTeacherFeedback(data.record.teacherFeedback);
+                  loadedFromServer = true;
+                }
+              }
+            }
+          } catch (err) {
+            console.warn("Could not fetch server portfolio, falling back to localStorage:", err);
+          }
+        }
+
+        // 2. Fallback to localStorage if not found on server yet
+        if (!loadedFromServer && isMounted) {
+          const storageKey = getStudentStorageKey(targetStudentId);
+          const saved = localStorage.getItem(storageKey);
+
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            setState((prev) => ({
+              ...prev,
+              ...parsed,
+              sections: { ...prev.sections, ...(parsed.sections || {}) },
+              profile: {
+                ...prev.profile,
+                ...(parsed.profile || {}),
+                fullNameTh: parsed.profile?.fullNameTh || name || prev.profile.fullNameTh,
+              },
+            }));
+          } else {
+            // Initialize fresh portfolio for this logged-in student
+            setState((prev) => ({
+              ...prev,
+              profile: {
+                ...prev.profile,
+                fullNameTh: name || prev.profile.fullNameTh,
+                email: email || (targetStudentId ? `${targetStudentId}@wts.ac.th` : prev.profile.email),
+                phone: phone || prev.profile.phone,
+                photoUrl:
+                  avatar && (avatar.startsWith("data:") || avatar.startsWith("http") || avatar.startsWith("/"))
+                    ? avatar
+                    : prev.profile.photoUrl,
+              },
+            }));
+          }
+        }
+      } catch (e) {
+        console.error("Failed to load portfolio state:", e);
+      } finally {
+        if (isMounted) setIsLoaded(true);
       }
-    } catch (e) {
-      console.error("Failed to load portfolio state:", e);
-    } finally {
-      setIsLoaded(true);
-    }
+    };
+
+    initPortfolio();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Auto-save whenever state changes (isolated per student ID)
@@ -562,13 +626,68 @@ function PortfolioBuilderContent() {
     }
   };
 
-  const handleSaveManual = () => {
+  const saveToBackend = async (nextStatus?: "draft" | "submitted") => {
+    if (!currentStudentId) return false;
+    setIsSavingServer(true);
+    try {
+      const res = await fetch("/api/portfolios", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId: currentStudentId,
+          studentName: state.profile.fullNameTh || currentStudentName,
+          classroom: currentClassroom,
+          status: nextStatus || portfolioStatus,
+          portfolio: state,
+        }),
+      });
+      if (res.ok && nextStatus) {
+        setPortfolioStatus(nextStatus);
+      }
+      return res.ok;
+    } catch (err) {
+      console.warn("Failed to sync portfolio to server:", err);
+      return false;
+    } finally {
+      setIsSavingServer(false);
+    }
+  };
+
+  const handleSaveManual = async () => {
     try {
       const storageKey = getStudentStorageKey(currentStudentId);
       localStorage.setItem(storageKey, JSON.stringify(state));
-      swalSuccess("บันทึกแฟ้มสะสมผลงานแล้ว!", `ข้อมูลแฟ้มสะสมผลงานของ ${currentStudentName || "คุณ"} ถูกบันทึกเรียบร้อย`, 1600);
-    } catch {
-      swalToast("บันทึกไม่สำเร็จ รูปภาพอาจมีขนาดใหญ่เกินไป", "error");
+    } catch {}
+    const ok = await saveToBackend();
+    if (ok) {
+      swalSuccess(
+        "บันทึกแฟ้มสะสมผลงานแล้ว!",
+        `ซิงค์ข้อมูลแฟ้มสะสมผลงานของ ${state.profile.fullNameTh || currentStudentName || "คุณ"} เข้าสู่ระบบเรียบร้อย`,
+        1600
+      );
+    } else {
+      swalSuccess(
+        "บันทึกแฟ้มสะสมผลงานแล้ว!",
+        `ข้อมูลแฟ้มสะสมผลงานของ ${currentStudentName || "คุณ"} ถูกบันทึกไว้ในเครื่องเรียบร้อย`,
+        1600
+      );
+    }
+  };
+
+  const handleSubmitForTeacherReview = async () => {
+    try {
+      const storageKey = getStudentStorageKey(currentStudentId);
+      localStorage.setItem(storageKey, JSON.stringify(state));
+    } catch {}
+    const ok = await saveToBackend("submitted");
+    if (ok) {
+      swalSuccess(
+        "ส่งแฟ้มให้คุณครูตรวจเรียบร้อย!",
+        "คุณครูผู้สอนสามารถเปิดดูและให้คำแนะนำแฟ้มสะสมผลงานของคุณผ่านระบบหลังบ้านได้ทันที",
+        2000
+      );
+    } else {
+      swalToast("ไม่สามารถส่งข้อมูลไปยังเซิร์ฟเวอร์ได้ กรุณาลองอีกครั้ง", "error");
     }
   };
 
@@ -1470,13 +1589,27 @@ function PortfolioBuilderContent() {
             <span>สร้างไฟล์ PDF</span>
           </button>
 
+          {!isAdminViewing && (
+            <button
+              type="button"
+              onClick={handleSubmitForTeacherReview}
+              disabled={isSavingServer}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs transition-all cursor-pointer disabled:opacity-50 no-min-h"
+              title="ส่งแฟ้มสะสมผลงานให้คุณครูตรวจในระบบหลังบ้าน"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">ส่งให้ครูตรวจ</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={handleSaveManual}
-            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-[#0d9488] hover:bg-[#0f766e] text-white font-bold text-xs shadow-xs transition-all cursor-pointer no-min-h"
+            disabled={isSavingServer}
+            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-[#0d9488] hover:bg-[#0f766e] text-white font-bold text-xs shadow-xs transition-all cursor-pointer disabled:opacity-50 no-min-h"
           >
             <Save className="w-3.5 h-3.5" />
-            <span>บันทึกแฟ้ม</span>
+            <span>{isSavingServer ? "กำลังบันทึก..." : "บันทึกแฟ้ม"}</span>
           </button>
         </div>
       </header>
@@ -1816,8 +1949,55 @@ function PortfolioBuilderContent() {
           onClick={() => setActiveEntryId(null)}
           className="flex-1 overflow-y-auto p-3 sm:p-6 lg:p-8 space-y-5 print:p-0 print:overflow-visible print:space-y-0"
         >
-          {/* Warning Banners (Hidden on Print) */}
+          {/* Warning & Teacher Feedback Banners (Hidden on Print) */}
           <div className="max-w-[820px] mx-auto space-y-2.5 print:hidden">
+            {isAdminViewing && (
+              <div className="p-3.5 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs flex items-center justify-between gap-2.5 shadow-xs">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-indigo-600 shrink-0" />
+                  <span>
+                    <strong>โหมดครูผู้สอน / แอดมิน:</strong> กำลังเปิดดูและแก้ไขแฟ้มสะสมผลงานของรหัสนักเรียน{" "}
+                    <strong>{currentStudentId}</strong> ({state.profile.fullNameTh})
+                  </span>
+                </div>
+                <Link
+                  href="/admin?tab=portfolios"
+                  className="px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] shrink-0"
+                >
+                  กลับหน้าแอดมิน
+                </Link>
+              </div>
+            )}
+
+            {(teacherFeedback || portfolioStatus === "approved" || portfolioStatus === "revision") && (
+              <div
+                className={`p-3.5 rounded-xl border text-xs flex items-start gap-2.5 shadow-xs ${
+                  portfolioStatus === "approved"
+                    ? "bg-emerald-50 border-emerald-200 text-emerald-900"
+                    : portfolioStatus === "revision"
+                    ? "bg-rose-50 border-rose-200 text-rose-900"
+                    : "bg-blue-50 border-blue-200 text-blue-900"
+                }`}
+              >
+                <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <div className="font-bold">
+                    สถานะการตรวจจากครูผู้สอน:{" "}
+                    {portfolioStatus === "approved"
+                      ? "✅ ตรวจผ่านแล้ว"
+                      : portfolioStatus === "revision"
+                      ? "⚠️ ให้แก้ไขเพิ่มเติม"
+                      : "⏳ ส่งให้ครูตรวจแล้ว"}
+                  </div>
+                  {teacherFeedback && (
+                    <div>
+                      <strong>ข้อเสนอแนะจากครู:</strong> &quot;{teacherFeedback}&quot;
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {missingTitleWarnings.length > 0 && (
               <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2.5 shadow-xs">
                 <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />

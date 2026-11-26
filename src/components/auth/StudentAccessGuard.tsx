@@ -51,12 +51,22 @@ export default function StudentAccessGuard({
 
         if (!isMounted) return;
 
-        if (serverAuth.authenticated && serverAuth.user?.role === "student") {
+        if (serverAuth.authenticated && (serverAuth.user?.role === "student" || serverAuth.isAdmin)) {
           setAuthState({
             isLoading: false,
             isStudent: true,
             isGuest: false,
-            studentName: serverAuth.user.name,
+            studentName: serverAuth.user?.name || "ครูผู้สอน / แอดมิน",
+          });
+          return;
+        }
+
+        if (serverAuth.isAdmin) {
+          setAuthState({
+            isLoading: false,
+            isStudent: true,
+            isGuest: false,
+            studentName: "ครูผู้สอน / แอดมิน",
           });
           return;
         }
@@ -76,7 +86,7 @@ export default function StudentAccessGuard({
         const studentId = localStorage.getItem("artroom_student_id");
         const authorName = localStorage.getItem("artroom_author_name");
 
-        if (localRole === "student" && studentId) {
+        if ((localRole === "student" && studentId) || localRole === "admin" || localRole === "teacher") {
           setAuthState({
             isLoading: false,
             isStudent: true,

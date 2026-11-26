@@ -35,7 +35,8 @@ import {
   ChevronDown,
   Edit3,
   RefreshCw,
-  Table2
+  Table2,
+  FolderKanban
 } from "lucide-react";
 
 // Import tabs
@@ -45,6 +46,7 @@ import AssignmentsTab from "@/components/admin/teaching/AssignmentsTab";
 import GradingTab from "@/components/admin/teaching/GradingTab";
 import QuizzesTab from "@/components/admin/teaching/QuizzesTab";
 import ScorebookTab from "@/components/admin/teaching/ScorebookTab";
+import PortfoliosAdminTab from "@/components/admin/teaching/PortfoliosAdminTab";
 
 import AwardsTab from "@/components/admin/AwardsTab";
 import ArtworksTab from "@/components/admin/ArtworksTab";
@@ -70,6 +72,7 @@ type AdminTabKey =
   | "grading" 
   | "quizzes" 
   | "scorebook"
+  | "portfolios"
   | "downloads" 
   | "artworks" 
   | "awards" 
@@ -114,7 +117,8 @@ const ADMIN_CATEGORIES: AdminMenuCategory[] = [
       { key: "grading", label: "3. ตรวจงาน & ให้คะแนน", sublabel: "Evaluation & Scoring", icon: BookCheck },
       { key: "quizzes", label: "4. แบบทดสอบก่อนเรียน", sublabel: "Pre-tests & Reports", icon: HelpCircle },
       { key: "scorebook", label: "5. ตารางรวมคะแนนรายบุคคล", sublabel: "Real-time Scorebook & Excel", icon: Table2, badge: "LIVE", isSpecial: true },
-      { key: "downloads", label: "6. สื่อการสอน & ใบงาน (AI)", sublabel: "AI Material Studio & Files", icon: FolderDown, isSpecial: true },
+      { key: "portfolios", label: "6. จัดการแฟ้มสะสมผลงาน (Portfolio)", sublabel: "ตรวจพอร์ตนักเรียน & พิมพ์ PDF", icon: FolderKanban, badge: "NEW", isSpecial: true },
+      { key: "downloads", label: "7. สื่อการสอน & ใบงาน (AI)", sublabel: "AI Material Studio & Files", icon: FolderDown, isSpecial: true },
     ]
   },
   {
@@ -160,6 +164,7 @@ const TEACHING_ALLOWED_KEYS: AdminTabKey[] = [
   "grading",
   "quizzes",
   "scorebook",
+  "portfolios",
 ];
 
 export default function AdminPage() {
@@ -785,6 +790,7 @@ export default function AdminPage() {
                 )}
                 {activeTab === "quizzes" && <QuizzesTab />}
                 {activeTab === "scorebook" && <ScorebookTab />}
+                {activeTab === "portfolios" && <PortfoliosAdminTab />}
                 {activeTab === "downloads" && <DownloadsTab />}
                 {activeTab === "awards" && <AwardsTab />}
                 {activeTab === "artworks" && <ArtworksTab />}
