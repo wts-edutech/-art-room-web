@@ -153,9 +153,10 @@ export async function GET(request: Request) {
 
     const enriched = list.map(item => {
       const count = Math.max(Number(item.imageCount) || 0, item.hasImage ? 1 : 0);
+      const ver = item.updatedAt ? `&v=${encodeURIComponent(item.updatedAt)}` : '';
       let imageList: string[] = [];
       if (count > 0) {
-        imageList = Array.from({ length: count }, (_, idx) => `/api/submissions/image?id=${encodeURIComponent(item.id)}&index=${idx}`);
+        imageList = Array.from({ length: count }, (_, idx) => `/api/submissions/image?id=${encodeURIComponent(item.id)}&index=${idx}${ver}`);
       }
 
       return {

@@ -71,10 +71,10 @@ export async function GET(request: Request) {
       updatedAt: submissions.updatedAt,
     };
 
-    // 1. Fetch raw datasets in parallel (select light columns for students & submissions)
+    // 1. Fetch raw datasets in parallel (select light columns for students, assignments & submissions)
     const [subList, assList, studList, quizList, attemptList] = await Promise.all([
       db.select(subSelectFields).from(submissions).orderBy(desc(submissions.submittedAt)),
-      db.select().from(assignments),
+      db.select({ id: assignments.id, title: assignments.title, subjectId: assignments.subjectId, maxScore: assignments.maxScore }).from(assignments),
       db.select({ id: students.id, studentNumber: students.studentNumber, classroom: students.classroom }).from(students),
       db.select().from(quizzes),
       db.select().from(quizAttempts).orderBy(desc(quizAttempts.submittedAt)),
@@ -89,9 +89,10 @@ export async function GET(request: Request) {
       const ass = assignmentMap.get(sub.assignmentId);
       const student = studentMap.get(sub.studentId);
       const count = Math.max(Number(sub.imageCount) || 0, sub.hasImage ? 1 : 0);
+      const ver = sub.updatedAt ? `&v=${encodeURIComponent(sub.updatedAt)}` : '';
       let imagesList: string[] = [];
       if (count > 0) {
-        imagesList = Array.from({ length: count }, (_, idx) => `/api/submissions/image?id=${encodeURIComponent(sub.id)}&index=${idx}`);
+        imagesList = Array.from({ length: count }, (_, idx) => `/api/submissions/image?id=${encodeURIComponent(sub.id)}&index=${idx}${ver}`);
       }
 
       return {

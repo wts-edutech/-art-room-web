@@ -36,6 +36,8 @@ export interface ImageEditorModalProps {
   onSave: (editedFile: File) => void;
   /** Optional handler when modal auto-opens on upload and student chooses to keep full original image */
   onSkipCrop?: (rawFile: File) => void;
+  /** Optional fallback if browser cannot natively decode raw image format (e.g. certain HEIC files) */
+  onDecodeError?: (rawFile: File) => void;
   title?: string;
   defaultAspectRatio?: AspectPreset;
   /** Automatically detect worksheet/paper bounds and trim surrounding desk background on open */
@@ -81,15 +83,15 @@ function getTargetRatioValue(preset: AspectPreset, stageW: number, stageH: numbe
 
 /**
  * Smart client-side detector that finds a paper worksheet / drawing canvas
- * photographed on a desk (wood, grey table, green cutting mat, dark floor, etc.)
- * while preserving safe margins so student names/scores on paper edges are never clipped.
+ * photographed on a desk (wood, black/grey table, green cutting mat, floor, etc.),
+ * including angled/trapezoid perspective wedges, while keeping titles and bottom student names intact.
  */
-function detectArtworkBoundsFromCanvas(sourceCanvas: HTMLCanvasElement): { rect: CropRect; detected: boolean } {
+export function detectArtworkBoundsFromCanvas(sourceCanvas: HTMLCanvasElement): { rect: CropRect; detected: boolean } {
   try {
-    const maxSample = 280;
+    const maxSample = 360;
     const scale = Math.min(1, maxSample / Math.max(sourceCanvas.width, sourceCanvas.height));
-    const w = Math.max(32, Math.round(sourceCanvas.width * scale));
-    const h = Math.max(32, Math.round(sourceCanvas.height * scale));
+    const w = Math.max(48, Math.round(sourceCanvas.width * scale));
+    const h = Math.max(48, Math.round(sourceCanvas.height * scale));
 
     const sampleCanvas = document.createElement("canvas");
     sampleCanvas.width = w;
@@ -101,7 +103,9 @@ function detectArtworkBoundsFromCanvas(sourceCanvas: HTMLCanvasElement): { rect:
     const data = ctx.getImageData(0, 0, w, h).data;
 
     const getPixel = (x: number, y: number) => {
-      const idx = (y * w + x) * 4;
+      const cx = Math.max(0, Math.min(w - 1, x));
+      const cy = Math.max(0, Math.min(h - 1, y));
+      const idx = (cy * w + cx) * 4;
       const r = data[idx];
       const g = data[idx + 1];
       const b = data[idx + 2];
@@ -110,208 +114,103 @@ function detectArtworkBoundsFromCanvas(sourceCanvas: HTMLCanvasElement): { rect:
       return { r, g, b, lum, sat };
     };
 
-    const isBrightPaper = (p: { lum: number; sat: number }) =>
-      (p.lum >= 176 && p.sat <= 42) || (p.lum >= 205 && p.sat <= 58);
+    const isPaperPixel = (p: { lum: number; sat: number }) =>
+      (p.lum >= 152 && p.sat <= 46) || (p.lum >= 195 && p.sat <= 62);
 
-    // Check if the central area actually contains bright worksheet/drawing paper
+    // Check if central region contains worksheet/drawing paper
     let centerPaperHits = 0;
     let centerTotal = 0;
-    for (let y = Math.floor(h * 0.22); y <= Math.floor(h * 0.78); y += 2) {
-      for (let x = Math.floor(w * 0.22); x <= Math.floor(w * 0.78); x += 2) {
+    for (let y = Math.floor(h * 0.2); y <= Math.floor(h * 0.8); y += 2) {
+      for (let x = Math.floor(w * 0.2); x <= Math.floor(w * 0.8); x += 2) {
         centerTotal++;
-        if (isBrightPaper(getPixel(x, y))) centerPaperHits++;
+        if (isPaperPixel(getPixel(x, y))) centerPaperHits++;
       }
     }
-    const hasPaperCore = centerTotal > 0 && centerPaperHits / centerTotal >= 0.22;
+    const hasPaperCore = centerTotal > 0 && centerPaperHits / centerTotal >= 0.2;
 
-    const medianColor = (coords: Array<[number, number]>) => {
-      const rs: number[] = [];
-      const gs: number[] = [];
-      const bs: number[] = [];
-      let paperCount = 0;
-      for (const [x, y] of coords) {
-        const p = getPixel(x, y);
-        rs.push(p.r);
-        gs.push(p.g);
-        bs.push(p.b);
-        if (isBrightPaper(p)) paperCount++;
+    const scanSide = (coordsForStep: (step: number) => Array<[number, number]>, maxSteps: number): number => {
+      const p0 = [...coordsForStep(0), ...coordsForStep(1)].map(([x, y]) => getPixel(x, y));
+      if (p0.length === 0) return 0;
+
+      const initialPaperFrac = p0.filter(isPaperPixel).length / p0.length;
+      // Already clean paper all along this edge (no desk strip or corner wedge)
+      if (initialPaperFrac >= 0.88) return 0;
+
+      // Model desk background color from non-paper pixels near outer edge (steps 0..2)
+      const deskSamples = [0, 1, 2]
+        .flatMap((s) => coordsForStep(s))
+        .map(([x, y]) => getPixel(x, y))
+        .filter((p) => !isPaperPixel(p));
+
+      if (deskSamples.length === 0) return 0;
+
+      const rs = deskSamples.map((c) => c.r).sort((a, b) => a - b);
+      const gs = deskSamples.map((c) => c.g).sort((a, b) => a - b);
+      const bs = deskSamples.map((c) => c.b).sort((a, b) => a - b);
+      const mid = Math.floor(deskSamples.length / 2);
+      const bg = { r: rs[mid], g: gs[mid], b: bs[mid] };
+      const bgLum = 0.299 * bg.r + 0.587 * bg.g + 0.114 * bg.b;
+
+      // If there is no paper core AND outer border isn't uniform desk/dark border, don't guess-crop digital art
+      if (!hasPaperCore) {
+        const uniformCount = p0.filter(
+          (p) => Math.sqrt((p.r - bg.r) ** 2 + (p.g - bg.g) ** 2 + (p.b - bg.b) ** 2) <= 42
+        ).length;
+        if (uniformCount / p0.length < 0.72) return 0;
       }
-      rs.sort((a, b) => a - b);
-      gs.sort((a, b) => a - b);
-      bs.sort((a, b) => a - b);
-      const mid = Math.floor(rs.length / 2);
-      return {
-        r: rs[mid] ?? 128,
-        g: gs[mid] ?? 128,
-        b: bs[mid] ?? 128,
-        paperRatio: coords.length ? paperCount / coords.length : 0,
-      };
+
+      let best = 0;
+      for (let step = 0; step < maxSteps; step++) {
+        const pts = coordsForStep(step).map(([x, y]) => getPixel(x, y));
+        const len = Math.max(1, pts.length);
+        const paperFrac = pts.filter(isPaperPixel).length / len;
+        const deskFrac =
+          pts.filter((p) => {
+            if (isPaperPixel(p)) return false;
+            const dist = Math.sqrt((p.r - bg.r) ** 2 + (p.g - bg.g) ** 2 + (p.b - bg.b) ** 2);
+            return dist <= 58 || (bgLum < 98 && p.lum < 112);
+          }).length / len;
+
+        // Stop as soon as >=90% of scanline is clean paper (eliminating angled desk wedges) OR desk disappears
+        if ((hasPaperCore && paperFrac >= 0.9) || deskFrac <= 0.05) {
+          best = step;
+          break;
+        }
+        best = step + 1;
+      }
+      return best;
     };
 
-    const colorDist = (p: { r: number; g: number; b: number }, bg: { r: number; g: number; b: number }) =>
-      Math.sqrt((p.r - bg.r) ** 2 + (p.g - bg.g) ** 2 + (p.b - bg.b) ** 2);
-
-    const yStart = Math.floor(h * 0.1);
-    const yEnd = Math.ceil(h * 0.9);
-    const xStart = Math.floor(w * 0.1);
-    const xEnd = Math.ceil(w * 0.9);
-
-    // 1. Scan Left border inward
-    const leftEdgeCoords: Array<[number, number]> = [];
-    for (let y = yStart; y < yEnd; y++) leftEdgeCoords.push([1, y]);
-    const leftBg = medianColor(leftEdgeCoords);
-    let leftPx = 0;
-    if (leftBg.paperRatio < 0.5) {
-      let refBg = { r: leftBg.r, g: leftBg.g, b: leftBg.b };
-      const maxX = Math.floor(w * 0.38);
-      for (let x = 0; x < maxX; x++) {
-        let bgMatches = 0;
-        let paperMatches = 0;
-        let count = 0;
-        let sumR = 0, sumG = 0, sumB = 0;
-        for (let y = yStart; y < yEnd; y += 2) {
-          const p = getPixel(x, y);
-          count++;
-          if (isBrightPaper(p)) paperMatches++;
-          if (colorDist(p, refBg) <= 48 || colorDist(p, leftBg) <= 44 || (leftBg.r + leftBg.g + leftBg.b < 180 && p.lum < 65)) {
-            bgMatches++;
-            sumR += p.r; sumG += p.g; sumB += p.b;
-          }
-        }
-        const paperFrac = paperMatches / Math.max(1, count);
-        const bgFrac = bgMatches / Math.max(1, count);
-        if ((hasPaperCore && paperFrac >= 0.30) || bgFrac < 0.54) break;
-        leftPx = x + 1;
-        if (bgMatches > 4) {
-          refBg = {
-            r: Math.round(refBg.r * 0.6 + (sumR / bgMatches) * 0.4),
-            g: Math.round(refBg.g * 0.6 + (sumG / bgMatches) * 0.4),
-            b: Math.round(refBg.b * 0.6 + (sumB / bgMatches) * 0.4),
-          };
-        }
-      }
+    const ys: number[] = [];
+    const xs: number[] = [];
+    for (let i = 2; i <= 58; i++) {
+      ys.push(Math.floor((h * i) / 60));
+      xs.push(Math.floor((w * i) / 60));
     }
 
-    // 2. Scan Right border inward
-    const rightEdgeCoords: Array<[number, number]> = [];
-    for (let y = yStart; y < yEnd; y++) rightEdgeCoords.push([w - 2, y]);
-    const rightBg = medianColor(rightEdgeCoords);
-    let rightPx = w - 1;
-    if (rightBg.paperRatio < 0.5) {
-      let refBg = { r: rightBg.r, g: rightBg.g, b: rightBg.b };
-      const minX = Math.ceil(w * 0.62);
-      for (let x = w - 1; x >= minX; x--) {
-        let bgMatches = 0;
-        let paperMatches = 0;
-        let count = 0;
-        let sumR = 0, sumG = 0, sumB = 0;
-        for (let y = yStart; y < yEnd; y += 2) {
-          const p = getPixel(x, y);
-          count++;
-          if (isBrightPaper(p)) paperMatches++;
-          if (colorDist(p, refBg) <= 48 || colorDist(p, rightBg) <= 44 || (rightBg.r + rightBg.g + rightBg.b < 180 && p.lum < 65)) {
-            bgMatches++;
-            sumR += p.r; sumG += p.g; sumB += p.b;
-          }
-        }
-        const paperFrac = paperMatches / Math.max(1, count);
-        const bgFrac = bgMatches / Math.max(1, count);
-        if ((hasPaperCore && paperFrac >= 0.30) || bgFrac < 0.54) break;
-        rightPx = x - 1;
-        if (bgMatches > 4) {
-          refBg = {
-            r: Math.round(refBg.r * 0.6 + (sumR / bgMatches) * 0.4),
-            g: Math.round(refBg.g * 0.6 + (sumG / bgMatches) * 0.4),
-            b: Math.round(refBg.b * 0.6 + (sumB / bgMatches) * 0.4),
-          };
-        }
-      }
-    }
+    let leftPx = scanSide((dx) => ys.map((y) => [dx, y]), Math.floor(w * 0.38));
+    let rightInPx = scanSide((dx) => ys.map((y) => [w - 1 - dx, y]), Math.floor(w * 0.38));
+    let topPx = scanSide((dy) => xs.map((x) => [x, dy]), Math.floor(h * 0.35));
+    let botInPx = scanSide((dy) => xs.map((x) => [x, h - 1 - dy]), Math.floor(h * 0.30));
 
-    // 3. Scan Top border inward
-    const topEdgeCoords: Array<[number, number]> = [];
-    for (let x = xStart; x < xEnd; x++) topEdgeCoords.push([x, 1]);
-    const topBg = medianColor(topEdgeCoords);
-    let topPx = 0;
-    if (topBg.paperRatio < 0.5) {
-      let refBg = { r: topBg.r, g: topBg.g, b: topBg.b };
-      const maxY = Math.floor(h * 0.36);
-      for (let y = 0; y < maxY; y++) {
-        let bgMatches = 0;
-        let paperMatches = 0;
-        let count = 0;
-        let sumR = 0, sumG = 0, sumB = 0;
-        for (let x = xStart; x < xEnd; x += 2) {
-          const p = getPixel(x, y);
-          count++;
-          if (isBrightPaper(p)) paperMatches++;
-          if (colorDist(p, refBg) <= 48 || colorDist(p, topBg) <= 44 || (topBg.r + topBg.g + topBg.b < 180 && p.lum < 65)) {
-            bgMatches++;
-            sumR += p.r; sumG += p.g; sumB += p.b;
-          }
-        }
-        const paperFrac = paperMatches / Math.max(1, count);
-        const bgFrac = bgMatches / Math.max(1, count);
-        if ((hasPaperCore && paperFrac >= 0.30) || bgFrac < 0.54) break;
-        topPx = y + 1;
-        if (bgMatches > 4) {
-          refBg = {
-            r: Math.round(refBg.r * 0.6 + (sumR / bgMatches) * 0.4),
-            g: Math.round(refBg.g * 0.6 + (sumG / bgMatches) * 0.4),
-            b: Math.round(refBg.b * 0.6 + (sumB / bgMatches) * 0.4),
-          };
-        }
-      }
-    }
+    // Shave +0.4% inward on trimmed sides so zero 1-2px dark desk seam remains
+    const shaveX = Math.max(1, Math.round(w * 0.004));
+    const shaveY = Math.max(1, Math.round(h * 0.004));
+    if (leftPx > 0) leftPx = Math.min(Math.floor(w * 0.38), leftPx + shaveX);
+    if (rightInPx > 0) rightInPx = Math.min(Math.floor(w * 0.38), rightInPx + shaveX);
+    if (topPx > 0) topPx = Math.min(Math.floor(h * 0.35), topPx + shaveY);
+    if (botInPx > 0) botInPx = Math.min(Math.floor(h * 0.30), botInPx + shaveY);
 
-    // 4. Scan Bottom border inward (more conservative so bottom student name is never clipped)
-    const bottomEdgeCoords: Array<[number, number]> = [];
-    for (let x = xStart; x < xEnd; x++) bottomEdgeCoords.push([x, h - 2]);
-    const bottomBg = medianColor(bottomEdgeCoords);
-    let bottomPx = h - 1;
-    if (bottomBg.paperRatio < 0.45) {
-      let refBg = { r: bottomBg.r, g: bottomBg.g, b: bottomBg.b };
-      const minY = Math.ceil(h * 0.66);
-      for (let y = h - 1; y >= minY; y--) {
-        let bgMatches = 0;
-        let paperMatches = 0;
-        let count = 0;
-        let sumR = 0, sumG = 0, sumB = 0;
-        for (let x = xStart; x < xEnd; x += 2) {
-          const p = getPixel(x, y);
-          count++;
-          if (isBrightPaper(p)) paperMatches++;
-          if (colorDist(p, refBg) <= 46 || colorDist(p, bottomBg) <= 42 || (bottomBg.r + bottomBg.g + bottomBg.b < 180 && p.lum < 65)) {
-            bgMatches++;
-            sumR += p.r; sumG += p.g; sumB += p.b;
-          }
-        }
-        const paperFrac = paperMatches / Math.max(1, count);
-        const bgFrac = bgMatches / Math.max(1, count);
-        if ((hasPaperCore && paperFrac >= 0.26) || bgFrac < 0.58) break;
-        bottomPx = y - 1;
-        if (bgMatches > 4) {
-          refBg = {
-            r: Math.round(refBg.r * 0.6 + (sumR / bgMatches) * 0.4),
-            g: Math.round(refBg.g * 0.6 + (sumG / bgMatches) * 0.4),
-            b: Math.round(refBg.b * 0.6 + (sumB / bgMatches) * 0.4),
-          };
-        }
-      }
-    }
-
-    // Add 1.4% outward breathing margin so paper borders and student names stay safe
-    const pad = 0.014;
-    const nx1 = leftPx > 3 ? Math.max(0, leftPx / w - pad) : 0;
-    const ny1 = topPx > 3 ? Math.max(0, topPx / h - pad) : 0;
-    const nx2 = rightPx < w - 4 ? Math.min(1, (rightPx + 1) / w + pad) : 1;
-    const ny2 = bottomPx < h - 4 ? Math.min(1, (bottomPx + 1) / h + pad) : 1;
+    const nx1 = leftPx / w;
+    const ny1 = topPx / h;
+    const nx2 = (w - rightInPx) / w;
+    const ny2 = (h - botInPx) / h;
 
     const cw = nx2 - nx1;
     const ch = ny2 - ny1;
     const totalTrimmed = nx1 + ny1 + (1 - nx2) + (1 - ny2);
 
-    if (cw >= 0.38 && ch >= 0.38 && totalTrimmed >= 0.035) {
+    if (cw >= 0.38 && ch >= 0.38 && totalTrimmed >= 0.015) {
       return {
         rect: { x: nx1, y: ny1, w: cw, h: ch },
         detected: true,
@@ -330,6 +229,7 @@ export default function ImageEditorModal({
   onClose,
   onSave,
   onSkipCrop,
+  onDecodeError,
   title = "ครอบตัดขอบโต๊ะ & ปรับภาพผลงาน",
   defaultAspectRatio = "free",
   autoDetectArtwork = true,
@@ -465,7 +365,9 @@ export default function ImageEditorModal({
     };
     img.onerror = () => {
       // Fallback safely if browser cannot decode raw format (e.g. HEIC on some Android/Chrome builds)
-      if (onSkipCrop && file) {
+      if (onDecodeError && file) {
+        onDecodeError(file);
+      } else if (onSkipCrop && file) {
         onSkipCrop(file);
       } else {
         onClose();
@@ -1282,7 +1184,7 @@ export default function ImageEditorModal({
                 ) : (
                   <>
                     <Check className="w-4 h-4 stroke-[2.5]" />
-                    <span>{onSkipCrop ? "ใช้ภาพที่ครอปนี้ (ไปกดส่งงานต่อ)" : "บันทึกการแก้ไขรูปภาพ"}</span>
+                    <span>ใช้ภาพที่ครอปนี้</span>
                   </>
                 )}
               </button>

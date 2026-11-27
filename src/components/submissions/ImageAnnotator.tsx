@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Check, Eraser, PenLine, RotateCcw, Stamp, Trash2, Undo2, X, ImageOff } from "lucide-react";
+import { Check, Crop, Eraser, PenLine, RotateCcw, Stamp, Trash2, Undo2, X, ImageOff } from "lucide-react";
 import { swalAlert, swalConfirm } from "@/lib/swal";
+import ImageEditorModal from "@/components/common/ImageEditorModal";
 
 /**
  * หน้าจอเขียนตรวจบนภาพผลงาน (เต็มจอ) — รองรับ Apple Pencil (แรงกด), นิ้ว และเมาส์
@@ -25,7 +26,7 @@ type Stroke = {
   stampSubText?: string;
   stampColor?: string;
 };
-type ImageState = { base: "current" | "original"; strokes: Stroke[] };
+type ImageState = { base: "current" | "original"; strokes: Stroke[]; croppedDataUrl?: string };
 
 const PEN_COLOR = "#ef2b2b";
 const STAMP_COLORS = [
@@ -229,6 +230,8 @@ export default function ImageAnnotator({ images, initialIndex = 0, title, onDone
   const [box, setBox] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
   const [imgError, setImgError] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [cropModalFile, setCropModalFile] = useState<File | null>(null);
+  const [isCropModalOpen, setIsCropModalOpen] = useState(false);
 
   const stageRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -241,10 +244,43 @@ export default function ImageAnnotator({ images, initialIndex = 0, title, onDone
   const active = images[activeIdx];
   const activeState = states[activeIdx];
   const hasExisting = (i: number) => images[i] && images[i].currentUrl !== images[i].originalUrl;
-  const baseUrl = activeState?.base === "original" ? active?.originalUrl : active?.currentUrl;
+  const baseUrl =
+    activeState?.croppedDataUrl ||
+    (activeState?.base === "original" ? active?.originalUrl : active?.currentUrl);
 
-  const isDirty = (s: ImageState, i: number) => s.strokes.length > 0 || (s.base === "original" && hasExisting(i));
+  const isDirty = (s: ImageState, i: number) =>
+    Boolean(s.croppedDataUrl) || s.strokes.length > 0 || (s.base === "original" && hasExisting(i));
   const anyDirty = states.some(isDirty);
+
+  const handleOpenTeacherCropper = async () => {
+    if (!baseUrl) return;
+    try {
+      const res = await fetch(baseUrl);
+      const blob = await res.blob();
+      const f = new File([blob], `student_work_${activeIdx + 1}.jpg`, {
+        type: blob.type || "image/jpeg",
+      });
+      setCropModalFile(f);
+      setIsCropModalOpen(true);
+    } catch {
+      swalAlert("ไม่สามารถดึงภาพเพื่อครอปได้ กรุณาลองใหม่อีกครั้ง");
+    }
+  };
+
+  const handleSaveTeacherCrop = (editedFile: File) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      updateActive(() => ({
+        base: "current",
+        strokes: [],
+        croppedDataUrl: dataUrl,
+      }));
+      setIsCropModalOpen(false);
+      setCropModalFile(null);
+    };
+    reader.readAsDataURL(editedFile);
+  };
 
   // ล็อกการเลื่อนหน้าขณะเขียน
   useEffect(() => {
@@ -421,8 +457,9 @@ export default function ImageAnnotator({ images, initialIndex = 0, title, onDone
       for (let i = 0; i < images.length; i++) {
         const s = targetStates[i];
         if (!isDirty(s, i)) continue;
-        const url = s.base === "original" ? images[i].originalUrl : images[i].currentUrl;
-        if (s.strokes.length === 0) {
+        const url =
+          s.croppedDataUrl || (s.base === "original" ? images[i].originalUrl : images[i].currentUrl);
+        if (s.strokes.length === 0 && !s.croppedDataUrl) {
           // เริ่มใหม่จากต้นฉบับแต่ไม่ได้เขียนอะไร → ลบการเขียนตรวจ
           changes[i] = null;
         } else {
@@ -471,6 +508,15 @@ export default function ImageAnnotator({ images, initialIndex = 0, title, onDone
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={handleOpenTeacherCropper}
+            className="h-11 px-3 sm:px-4 rounded-xl flex items-center gap-1.5 text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md transition-all cursor-pointer select-none"
+            title="ตัดขอบพื้นโต๊ะออกจากภาพผลงานนักเรียน"
+          >
+            <Crop className="w-4 h-4" />
+            <span>ครอปขอบโต๊ะ</span>
+          </button>
           <button type="button" onClick={() => setTool("stamp")} className={toolBtn(tool === "stamp")} title="ตราปั๊มตรวจงาน">
             <Stamp className="w-4 h-4" style={{ color: tool === "stamp" ? stampColor : undefined }} />
             <span>ตราปั๊มตรวจงาน</span>
@@ -673,6 +719,20 @@ export default function ImageAnnotator({ images, initialIndex = 0, title, onDone
             );
           })}
         </div>
+      )}
+      {isCropModalOpen && (
+        <ImageEditorModal
+          isOpen={isCropModalOpen}
+          file={cropModalFile}
+          onClose={() => {
+            setIsCropModalOpen(false);
+            setCropModalFile(null);
+          }}
+          onSave={handleSaveTeacherCrop}
+          title="✂️ ตัดขอบพื้นโต๊ะออกจากผลงานนักเรียน (สำหรับครู)"
+          defaultAspectRatio="free"
+          autoDetectArtwork={true}
+        />
       )}
     </div>
   );

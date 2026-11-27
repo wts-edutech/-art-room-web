@@ -1398,7 +1398,7 @@ export default function SubmitWorkModal({
             setIsAutoOpenedEditor(false);
           }}
           onSave={handleEditorSave}
-          onSkipCrop={isAutoOpenedEditor ? handleSkipAutoCrop : undefined}
+          onDecodeError={isAutoOpenedEditor ? handleSkipAutoCrop : undefined}
           title={`✂️ ครอบตัดขอบโต๊ะ & จัดกรอบผลงาน (ช่องที่ ${activeSlot + 1})`}
           defaultAspectRatio="free"
           autoDetectArtwork={true}
