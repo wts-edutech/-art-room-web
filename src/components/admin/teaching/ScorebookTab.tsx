@@ -1077,19 +1077,29 @@ export default function ScorebookTab() {
       {/* Scorebook Matrix Table */}
       <div className="bg-white rounded-3xl border border-gray-200/90 shadow-xs overflow-hidden">
         <div className="overflow-auto max-h-[74vh]">
-          <table className="w-full text-left border-collapse">
+          <table
+            className="w-full table-fixed text-left border-collapse"
+            style={{
+              minWidth: `${
+                345 +
+                (selectedClassroom === "all" ? 64 : 0) +
+                (colsAssignments.length + colsQuizzes.length) * 124 +
+                92
+              }px`,
+            }}
+          >
             <thead className="sticky top-0 z-20 shadow-2xs">
               <tr className="bg-gray-50 border-b border-gray-200 text-[11px] font-bold text-gray-700">
-                <th className="py-3 px-2 text-center w-11 sticky left-0 bg-gray-50 z-30 border-r border-gray-200/70">
+                <th className="py-3 px-1.5 text-center w-11 sticky left-0 bg-gray-50 z-30 border-r border-gray-200/70">
                   เลขที่
                 </th>
-                <th className="py-3 px-2 w-14 bg-gray-50">รหัส</th>
-                <th className="py-3 px-2.5 min-w-[150px] max-w-[210px] bg-gray-50">ชื่อ-นามสกุล</th>
+                <th className="py-3 px-2 w-15 bg-gray-50">รหัส</th>
+                <th className="py-3 px-2.5 w-[235px] bg-gray-50">ชื่อ-นามสกุล</th>
                 {selectedClassroom === "all" && <th className="py-3 px-2 w-16 text-center bg-gray-50">ห้อง</th>}
 
                 {colsAssignments.map((ass, idx) => (
-                  <th key={ass.id} className="py-2.5 px-2 text-center w-[128px] max-w-[136px] border-l border-gray-200/60 bg-gray-50">
-                    <div className="flex flex-col items-center gap-0.5 max-w-[124px] mx-auto whitespace-normal break-words">
+                  <th key={ass.id} className="py-2.5 px-2 text-center border-l border-gray-200/60 bg-gray-50">
+                    <div className="flex flex-col items-center gap-0.5 mx-auto whitespace-normal break-words">
                       <span className="inline-flex items-center gap-1 text-[10px] text-orange-600 font-bold">
                         <ClipboardList className="w-3 h-3 shrink-0" /> งาน {idx + 1}
                       </span>
@@ -1104,8 +1114,8 @@ export default function ScorebookTab() {
                 ))}
 
                 {colsQuizzes.map((qz, idx) => (
-                  <th key={qz.id} className="py-3 px-2 text-center w-[124px] border-l border-purple-200/60 bg-purple-50">
-                    <div className="flex flex-col items-center gap-0.5 max-w-[118px] mx-auto whitespace-normal break-words">
+                  <th key={qz.id} className="py-3 px-2 text-center border-l border-purple-200/60 bg-purple-50">
+                    <div className="flex flex-col items-center gap-0.5 mx-auto whitespace-normal break-words">
                       <span className="inline-flex items-center gap-1 text-[10px] text-purple-700 font-bold">
                         <HelpCircle className="w-3 h-3 shrink-0" /> สอบ {idx + 1}
                       </span>
@@ -1119,7 +1129,7 @@ export default function ScorebookTab() {
                   </th>
                 ))}
 
-                <th className="py-3 px-2.5 text-center w-24 border-l border-gray-200 bg-orange-50 text-orange-900">
+                <th className="py-3 px-2 text-center w-[92px] border-l border-gray-200 bg-orange-50 text-orange-900">
                   คะแนนรวม
                 </th>
               </tr>
@@ -1141,13 +1151,15 @@ export default function ScorebookTab() {
                     .filter(Boolean);
                   return (
                   <tr key={row.student.id} className="hover:bg-orange-50/20 transition-colors">
-                    <td className="py-2 px-2 text-center font-mono text-gray-500 sticky left-0 bg-white z-10 border-r border-gray-100">
+                    <td className="py-2 px-1.5 text-center font-mono text-gray-500 sticky left-0 bg-white z-10 border-r border-gray-100">
                       {row.orderNo}
                     </td>
                     <td className="py-2 px-2 font-mono text-gray-600 font-medium">{row.student.id}</td>
                     <td className="py-2 px-2.5 font-semibold text-gray-900">
-                      <div className="flex items-center justify-between gap-1.5 flex-wrap">
-                        <span>{row.student.name}</span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="truncate max-w-[175px]" title={row.student.name}>
+                          {row.student.name}
+                        </span>
                         {missingShortNums.length > 0 && (
                           <span className="inline-flex items-center px-1.5 py-0.2 rounded-md bg-rose-50 text-rose-600 border border-rose-200 text-[10px] font-bold shrink-0">
                             ขาด {missingShortNums.join(", ")}
