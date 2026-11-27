@@ -463,6 +463,14 @@ export default function ImageEditorModal({
       setAspectRatio(defaultAspectRatio);
       rebuildStage(img, 0, false, autoDetectArtwork, defaultAspectRatio);
     };
+    img.onerror = () => {
+      // Fallback safely if browser cannot decode raw format (e.g. HEIC on some Android/Chrome builds)
+      if (onSkipCrop && file) {
+        onSkipCrop(file);
+      } else {
+        onClose();
+      }
+    };
 
     return () => {
       URL.revokeObjectURL(objectUrl);
@@ -1274,7 +1282,7 @@ export default function ImageEditorModal({
                 ) : (
                   <>
                     <Check className="w-4 h-4 stroke-[2.5]" />
-                    <span>ยืนยันครอป & ใช้ภาพนี้</span>
+                    <span>{onSkipCrop ? "ใช้ภาพที่ครอปนี้ (ไปกดส่งงานต่อ)" : "บันทึกการแก้ไขรูปภาพ"}</span>
                   </>
                 )}
               </button>

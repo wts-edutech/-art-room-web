@@ -746,7 +746,8 @@ export default function ScorebookTab() {
 
             <button
               type="button"
-              onClick={() => {
+              onClick={async () => {
+                await fetchScorebook(true);
                 setLineTargetMode("all");
                 setIsLineModalOpen(true);
               }}
@@ -829,7 +830,7 @@ export default function ScorebookTab() {
             <CheckCircle2 className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[11px] text-emerald-700 font-medium">ส่งงานครบแล้ว</p>
+            <p className="text-[11px] text-emerald-700 font-medium">ส่งครบทุกชิ้นแล้ว ({colsAssignments.length} งาน)</p>
             <p className="text-xl font-bold font-kanit text-emerald-700">{summaryStats.allDone} คน</p>
           </div>
         </div>
@@ -839,7 +840,7 @@ export default function ScorebookTab() {
             <AlertCircle className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[11px] text-rose-700 font-medium">ยังมีงานค้างส่ง</p>
+            <p className="text-[11px] text-rose-700 font-medium">ค้างอย่างน้อย 1 ชิ้นงาน</p>
             <p className="text-xl font-bold font-kanit text-rose-600">{summaryStats.hasMissing} คน</p>
           </div>
         </div>
@@ -855,21 +856,70 @@ export default function ScorebookTab() {
         </div>
       </div>
 
+      {/* Per-Assignment Submission Breakdown Strip */}
+      {colsAssignments.length > 0 && tableRows.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+          {colsAssignments.map((ass, idx) => {
+            const submittedCnt = tableRows.filter((r) => {
+              const c = r.assignmentCells[idx];
+              return c && (c.type === "graded" || c.type === "pending");
+            }).length;
+            const missingCnt = tableRows.filter((r) => {
+              const c = r.assignmentCells[idx];
+              return c && (c.type === "missing" || c.type === "resubmit");
+            }).length;
+            return (
+              <div
+                key={ass.id}
+                className="bg-white rounded-2xl border border-gray-200/90 px-3.5 py-2.5 flex items-center justify-between gap-2 shadow-2xs"
+              >
+                <div className="min-w-0">
+                  <div className="text-[10px] font-bold text-orange-600">
+                    งานที่ {idx + 1} • ส่งแล้ว {submittedCnt}/{tableRows.length} คน
+                  </div>
+                  <div className="text-xs font-bold text-gray-800 truncate" title={ass.title}>
+                    {ass.title}
+                  </div>
+                </div>
+                {missingCnt > 0 ? (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await fetchScorebook(true);
+                      setLineTargetMode(ass.id);
+                      setIsLineModalOpen(true);
+                    }}
+                    className="px-2.5 py-1 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-bold shrink-0 cursor-pointer transition-colors"
+                    title="คลิกเพื่อแจ้งเตือนทาง LINE เฉพาะคนที่ค้างงานชิ้นนี้"
+                  >
+                    ขาด {missingCnt} คน (แจ้ง LINE)
+                  </button>
+                ) : (
+                  <span className="px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold shrink-0">
+                    ส่งครบแล้ว ✓
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {/* Scorebook Matrix Table */}
       <div className="bg-white rounded-3xl border border-gray-200/90 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[760px]">
+          <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-50/90 border-b border-gray-200 text-[11px] font-bold text-gray-700">
-                <th className="py-3 px-3 text-center w-12 sticky left-0 bg-gray-50 z-10 border-r border-gray-200/70">
+                <th className="py-3 px-2.5 text-center w-11 sticky left-0 bg-gray-50 z-10 border-r border-gray-200/70">
                   เลขที่
                 </th>
-                <th className="py-3 px-3 w-20">รหัส</th>
-                <th className="py-3 px-3 min-w-[180px]">ชื่อ-นามสกุล</th>
-                {selectedClassroom === "all" && <th className="py-3 px-2.5 w-20 text-center">ห้อง</th>}
+                <th className="py-3 px-2 w-16">รหัส</th>
+                <th className="py-3 px-2.5 min-w-[155px]">ชื่อ-นามสกุล</th>
+                {selectedClassroom === "all" && <th className="py-3 px-2 w-16 text-center">ห้อง</th>}
 
                 {colsAssignments.map((ass, idx) => (
-                  <th key={ass.id} className="py-3 px-2.5 text-center min-w-[105px] border-l border-gray-200/60">
+                  <th key={ass.id} className="py-2.5 px-2 text-center min-w-[96px] max-w-[150px] border-l border-gray-200/60">
                     <div className="flex flex-col items-center gap-0.5">
                       <span className="inline-flex items-center gap-1 text-[10px] text-orange-600 font-bold">
                         <ClipboardList className="w-3 h-3" /> งาน {idx + 1}

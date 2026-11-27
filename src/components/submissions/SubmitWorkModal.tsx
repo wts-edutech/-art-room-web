@@ -210,15 +210,14 @@ export default function SubmitWorkModal({
     setIsEditorOpen(false);
     setIsAutoOpenedEditor(false);
     await processAndSetImage(editedFile);
-    setAiSuccessMessage(`✂️ ครอบตัดขอบภาพช่องที่ ${activeSlot + 1} เรียบร้อยแล้ว!`);
-    swalToast(`ครอบตัดภาพช่องที่ ${activeSlot + 1} เรียบร้อยแล้ว`, "success");
-    setTimeout(() => setAiSuccessMessage(""), 4000);
+    setAiSuccessMessage(`✂️ แนบภาพช่องที่ ${activeSlot + 1} แล้ว — กรุณากดปุ่มสีแดง "ยืนยันการส่งงาน" ด้านล่างเพื่อส่งให้คุณครู!`);
   };
 
   const handleSkipAutoCrop = async (rawFile: File) => {
     setIsEditorOpen(false);
     setIsAutoOpenedEditor(false);
     await processAndSetImage(rawFile);
+    setAiSuccessMessage(`📎 แนบภาพช่องที่ ${activeSlot + 1} แล้ว — กรุณากดปุ่มสีแดง "ยืนยันการส่งงาน" ด้านล่างเพื่อส่งให้คุณครู!`);
   };
 
   // 1-Click AI Auto Enhance: balances contrast, vibrance, brightness, and details
@@ -1361,8 +1360,8 @@ export default function SubmitWorkModal({
             />
           </div>
 
-          {/* Submit Button */}
-          <div className="pt-3 flex items-center gap-3">
+          {/* Sticky Submit Button Bar — Always visible on mobile without scrolling! */}
+          <div className="sticky -bottom-4 sm:-bottom-8 -mx-4 sm:-mx-8 px-4 sm:px-8 py-3.5 bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-[0_-6px_20px_rgba(0,0,0,0.06)] z-20 flex items-center gap-3">
             <Button
               type="submit"
               disabled={isSubmitting || isCompressing}
@@ -1375,13 +1374,13 @@ export default function SubmitWorkModal({
                 ? "กำลังส่งงาน..."
                 : existingSubmission
                 ? "บันทึกการแก้ไขงาน"
-                : "ยืนยันการส่งงาน"}
+                : "ยืนยันการส่งงาน (กดปุ่มนี้เพื่อส่งครู)"}
             </Button>
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
-              className="h-12 px-5 rounded-xl border-gray-200 text-gray-600"
+              className="h-12 px-5 rounded-xl border-gray-200 text-gray-600 bg-white"
             >
               ยกเลิก
             </Button>
