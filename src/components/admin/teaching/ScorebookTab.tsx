@@ -1076,24 +1076,24 @@ export default function ScorebookTab() {
 
       {/* Scorebook Matrix Table */}
       <div className="bg-white rounded-3xl border border-gray-200/90 shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-auto max-h-[74vh]">
           <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-gray-50/90 border-b border-gray-200 text-[11px] font-bold text-gray-700">
-                <th className="py-3 px-2.5 text-center w-11 sticky left-0 bg-gray-50 z-10 border-r border-gray-200/70">
+            <thead className="sticky top-0 z-20 shadow-2xs">
+              <tr className="bg-gray-50 border-b border-gray-200 text-[11px] font-bold text-gray-700">
+                <th className="py-3 px-2 text-center w-11 sticky left-0 bg-gray-50 z-30 border-r border-gray-200/70">
                   เลขที่
                 </th>
-                <th className="py-3 px-2 w-16">รหัส</th>
-                <th className="py-3 px-2.5 min-w-[155px]">ชื่อ-นามสกุล</th>
-                {selectedClassroom === "all" && <th className="py-3 px-2 w-16 text-center">ห้อง</th>}
+                <th className="py-3 px-2 w-14 bg-gray-50">รหัส</th>
+                <th className="py-3 px-2.5 min-w-[150px] max-w-[210px] bg-gray-50">ชื่อ-นามสกุล</th>
+                {selectedClassroom === "all" && <th className="py-3 px-2 w-16 text-center bg-gray-50">ห้อง</th>}
 
                 {colsAssignments.map((ass, idx) => (
-                  <th key={ass.id} className="py-2.5 px-2 text-center min-w-[96px] max-w-[150px] border-l border-gray-200/60">
-                    <div className="flex flex-col items-center gap-0.5">
+                  <th key={ass.id} className="py-2.5 px-2 text-center w-[128px] max-w-[136px] border-l border-gray-200/60 bg-gray-50">
+                    <div className="flex flex-col items-center gap-0.5 max-w-[124px] mx-auto whitespace-normal break-words">
                       <span className="inline-flex items-center gap-1 text-[10px] text-orange-600 font-bold">
-                        <ClipboardList className="w-3 h-3" /> งาน {idx + 1}
+                        <ClipboardList className="w-3 h-3 shrink-0" /> งาน {idx + 1}
                       </span>
-                      <span className="line-clamp-2 leading-tight text-gray-800" title={ass.title}>
+                      <span className="line-clamp-2 leading-snug text-gray-800 text-[11px]" title={ass.title}>
                         {ass.title}
                       </span>
                       <span className="text-[10px] font-normal text-gray-400">
@@ -1104,12 +1104,12 @@ export default function ScorebookTab() {
                 ))}
 
                 {colsQuizzes.map((qz, idx) => (
-                  <th key={qz.id} className="py-3 px-2.5 text-center min-w-[105px] border-l border-purple-200/60 bg-purple-50/30">
-                    <div className="flex flex-col items-center gap-0.5">
+                  <th key={qz.id} className="py-3 px-2 text-center w-[124px] border-l border-purple-200/60 bg-purple-50">
+                    <div className="flex flex-col items-center gap-0.5 max-w-[118px] mx-auto whitespace-normal break-words">
                       <span className="inline-flex items-center gap-1 text-[10px] text-purple-700 font-bold">
-                        <HelpCircle className="w-3 h-3" /> สอบ {idx + 1}
+                        <HelpCircle className="w-3 h-3 shrink-0" /> สอบ {idx + 1}
                       </span>
-                      <span className="line-clamp-2 leading-tight text-gray-800" title={qz.title}>
+                      <span className="line-clamp-2 leading-snug text-gray-800" title={qz.title}>
                         {qz.title}
                       </span>
                       <span className="text-[10px] font-normal text-purple-500">
@@ -1119,7 +1119,7 @@ export default function ScorebookTab() {
                   </th>
                 ))}
 
-                <th className="py-3 px-3 text-center w-28 border-l border-gray-200 bg-orange-50/50 text-orange-900">
+                <th className="py-3 px-2.5 text-center w-24 border-l border-gray-200 bg-orange-50 text-orange-900">
                   คะแนนรวม
                 </th>
               </tr>
@@ -1135,15 +1135,28 @@ export default function ScorebookTab() {
                   </td>
                 </tr>
               ) : (
-                tableRows.map((row) => (
+                tableRows.map((row) => {
+                  const missingShortNums = row.assignmentCells
+                    .map((c, idx) => (c.type === "missing" || c.type === "resubmit" ? `งาน ${idx + 1}` : null))
+                    .filter(Boolean);
+                  return (
                   <tr key={row.student.id} className="hover:bg-orange-50/20 transition-colors">
-                    <td className="py-2.5 px-3 text-center font-mono text-gray-500 sticky left-0 bg-white border-r border-gray-100">
+                    <td className="py-2 px-2 text-center font-mono text-gray-500 sticky left-0 bg-white z-10 border-r border-gray-100">
                       {row.orderNo}
                     </td>
-                    <td className="py-2.5 px-3 font-mono text-gray-600 font-medium">{row.student.id}</td>
-                    <td className="py-2.5 px-3 font-semibold text-gray-900">{row.student.name}</td>
+                    <td className="py-2 px-2 font-mono text-gray-600 font-medium">{row.student.id}</td>
+                    <td className="py-2 px-2.5 font-semibold text-gray-900">
+                      <div className="flex items-center justify-between gap-1.5 flex-wrap">
+                        <span>{row.student.name}</span>
+                        {missingShortNums.length > 0 && (
+                          <span className="inline-flex items-center px-1.5 py-0.2 rounded-md bg-rose-50 text-rose-600 border border-rose-200 text-[10px] font-bold shrink-0">
+                            ขาด {missingShortNums.join(", ")}
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     {selectedClassroom === "all" && (
-                      <td className="py-2.5 px-2.5 text-center">
+                      <td className="py-2 px-2 text-center">
                         <span className="px-2 py-0.5 rounded-md bg-gray-100 text-gray-700 text-[11px] font-medium">
                           {row.student.classroom || "-"}
                         </span>
@@ -1153,7 +1166,7 @@ export default function ScorebookTab() {
                     {row.assignmentCells.map((cell, cIdx) => {
                       const assObj = colsAssignments[cIdx];
                       return (
-                        <td key={cell.assignmentId} className="py-2 px-2 text-center border-l border-gray-100">
+                        <td key={cell.assignmentId} className="py-2 px-1.5 text-center border-l border-gray-100">
                           {cell.type === "graded" && (
                             <button
                               type="button"
@@ -1185,7 +1198,7 @@ export default function ScorebookTab() {
                             </button>
                           )}
                           {cell.type === "missing" && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-gray-100 text-gray-500 text-[10px]">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-rose-50 text-rose-600 border border-rose-200 font-semibold text-[10px]">
                               ยังไม่ส่ง
                             </span>
                           )}
@@ -1197,7 +1210,7 @@ export default function ScorebookTab() {
                     })}
 
                     {row.quizCells.map((cell) => (
-                      <td key={cell.quizId} className="py-2 px-2 text-center border-l border-purple-100/70 bg-purple-50/10">
+                      <td key={cell.quizId} className="py-2 px-1.5 text-center border-l border-purple-100/70 bg-purple-50/10">
                         {cell.type === "completed" ? (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-purple-50 text-purple-700 border border-purple-200 font-bold text-[11px]">
                             {cell.score}
@@ -1210,7 +1223,7 @@ export default function ScorebookTab() {
                       </td>
                     ))}
 
-                    <td className="py-2.5 px-3 text-center border-l border-gray-100 bg-orange-50/20">
+                    <td className="py-2 px-2 text-center border-l border-gray-100 bg-orange-50/20">
                       <div className="font-bold text-gray-900 font-kanit">
                         {row.earnedTotal}{" "}
                         <span className="text-[10px] font-normal text-gray-400">/ {row.maxTotal}</span>
@@ -1218,7 +1231,8 @@ export default function ScorebookTab() {
                       <div className="text-[10px] text-orange-600 font-semibold">{row.percentage}%</div>
                     </td>
                   </tr>
-                ))
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -1293,16 +1307,38 @@ export default function ScorebookTab() {
 
               {lineTargetMode === "all" && lineMissingStats.perAssMissing.length > 1 && (
                 <div className="rounded-2xl border border-gray-200/90 bg-gray-50/70 p-3 space-y-1.5">
-                  <div className="text-[11px] font-bold text-gray-700 flex items-center justify-between">
-                    <span>เลือกชิ้นงานที่จะนำมานับรวม (ติ๊กออกได้หากงานล่าสุดยังไม่ถึงกำหนดส่ง):</span>
+                  <div className="text-[11px] font-bold text-gray-700">
+                    สถานะแยกตามชิ้นงาน (ติ๊กเลือกเฉพาะงานที่ต้องการทวงส่ง):
                   </div>
                   <div className="space-y-1">
                     {lineMissingStats.perAssMissing.map(({ ass, idx, missingCnt, submittedCnt }) => {
+                      if (missingCnt === 0) {
+                        return (
+                          <div
+                            key={ass.id}
+                            className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl bg-emerald-50/60 border border-emerald-200/70 text-xs text-emerald-800"
+                          >
+                            <span className="flex items-center gap-2 min-w-0">
+                              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                              <span className="font-semibold truncate">
+                                งาน {idx + 1}: {ass.title}
+                              </span>
+                            </span>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white text-emerald-700 border border-emerald-200 shrink-0">
+                              ส่งครบทั้งห้อง {submittedCnt}/{summaryStats.total} ✓
+                            </span>
+                          </div>
+                        );
+                      }
                       const isIncluded = !excludedLineAssIds.has(ass.id);
                       return (
                         <label
                           key={ass.id}
-                          className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl bg-white border border-gray-200/80 text-xs cursor-pointer hover:border-emerald-300 transition-colors"
+                          className={`flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl border text-xs cursor-pointer transition-colors ${
+                            isIncluded
+                              ? "bg-rose-50/60 border-rose-300"
+                              : "bg-white border-gray-200 opacity-65"
+                          }`}
                         >
                           <span className="flex items-center gap-2 min-w-0">
                             <input
@@ -1316,20 +1352,14 @@ export default function ScorebookTab() {
                                   return next;
                                 });
                               }}
-                              className="w-4 h-4 rounded accent-[#06C755] cursor-pointer shrink-0"
+                              className="w-4 h-4 rounded accent-rose-600 cursor-pointer shrink-0"
                             />
-                            <span className="font-semibold text-gray-800 truncate">
-                              งาน {idx + 1}: {ass.title}
+                            <span className="font-bold text-gray-900 truncate">
+                              ทวงงาน {idx + 1}: {ass.title}
                             </span>
                           </span>
-                          <span
-                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
-                              missingCnt > 0
-                                ? "bg-rose-50 text-rose-700 border border-rose-200"
-                                : "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                            }`}
-                          >
-                            {missingCnt > 0 ? `ขาด ${missingCnt} คน` : `ส่งครบ ${submittedCnt} คน ✓`}
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-600 text-white shrink-0">
+                            ยังไม่ส่ง {missingCnt} คน
                           </span>
                         </label>
                       );

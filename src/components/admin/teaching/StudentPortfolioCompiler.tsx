@@ -83,7 +83,7 @@ export default function StudentPortfolioCompiler({ initialClassroom }: StudentPo
   // Filter students based on classroom and search query
   const filteredStudents = useMemo(() => {
     return students.filter((s) => {
-      const matchRoom = selectedClassroom ? (s.classroom || "").includes(selectedClassroom) : true;
+      const matchRoom = selectedClassroom ? (s.classroom || "").trim() === selectedClassroom.trim() : true;
       const q = searchQuery.toLowerCase().trim();
       const matchSearch = !q || 
         (s.name || "").toLowerCase().includes(q) || 
