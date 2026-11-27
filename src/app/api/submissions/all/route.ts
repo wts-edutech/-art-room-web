@@ -53,7 +53,22 @@ export async function GET(request: Request) {
         WHEN length(${submissions.images}) > 5 THEN 1
         ELSE 0
       END`,
-      annotatedImages: submissions.annotatedImages,
+      annotatedFlags: sql<string>`CASE
+        WHEN ${submissions.annotatedImages} IS NULL OR length(${submissions.annotatedImages}) <= 2 THEN ''
+        WHEN json_valid(${submissions.annotatedImages}) AND json_type(${submissions.annotatedImages}) = 'array' THEN
+          json_array(
+            CASE WHEN length(COALESCE(json_extract(${submissions.annotatedImages}, '$[0]'), '')) > 0 THEN '1' ELSE '' END,
+            CASE WHEN length(COALESCE(json_extract(${submissions.annotatedImages}, '$[1]'), '')) > 0 THEN '1' ELSE '' END,
+            CASE WHEN length(COALESCE(json_extract(${submissions.annotatedImages}, '$[2]'), '')) > 0 THEN '1' ELSE '' END
+          )
+        WHEN json_valid(${submissions.annotatedImages}) AND json_type(${submissions.annotatedImages}) = 'text' AND json_valid(json_extract(${submissions.annotatedImages}, '$')) THEN
+          json_array(
+            CASE WHEN length(COALESCE(json_extract(json_extract(${submissions.annotatedImages}, '$'), '$[0]'), '')) > 0 THEN '1' ELSE '' END,
+            CASE WHEN length(COALESCE(json_extract(json_extract(${submissions.annotatedImages}, '$'), '$[1]'), '')) > 0 THEN '1' ELSE '' END,
+            CASE WHEN length(COALESCE(json_extract(json_extract(${submissions.annotatedImages}, '$'), '$[2]'), '')) > 0 THEN '1' ELSE '' END
+          )
+        ELSE '["1"]'
+      END`,
       hasImage: sql<number>`CASE 
         WHEN ${submissions.images} IS NOT NULL AND length(${submissions.images}) > 2 AND ${submissions.images} NOT LIKE '%blob:%' AND ${submissions.images} NOT LIKE '%/api/submissions/image%' THEN 1 
         WHEN ${submissions.imageUrl} IS NOT NULL AND length(${submissions.imageUrl}) > 0 AND ${submissions.imageUrl} NOT LIKE '%/api/submissions/image%' AND ${submissions.imageUrl} NOT LIKE '%blob:%' THEN 1 
@@ -112,7 +127,7 @@ export async function GET(request: Request) {
         isLate: Boolean(sub.isLate),
         imageUrl: imagesList.length > 0 ? imagesList[0] : (sub.hasImage ? `/api/submissions/image?id=${encodeURIComponent(sub.id)}` : null),
         images: imagesList,
-        annotatedImages: buildAnnotatedUrls(sub.id, sub.annotatedImages, imagesList.length, sub.updatedAt),
+        annotatedImages: buildAnnotatedUrls(sub.id, sub.annotatedFlags, imagesList.length, sub.updatedAt),
         fileUrl: sub.hasFile ? `/api/submissions/image?id=${encodeURIComponent(sub.id)}&type=file` : null,
         fileName: sub.fileName || null,
         externalLink: sub.externalLink || null,

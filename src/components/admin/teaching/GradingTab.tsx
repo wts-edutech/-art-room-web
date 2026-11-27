@@ -985,6 +985,8 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
                                   <img
                                     src={sub.imageUrl}
                                     alt="work"
+                                    loading="lazy"
+                                    decoding="async"
                                     className="w-full h-full object-cover absolute inset-0 bg-gray-50"
                                     onError={(e) => {
                                       (e.currentTarget as HTMLElement).style.display = 'none';

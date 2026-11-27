@@ -93,11 +93,13 @@ export default function SubmissionsCenterTab() {
   const [classrooms, setClassrooms] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Filters
+  // Filters & Pagination
   const [typeFilter, setTypeFilter] = useState<'all' | 'assignment' | 'quiz'>('all');
   const [classroomFilter, setClassroomFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const PAGE_SIZE = 50;
 
   // Inspection & Grading Modal
   const [inspectItem, setInspectItem] = useState<UnifiedItem | null>(null);
@@ -148,14 +150,23 @@ export default function SubmissionsCenterTab() {
   };
 
   useEffect(() => {
+    setCurrentPage(1);
     fetchData();
   }, [typeFilter, classroomFilter, statusFilter]);
 
   // Handle Search Debounce or Enter
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setCurrentPage(1);
     fetchData();
   };
+
+  const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const pagedItems = useMemo(
+    () => items.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE),
+    [items, safePage]
+  );
 
   // Open Inspection Modal
   const handleOpenInspect = (item: UnifiedItem) => {
@@ -659,7 +670,8 @@ export default function SubmissionsCenterTab() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
-                {items.map((item, idx) => {
+                {pagedItems.map((item, idx) => {
+                  const globalIdx = (safePage - 1) * PAGE_SIZE + idx + 1;
                   const isAssignment = item.type === 'assignment';
                   const thaiDate = item.submittedAt
                     ? new Date(item.submittedAt).toLocaleString('th-TH', {
@@ -675,7 +687,7 @@ export default function SubmissionsCenterTab() {
                     <tr key={item.id} className="hover:bg-orange-50/30 transition-colors group">
                       {/* Order */}
                       <td className="py-3.5 px-4 text-center font-bold text-slate-400">
-                        {idx + 1}
+                        {globalIdx}
                       </td>
 
                       {/* Submitted Time */}
@@ -748,6 +760,8 @@ export default function SubmissionsCenterTab() {
                                 <img
                                   src={item.imageUrl}
                                   alt="Artwork preview"
+                                  loading="lazy"
+                                  decoding="async"
                                   className="w-full h-full object-cover absolute inset-0 bg-slate-100"
                                   onError={(e) => {
                                     (e.currentTarget as HTMLElement).style.display = 'none';
@@ -848,6 +862,36 @@ export default function SubmissionsCenterTab() {
                 })}
               </tbody>
             </table>
+
+            {totalPages > 1 && (
+              <div className="px-5 py-3.5 border-t border-slate-100 bg-slate-50/60 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-600">
+                <span>
+                  แสดงรายการ {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, items.length)} จากทั้งหมด{" "}
+                  <b>{items.length.toLocaleString()}</b> รายการ (ส่งออก Excel ได้ครบทุกรายการ)
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    disabled={safePage <= 1}
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    className="px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 font-bold disabled:opacity-40 cursor-pointer"
+                  >
+                    ← ก่อนหน้า
+                  </button>
+                  <span className="px-2.5 py-1 font-bold text-slate-800">
+                    หน้า {safePage} / {totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={safePage >= totalPages}
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    className="px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 font-bold disabled:opacity-40 cursor-pointer"
+                  >
+                    ถัดไป →
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
