@@ -48,7 +48,7 @@ export const DEFAULT_PORTFOLIO_CONFIG: PortfolioConfigSettings = {
   defaultProjectRound: "โครงการช้างเผือก (รอบ 1.2)",
   defaultSchoolName: "วชิรธรรมสาธิต",
   defaultSchoolProvince: "กรุงเทพมหานคร",
-  defaultStudyPlan: "แผนการเรียนศิลปะ-การออกแบบ",
+  defaultStudyPlan: "",
   pageLimitNoticeText: "หลักสูตรนี้ไม่จำกัดจำนวนหน้า",
   sec1Title: "หมวด 1 • ข้อมูลผู้สมัคร",
   sec1PersonalTitle: "ข้อมูลส่วนตัว",

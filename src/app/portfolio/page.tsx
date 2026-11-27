@@ -253,43 +253,43 @@ const DEFAULT_STATE: PortfolioState = {
   },
   profile: {
     photoUrl: "",
-    fullNameTh: "นายวชิรธรรม สาธิต",
-    fullNameEn: "Wachiratham Satit",
-    citizenId: "1-1032-00161-46-5",
-    birthDate: "15/10/2008",
-    age: "18 ปี 1 เดือน",
-    email: "student@wts.ac.th",
-    phone: "084-353-0359",
-    weight: "65 กก.",
-    height: "175 ซม.",
-    gender: "ชาย",
-    parentRelation: "มารดา",
-    parentName: "นางสมศรี สาธิต",
-    parentPhone: "081-841-5982",
-    parentEmail: "parent@gmail.com",
-    addressNo: "เลขที่ 1091 ถนนสุขุมวิท 101/1",
-    subDistrict: "บางจาก",
-    district: "พระโขนง",
-    province: "กรุงเทพมหานคร",
-    postalCode: "10260",
+    fullNameTh: "",
+    fullNameEn: "",
+    citizenId: "",
+    birthDate: "",
+    age: "",
+    email: "",
+    phone: "",
+    weight: "",
+    height: "",
+    gender: "",
+    parentRelation: "",
+    parentName: "",
+    parentPhone: "",
+    parentEmail: "",
+    addressNo: "",
+    subDistrict: "",
+    district: "",
+    province: "",
+    postalCode: "",
     schoolName: "วชิรธรรมสาธิต",
     schoolProvince: "กรุงเทพมหานคร",
-    studyPlan: "แผนการเรียนศิลปะ-การออกแบบ",
-    eduYear: "2569",
-    gpax4: "3.65",
-    gpax5: "3.72",
+    studyPlan: "",
+    eduYear: "",
+    gpax4: "",
+    gpax5: "",
     transcriptFrontUrl: "",
     transcriptBackUrl: "",
   },
   subjectGrades: [
-    { subjectGroup: "ภาษาไทย", credits: "6.0", gpa: "3.80" },
-    { subjectGroup: "คณิตศาสตร์", credits: "6.0", gpa: "3.45" },
-    { subjectGroup: "วิทยาศาสตร์และเทคโนโลยี", credits: "8.0", gpa: "3.60" },
-    { subjectGroup: "สังคมศึกษา ศาสนา และวัฒนธรรม", credits: "8.0", gpa: "3.75" },
-    { subjectGroup: "สุขศึกษาและพลศึกษา", credits: "4.0", gpa: "4.00" },
-    { subjectGroup: "ศิลปะ (ทัศนศิลป์ ดนตรี นาฏศิลป์)", credits: "6.0", gpa: "4.00" },
-    { subjectGroup: "การงานอาชีพ", credits: "4.0", gpa: "3.90" },
-    { subjectGroup: "ภาษาต่างประเทศ", credits: "6.0", gpa: "3.65" },
+    { subjectGroup: "ภาษาไทย", credits: "", gpa: "" },
+    { subjectGroup: "คณิตศาสตร์", credits: "", gpa: "" },
+    { subjectGroup: "วิทยาศาสตร์และเทคโนโลยี", credits: "", gpa: "" },
+    { subjectGroup: "สังคมศึกษา ศาสนา และวัฒนธรรม", credits: "", gpa: "" },
+    { subjectGroup: "สุขศึกษาและพลศึกษา", credits: "", gpa: "" },
+    { subjectGroup: "ศิลปะ (ทัศนศิลป์ ดนตรี นาฏศิลป์)", credits: "", gpa: "" },
+    { subjectGroup: "การงานอาชีพ", credits: "", gpa: "" },
+    { subjectGroup: "ภาษาต่างประเทศ", credits: "", gpa: "" },
   ],
   essay: {
     title: "เหตุผลและแรงบันดาลใจในการสมัครเข้าศึกษาต่อ",
@@ -361,6 +361,74 @@ const DEFAULT_STATE: PortfolioState = {
 };
 
 const STORAGE_KEY_PREFIX = "artroom_tcasfolio_builder_v1";
+
+/**
+ * Strips legacy sample mockup values ("Wachiratham Satit", "นางสมศรี สาธิต", "15/10/2008", etc.)
+ * that were previously pre-filled into student drafts, while keeping any real values typed by the student.
+ */
+function sanitizeLegacySampleProfile(
+  rawProfile: Partial<PortfolioState["profile"]> | undefined,
+  realStudentName?: string
+): PortfolioState["profile"] {
+  const p = { ...DEFAULT_STATE.profile, ...(rawProfile || {}) };
+
+  const hasLegacySample =
+    p.fullNameEn === "Wachiratham Satit" ||
+    p.citizenId === "1-1032-00161-46-5" ||
+    p.birthDate === "15/10/2008" ||
+    p.parentName === "นางสมศรี สาธิต" ||
+    p.parentEmail === "parent@gmail.com" ||
+    p.parentPhone === "081-841-5982" ||
+    p.phone === "084-353-0359" ||
+    p.addressNo === "เลขที่ 1091 ถนนสุขุมวิท 101/1";
+
+  if (p.fullNameTh === "นายวชิรธรรม สาธิต") p.fullNameTh = realStudentName || "";
+  else if (!p.fullNameTh && realStudentName) p.fullNameTh = realStudentName;
+
+  if (p.fullNameEn === "Wachiratham Satit") p.fullNameEn = "";
+  if (p.citizenId === "1-1032-00161-46-5") p.citizenId = "";
+  if (p.birthDate === "15/10/2008") p.birthDate = "";
+  if (p.age === "18 ปี 1 เดือน") p.age = "";
+  if (p.email === "student@wts.ac.th" || /^\d{4,6}@(wachiratham|wts)\.ac\.th$/i.test((p.email || "").trim())) {
+    p.email = "";
+  }
+  if (p.phone === "084-353-0359") p.phone = "";
+  if (p.weight === "65 กก.") p.weight = "";
+  if (p.height === "175 ซม.") p.height = "";
+  if (p.parentName === "นางสมศรี สาธิต") p.parentName = "";
+  if (p.parentPhone === "081-841-5982") p.parentPhone = "";
+  if (p.parentEmail === "parent@gmail.com") p.parentEmail = "";
+  if (p.addressNo === "เลขที่ 1091 ถนนสุขุมวิท 101/1") p.addressNo = "";
+
+  if (hasLegacySample) {
+    if (p.gender === "ชาย") p.gender = "";
+    if (p.parentRelation === "มารดา") p.parentRelation = "";
+    if (p.subDistrict === "บางจาก") p.subDistrict = "";
+    if (p.district === "พระโขนง") p.district = "";
+    if (p.province === "กรุงเทพมหานคร") p.province = "";
+    if (p.postalCode === "10260") p.postalCode = "";
+    if (p.studyPlan === "แผนการเรียนศิลปะ-การออกแบบ") p.studyPlan = "";
+    if (p.eduYear === "2569") p.eduYear = "";
+    if (p.gpax4 === "3.65") p.gpax4 = "";
+    if (p.gpax5 === "3.72") p.gpax5 = "";
+  }
+
+  return p;
+}
+
+const LEGACY_SAMPLE_GPAS = ["3.80", "3.45", "3.60", "3.75", "4.00", "4.00", "3.90", "3.65"];
+function sanitizeLegacySubjectGrades(
+  grades: PortfolioState["subjectGrades"] | undefined
+): PortfolioState["subjectGrades"] {
+  if (!Array.isArray(grades) || grades.length === 0) return DEFAULT_STATE.subjectGrades;
+  const isExactSample =
+    grades.length === LEGACY_SAMPLE_GPAS.length &&
+    grades.every((g, i) => g.gpa === LEGACY_SAMPLE_GPAS[i]);
+  if (isExactSample) {
+    return grades.map((g) => ({ ...g, credits: "", gpa: "" }));
+  }
+  return grades;
+}
 
 function getStudentStorageKey(studentId?: string): string {
   const cleanId = (studentId || "").trim();
@@ -475,14 +543,13 @@ function PortfolioBuilderContent() {
               if (data?.record && data.record.portfolioJson) {
                 const parsedServer = JSON.parse(data.record.portfolioJson);
                 if (isMounted) {
+                  const realName = data.record.studentName || name;
                   setState((prev) => ({
                     ...prev,
                     ...parsedServer,
                     sections: { ...prev.sections, ...(parsedServer.sections || {}) },
-                    profile: {
-                      ...prev.profile,
-                      ...(parsedServer.profile || {}),
-                    },
+                    profile: sanitizeLegacySampleProfile(parsedServer.profile, realName),
+                    subjectGrades: sanitizeLegacySubjectGrades(parsedServer.subjectGrades),
                   }));
                   if (data.record.studentName) setCurrentStudentName(data.record.studentName);
                   if (data.record.classroom) setCurrentClassroom(data.record.classroom);
@@ -508,14 +575,15 @@ function PortfolioBuilderContent() {
               ...prev,
               ...parsed,
               sections: { ...prev.sections, ...(parsed.sections || {}) },
-              profile: {
-                ...prev.profile,
-                ...(parsed.profile || {}),
-                fullNameTh: parsed.profile?.fullNameTh || name || prev.profile.fullNameTh,
-              },
+              profile: sanitizeLegacySampleProfile(parsed.profile, name),
+              subjectGrades: sanitizeLegacySubjectGrades(parsed.subjectGrades),
             }));
           } else {
-            // Initialize fresh portfolio for this logged-in student using admin default config
+            // Initialize fresh portfolio for this logged-in student (blank personal/parent/address fields so students fill their own)
+            const cleanRealEmail =
+              email && !/^\d{4,6}@(wachiratham|wts)\.ac\.th$/i.test(email.trim()) && email !== "student@wts.ac.th"
+                ? email
+                : "";
             setState((prev) => ({
               ...prev,
               academicYear: fetchedCfg.defaultAcademicYear || prev.academicYear,
@@ -525,12 +593,15 @@ function PortfolioBuilderContent() {
               projectRound: fetchedCfg.defaultProjectRound || prev.projectRound,
               profile: {
                 ...prev.profile,
-                fullNameTh: name || prev.profile.fullNameTh,
-                email: email || (targetStudentId ? `${targetStudentId}@wts.ac.th` : prev.profile.email),
-                phone: phone || prev.profile.phone,
+                fullNameTh: name || "",
+                email: cleanRealEmail,
+                phone: phone || "",
                 schoolName: fetchedCfg.defaultSchoolName || prev.profile.schoolName,
                 schoolProvince: fetchedCfg.defaultSchoolProvince || prev.profile.schoolProvince,
-                studyPlan: fetchedCfg.defaultStudyPlan || prev.profile.studyPlan,
+                studyPlan:
+                  fetchedCfg.defaultStudyPlan && fetchedCfg.defaultStudyPlan !== "แผนการเรียนศิลปะ-การออกแบบ"
+                    ? fetchedCfg.defaultStudyPlan
+                    : "",
                 photoUrl:
                   avatar && (avatar.startsWith("data:") || avatar.startsWith("http") || avatar.startsWith("/"))
                     ? avatar
@@ -741,8 +812,7 @@ function PortfolioBuilderContent() {
         ...DEFAULT_STATE,
         profile: {
           ...DEFAULT_STATE.profile,
-          fullNameTh: currentStudentName || DEFAULT_STATE.profile.fullNameTh,
-          email: currentStudentId ? `${currentStudentId}@wts.ac.th` : DEFAULT_STATE.profile.email,
+          fullNameTh: currentStudentName || "",
         },
       });
       swalToast("คืนค่าเริ่มต้นเรียบร้อยแล้ว", "info");
@@ -1802,7 +1872,9 @@ function PortfolioBuilderContent() {
                           onChange={() => toggleSection("sec1_transcriptFront")}
                           className="w-4 h-4 rounded text-[#13426b]"
                         />
-                        <span className="text-slate-700 font-medium">ใบปพ.1 ด้านหน้า ✓</span>
+                        <span className="text-slate-700 font-medium">
+                          ใบปพ.1 ด้านหน้า {state.profile.transcriptFrontUrl ? "✓" : ""}
+                        </span>
                       </div>
                       <button
                         type="button"
@@ -1825,7 +1897,9 @@ function PortfolioBuilderContent() {
                           onChange={() => toggleSection("sec1_transcriptBack")}
                           className="w-4 h-4 rounded text-[#13426b]"
                         />
-                        <span className="text-slate-700 font-medium">ใบปพ.1 ด้านหลัง ✓</span>
+                        <span className="text-slate-700 font-medium">
+                          ใบปพ.1 ด้านหลัง {state.profile.transcriptBackUrl ? "✓" : ""}
+                        </span>
                       </div>
                       <button
                         type="button"
@@ -2162,7 +2236,8 @@ function PortfolioBuilderContent() {
                               type="text"
                               value={state.profile.fullNameTh}
                               onChange={(e) => updateProfile("fullNameTh", e.target.value)}
-                              className="font-semibold text-slate-900 bg-transparent border-b border-transparent focus:border-[#f26532] outline-none w-full"
+                              placeholder="กรอกชื่อ-นามสกุล..."
+                              className="font-semibold text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:border-solid focus:border-[#f26532] print:border-none placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent outline-none w-full"
                             />
                           </div>
                           <div className="flex items-baseline gap-2">
@@ -2171,7 +2246,8 @@ function PortfolioBuilderContent() {
                               type="text"
                               value={state.profile.citizenId}
                               onChange={(e) => updateProfile("citizenId", e.target.value)}
-                              className="font-semibold text-slate-900 bg-transparent border-b border-transparent focus:border-[#f26532] outline-none w-full"
+                              placeholder="กรอกเลขบัตรประชาชน..."
+                              className="font-semibold text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:border-solid focus:border-[#f26532] print:border-none placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent outline-none w-full"
                             />
                           </div>
                           <div className="flex items-baseline gap-2">
@@ -2180,7 +2256,8 @@ function PortfolioBuilderContent() {
                               type="text"
                               value={state.profile.schoolName}
                               onChange={(e) => updateProfile("schoolName", e.target.value)}
-                              className="font-semibold text-slate-900 bg-transparent border-b border-transparent focus:border-[#f26532] outline-none w-full"
+                              placeholder="กรอกชื่อโรงเรียน..."
+                              className="font-semibold text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:border-solid focus:border-[#f26532] print:border-none placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent outline-none w-full"
                             />
                           </div>
                           <div className="flex items-baseline gap-2">
@@ -2189,7 +2266,8 @@ function PortfolioBuilderContent() {
                               type="text"
                               value={state.profile.schoolProvince}
                               onChange={(e) => updateProfile("schoolProvince", e.target.value)}
-                              className="font-semibold text-slate-900 bg-transparent border-b border-transparent focus:border-[#f26532] outline-none w-full"
+                              placeholder="กรอกจังหวัด..."
+                              className="font-semibold text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:border-solid focus:border-[#f26532] print:border-none placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent outline-none w-full"
                             />
                           </div>
                         </div>
@@ -2238,17 +2316,21 @@ function PortfolioBuilderContent() {
                   {/* 1.1 ข้อมูลส่วนตัว */}
                   {state.sections.sec1_personal && (
                     <div>
-                      <div className="bg-slate-100/90 px-3 py-1.5 font-extrabold text-[#13426b] border-b border-slate-300">
-                        {sysConfig.sec1PersonalTitle || "ข้อมูลส่วนตัว"}
+                      <div className="bg-slate-100/90 px-3 py-1.5 font-extrabold text-[#13426b] border-b border-slate-300 flex items-center justify-between">
+                        <span>{sysConfig.sec1PersonalTitle || "ข้อมูลส่วนตัว"}</span>
+                        <span className="text-[10px] font-normal text-slate-500 print:hidden">
+                          * แตะที่ช่องว่างเพื่อกรอกข้อมูลจริงของนักเรียน
+                        </span>
                       </div>
-                      <div className="p-2.5 grid grid-cols-2 sm:grid-cols-4 gap-2 border-b border-slate-200">
+                      <div className="p-2.5 grid grid-cols-2 sm:grid-cols-4 gap-2.5 border-b border-slate-200">
                         <div>
                           <span className="text-slate-500">ชื่อ : </span>
                           <input
                             type="text"
                             value={state.profile.fullNameTh}
                             onChange={(e) => updateProfile("fullNameTh", e.target.value)}
-                            className="font-bold text-slate-900 bg-transparent border-b border-transparent focus:border-teal-500 outline-none w-32"
+                            placeholder="กรอกชื่อ-นามสกุล..."
+                            className="font-bold text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:border-solid focus:border-teal-500 print:border-none placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent outline-none w-36 max-w-full"
                           />
                         </div>
                         <div>
@@ -2257,7 +2339,8 @@ function PortfolioBuilderContent() {
                             type="text"
                             value={state.profile.fullNameEn}
                             onChange={(e) => updateProfile("fullNameEn", e.target.value)}
-                            className="font-bold text-slate-900 bg-transparent border-b border-transparent focus:border-teal-500 outline-none w-28"
+                            placeholder="กรอกชื่ออังกฤษ..."
+                            className="font-bold text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:border-solid focus:border-teal-500 print:border-none placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent outline-none w-32 max-w-full"
                           />
                         </div>
                         <div>
@@ -2266,7 +2349,8 @@ function PortfolioBuilderContent() {
                             type="text"
                             value={state.profile.citizenId}
                             onChange={(e) => updateProfile("citizenId", e.target.value)}
-                            className="font-bold text-slate-900 bg-transparent border-b border-transparent focus:border-teal-500 outline-none w-28"
+                            placeholder="เลขบัตร 13 หลัก..."
+                            className="font-bold text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:border-solid focus:border-teal-500 print:border-none placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent outline-none w-32 max-w-full"
                           />
                         </div>
                         <div>
@@ -2275,18 +2359,20 @@ function PortfolioBuilderContent() {
                             type="text"
                             value={state.profile.birthDate}
                             onChange={(e) => updateProfile("birthDate", e.target.value)}
-                            className="font-bold text-slate-900 bg-transparent border-b border-transparent focus:border-teal-500 outline-none w-20"
+                            placeholder="เช่น 12/05/2551"
+                            className="font-bold text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:border-solid focus:border-teal-500 print:border-none placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent outline-none w-24 max-w-full"
                           />
                         </div>
                       </div>
-                      <div className="p-2.5 grid grid-cols-2 sm:grid-cols-6 gap-2 border-b border-slate-300">
+                      <div className="p-2.5 grid grid-cols-2 sm:grid-cols-6 gap-2.5 border-b border-slate-300">
                         <div>
                           <span className="text-slate-500">อายุ : </span>
                           <input
                             type="text"
                             value={state.profile.age}
                             onChange={(e) => updateProfile("age", e.target.value)}
-                            className="font-bold text-slate-900 bg-transparent border-b border-transparent focus:border-teal-500 outline-none w-20"
+                            placeholder="เช่น 17 ปี"
+                            className="font-bold text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:border-solid focus:border-teal-500 print:border-none placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent outline-none w-20 max-w-full"
                           />
                         </div>
                         <div className="sm:col-span-2">
@@ -2295,7 +2381,8 @@ function PortfolioBuilderContent() {
                             type="text"
                             value={state.profile.email}
                             onChange={(e) => updateProfile("email", e.target.value)}
-                            className="font-bold text-slate-900 bg-transparent border-b border-transparent focus:border-teal-500 outline-none w-40"
+                            placeholder="กรอกอีเมลที่ติดต่อได้..."
+                            className="font-bold text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:border-solid focus:border-teal-500 print:border-none placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent outline-none w-44 max-w-full"
                           />
                         </div>
                         <div>
@@ -2304,21 +2391,29 @@ function PortfolioBuilderContent() {
                             type="text"
                             value={state.profile.phone}
                             onChange={(e) => updateProfile("phone", e.target.value)}
-                            className="font-bold text-slate-900 bg-transparent border-b border-transparent focus:border-teal-500 outline-none w-24"
+                            placeholder="0xx-xxx-xxxx"
+                            className="font-bold text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:border-solid focus:border-teal-500 print:border-none placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent outline-none w-24 max-w-full"
                           />
                         </div>
                         <div>
                           <span className="text-slate-500">น้ำหนัก/ส่วนสูง : </span>
-                          <input
-                            type="text"
-                            value={`${state.profile.weight} / ${state.profile.height}`}
-                            onChange={(e) => {
-                              const parts = e.target.value.split("/");
-                              updateProfile("weight", (parts[0] || "").trim());
-                              if (parts[1]) updateProfile("height", parts[1].trim());
-                            }}
-                            className="font-bold text-slate-900 bg-transparent border-b border-transparent focus:border-teal-500 outline-none w-24"
-                          />
+                          <span className="inline-flex items-baseline gap-1">
+                            <input
+                              type="text"
+                              value={state.profile.weight}
+                              onChange={(e) => updateProfile("weight", e.target.value)}
+                              placeholder="กก."
+                              className="font-bold text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:border-solid focus:border-teal-500 print:border-none placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent outline-none w-11 text-center"
+                            />
+                            <span className={`text-slate-400 ${!state.profile.weight && !state.profile.height ? "print:hidden" : ""}`}>/</span>
+                            <input
+                              type="text"
+                              value={state.profile.height}
+                              onChange={(e) => updateProfile("height", e.target.value)}
+                              placeholder="ซม."
+                              className="font-bold text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:border-solid focus:border-teal-500 print:border-none placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent outline-none w-12 text-center"
+                            />
+                          </span>
                         </div>
                         <div>
                           <span className="text-slate-500">เพศ : </span>
@@ -2326,7 +2421,8 @@ function PortfolioBuilderContent() {
                             type="text"
                             value={state.profile.gender}
                             onChange={(e) => updateProfile("gender", e.target.value)}
-                            className="font-bold text-slate-900 bg-transparent border-b border-transparent focus:border-teal-500 outline-none w-12"
+                            placeholder="ชาย/หญิง"
+                            className="font-bold text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:border-solid focus:border-teal-500 print:border-none placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent outline-none w-14 max-w-full"
                           />
                         </div>
                       </div>
@@ -2339,14 +2435,15 @@ function PortfolioBuilderContent() {
                       <div className="bg-slate-100/90 px-3 py-1.5 font-extrabold text-[#13426b] border-b border-slate-300">
                         {sysConfig.sec1ParentTitle || "ข้อมูลผู้ปกครอง"}
                       </div>
-                      <div className="p-2.5 grid grid-cols-2 sm:grid-cols-4 gap-2 border-b border-slate-300">
+                      <div className="p-2.5 grid grid-cols-2 sm:grid-cols-4 gap-2.5 border-b border-slate-300">
                         <div>
                           <span className="text-slate-500">สถานะผู้ปกครอง : </span>
                           <input
                             type="text"
                             value={state.profile.parentRelation}
                             onChange={(e) => updateProfile("parentRelation", e.target.value)}
-                            className="font-bold text-slate-900 bg-transparent border-b border-transparent focus:border-teal-500 outline-none w-16"
+                            placeholder="บิดา/มารดา..."
+                            className="font-bold text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:border-solid focus:border-teal-500 print:border-none placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent outline-none w-20 max-w-full"
                           />
                         </div>
                         <div>
@@ -2355,7 +2452,8 @@ function PortfolioBuilderContent() {
                             type="text"
                             value={state.profile.parentName}
                             onChange={(e) => updateProfile("parentName", e.target.value)}
-                            className="font-bold text-slate-900 bg-transparent border-b border-transparent focus:border-teal-500 outline-none w-28"
+                            placeholder="ชื่อ-นามสกุลผู้ปกครอง..."
+                            className="font-bold text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:border-solid focus:border-teal-500 print:border-none placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent outline-none w-36 max-w-full"
                           />
                         </div>
                         <div>
@@ -2364,7 +2462,8 @@ function PortfolioBuilderContent() {
                             type="text"
                             value={state.profile.parentPhone}
                             onChange={(e) => updateProfile("parentPhone", e.target.value)}
-                            className="font-bold text-slate-900 bg-transparent border-b border-transparent focus:border-teal-500 outline-none w-24"
+                            placeholder="0xx-xxx-xxxx"
+                            className="font-bold text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:border-solid focus:border-teal-500 print:border-none placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent outline-none w-24 max-w-full"
                           />
                         </div>
                         <div>
@@ -2373,7 +2472,8 @@ function PortfolioBuilderContent() {
                             type="text"
                             value={state.profile.parentEmail}
                             onChange={(e) => updateProfile("parentEmail", e.target.value)}
-                            className="font-bold text-slate-900 bg-transparent border-b border-transparent focus:border-teal-500 outline-none w-32"
+                            placeholder="อีเมลผู้ปกครอง (ถ้ามี)"
+                            className="font-bold text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:border-solid focus:border-teal-500 print:border-none placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent outline-none w-36 max-w-full"
                           />
                         </div>
                       </div>
@@ -2386,14 +2486,15 @@ function PortfolioBuilderContent() {
                       <div className="bg-slate-100/90 px-3 py-1.5 font-extrabold text-[#13426b] border-b border-slate-300">
                         {sysConfig.sec1AddressTitle || "ที่อยู่ติดต่อได้"}
                       </div>
-                      <div className="p-2.5 grid grid-cols-2 sm:grid-cols-5 gap-2 border-b border-slate-300">
+                      <div className="p-2.5 grid grid-cols-2 sm:grid-cols-5 gap-2.5 border-b border-slate-300">
                         <div className="sm:col-span-2">
                           <span className="text-slate-500">ที่อยู่ : </span>
                           <input
                             type="text"
                             value={state.profile.addressNo}
                             onChange={(e) => updateProfile("addressNo", e.target.value)}
-                            className="font-bold text-slate-900 bg-transparent border-b border-transparent focus:border-teal-500 outline-none w-44"
+                            placeholder="บ้านเลขที่ หมู่ ซอย ถนน..."
+                            className="font-bold text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:border-solid focus:border-teal-500 print:border-none placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent outline-none w-48 max-w-full"
                           />
                         </div>
                         <div>
@@ -2402,7 +2503,8 @@ function PortfolioBuilderContent() {
                             type="text"
                             value={state.profile.subDistrict}
                             onChange={(e) => updateProfile("subDistrict", e.target.value)}
-                            className="font-bold text-slate-900 bg-transparent border-b border-transparent focus:border-teal-500 outline-none w-20"
+                            placeholder="ระบุแขวง/ตำบล"
+                            className="font-bold text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:border-solid focus:border-teal-500 print:border-none placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent outline-none w-24 max-w-full"
                           />
                         </div>
                         <div>
@@ -2411,7 +2513,8 @@ function PortfolioBuilderContent() {
                             type="text"
                             value={state.profile.district}
                             onChange={(e) => updateProfile("district", e.target.value)}
-                            className="font-bold text-slate-900 bg-transparent border-b border-transparent focus:border-teal-500 outline-none w-20"
+                            placeholder="ระบุเขต/อำเภอ"
+                            className="font-bold text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:border-solid focus:border-teal-500 print:border-none placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent outline-none w-24 max-w-full"
                           />
                         </div>
                         <div>
@@ -2420,7 +2523,8 @@ function PortfolioBuilderContent() {
                             type="text"
                             value={state.profile.province}
                             onChange={(e) => updateProfile("province", e.target.value)}
-                            className="font-bold text-slate-900 bg-transparent border-b border-transparent focus:border-teal-500 outline-none w-24"
+                            placeholder="ระบุจังหวัด"
+                            className="font-bold text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:border-solid focus:border-teal-500 print:border-none placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent outline-none w-24 max-w-full"
                           />
                         </div>
                       </div>
@@ -2433,14 +2537,15 @@ function PortfolioBuilderContent() {
                       <div className="bg-slate-100/90 px-3 py-1.5 font-extrabold text-[#13426b] border-b border-slate-300">
                         {sysConfig.sec1EducationTitle || "ข้อมูลการศึกษา"}
                       </div>
-                      <div className="p-2.5 grid grid-cols-2 gap-2 border-b border-slate-200">
+                      <div className="p-2.5 grid grid-cols-2 gap-2.5 border-b border-slate-200">
                         <div>
                           <span className="text-slate-500">ชื่อโรงเรียน : </span>
                           <input
                             type="text"
                             value={state.profile.schoolName}
                             onChange={(e) => updateProfile("schoolName", e.target.value)}
-                            className="font-bold text-slate-900 bg-transparent border-b border-transparent focus:border-teal-500 outline-none w-40"
+                            placeholder="กรอกชื่อโรงเรียน..."
+                            className="font-bold text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:border-solid focus:border-teal-500 print:border-none placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent outline-none w-40 max-w-full"
                           />
                         </div>
                         <div>
@@ -2449,18 +2554,20 @@ function PortfolioBuilderContent() {
                             type="text"
                             value={state.profile.schoolProvince}
                             onChange={(e) => updateProfile("schoolProvince", e.target.value)}
-                            className="font-bold text-slate-900 bg-transparent border-b border-transparent focus:border-teal-500 outline-none w-32"
+                            placeholder="กรอกจังหวัด..."
+                            className="font-bold text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:border-solid focus:border-teal-500 print:border-none placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent outline-none w-32 max-w-full"
                           />
                         </div>
                       </div>
-                      <div className="p-2.5 grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      <div className="p-2.5 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                         <div className="sm:col-span-2">
                           <span className="text-slate-500">หลักสูตร : </span>
                           <input
                             type="text"
                             value={state.profile.studyPlan}
                             onChange={(e) => updateProfile("studyPlan", e.target.value)}
-                            className="font-bold text-slate-900 bg-transparent border-b border-transparent focus:border-teal-500 outline-none w-48"
+                            placeholder="ระบุแผนการเรียน..."
+                            className="font-bold text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:border-solid focus:border-teal-500 print:border-none placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent outline-none w-48 max-w-full"
                           />
                         </div>
                         {state.sections.sec1_gpax4 && (
@@ -2470,11 +2577,14 @@ function PortfolioBuilderContent() {
                               type="text"
                               value={state.profile.gpax4}
                               onChange={(e) => updateProfile("gpax4", e.target.value)}
-                              className="font-extrabold text-[#0d9488] bg-transparent border-b border-transparent focus:border-teal-500 outline-none w-14"
+                              placeholder="0.00"
+                              className="font-extrabold text-[#0d9488] bg-transparent border-b border-dashed border-slate-300 focus:border-solid focus:border-teal-500 print:border-none placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent outline-none w-14"
                             />
-                            <span className="inline-block ml-1 px-1 rounded bg-emerald-500 text-white text-[9px] font-bold">
-                              ✓
-                            </span>
+                            {state.profile.gpax4.trim() && (
+                              <span className="inline-block ml-1 px-1 rounded bg-emerald-500 text-white text-[9px] font-bold">
+                                ✓
+                              </span>
+                            )}
                           </div>
                         )}
                         {state.sections.sec1_gpax5 && (
@@ -2484,11 +2594,14 @@ function PortfolioBuilderContent() {
                               type="text"
                               value={state.profile.gpax5}
                               onChange={(e) => updateProfile("gpax5", e.target.value)}
-                              className="font-extrabold text-[#0d9488] bg-transparent border-b border-transparent focus:border-teal-500 outline-none w-14"
+                              placeholder="0.00"
+                              className="font-extrabold text-[#0d9488] bg-transparent border-b border-dashed border-slate-300 focus:border-solid focus:border-teal-500 print:border-none placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent outline-none w-14"
                             />
-                            <span className="inline-block ml-1 px-1 rounded bg-emerald-500 text-white text-[9px] font-bold">
-                              ✓
-                            </span>
+                            {state.profile.gpax5.trim() && (
+                              <span className="inline-block ml-1 px-1 rounded bg-emerald-500 text-white text-[9px] font-bold">
+                                ✓
+                              </span>
+                            )}
                           </div>
                         )}
                       </div>
@@ -2514,12 +2627,13 @@ function PortfolioBuilderContent() {
                             <input
                               type="text"
                               value={sg.gpa}
+                              placeholder="0.00"
                               onChange={(e) => {
                                 const next = [...state.subjectGrades];
                                 next[i] = { ...next[i], gpa: e.target.value };
                                 setState({ ...state, subjectGrades: next });
                               }}
-                              className="w-12 font-bold text-[#0d9488] text-right bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200"
+                              className="w-14 font-bold text-[#0d9488] text-right bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200 placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent"
                             />
                           </div>
                         </div>
