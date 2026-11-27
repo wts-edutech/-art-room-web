@@ -342,6 +342,14 @@ export default function SubmitWorkModal({
     }
   };
 
+  const fileToDataUrl = (blob: Blob): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(reader.error || new Error("FileReader error"));
+      reader.readAsDataURL(blob);
+    });
+
   const processAndSetImage = async (file: File) => {
     const isImageFile = file.type.startsWith("image/") || /\.(heic|heif|jpg|jpeg|png|webp|gif)$/i.test(file.name || "");
     if (!isImageFile) {
@@ -350,12 +358,13 @@ export default function SubmitWorkModal({
     }
     setErrorMsg("");
     setIsCompressing(true);
+    const targetSlot = activeSlot;
 
     // 1. Instant preview using ObjectURL (0 ms perceived lag for user)
     const instantUrl = URL.createObjectURL(file);
     setImagePreviews(prev => {
       const next = [...prev];
-      next[activeSlot] = instantUrl;
+      next[targetSlot] = instantUrl;
       return next;
     });
 
@@ -367,39 +376,32 @@ export default function SubmitWorkModal({
         quality: 0.78,
         outputFormat: "image/webp",
       });
-
-      const reader = new FileReader();
-      reader.onload = () => {
-        const dataUrl = reader.result as string;
-        setImageFiles(prev => {
-          const next = [...prev];
-          next[activeSlot] = compressed;
-          return next;
-        });
-        setImagePreviews(prev => {
-          const next = [...prev];
-          next[activeSlot] = dataUrl;
-          return next;
-        });
-      };
-      reader.readAsDataURL(compressed);
+      const dataUrl = await fileToDataUrl(compressed);
+      setImageFiles(prev => {
+        const next = [...prev];
+        next[targetSlot] = compressed;
+        return next;
+      });
+      setImagePreviews(prev => {
+        const next = [...prev];
+        next[targetSlot] = dataUrl;
+        return next;
+      });
     } catch (err) {
       console.warn("Compression fallback to raw file:", err);
-      const reader = new FileReader();
-      reader.onload = () => {
-        const dataUrl = reader.result as string;
+      try {
+        const dataUrl = await fileToDataUrl(file);
         setImageFiles(prev => {
           const next = [...prev];
-          next[activeSlot] = file;
+          next[targetSlot] = file;
           return next;
         });
         setImagePreviews(prev => {
           const next = [...prev];
-          next[activeSlot] = dataUrl;
+          next[targetSlot] = dataUrl;
           return next;
         });
-      };
-      reader.readAsDataURL(file);
+      } catch {}
     } finally {
       setIsCompressing(false);
     }
@@ -493,21 +495,24 @@ export default function SubmitWorkModal({
       if (externalLink) formData.append("externalLink", externalLink.trim());
       if (concept) formData.append("concept", concept.trim());
 
-      // Send compressed files as binary File parts (much faster upload & smaller payload)
+      // Send compressed files as binary File parts (fast upload & avoids 3x base64 FormData bloat)
       let hasImageFiles = false;
+      const hasKeptExistingUrls = imagePreviews.some(
+        (u, idx) => Boolean(u) && !u.startsWith("blob:") && !u.startsWith("data:") && !imageFiles[idx]
+      );
       imageFiles.forEach((f, idx) => {
-        if (f) {
+        if (f && !hasKeptExistingUrls) {
           formData.append(`image_${idx}`, f);
           hasImageFiles = true;
         }
       });
 
-      // Send primary image preview / data url if present
+      // Only send JSON/base64 imageUrl & images when binary File parts weren't used (e.g. draft/existing URL slots)
       const primaryImage = validImages[0] || "";
-      if (primaryImage) {
+      if (!hasImageFiles && primaryImage) {
         formData.append("imageUrl", primaryImage);
         formData.append("images", JSON.stringify(validImages));
-      } else if (!hasImageFiles) {
+      } else if (!hasImageFiles && !primaryImage) {
         formData.append("removeImage", "true");
         formData.append("imageUrl", "");
       }

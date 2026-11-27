@@ -20,6 +20,10 @@ export async function GET() {
   try {
     const adminSession = await getAdminSession();
     if (!adminSession.isAdmin) {
+      const cookieStore = await cookies();
+      if (cookieStore.get('admin_token')) {
+        cookieStore.delete('admin_token');
+      }
       return NextResponse.json({ isAdmin: false }, { status: 401, headers: NO_CACHE_HEADERS });
     }
 
@@ -54,14 +58,14 @@ export async function POST(request: Request) {
         request,
       });
 
-      const token = await createAdminToken(24, sessionId, role); // expires in 24 hours with role
+      const token = await createAdminToken(24 * 7, sessionId, role); // expires in 7 days with role
 
       const cookieStore = await cookies();
       cookieStore.set('admin_token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
-        maxAge: 60 * 60 * 24, // 1 day
+        maxAge: 60 * 60 * 24 * 7, // 7 days
         path: '/',
       });
 

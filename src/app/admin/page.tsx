@@ -204,7 +204,11 @@ export default function AdminPage() {
   useEffect(() => {
     async function checkRole() {
       try {
-        const res = await fetch("/api/auth");
+        const res = await fetch("/api/auth", { cache: "no-store" });
+        if (res.status === 401) {
+          router.replace("/admin/login");
+          return;
+        }
         if (res.ok) {
           const data = await res.json();
           const role = data.role === "teaching_admin" ? "teaching_admin" : "super_admin";
@@ -220,7 +224,7 @@ export default function AdminPage() {
       }
     }
     checkRole();
-  }, []);
+  }, [router]);
 
   const fetchVisitors = useCallback(async () => {
     setIsRefreshingVisitor(true);

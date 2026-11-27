@@ -64,11 +64,20 @@ interface SubmissionItem {
   id: string;
   assignmentId: string;
   studentId: string;
+  studentName?: string | null;
   classroom: string;
   score: number | null;
   status: string | null;
   isLate: boolean | null;
   submittedAt: string | null;
+}
+
+function normalizeStudentName(name?: string | null): string {
+  return (name || "")
+    .trim()
+    .toLowerCase()
+    .replace(/^(นาย|นางสาว|น\.ส\.|นาง|เด็กชาย|ด\.ช\.|เด็กหญิง|ด\.ญ\.)\s*/, "")
+    .replace(/\s+/g, "");
 }
 
 interface QuizAttemptItem {
@@ -123,8 +132,10 @@ export default function ScorebookTab() {
 
   const [selectedClassroom, setSelectedClassroom] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [loadError, setLoadError] = useState<string>("");
   const [isLineModalOpen, setIsLineModalOpen] = useState(false);
   const [lineTargetMode, setLineTargetMode] = useState<string>("all");
+  const [excludedLineAssIds, setExcludedLineAssIds] = useState<Set<string>>(new Set());
   const [lineCustomText, setLineCustomText] = useState<string>("");
   const [copiedLine, setCopiedLine] = useState(false);
 
@@ -144,7 +155,14 @@ export default function ScorebookTab() {
   const [quickActiveImgIdx, setQuickActiveImgIdx] = useState(0);
 
   const openQuickGradeModal = async (student: StudentRow, assignment: AssignmentCol) => {
-    const lightSub = subLookup.get(`${student.id}__${assignment.id}`);
+    const sid = String(student.id || "").trim();
+    const aid = String(assignment.id || "").trim();
+    const cname = normalizeStudentName(student.name);
+    const lightSub = submissions.find(
+      (s) =>
+        String(s.assignmentId || "").trim() === aid &&
+        (String(s.studentId || "").trim() === sid || (cname && normalizeStudentName(s.studentName) === cname))
+    );
     setQuickGradeTarget({ student, assignment });
     setQuickScore(
       lightSub?.score !== null && lightSub?.score !== undefined
@@ -160,7 +178,7 @@ export default function ScorebookTab() {
 
     try {
       const res = await fetch(
-        `/api/submissions?assignmentId=${encodeURIComponent(assignment.id)}&studentId=${encodeURIComponent(student.id)}`,
+        `/api/submissions?assignmentId=${encodeURIComponent(assignment.id)}&studentId=${encodeURIComponent(student.id)}&studentName=${encodeURIComponent(student.name)}&_t=${Date.now()}`,
         { cache: "no-store" }
       );
       if (res.ok) {
@@ -214,21 +232,41 @@ export default function ScorebookTab() {
     }
   };
 
-  const fetchScorebook = useCallback(async (silent: boolean = false) => {
+  const fetchScorebook = useCallback(async (silent: boolean = false, isRetry: boolean = false) => {
     if (!silent) setIsRefreshing(true);
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 12000);
+    const timeoutId = setTimeout(() => controller.abort(), 25000);
     try {
-      // On silent/background refresh, only reload submissions to avoid re-reading ~2,900 students in D1
-      const url = silent
+      // On silent/background refresh, only reload submissions IF students & assignments are already loaded
+      const useSubOnly = silent && students.length > 0 && assignments.length > 0;
+      const url = useSubOnly
         ? `/api/admin/scorebook?submissionsOnly=1&_t=${Date.now()}`
         : `/api/admin/scorebook?_t=${Date.now()}`;
       const res = await fetch(url, {
         cache: "no-store",
         signal: controller.signal,
       });
-      if (!res.ok) return;
+
+      if (res.status === 401) {
+        setLoadError("เซสชันผู้ดูแลระบบหมดอายุ กรุณาเข้าสู่ระบบใหม่อีกครั้ง");
+        if (typeof window !== "undefined") {
+          window.location.href = "/admin/login";
+        }
+        return;
+      }
+
+      if (!res.ok) {
+        if (!isRetry && !useSubOnly) {
+          clearTimeout(timeoutId);
+          await new Promise((r) => setTimeout(r, 600));
+          return fetchScorebook(silent, true);
+        }
+        setLoadError(`โหลดข้อมูลไม่สำเร็จ (HTTP ${res.status}) กรุณากดปุ่มรีเฟรชอีกครั้ง`);
+        return;
+      }
+
       const data: any = await res.json();
+      setLoadError("");
 
       const subList: SubmissionItem[] = Array.isArray(data.submissions) ? data.submissions : [];
       setSubmissions(subList);
@@ -267,15 +305,41 @@ export default function ScorebookTab() {
       );
     } catch (err) {
       console.error("Scorebook fetch error:", err);
+      if (!isRetry && !silent) {
+        clearTimeout(timeoutId);
+        await new Promise((r) => setTimeout(r, 700));
+        return fetchScorebook(silent, true);
+      }
+      if (students.length === 0) {
+        setLoadError("การเชื่อมต่อใช้เวลานานกว่าปกติ กรุณากดปุ่มรีเฟรชเพื่อโหลดข้อมูลตารางคะแนนใหม่");
+      }
     } finally {
       clearTimeout(timeoutId);
       setLoading(false);
       setIsRefreshing(false);
     }
-  }, []);
+  }, [students.length, assignments.length]);
 
   useEffect(() => {
     fetchScorebook(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Auto-refresh submissions whenever teacher returns to this browser tab/window (e.g. from LINE)
+  useEffect(() => {
+    let lastFocusRefresh = Date.now();
+    const handleVisibilityOrFocus = () => {
+      if (document.visibilityState === "visible" && Date.now() - lastFocusRefresh > 8_000) {
+        lastFocusRefresh = Date.now();
+        fetchScorebook(true);
+      }
+    };
+    window.addEventListener("focus", handleVisibilityOrFocus);
+    document.addEventListener("visibilitychange", handleVisibilityOrFocus);
+    return () => {
+      window.removeEventListener("focus", handleVisibilityOrFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityOrFocus);
+    };
   }, [fetchScorebook]);
 
   // Optional Live Polling every 60 seconds when enabled & tab is visible (preserves D1 daily read quota)
@@ -311,17 +375,42 @@ export default function ScorebookTab() {
     return m;
   }, [subjects]);
 
-  // Map newest submission per (studentId + assignmentId)
-  const subLookup = useMemo(() => {
-    const m = new Map<string, SubmissionItem>();
+  // Map newest submission per (trimmed studentId + assignmentId) AND normalized studentName fallback
+  const { subLookup, subNameLookup } = useMemo(() => {
+    const byId = new Map<string, SubmissionItem>();
+    const byName = new Map<string, SubmissionItem>();
     for (const sub of submissions) {
-      const key = `${sub.studentId}__${sub.assignmentId}`;
-      if (!m.has(key)) {
-        m.set(key, sub);
+      const sid = String(sub.studentId || "").trim();
+      const aid = String(sub.assignmentId || "").trim();
+      if (sid && aid) {
+        const key = `${sid}__${aid}`;
+        if (!byId.has(key)) byId.set(key, sub);
+      }
+      const cname = normalizeStudentName(sub.studentName);
+      if (cname && aid) {
+        const roomPrefix = (sub.classroom || "").trim();
+        const nameRoomKey = `${roomPrefix}::${cname}__${aid}`;
+        if (!byName.has(nameRoomKey)) byName.set(nameRoomKey, sub);
+        const nameOnlyKey = `*::${cname}__${aid}`;
+        if (!byName.has(nameOnlyKey)) byName.set(nameOnlyKey, sub);
       }
     }
-    return m;
+    return { subLookup: byId, subNameLookup: byName };
   }, [submissions]);
+
+  const getSubForStudentAndAssignment = useCallback(
+    (st: StudentRow, assignmentId: string): SubmissionItem | undefined => {
+      const sid = String(st.id || "").trim();
+      const aid = String(assignmentId || "").trim();
+      const direct = subLookup.get(`${sid}__${aid}`);
+      if (direct) return direct;
+      const cname = normalizeStudentName(st.name);
+      if (!cname) return undefined;
+      const room = (st.classroom || "").trim();
+      return subNameLookup.get(`${room}::${cname}__${aid}`) || subNameLookup.get(`*::${cname}__${aid}`);
+    },
+    [subLookup, subNameLookup]
+  );
 
   // Map best/latest quiz attempt per (studentId + quizId)
   const quizLookup = useMemo(() => {
@@ -417,7 +506,7 @@ export default function ScorebookTab() {
 
           totalTasks += 1;
           maxTotal += assMax;
-          const sub = subLookup.get(`${st.id}__${ass.id}`);
+          const sub = getSubForStudentAndAssignment(st, ass.id);
 
           if (!sub) {
             missingTitles.push(ass.title);
@@ -473,7 +562,7 @@ export default function ScorebookTab() {
 
       return { rows, colsAssignments: rAss, colsQuizzes: rQuiz };
     },
-    [students, getColumnsForClassroom, subLookup, quizLookup]
+    [students, getColumnsForClassroom, getSubForStudentAndAssignment, quizLookup]
   );
 
   const { rows: tableRows } = useMemo(
@@ -493,7 +582,67 @@ export default function ScorebookTab() {
     return { total, allDone, hasMissing, avgScore };
   }, [tableRows]);
 
-  // Build LINE reminder message whenever modal opens or mode/room changes
+  // Missing count for current LINE modal selection (dynamic so header & dropdown stay 100% accurate)
+  const lineMissingStats = useMemo(() => {
+    const perAssMissing = colsAssignments.map((ass, idx) => {
+      const cnt = tableRows.filter((r) => {
+        const c = r.assignmentCells[idx];
+        return c && (c.type === "missing" || c.type === "resubmit");
+      }).length;
+      return { ass, idx, missingCnt: cnt, submittedCnt: Math.max(0, tableRows.length - cnt) };
+    });
+
+    if (lineTargetMode === "all") {
+      const activeIndices = colsAssignments
+        .map((a, idx) => (!excludedLineAssIds.has(a.id) ? idx : -1))
+        .filter((idx) => idx >= 0);
+
+      const studentsWithMissing = tableRows
+        .map((r) => {
+          const titles: string[] = [];
+          for (const idx of activeIndices) {
+            const cell = r.assignmentCells[idx];
+            const title = colsAssignments[idx]?.title || `งานที่ ${idx + 1}`;
+            if (cell?.type === "missing") titles.push(title);
+            else if (cell?.type === "resubmit") titles.push(`${title} (ส่งแก้ไข)`);
+          }
+          return { row: r, titles };
+        })
+        .filter((x) => x.titles.length > 0);
+
+      return {
+        perAssMissing,
+        activeMissingCount: studentsWithMissing.length,
+        studentsWithMissing,
+      };
+    }
+
+    const assIdx = colsAssignments.findIndex((a) => a.id === lineTargetMode);
+    const studentsWithMissing =
+      assIdx >= 0
+        ? tableRows
+            .filter((r) => {
+              const cell = r.assignmentCells[assIdx];
+              return cell && (cell.type === "missing" || cell.type === "resubmit");
+            })
+            .map((r) => ({
+              row: r,
+              titles: [
+                r.assignmentCells[assIdx]?.type === "resubmit"
+                  ? `${colsAssignments[assIdx].title} (ส่งแก้ไข)`
+                  : colsAssignments[assIdx].title,
+              ],
+            }))
+        : [];
+
+    return {
+      perAssMissing,
+      activeMissingCount: studentsWithMissing.length,
+      studentsWithMissing,
+    };
+  }, [colsAssignments, tableRows, lineTargetMode, excludedLineAssIds]);
+
+  // Build LINE reminder message whenever modal opens or mode/room/filter changes
   const generatedLineMessage = useMemo(() => {
     const roomLabel = selectedClassroom === "all" ? "ทุกห้องเรียน" : `ห้อง ${selectedClassroom}`;
     const todayStr = new Date().toLocaleDateString("th-TH", {
@@ -503,17 +652,21 @@ export default function ScorebookTab() {
     });
 
     if (lineTargetMode === "all") {
-      const missingStudents = tableRows.filter((r) => r.missingCount > 0);
+      const includedCount = colsAssignments.filter((a) => !excludedLineAssIds.has(a.id)).length;
+      if (includedCount === 0) {
+        return `กรุณาติ๊กเลือกชิ้นงานอย่างน้อย 1 ชิ้นด้านบนเพื่อสร้างรายชื่อนักเรียนค้างส่ง`;
+      }
+      const missingStudents = lineMissingStats.studentsWithMissing;
       if (missingStudents.length === 0) {
-        return `✅ แจ้งผลส่งงานศิลปะ (${roomLabel})\nข้อมูล ณ วันที่ ${todayStr}\n\n🎉 นักเรียนทุกคนส่งงานครบทุกชิ้นแล้วครับ/ค่ะ!`;
+        return `✅ แจ้งผลส่งงานศิลปะ (${roomLabel})\nข้อมูล ณ วันที่ ${todayStr}\n\n🎉 นักเรียนทุกคนส่งงานที่เลือกครบทุกชิ้นแล้วครับ/ค่ะ!`;
       }
       const lines = [
         `📢 แจ้งเตือนติดตามงานค้างส่ง (${roomLabel})`,
         `📅 ข้อมูล ณ วันที่ ${todayStr} • ค้างส่ง ${missingStudents.length} จาก ${tableRows.length} คน`,
         ``,
         ...missingStudents.map(
-          (r) =>
-            `• เลขที่ ${r.orderNo} ${r.student.name}${selectedClassroom === "all" && r.student.classroom ? ` (${r.student.classroom})` : ""} — ขาด ${r.missingCount} งาน: ${r.missingTitles.join(", ")}`
+          ({ row: r, titles }) =>
+            `• เลขที่ ${r.orderNo} ${r.student.name}${selectedClassroom === "all" && r.student.classroom ? ` (${r.student.classroom})` : ""} — ขาด ${titles.length} งาน: ${titles.join(", ")}`
         ),
         ``,
         `📲 ส่งงานได้ที่เว็บไซต์ห้องเรียนศิลปะ: https://artroom-wts.com/submissions`,
@@ -525,10 +678,7 @@ export default function ScorebookTab() {
     const ass = assIdx >= 0 ? colsAssignments[assIdx] : null;
     if (!ass) return "";
 
-    const missingForAss = tableRows.filter((r) => {
-      const cell = r.assignmentCells[assIdx];
-      return cell && (cell.type === "missing" || cell.type === "resubmit");
-    });
+    const missingForAss = lineMissingStats.studentsWithMissing;
 
     if (missingForAss.length === 0) {
       return `✅ แจ้งผลส่งงาน: ${ass.title} (${roomLabel})\n🎉 นักเรียนส่งงานนี้ครบทุกคนแล้วครับ/ค่ะ!`;
@@ -538,7 +688,7 @@ export default function ScorebookTab() {
       `📢 แจ้งเตือนส่งงาน: ${ass.title}`,
       `🏫 ${roomLabel} • ยังไม่ส่ง ${missingForAss.length} จาก ${tableRows.length} คน`,
       ``,
-      ...missingForAss.map((r) => {
+      ...missingForAss.map(({ row: r }) => {
         const isResubmit = r.assignmentCells[assIdx]?.type === "resubmit";
         return `• เลขที่ ${r.orderNo} ${r.student.name}${isResubmit ? " (ส่งแก้ไข)" : ""}`;
       }),
@@ -546,7 +696,7 @@ export default function ScorebookTab() {
       `📲 ส่งงานได้ที่: https://artroom-wts.com/submissions`,
     ];
     return lines.join("\n");
-  }, [selectedClassroom, lineTargetMode, tableRows, colsAssignments]);
+  }, [selectedClassroom, lineTargetMode, tableRows.length, colsAssignments, excludedLineAssIds, lineMissingStats]);
 
   useEffect(() => {
     if (isLineModalOpen) {
@@ -747,7 +897,8 @@ export default function ScorebookTab() {
             <button
               type="button"
               onClick={async () => {
-                await fetchScorebook(true);
+                await fetchScorebook(students.length > 0 && assignments.length > 0);
+                setExcludedLineAssIds(new Set());
                 setLineTargetMode("all");
                 setIsLineModalOpen(true);
               }}
@@ -812,6 +963,24 @@ export default function ScorebookTab() {
           </div>
         </div>
       </div>
+
+      {loadError && (
+        <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 text-xs text-rose-800 font-semibold">
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            <span>{loadError}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => fetchScorebook(false)}
+            disabled={isRefreshing}
+            className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer shrink-0 disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+            <span>ลองโหลดข้อมูลใหม่</span>
+          </button>
+        </div>
+      )}
 
       {/* KPI Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -1063,31 +1232,45 @@ export default function ScorebookTab() {
           onClick={() => setIsLineModalOpen(false)}
         >
           <div
-            className="bg-white rounded-3xl max-w-xl w-full shadow-2xl border border-gray-100 overflow-hidden"
+            className="bg-white rounded-3xl max-w-xl w-full max-h-[92dvh] flex flex-col shadow-2xl border border-gray-100 overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="px-5 py-4 bg-gradient-to-r from-[#06C755] to-emerald-600 text-white flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <MessageCircle className="w-5 h-5" />
-                <div>
-                  <h3 className="font-bold text-base font-kanit">แจ้งเตือนงานค้างทาง LINE</h3>
-                  <p className="text-[11px] text-white/85">
-                    {selectedClassroom === "all" ? "ทุกห้องเรียน" : `ห้อง ${selectedClassroom}`} • ค้างส่ง {summaryStats.hasMissing} จาก {summaryStats.total} คน
+            <div className="px-5 py-4 bg-gradient-to-r from-[#06C755] to-emerald-600 text-white flex items-center justify-between gap-2 shrink-0">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <MessageCircle className="w-5 h-5 shrink-0" />
+                <div className="min-w-0">
+                  <h3 className="font-bold text-base font-kanit truncate">แจ้งเตือนงานค้างทาง LINE</h3>
+                  <p className="text-[11px] text-white/90 truncate">
+                    {selectedClassroom === "all" ? "ทุกห้องเรียน" : `ห้อง ${selectedClassroom}`} • ค้างส่ง{" "}
+                    {lineMissingStats.activeMissingCount} จาก {summaryStats.total} คน
+                    {lastUpdated ? ` (อัปเดต ${lastUpdated})` : ""}
                   </p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsLineModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center cursor-pointer transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => fetchScorebook(students.length > 0 && assignments.length > 0)}
+                  disabled={isRefreshing}
+                  title="ดึงสถานะส่งงานล่าสุดทันที"
+                  className="px-2.5 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-colors disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+                  <span>เช็คล่าสุด</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsLineModalOpen(false)}
+                  className="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center cursor-pointer transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
             {/* Body */}
-            <div className="p-5 space-y-4">
+            <div className="p-5 space-y-3.5 overflow-y-auto">
               <div>
                 <label className="text-xs font-bold text-gray-700 block mb-1.5">
                   เลือกรูปแบบข้อความแจ้งเตือน
@@ -1097,14 +1280,63 @@ export default function ScorebookTab() {
                   onChange={(e) => setLineTargetMode(e.target.value)}
                   className="w-full h-10 px-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-[#06C755] text-xs font-bold text-gray-800 outline-none"
                 >
-                  <option value="all">สรุปรวมงานค้างทุกชิ้นรายบุคคล ({summaryStats.hasMissing} คน)</option>
-                  {colsAssignments.map((ass, idx) => (
+                  <option value="all">
+                    สรุปรวมงานค้างรายบุคคล ({lineTargetMode === "all" ? lineMissingStats.activeMissingCount : summaryStats.hasMissing} คน)
+                  </option>
+                  {lineMissingStats.perAssMissing.map(({ ass, idx, missingCnt, submittedCnt }) => (
                     <option key={ass.id} value={ass.id}>
-                      เฉพาะงาน {idx + 1}: {ass.title}
+                      เฉพาะงาน {idx + 1}: {ass.title} — {missingCnt > 0 ? `ยังไม่ส่ง ${missingCnt} คน` : `ส่งครบ ${submittedCnt}/${summaryStats.total} ✓`}
                     </option>
                   ))}
                 </select>
               </div>
+
+              {lineTargetMode === "all" && lineMissingStats.perAssMissing.length > 1 && (
+                <div className="rounded-2xl border border-gray-200/90 bg-gray-50/70 p-3 space-y-1.5">
+                  <div className="text-[11px] font-bold text-gray-700 flex items-center justify-between">
+                    <span>เลือกชิ้นงานที่จะนำมานับรวม (ติ๊กออกได้หากงานล่าสุดยังไม่ถึงกำหนดส่ง):</span>
+                  </div>
+                  <div className="space-y-1">
+                    {lineMissingStats.perAssMissing.map(({ ass, idx, missingCnt, submittedCnt }) => {
+                      const isIncluded = !excludedLineAssIds.has(ass.id);
+                      return (
+                        <label
+                          key={ass.id}
+                          className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl bg-white border border-gray-200/80 text-xs cursor-pointer hover:border-emerald-300 transition-colors"
+                        >
+                          <span className="flex items-center gap-2 min-w-0">
+                            <input
+                              type="checkbox"
+                              checked={isIncluded}
+                              onChange={() => {
+                                setExcludedLineAssIds((prev) => {
+                                  const next = new Set(prev);
+                                  if (next.has(ass.id)) next.delete(ass.id);
+                                  else next.add(ass.id);
+                                  return next;
+                                });
+                              }}
+                              className="w-4 h-4 rounded accent-[#06C755] cursor-pointer shrink-0"
+                            />
+                            <span className="font-semibold text-gray-800 truncate">
+                              งาน {idx + 1}: {ass.title}
+                            </span>
+                          </span>
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                              missingCnt > 0
+                                ? "bg-rose-50 text-rose-700 border border-rose-200"
+                                : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            }`}
+                          >
+                            {missingCnt > 0 ? `ขาด ${missingCnt} คน` : `ส่งครบ ${submittedCnt} คน ✓`}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               <div>
                 <div className="flex items-center justify-between mb-1.5">
@@ -1112,7 +1344,7 @@ export default function ScorebookTab() {
                   <span className="text-[10px] text-gray-400">{lineCustomText.length} ตัวอักษร</span>
                 </div>
                 <textarea
-                  rows={10}
+                  rows={8}
                   value={lineCustomText}
                   onChange={(e) => setLineCustomText(e.target.value)}
                   className="w-full p-3.5 rounded-2xl border border-gray-200 bg-gray-50/70 focus:bg-white focus:border-[#06C755] text-xs leading-relaxed text-gray-800 outline-none font-sans"

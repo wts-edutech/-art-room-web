@@ -131,9 +131,9 @@ export default function SubmissionsCenterTab() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      let url = `/api/submissions/all?type=${typeFilter}&classroom=${encodeURIComponent(classroomFilter)}&status=${statusFilter}`;
+      let url = `/api/submissions/all?type=${typeFilter}&classroom=${encodeURIComponent(classroomFilter)}&status=${statusFilter}&_t=${Date.now()}`;
       if (searchQuery) url += `&q=${encodeURIComponent(searchQuery)}`;
-      const res = await fetch(url);
+      const res = await fetch(url, { cache: 'no-store' });
       const json = await res.json();
       if (json.success && Array.isArray(json.data)) {
         setItems(json.data);

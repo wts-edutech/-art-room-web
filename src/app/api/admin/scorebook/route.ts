@@ -8,13 +8,36 @@ import {
   students,
   assignments,
   submissions,
-  quizzes,
-  quizAttempts,
   subjects,
-  classrooms,
 } from '@/db/schema';
 import { checkIsAdmin } from '@/lib/api-auth';
 import { asc, desc } from 'drizzle-orm';
+
+function parseJsonArray(val: unknown): string[] {
+  let cur: unknown = val;
+  for (let i = 0; i < 3; i++) {
+    if (Array.isArray(cur)) return cur.map((v) => String(v).trim()).filter(Boolean);
+    if (typeof cur === 'string') {
+      const trimmed = cur.trim();
+      if (trimmed.startsWith('[') || trimmed.startsWith('"')) {
+        try {
+          cur = JSON.parse(trimmed);
+          continue;
+        } catch {
+          break;
+        }
+      }
+    }
+    break;
+  }
+  return [];
+}
+
+function extractGradePrefix(roomOrGrade?: string | null): string {
+  if (!roomOrGrade) return '';
+  const m = roomOrGrade.match(/ม\.?\s*([1-6])/);
+  return m ? `ม.${m[1]}` : roomOrGrade.trim();
+}
 
 export async function GET(request: Request) {
   try {
@@ -24,6 +47,7 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const submissionsOnly = searchParams.get('submissionsOnly') === '1';
+    const includeAllStudents = searchParams.get('allStudents') === '1';
 
     const db = getDb();
 
@@ -34,6 +58,7 @@ export async function GET(request: Request) {
           id: submissions.id,
           assignmentId: submissions.assignmentId,
           studentId: submissions.studentId,
+          studentName: submissions.studentName,
           classroom: submissions.classroom,
           score: submissions.score,
           status: submissions.status,
@@ -56,7 +81,7 @@ export async function GET(request: Request) {
       );
     }
 
-    // Fetch only the minimal columns needed for the assignment scorebook
+    // Fetch minimal columns needed for the assignment scorebook
     const [
       allSubjects,
       allAssignments,
@@ -80,6 +105,7 @@ export async function GET(request: Request) {
           classrooms: assignments.classrooms,
           targetStudents: assignments.targetStudents,
           maxScore: assignments.maxScore,
+          dueDate: assignments.dueDate,
           isActive: assignments.isActive,
           createdAt: assignments.createdAt,
         })
@@ -100,6 +126,7 @@ export async function GET(request: Request) {
           id: submissions.id,
           assignmentId: submissions.assignmentId,
           studentId: submissions.studentId,
+          studentName: submissions.studentName,
           classroom: submissions.classroom,
           score: submissions.score,
           status: submissions.status,
@@ -109,12 +136,60 @@ export async function GET(request: Request) {
         .orderBy(desc(submissions.submittedAt)),
     ]);
 
+    const safeSubjects = allSubjects || [];
+    const safeAssignments = allAssignments || [];
+    const safeStudents = allStudents || [];
+    const safeSubmissions = allSubmissions || [];
+
+    // Filter student payload to taught classrooms/grades (~500 rows vs 2,879 school-wide rows -> 5x faster download)
+    let filteredStudents = safeStudents;
+    if (!includeAllStudents && safeAssignments.length > 0) {
+      const subjectMap = new Map(safeSubjects.map((s) => [s.id, s]));
+      const taughtRooms = new Set<string>();
+      const taughtGrades = new Set<string>();
+      let hasUnscopedAssignment = false;
+
+      for (const a of safeAssignments) {
+        if (a.isActive === false) continue;
+        const rooms = parseJsonArray(a.classrooms);
+        if (rooms.length > 0) {
+          for (const r of rooms) taughtRooms.add(r);
+        } else {
+          const subj = subjectMap.get(a.subjectId);
+          const g = extractGradePrefix(subj?.gradeLevel);
+          if (g) taughtGrades.add(g);
+          else hasUnscopedAssignment = true;
+        }
+      }
+
+      if (!hasUnscopedAssignment && (taughtRooms.size > 0 || taughtGrades.size > 0)) {
+        const matched = safeStudents.filter((st) => {
+          const room = (st.classroom || '').trim();
+          if (room && taughtRooms.has(room)) return true;
+          if (taughtGrades.size > 0) {
+            const g = extractGradePrefix(room || st.gradeLevel);
+            if (g && taughtGrades.has(g)) return true;
+          }
+          return false;
+        });
+        if (matched.length > 0) {
+          filteredStudents = matched;
+        }
+      }
+    }
+
+    const activeAssIds = new Set(safeAssignments.map((a) => a.id));
+    const filteredSubmissions =
+      activeAssIds.size > 0
+        ? safeSubmissions.filter((s) => activeAssIds.has(s.assignmentId))
+        : safeSubmissions;
+
     return NextResponse.json(
       {
-        subjects: allSubjects || [],
-        assignments: allAssignments || [],
-        students: allStudents || [],
-        submissions: allSubmissions || [],
+        subjects: safeSubjects,
+        assignments: safeAssignments,
+        students: filteredStudents,
+        submissions: filteredSubmissions,
         serverTime: new Date().toISOString(),
       },
       {

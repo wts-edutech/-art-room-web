@@ -65,14 +65,17 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
   const fetchInitialData = async () => {
     setIsLoading(true);
     try {
+      const ts = Date.now();
       const preSubPromise = selectedAssignmentId
-        ? fetch(`/api/submissions?assignmentId=${selectedAssignmentId}`).then((r) => (r.ok ? r.json() : [])).catch(() => [])
+        ? fetch(`/api/submissions?assignmentId=${selectedAssignmentId}&_t=${ts}`, { cache: "no-store" })
+            .then((r) => (r.ok ? r.json() : []))
+            .catch(() => [])
         : Promise.resolve(null);
 
       const [dataAss, dataRooms, dataStudents, preSubs] = await Promise.all([
-        fetch("/api/assignments").then((r) => (r.ok ? r.json() : [])).catch(() => []),
-        fetch("/api/classrooms").then((r) => (r.ok ? r.json() : [])).catch(() => []),
-        fetch("/api/students?light=true").then((r) => (r.ok ? r.json() : [])).catch(() => []),
+        fetch(`/api/assignments?_t=${ts}`, { cache: "no-store" }).then((r) => (r.ok ? r.json() : [])).catch(() => []),
+        fetch(`/api/classrooms?_t=${ts}`, { cache: "no-store" }).then((r) => (r.ok ? r.json() : [])).catch(() => []),
+        fetch(`/api/students?light=true&_t=${ts}`, { cache: "no-store" }).then((r) => (r.ok ? r.json() : [])).catch(() => []),
         preSubPromise,
       ]);
 
@@ -93,7 +96,9 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
       if (targetAssId) {
         const subList = Array.isArray(preSubs)
           ? preSubs
-          : await fetch(`/api/submissions?assignmentId=${targetAssId}`).then((r) => (r.ok ? r.json() : [])).catch(() => []);
+          : await fetch(`/api/submissions?assignmentId=${targetAssId}&_t=${Date.now()}`, { cache: "no-store" })
+              .then((r) => (r.ok ? r.json() : []))
+              .catch(() => []);
         const validSubs = Array.isArray(subList) ? subList : [];
         setSubmissions(validSubs);
 
@@ -123,8 +128,8 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
   const fetchSubmissions = async (autoSelectActiveRoom = false) => {
     if (!selectedAssignmentId) return;
     try {
-      let url = `/api/submissions?assignmentId=${selectedAssignmentId}`;
-      const res = await fetch(url);
+      const url = `/api/submissions?assignmentId=${selectedAssignmentId}&_t=${Date.now()}`;
+      const res = await fetch(url, { cache: "no-store" });
       const data = await res.json();
       const list = Array.isArray(data) ? data : [];
       setSubmissions(list);
@@ -605,7 +610,10 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
         <div className="shrink-0 self-end md:self-center flex items-center gap-2">
           <button
             type="button"
-            onClick={() => setIsLineReminderOpen(true)}
+            onClick={async () => {
+              await fetchSubmissions(false);
+              setIsLineReminderOpen(true);
+            }}
             className="inline-flex items-center gap-1.5 h-10 px-4 rounded-lg bg-[#06C755] hover:bg-[#05b34c] text-white font-bold text-sm shadow-xs hover:shadow-md hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
             title="เปิดระบบแจ้งเตือนทาง LINE สำหรับนักเรียนที่ยังไม่ส่งงาน"
           >
@@ -777,7 +785,10 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
             <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
               <button
                 type="button"
-                onClick={() => setIsLineReminderOpen(true)}
+                onClick={async () => {
+                  await fetchSubmissions(false);
+                  setIsLineReminderOpen(true);
+                }}
                 className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[#06C755] hover:bg-[#05b34c] text-white font-bold text-xs shrink-0 transition-all cursor-pointer shadow-xs active:scale-95"
                 title="เปิดระบบแจ้งเตือนทาง LINE สำหรับนักเรียนที่ยังไม่ส่งงาน"
               >

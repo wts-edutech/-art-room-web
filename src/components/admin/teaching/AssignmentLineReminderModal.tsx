@@ -1,7 +1,7 @@
 "use client";
 
 import { swalAlert } from "@/lib/swal";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { 
   X, 
   MessageCircle, 
@@ -19,7 +19,8 @@ import {
   Calendar,
   Sparkles,
   BookOpen,
-  FolderOpen
+  FolderOpen,
+  RefreshCw
 } from "lucide-react";
 import * as XLSX from "xlsx";
 
@@ -128,6 +129,35 @@ export default function AssignmentLineReminderModal({
   onSelectAssignment,
 }: AssignmentLineReminderModalProps) {
   const [activeAssignmentId, setActiveAssignmentId] = useState<string>(assignment?.id || "");
+  const [liveAllSubmissions, setLiveAllSubmissions] = useState<SubmissionRecord[] | null>(null);
+  const [isRefreshingLive, setIsRefreshingLive] = useState<boolean>(false);
+
+  const refreshLiveSubmissions = useCallback(async () => {
+    setIsRefreshingLive(true);
+    try {
+      const res = await fetch(`/api/admin/scorebook?submissionsOnly=1&_t=${Date.now()}`, {
+        cache: "no-store",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data?.submissions)) {
+          setLiveAllSubmissions(data.submissions);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to refresh live submissions for LINE modal:", e);
+    } finally {
+      setIsRefreshingLive(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      refreshLiveSubmissions();
+    }
+  }, [isOpen, refreshLiveSubmissions]);
+
+  const effectiveSubmissions = liveAllSubmissions || submissions;
 
   useEffect(() => {
     if (assignment?.id) {
@@ -218,8 +248,8 @@ export default function AssignmentLineReminderModal({
     const roomStudentIds = new Set(roomStudents.map((s) => s.id.trim()));
     const roomStudentNames = new Set(roomStudents.map((s) => cleanName(s.name)));
 
-    submissions.forEach((sub) => {
-      if (sub.assignmentId === currentAssignment.id) {
+    effectiveSubmissions.forEach((sub) => {
+      if (sub.assignmentId === currentAssignment.id && sub.status !== "resubmit") {
         const subId = sub.studentId ? sub.studentId.trim() : "";
         const subName = sub.studentName ? cleanName(sub.studentName) : "";
         const isBelongsToRoom =
@@ -235,7 +265,7 @@ export default function AssignmentLineReminderModal({
       }
     });
     return { submittedIds: ids, submittedNames: names };
-  }, [submissions, currentAssignment, selectedRoom, roomStudents]);
+  }, [effectiveSubmissions, currentAssignment, selectedRoom, roomStudents]);
 
   // Unsubmitted students list
   const unsubmittedStudents = useMemo(() => {
@@ -314,8 +344,8 @@ export default function AssignmentLineReminderModal({
       const enrolledIds = new Set(enrolled.map((s) => s.id.trim()));
       const enrolledNames = new Set(enrolled.map((s) => cleanName(s.name)));
 
-      submissions.forEach((sub) => {
-        if (sub.assignmentId === currentAssignment.id) {
+      effectiveSubmissions.forEach((sub) => {
+        if (sub.assignmentId === currentAssignment.id && sub.status !== "resubmit") {
           const subId = sub.studentId ? sub.studentId.trim() : "";
           const subName = sub.studentName ? cleanName(sub.studentName) : "";
           const isBelongsToRoom =
@@ -339,7 +369,7 @@ export default function AssignmentLineReminderModal({
       counts[room] = missing;
     });
     return counts;
-  }, [targetRooms, students, submissions, currentAssignment]);
+  }, [targetRooms, students, effectiveSubmissions, currentAssignment]);
 
   // Active students to be included in the LINE message
   const activeUnsubmittedList = useMemo(() => {
@@ -485,14 +515,26 @@ ${customNote ? `💬 ข้อความจากครูผู้สอน: 
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center text-white transition-colors cursor-pointer shrink-0"
-            aria-label="ปิดหน้าต่าง"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={refreshLiveSubmissions}
+              disabled={isRefreshingLive}
+              className="px-2.5 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-50"
+              title="ดึงสถานะส่งงานล่าสุดจากฐานข้อมูลทันที"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshingLive ? "animate-spin" : ""}`} />
+              <span className="hidden sm:inline">เช็คล่าสุด</span>
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center text-white transition-colors cursor-pointer shrink-0"
+              aria-label="ปิดหน้าต่าง"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Assignment Switcher Header Bar */}
@@ -516,7 +558,11 @@ ${customNote ? `💬 ข้อความจากครูผู้สอน: 
                 className="w-full bg-white text-gray-900 font-bold text-xs rounded-xl px-3 py-1.5 border border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300 shadow-xs cursor-pointer truncate"
               >
                 {assignments.map((a) => {
-                  const cnt = submissions.filter((s) => s.assignmentId === a.id).length;
+                  const cnt = new Set(
+                    effectiveSubmissions
+                      .filter((s) => s.assignmentId === a.id && s.status !== "resubmit")
+                      .map((s) => s.studentId || s.studentName)
+                  ).size;
                   return (
                     <option key={a.id} value={a.id}>
                       {a.title} ({a.maxScore || 10} คะแนน) — [ส่งแล้ว {cnt} คน]
