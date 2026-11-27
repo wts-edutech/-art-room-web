@@ -331,7 +331,7 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
     setTimeout(() => setIsCopied(false), 2500);
   };
 
-  // Open Grading Modal
+  // Open Grading Modal (supports both online submissions and direct paper-worksheet grading by teacher)
   const handleOpenGrading = (sub: any, fallbackStudent?: any) => {
     if (sub) {
       setSelectedSubmission(sub);
@@ -341,8 +341,22 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
       setPendingAnnotations({});
       setGradingActiveImgIdx(0);
       setIsAnnotating(false);
-    } else if (fallbackStudent) {
-      swalAlert(`นักเรียน ${fallbackStudent.name} (เลขที่ ${fallbackStudent.studentNumber || "-"}) ยังไม่ได้ส่งงานนี้`);
+    } else if (fallbackStudent && currentAssignment) {
+      setSelectedSubmission({
+        id: null,
+        isManualTeacherEntry: true,
+        assignmentId: currentAssignment.id,
+        studentId: fallbackStudent.id,
+        studentName: fallbackStudent.name,
+        classroom: fallbackStudent.classroom || selectedClassroom || "",
+        concept: "ส่งใบงานกระดาษกับครูผู้สอนแล้ว (ยังไม่มีไฟล์แนบในระบบ)",
+      });
+      setGradingScore(String(currentAssignment.maxScore || 10));
+      setGradingFeedback("ส่งใบงานจริงกับครูผู้สอนแล้ว");
+      setGradingStatus("graded");
+      setPendingAnnotations({});
+      setGradingActiveImgIdx(0);
+      setIsAnnotating(false);
     }
   };
 
@@ -354,16 +368,28 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
     setIsSaving(true);
     try {
       const effectiveStatus = (gradingStatus === "pending" && gradingScore !== "") ? "graded" : gradingStatus;
+      const payload = selectedSubmission.id
+        ? {
+            id: selectedSubmission.id,
+            score: gradingScore,
+            feedback: gradingFeedback,
+            status: effectiveStatus,
+            annotations: Object.keys(pendingAnnotations).length > 0 ? pendingAnnotations : undefined,
+          }
+        : {
+            assignmentId: selectedSubmission.assignmentId || selectedAssignmentId,
+            studentId: selectedSubmission.studentId,
+            studentName: selectedSubmission.studentName,
+            classroom: selectedSubmission.classroom || selectedClassroom,
+            score: gradingScore,
+            feedback: gradingFeedback,
+            status: effectiveStatus,
+          };
+
       const res = await fetch("/api/submissions", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: selectedSubmission.id,
-          score: gradingScore,
-          feedback: gradingFeedback,
-          status: effectiveStatus,
-          annotations: Object.keys(pendingAnnotations).length > 0 ? pendingAnnotations : undefined,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (res.ok) {
@@ -1017,7 +1043,14 @@ export default function GradingTab({ preselectedAssignmentId }: { preselectedAss
                               ตรวจงาน
                             </button>
                           ) : (
-                            <span className="text-gray-300 text-xs">-</span>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenGrading(null, student)}
+                              title="ลงคะแนนตรง (กรณีส่งใบงานกระดาษกับครูแล้ว)"
+                              className="px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-orange-50 text-gray-600 hover:text-orange-700 border border-gray-200 hover:border-orange-300 font-medium text-xs transition-colors cursor-pointer"
+                            >
+                              + ลงคะแนน
+                            </button>
                           )}
                         </td>
                       </tr>

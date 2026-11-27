@@ -4,10 +4,12 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import * as XLSX from "xlsx";
 import { compareClassrooms } from "@/components/admin/StudentsTab";
 import ImageAnnotator, { AnnotatorImage } from "@/components/submissions/ImageAnnotator";
+import { compressImage } from "@/lib/image-compressor";
 import { swalToast, swalWarning, swalError } from "@/lib/swal";
 import {
   Table2,
   Download,
+  Upload,
   RefreshCw,
   Search,
   Users,
@@ -153,6 +155,7 @@ export default function ScorebookTab() {
   const [isQuickAnnotating, setIsQuickAnnotating] = useState(false);
   const [quickPendingAnnotations, setQuickPendingAnnotations] = useState<Record<number, string | null>>({});
   const [quickActiveImgIdx, setQuickActiveImgIdx] = useState(0);
+  const [teacherUploadDataUrl, setTeacherUploadDataUrl] = useState<string>("");
 
   const openQuickGradeModal = async (student: StudentRow, assignment: AssignmentCol) => {
     const sid = String(student.id || "").trim();
@@ -173,6 +176,7 @@ export default function ScorebookTab() {
     setQuickFeedback("");
     setQuickPendingAnnotations({});
     setQuickActiveImgIdx(0);
+    setTeacherUploadDataUrl("");
     setQuickSubDetail(null);
     setLoadingQuickSub(true);
 
@@ -201,28 +205,64 @@ export default function ScorebookTab() {
     }
   };
 
+  const handleTeacherPickImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const compressed = await compressImage(file, {
+        maxWidth: 1200,
+        maxHeight: 1200,
+        quality: 0.8,
+        outputFormat: "image/webp",
+      });
+      const reader = new FileReader();
+      reader.onload = () => setTeacherUploadDataUrl(reader.result as string);
+      reader.readAsDataURL(compressed);
+    } catch {
+      const reader = new FileReader();
+      reader.onload = () => setTeacherUploadDataUrl(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSaveQuickGrade = async () => {
-    if (!quickSubDetail?.id) return;
+    if (!quickGradeTarget) return;
     setIsQuickSaving(true);
     try {
+      const payload: Record<string, any> = quickSubDetail?.id
+        ? {
+            id: quickSubDetail.id,
+            score: quickScore,
+            status: quickStatus,
+            feedback: quickFeedback,
+            imageDataUrl: teacherUploadDataUrl || undefined,
+            annotations: Object.keys(quickPendingAnnotations).length > 0 ? quickPendingAnnotations : undefined,
+          }
+        : {
+            assignmentId: quickGradeTarget.assignment.id,
+            studentId: quickGradeTarget.student.id,
+            studentName: quickGradeTarget.student.name,
+            classroom: quickGradeTarget.student.classroom || selectedClassroom,
+            score: quickScore,
+            status: quickStatus,
+            feedback: quickFeedback || "ส่งใบงานจริงกับครูผู้สอนแล้ว",
+            imageDataUrl: teacherUploadDataUrl || undefined,
+          };
+
       const res = await fetch("/api/submissions", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: quickSubDetail.id,
-          score: quickScore,
-          status: quickStatus,
-          feedback: quickFeedback,
-          annotations: Object.keys(quickPendingAnnotations).length > 0 ? quickPendingAnnotations : undefined,
-        }),
+        body: JSON.stringify(payload),
       });
       if (res.ok) {
         swalToast("บันทึกคะแนนเรียบร้อยแล้ว", "success");
         setQuickGradeTarget(null);
         setQuickSubDetail(null);
+        setTeacherUploadDataUrl("");
         fetchScorebook(true);
       } else {
-        const err = await res.json().catch(() => ({}));
+        const err: any = await res.json().catch(() => ({}));
         swalError("บันทึกไม่สำเร็จ", err.error || "กรุณาลองใหม่อีกครั้ง");
       }
     } catch {
@@ -1210,9 +1250,14 @@ export default function ScorebookTab() {
                             </button>
                           )}
                           {cell.type === "missing" && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-rose-50 text-rose-600 border border-rose-200 font-semibold text-[10px]">
+                            <button
+                              type="button"
+                              onClick={() => assObj && openQuickGradeModal(row.student, assObj)}
+                              title="คลิกเพื่อให้คะแนนตรง (กรณีส่งใบงานกระดาษกับครูแล้ว)"
+                              className="inline-flex items-center px-2 py-0.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-semibold text-[10px] cursor-pointer transition-all active:scale-95"
+                            >
                               ยังไม่ส่ง
-                            </span>
+                            </button>
                           )}
                           {cell.type === "exempt" && (
                             <span className="text-[10px] text-gray-300">-</span>
@@ -1455,117 +1500,155 @@ export default function ScorebookTab() {
                 <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
                 <span>กำลังโหลดผลงานของนักเรียน...</span>
               </div>
-            ) : !quickSubDetail ? (
-              <div className="py-8 text-center text-xs text-gray-400">ไม่พบข้อมูลงานที่ส่ง</div>
             ) : (
               <>
-                {/* Artwork Image & Stamp Button */}
-                {(() => {
-                  const subImages: string[] =
-                    Array.isArray(quickSubDetail.images) && quickSubDetail.images.length > 0
-                      ? quickSubDetail.images
-                      : quickSubDetail.imageUrl
-                      ? [quickSubDetail.imageUrl]
-                      : [];
-                  const serverAnnotated: (string | null)[] = Array.isArray(quickSubDetail.annotatedImages)
-                    ? quickSubDetail.annotatedImages
-                    : [];
-                  const annotatorImages: AnnotatorImage[] = subImages.map((orig, i) => {
-                    const pending = quickPendingAnnotations[i];
-                    const current =
-                      pending !== undefined
-                        ? pending === null
-                          ? orig
-                          : pending
-                        : serverAnnotated[i] || orig;
-                    return { originalUrl: orig, currentUrl: current };
-                  });
-                  const currentPreview = annotatorImages[quickActiveImgIdx]?.currentUrl || subImages[0];
+                {!quickSubDetail ? (
+                  <div className="rounded-2xl bg-amber-50/80 border border-amber-200 p-3.5 space-y-2.5 text-xs">
+                    <div className="font-bold text-amber-900">
+                      📝 บันทึกคะแนนโดยครูผู้สอน (กรณีน้องส่งใบงานกระดาษกับครูแล้ว / ส่งออนไลน์ไม่เข้า)
+                    </div>
+                    <p className="text-[11px] text-amber-800 leading-relaxed">
+                      สามารถกรอกคะแนนด้านล่างแล้วกด <b>บันทึกคะแนน</b> ได้ทันที ระบบจะนับว่าส่งงานแล้วและตัดชื่อออกจากรายการค้างส่งอัตโนมัติ (หรือแนบรูปใบงานเก็บไว้ก็ได้)
+                    </p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-amber-100/60 text-amber-900 border border-amber-300 font-bold text-xs cursor-pointer transition-colors">
+                        <Upload className="w-3.5 h-3.5 text-orange-600" />
+                        <span>{teacherUploadDataUrl ? "เปลี่ยนรูปใบงานที่แนบ" : "แนบรูปใบงานแทนนักเรียน (ไม่บังคับ)"}</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleTeacherPickImage}
+                          className="hidden"
+                        />
+                      </label>
+                      {teacherUploadDataUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setTeacherUploadDataUrl("")}
+                          className="text-[11px] text-rose-600 font-semibold hover:underline cursor-pointer"
+                        >
+                          ลบรูปที่แนบ
+                        </button>
+                      )}
+                    </div>
+                    {teacherUploadDataUrl && (
+                      <div className="rounded-xl overflow-hidden bg-white border border-amber-200 max-h-56 flex items-center justify-center p-1">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={teacherUploadDataUrl} alt="ภาพที่ครูแนบ" className="max-h-52 w-auto object-contain rounded-lg" />
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    {/* Artwork Image & Stamp Button */}
+                    {(() => {
+                      const subImages: string[] =
+                        Array.isArray(quickSubDetail.images) && quickSubDetail.images.length > 0
+                          ? quickSubDetail.images
+                          : quickSubDetail.imageUrl
+                          ? [quickSubDetail.imageUrl]
+                          : [];
+                      const serverAnnotated: (string | null)[] = Array.isArray(quickSubDetail.annotatedImages)
+                        ? quickSubDetail.annotatedImages
+                        : [];
+                      const annotatorImages: AnnotatorImage[] = subImages.map((orig, i) => {
+                        const pending = quickPendingAnnotations[i];
+                        const current =
+                          pending !== undefined
+                            ? pending === null
+                              ? orig
+                              : pending
+                            : serverAnnotated[i] || orig;
+                        return { originalUrl: orig, currentUrl: current };
+                      });
+                      const currentPreview = annotatorImages[quickActiveImgIdx]?.currentUrl || subImages[0];
 
-                  return (
-                    <>
-                      {subImages.length > 0 && (
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold text-gray-700">
-                              ภาพถ่ายผลงานศิลปะ {subImages.length > 1 ? `(${quickActiveImgIdx + 1}/${subImages.length})` : ""}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => setIsQuickAnnotating(true)}
-                              className="px-3 py-1.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm cursor-pointer active:scale-95"
-                            >
-                              <PenLine className="w-3.5 h-3.5" />
-                              <span>💮 ปั๊มตรวจ / เขียนบนภาพ</span>
-                            </button>
-                          </div>
-
-                          <div className="rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 max-h-80 flex items-center justify-center">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={currentPreview}
-                              alt="ผลงานนักเรียน"
-                              className="max-h-80 w-auto object-contain"
-                            />
-                          </div>
-
-                          {subImages.length > 1 && (
-                            <div className="flex items-center gap-2 overflow-x-auto pb-1">
-                              {subImages.map((_, idx) => (
+                      return (
+                        <>
+                          {subImages.length > 0 && (
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold text-gray-700">
+                                  ภาพถ่ายผลงานศิลปะ {subImages.length > 1 ? `(${quickActiveImgIdx + 1}/${subImages.length})` : ""}
+                                </span>
                                 <button
-                                  key={idx}
                                   type="button"
-                                  onClick={() => setQuickActiveImgIdx(idx)}
-                                  className={`w-12 h-12 rounded-xl overflow-hidden border-2 cursor-pointer shrink-0 ${
-                                    quickActiveImgIdx === idx ? "border-orange-500" : "border-gray-200 opacity-70"
-                                  }`}
+                                  onClick={() => setIsQuickAnnotating(true)}
+                                  className="px-3 py-1.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm cursor-pointer active:scale-95"
                                 >
-                                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                                  <img
-                                    src={annotatorImages[idx]?.currentUrl || subImages[idx]}
-                                    alt={`ภาพที่ ${idx + 1}`}
-                                    className="w-full h-full object-cover"
-                                  />
+                                  <PenLine className="w-3.5 h-3.5" />
+                                  <span>💮 ปั๊มตรวจ / เขียนบนภาพ</span>
                                 </button>
-                              ))}
+                              </div>
+
+                              <div className="rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 max-h-80 flex items-center justify-center">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={currentPreview}
+                                  alt="ผลงานนักเรียน"
+                                  className="max-h-80 w-auto object-contain"
+                                />
+                              </div>
+
+                              {subImages.length > 1 && (
+                                <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                                  {subImages.map((_, idx) => (
+                                    <button
+                                      key={idx}
+                                      type="button"
+                                      onClick={() => setQuickActiveImgIdx(idx)}
+                                      className={`w-12 h-12 rounded-xl overflow-hidden border-2 cursor-pointer shrink-0 ${
+                                        quickActiveImgIdx === idx ? "border-orange-500" : "border-gray-200 opacity-70"
+                                      }`}
+                                    >
+                                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                                      <img
+                                        src={annotatorImages[idx]?.currentUrl || subImages[idx]}
+                                        alt={`ภาพที่ ${idx + 1}`}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           )}
-                        </div>
-                      )}
 
-                      {isQuickAnnotating && (
-                        <ImageAnnotator
-                          images={annotatorImages}
-                          initialIndex={quickActiveImgIdx}
-                          title={`ผลงานของ ${quickGradeTarget.student.name} (${quickGradeTarget.student.id})`}
-                          onCancel={() => setIsQuickAnnotating(false)}
-                          onDone={(changes) => {
-                            setQuickPendingAnnotations((prev) => ({ ...prev, ...changes }));
-                            setIsQuickAnnotating(false);
-                          }}
-                        />
-                      )}
-                    </>
-                  );
-                })()}
+                          {isQuickAnnotating && (
+                            <ImageAnnotator
+                              images={annotatorImages}
+                              initialIndex={quickActiveImgIdx}
+                              title={`ผลงานของ ${quickGradeTarget.student.name} (${quickGradeTarget.student.id})`}
+                              onCancel={() => setIsQuickAnnotating(false)}
+                              onDone={(changes) => {
+                                setQuickPendingAnnotations((prev) => ({ ...prev, ...changes }));
+                                setIsQuickAnnotating(false);
+                              }}
+                            />
+                          )}
+                        </>
+                      );
+                    })()}
 
-                {quickSubDetail.externalLink && (
-                  <a
-                    href={quickSubDetail.externalLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-between p-3 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold hover:bg-blue-100"
-                  >
-                    <span className="truncate">{quickSubDetail.externalLink}</span>
-                    <ExternalLink className="w-4 h-4 shrink-0 ml-2" />
-                  </a>
-                )}
+                    {quickSubDetail.externalLink && (
+                      <a
+                        href={quickSubDetail.externalLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between p-3 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold hover:bg-blue-100"
+                      >
+                        <span className="truncate">{quickSubDetail.externalLink}</span>
+                        <ExternalLink className="w-4 h-4 shrink-0 ml-2" />
+                      </a>
+                    )}
 
-                {quickSubDetail.concept && (
-                  <div className="p-3 rounded-xl bg-orange-50/60 border border-orange-100 text-xs text-gray-800">
-                    <span className="font-bold text-orange-900 block mb-0.5">💡 แนวคิดผลงาน:</span>
-                    {quickSubDetail.concept}
-                  </div>
+                    {quickSubDetail.concept && (
+                      <div className="p-3 rounded-xl bg-orange-50/60 border border-orange-100 text-xs text-gray-800">
+                        <span className="font-bold text-orange-900 block mb-0.5">💡 แนวคิดผลงาน:</span>
+                        {quickSubDetail.concept}
+                      </div>
+                    )}
+                  </>
                 )}
 
                 {/* Score & Status Inputs */}

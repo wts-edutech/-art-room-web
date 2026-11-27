@@ -468,30 +468,100 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json().catch(() => ({}));
-    const { id, score, feedback, status, annotations } = body;
+    const {
+      id,
+      assignmentId,
+      studentId,
+      studentName,
+      classroom,
+      imageDataUrl,
+      score,
+      feedback,
+      status,
+      annotations,
+    } = body;
 
-    if (!id) {
+    const db = getDb();
+    const nowIso = new Date().toISOString();
+    const parsedScore = score !== undefined && score !== '' && score !== null ? parseFloat(score) : null;
+    const hasValidScore = parsedScore !== null && !Number.isNaN(parsedScore);
+    const resolvedStatus =
+      status === 'resubmit' ? 'resubmit' : hasValidScore ? 'graded' : status || 'graded';
+
+    // Support direct teacher score entry / paper-worksheet check-in when student has no online submission yet
+    let targetId = id ? String(id).trim() : '';
+    if (!targetId && assignmentId && studentId) {
+      const sid = String(studentId).trim();
+      const aid = String(assignmentId).trim();
+      const existingRow = await db
+        .select({ id: submissions.id })
+        .from(submissions)
+        .where(and(eq(submissions.assignmentId, aid), eq(submissions.studentId, sid)))
+        .get();
+
+      if (existingRow?.id) {
+        targetId = existingRow.id;
+      } else {
+        const newId = `sub_${Date.now()}_${sid}`;
+        let storedImages: string[] | null = null;
+        if (typeof imageDataUrl === 'string' && imageDataUrl.startsWith('data:image/')) {
+          const r2Ref = await offloadDataUrl(imageDataUrl, `submissions/${sid}/${aid}/${Date.now()}_0`);
+          storedImages = [r2Ref];
+        }
+        await db.insert(submissions).values({
+          id: newId,
+          assignmentId: aid,
+          studentId: sid,
+          studentName: String(studentName || sid).trim(),
+          classroom: String(classroom || '').trim() || 'ม.3/1',
+          imageUrl: storedImages ? `/api/submissions/image?id=${encodeURIComponent(newId)}&index=0` : null,
+          images: storedImages,
+          fileUrl: null,
+          fileName: null,
+          externalLink: null,
+          concept: 'ส่งใบงานจริงกับครูผู้สอน (บันทึกคะแนนโดยครู)',
+          score: hasValidScore ? parsedScore : null,
+          feedback: feedback ? String(feedback).trim() : null,
+          status: resolvedStatus,
+          isLate: false,
+          submittedAt: nowIso,
+          updatedAt: nowIso,
+        } as any);
+
+        return NextResponse.json({ success: true, id: newId, createdByTeacher: true });
+      }
+    }
+
+    if (!targetId) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
     }
 
-    const db = getDb();
     const updateData: any = {
-      updatedAt: new Date().toISOString(),
+      updatedAt: nowIso,
     };
 
     if (score !== undefined) {
-      updateData.score = score !== '' && score !== null ? parseFloat(score) : null;
+      updateData.score = hasValidScore ? parsedScore : null;
     }
     if (feedback !== undefined) {
       updateData.feedback = feedback ? String(feedback).trim() : null;
     }
-    const hasValidScore = score !== undefined && score !== '' && score !== null;
-    if (status === 'resubmit') {
-      updateData.status = 'resubmit';
-    } else if (hasValidScore) {
-      updateData.status = 'graded';
-    } else if (status) {
-      updateData.status = status;
+    updateData.status = resolvedStatus;
+
+    if (typeof imageDataUrl === 'string' && imageDataUrl.startsWith('data:image/')) {
+      const existingSub = await db
+        .select({ studentId: submissions.studentId, assignmentId: submissions.assignmentId })
+        .from(submissions)
+        .where(eq(submissions.id, targetId))
+        .get();
+      if (existingSub) {
+        const r2Ref = await offloadDataUrl(
+          imageDataUrl,
+          `submissions/${existingSub.studentId}/${existingSub.assignmentId}/${Date.now()}_0`
+        );
+        updateData.imageUrl = `/api/submissions/image?id=${encodeURIComponent(targetId)}&index=0`;
+        updateData.images = [r2Ref];
+      }
     }
 
     // ภาพที่ครูเขียนตรวจ: { [index]: dataUrl (บันทึกใหม่) | null (ลบการเขียน) }
@@ -504,7 +574,7 @@ export async function PUT(request: Request) {
         const existing = await db
           .select({ annotatedImages: submissions.annotatedImages, studentId: submissions.studentId })
           .from(submissions)
-          .where(eq(submissions.id, id))
+          .where(eq(submissions.id, targetId))
           .get();
         if (!existing) {
           return NextResponse.json({ error: 'ไม่พบงานที่ส่ง' }, { status: 404 });
@@ -515,14 +585,14 @@ export async function PUT(request: Request) {
           while (list.length <= i) list.push('');
           list[i] = v === null
             ? ''
-            : await offloadDataUrl(v as string, `submissions/annotated/${existing.studentId}/${id}_${i}_${stamp}`);
+            : await offloadDataUrl(v as string, `submissions/annotated/${existing.studentId}/${targetId}_${i}_${stamp}`);
         }
         updateData.annotatedImages = list.some(Boolean) ? list : null;
       }
     }
 
-    await db.update(submissions).set(updateData).where(eq(submissions.id, id));
-    return NextResponse.json({ success: true });
+    await db.update(submissions).set(updateData).where(eq(submissions.id, targetId));
+    return NextResponse.json({ success: true, id: targetId });
   } catch (error: any) {
     console.error("PUT /api/submissions error:", error);
     return NextResponse.json({ error: error?.message || 'Failed to update submission' }, { status: 500 });
