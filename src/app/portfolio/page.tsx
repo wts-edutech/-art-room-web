@@ -223,13 +223,63 @@ export function getLayoutLabel(layout: LayoutType): string {
   return "เด่น (1 + 4 เล็ก)";
 }
 
+const UNIVERSITY_LOGO_PRESETS: {
+  id: string;
+  name: string;
+  short: string;
+  logo: string;
+  keywords: string[];
+}[] = [
+  { id: "ku", name: "มหาวิทยาลัยเกษตรศาสตร์", short: "ม.เกษตรศาสตร์ (KU)", logo: "/universities/ku.png", keywords: ["เกษตรศาสตร์", "kasetsart", "มก"] },
+  { id: "su", name: "มหาวิทยาลัยศิลปากร", short: "ม.ศิลปากร (SU)", logo: "/universities/su.png", keywords: ["ศิลปากร", "silpakorn", "มศก"] },
+  { id: "cu", name: "จุฬาลงกรณ์มหาวิทยาลัย", short: "จุฬาลงกรณ์ฯ (CU)", logo: "/universities/cu.png", keywords: ["จุฬา", "chula"] },
+  { id: "swu", name: "มหาวิทยาลัยศรีนครินทรวิโรฒ", short: "มศว (SWU)", logo: "/universities/swu.png", keywords: ["ศรีนครินทรวิโรฒ", "มศว", "ประสานมิตร", "swu"] },
+  { id: "tu", name: "มหาวิทยาลัยธรรมศาสตร์", short: "ม.ธรรมศาสตร์ (TU)", logo: "/universities/tu.png", keywords: ["ธรรมศาสตร์", "thammasat", "มธ"] },
+  { id: "kmitl", name: "สถาบันเทคโนโลยีพระจอมเกล้าเจ้าคุณทหารลาดกระบัง", short: "สจล. ลาดกระบัง (KMITL)", logo: "/universities/kmitl.png", keywords: ["ลาดกระบัง", "เจ้าคุณทหาร", "kmitl", "สจล"] },
+  { id: "kmutt", name: "มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าธนบุรี", short: "มจธ. บางมด (KMUTT)", logo: "/universities/kmutt.png", keywords: ["พระจอมเกล้าธนบุรี", "บางมด", "kmutt", "มจธ"] },
+  { id: "kmutnb", name: "มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าพระนครเหนือ", short: "มจพ. พระนครเหนือ (KMUTNB)", logo: "/universities/kmutnb.png", keywords: ["พระนครเหนือ", "kmutnb", "มจพ"] },
+  { id: "mu", name: "มหาวิทยาลัยมหิดล", short: "ม.มหิดล (MU)", logo: "/universities/mu.png", keywords: ["มหิดล", "mahidol"] },
+  { id: "cmu", name: "มหาวิทยาลัยเชียงใหม่", short: "ม.เชียงใหม่ (CMU)", logo: "/universities/cmu.png", keywords: ["เชียงใหม่", "chiang mai", "cmu", "มช"] },
+  { id: "kku", name: "มหาวิทยาลัยขอนแก่น", short: "ม.ขอนแก่น (KKU)", logo: "/universities/kku.png", keywords: ["ขอนแก่น", "khon kaen", "kku", "มข"] },
+  { id: "buu", name: "มหาวิทยาลัยบูรพา", short: "ม.บูรพา (BUU)", logo: "/universities/buu.png", keywords: ["บูรพา", "burapha", "บางแสน", "buu"] },
+  { id: "psu", name: "มหาวิทยาลัยสงขลานครินทร์", short: "ม.สงขลานครินทร์ (PSU)", logo: "/universities/psu.png", keywords: ["สงขลานครินทร์", " prince of songkla", "psu", "มอ."] },
+  { id: "rmutr", name: "มหาวิทยาลัยเทคโนโลยีราชมงคลรัตนโกสินทร์ (เพาะช่าง)", short: "มทร.รัตนโกสินทร์ / เพาะช่าง", logo: "/universities/rmutr.png", keywords: ["รัตนโกสินทร์", "เพาะช่าง", "rmutr"] },
+  { id: "rmutt", name: "มหาวิทยาลัยเทคโนโลยีราชมงคลธัญบุรี", short: "มทร.ธัญบุรี (RMUTT)", logo: "/universities/rmutt.png", keywords: ["ราชมงคลธัญบุรี", "ธัญบุรี", "คลองหก", "rmutt"] },
+];
+
+function matchUniversityLogoByName(univName?: string | null): string | null {
+  const q = (univName || "").trim().toLowerCase();
+  if (!q) return null;
+  for (const u of UNIVERSITY_LOGO_PRESETS) {
+    if (u.keywords.some((kw) => q.includes(kw.toLowerCase()))) {
+      return u.logo;
+    }
+  }
+  return null;
+}
+
+function resolveUniversityLogo(univName?: string | null, savedLogo?: string | null): string {
+  const cleanLogo = (savedLogo || "").trim();
+  const isOldArtRoomLogo = !cleanLogo || cleanLogo === "/artroom-logo.png" || cleanLogo === "/images/artroom-logo.png";
+  const isBuiltInUnivLogo = cleanLogo.startsWith("/universities/");
+  const matched = matchUniversityLogoByName(univName);
+
+  if (isOldArtRoomLogo) {
+    return matched || "/universities/ku.png";
+  }
+  if (isBuiltInUnivLogo && matched) {
+    return matched;
+  }
+  return cleanLogo;
+}
+
 const DEFAULT_STATE: PortfolioState = {
   academicYear: "2570",
   university: "มหาวิทยาลัยเกษตรศาสตร์",
   faculty: "คณะศึกษาศาสตร์",
   major: "การมัธยมศึกษา ศษ.บ. สาขาวิชาศึกษาศาสตร์",
   projectRound: "โครงการช้างเผือก (รอบ 1.2)",
-  universityLogo: "/artroom-logo.png",
+  universityLogo: "/universities/ku.png",
   showConditions: false,
   conditionsText:
     "1. ผลการเรียนเฉลี่ยสะสม (GPAX) 5 ภาคเรียน สัดส่วน 30.00\n2. แฟ้มสะสมผลงาน (ตามแบบฟอร์มของ ทปอ.) สัดส่วน 30.00\n3. TGAT ความถนัดทั่วไป สัดส่วน 30.00\n4. TPAT5 ความถนัดครุศาสตร์-ศึกษาศาสตร์ สัดส่วน 10.00",
@@ -489,6 +539,7 @@ function PortfolioBuilderContent() {
   const [pendingUploadCallback, setPendingUploadCallback] = useState<((dataUrl: string) => void) | null>(null);
   const [cropperFile, setCropperFile] = useState<File | null>(null);
   const [isCropperOpen, setIsCropperOpen] = useState<boolean>(false);
+  const [isUnivLogoPickerOpen, setIsUnivLogoPickerOpen] = useState<boolean>(false);
 
   // Load saved state scoped strictly to the logged-in student ID (or query ?studentId= for Admin)
   useEffect(() => {
@@ -547,6 +598,7 @@ function PortfolioBuilderContent() {
                   setState((prev) => ({
                     ...prev,
                     ...parsedServer,
+                    universityLogo: resolveUniversityLogo(parsedServer.university, parsedServer.universityLogo),
                     sections: { ...prev.sections, ...(parsedServer.sections || {}) },
                     profile: sanitizeLegacySampleProfile(parsedServer.profile, realName),
                     subjectGrades: sanitizeLegacySubjectGrades(parsedServer.subjectGrades),
@@ -574,6 +626,7 @@ function PortfolioBuilderContent() {
             setState((prev) => ({
               ...prev,
               ...parsed,
+              universityLogo: resolveUniversityLogo(parsed.university, parsed.universityLogo),
               sections: { ...prev.sections, ...(parsed.sections || {}) },
               profile: sanitizeLegacySampleProfile(parsed.profile, name),
               subjectGrades: sanitizeLegacySubjectGrades(parsed.subjectGrades),
@@ -584,10 +637,12 @@ function PortfolioBuilderContent() {
               email && !/^\d{4,6}@(wachiratham|wts)\.ac\.th$/i.test(email.trim()) && email !== "student@wts.ac.th"
                 ? email
                 : "";
+            const initUniv = fetchedCfg.defaultUniversity || DEFAULT_STATE.university;
             setState((prev) => ({
               ...prev,
               academicYear: fetchedCfg.defaultAcademicYear || prev.academicYear,
-              university: fetchedCfg.defaultUniversity || prev.university,
+              university: initUniv,
+              universityLogo: resolveUniversityLogo(initUniv, prev.universityLogo),
               faculty: fetchedCfg.defaultFaculty || prev.faculty,
               major: fetchedCfg.defaultMajor || prev.major,
               projectRound: fetchedCfg.defaultProjectRound || prev.projectRound,
@@ -1744,11 +1799,33 @@ function PortfolioBuilderContent() {
             </div>
             <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
               <div>
-                <span className="text-[10px] text-slate-400 block">มหาวิทยาลัย / สถาบัน</span>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[10px] text-slate-400">มหาวิทยาลัย / สถาบัน</span>
+                  <button
+                    type="button"
+                    onClick={() => setIsUnivLogoPickerOpen(true)}
+                    className="text-[10px] font-bold text-[#0d9488] hover:underline flex items-center gap-1 cursor-pointer no-min-h"
+                  >
+                    <Building2 className="w-3 h-3" />
+                    <span>เลือกตรามหาวิทยาลัย</span>
+                  </button>
+                </div>
                 <input
                   type="text"
                   value={state.university}
-                  onChange={(e) => setState({ ...state, university: e.target.value })}
+                  onChange={(e) => {
+                    const nextUniv = e.target.value;
+                    const canAutoSwitch =
+                      !state.universityLogo ||
+                      state.universityLogo === "/artroom-logo.png" ||
+                      state.universityLogo.startsWith("/universities/");
+                    const autoLogo = canAutoSwitch ? matchUniversityLogoByName(nextUniv) : null;
+                    setState({
+                      ...state,
+                      university: nextUniv,
+                      universityLogo: autoLogo || state.universityLogo,
+                    });
+                  }}
                   className="w-full font-bold text-slate-800 bg-white px-2 py-1 rounded border border-slate-200 outline-none focus:border-teal-500"
                 />
               </div>
@@ -2283,18 +2360,19 @@ function PortfolioBuilderContent() {
                   </div>
                   <div className="flex items-start gap-3 p-3 rounded-xl bg-[#fffaf7] border border-[#f26532]/25">
                     <div
-                      onClick={() =>
-                        triggerImageUpload((url) => setState({ ...state, universityLogo: url }))
-                      }
-                      className="w-12 h-12 rounded-xl bg-white border border-[#f26532]/20 flex items-center justify-center overflow-hidden shrink-0 cursor-pointer group relative"
-                      title="คลิกเพื่อเปลี่ยนตราสถาบัน/โรงเรียน"
+                      onClick={() => setIsUnivLogoPickerOpen(true)}
+                      className="w-13 h-13 rounded-xl bg-white border border-[#f26532]/25 flex items-center justify-center overflow-hidden shrink-0 cursor-pointer group relative p-1 shadow-2xs"
+                      title="คลิกเพื่อเลือกตรามหาวิทยาลัย หรืออัปโหลดรูปตราเอง"
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={state.universityLogo || "/artroom-logo.png"}
-                        alt="Logo"
-                        className="w-10 h-10 object-contain"
+                        src={resolveUniversityLogo(state.university, state.universityLogo)}
+                        alt={state.university || "University Emblem"}
+                        className="w-full h-full object-contain"
                       />
+                      <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[9px] font-bold text-center leading-tight p-0.5 print:hidden">
+                        เปลี่ยนตรา
+                      </div>
                     </div>
                     <div className="space-y-0.5 text-xs flex-1">
                       <div className="font-extrabold text-[#c2410c] text-sm">{state.university}</div>
@@ -3286,6 +3364,102 @@ function PortfolioBuilderContent() {
           </div>
         </div>
       )}
+      {/* University Official Emblem Picker Modal */}
+      {isUnivLogoPickerOpen && (
+        <div
+          onClick={() => setIsUnivLogoPickerOpen(false)}
+          className="fixed inset-0 z-[120] bg-black/65 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 print:hidden"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-3xl max-w-2xl w-full max-h-[88dvh] overflow-hidden shadow-2xl border border-slate-100 flex flex-col animate-in zoom-in-95 duration-150"
+          >
+            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center">
+                  <Building2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-extrabold text-slate-900">
+                    เลือกตรามหาวิทยาลัย / สถาบันที่สมัคร
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    คลิกเลือกมหาวิทยาลัยเพื่อใส่ตราสัญลักษณ์และชื่อสถาบันอัตโนมัติ หรืออัปโหลดไฟล์ตราเอง
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsUnivLogoPickerOpen(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center cursor-pointer no-min-h"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-4 sm:p-5 overflow-y-auto space-y-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                {UNIVERSITY_LOGO_PRESETS.map((u) => {
+                  const isSelected = state.universityLogo === u.logo;
+                  return (
+                    <button
+                      key={u.id}
+                      type="button"
+                      onClick={() => {
+                        setState((prev) => ({
+                          ...prev,
+                          university: u.name,
+                          universityLogo: u.logo,
+                        }));
+                        setIsUnivLogoPickerOpen(false);
+                        swalToast(`เลือกตรา ${u.short} เรียบร้อย`, "success");
+                      }}
+                      className={`p-3 rounded-2xl border text-left flex items-center gap-3 transition-all cursor-pointer ${
+                        isSelected
+                          ? "border-orange-500 bg-orange-50/70 ring-2 ring-orange-500/15"
+                          : "border-slate-200 hover:border-orange-300 hover:bg-slate-50"
+                      }`}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={u.logo}
+                        alt={u.name}
+                        className="w-11 h-11 object-contain shrink-0 bg-white rounded-xl p-1 border border-slate-100"
+                      />
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold text-slate-900 leading-tight line-clamp-2">
+                          {u.short}
+                        </div>
+                        <div className="text-[10px] text-slate-400 truncate mt-0.5">
+                          {u.name}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-2.5">
+                <span className="text-xs text-slate-500">
+                  ไม่พบมหาวิทยาลัยที่ต้องการ? สามารถอัปโหลดรูปตราสถาบันจากเครื่องได้เลย
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsUnivLogoPickerOpen(false);
+                    triggerImageUpload((url) => setState((prev) => ({ ...prev, universityLogo: url })));
+                  }}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold cursor-pointer shrink-0 no-min-h"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>อัปโหลดรูปตราสถาบันเอง</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Smart Desk-Trimming & Interactive Cropper for Portfolio Uploads */}
       <ImageEditorModal
         isOpen={isCropperOpen}
