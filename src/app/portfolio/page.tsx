@@ -42,6 +42,18 @@ import {
   PortfolioConfigSettings,
   DEFAULT_PORTFOLIO_CONFIG,
 } from "@/lib/portfolio-config";
+import PortfolioDesignPanel from "@/components/portfolio/PortfolioDesignPanel";
+import {
+  PortfolioDesignSettings,
+  DEFAULT_PORTFOLIO_DESIGN,
+  PORTFOLIO_THEME_PRESETS,
+  resolvePortfolioDesign,
+  getFontCss,
+  hexToRgba,
+  mixHex,
+  getContrastText,
+  AccentSticker,
+} from "@/lib/portfolio-themes";
 
 export type LayoutType =
   | "a4-landscape"
@@ -161,6 +173,7 @@ export interface PortfolioState {
   }[];
   entries: PortfolioEntry[];
   questions: QuestionEntry[];
+  design?: PortfolioDesignSettings;
 }
 
 const LAYOUT_OPTIONS: {
@@ -408,6 +421,7 @@ const DEFAULT_STATE: PortfolioState = {
         "เพราะข้าพเจ้าเชื่อว่าศิลปะและการศึกษาเป็นรากฐานสำคัญในการพัฒนาศักยภาพของมนุษย์ ข้าพเจ้าต้องการนำทักษะความสามารถที่มีมาต่อยอดในระดับอุดมศึกษา เพื่อก้าวไปเป็นบุคลากรที่มีคุณภาพและสร้างสรรค์ผลงานที่เป็นประโยชน์ต่อสังคม",
     },
   ],
+  design: DEFAULT_PORTFOLIO_DESIGN,
 };
 
 const STORAGE_KEY_PREFIX = "artroom_tcasfolio_builder_v1";
@@ -520,6 +534,8 @@ function PortfolioBuilderContent() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [activeEntryId, setActiveEntryId] = useState<string | null>(null);
   const [openToolbarDropdown, setOpenToolbarDropdown] = useState<"layout" | "fit" | null>(null);
+  const [sidebarTab, setSidebarTab] = useState<"content" | "design">("content");
+  const asideRef = useRef<HTMLElement | null>(null);
 
   // Import from Art Room DB modal state (Strictly student's own items)
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -602,6 +618,7 @@ function PortfolioBuilderContent() {
                     sections: { ...prev.sections, ...(parsedServer.sections || {}) },
                     profile: sanitizeLegacySampleProfile(parsedServer.profile, realName),
                     subjectGrades: sanitizeLegacySubjectGrades(parsedServer.subjectGrades),
+                    design: resolvePortfolioDesign(parsedServer.design),
                   }));
                   if (data.record.studentName) setCurrentStudentName(data.record.studentName);
                   if (data.record.classroom) setCurrentClassroom(data.record.classroom);
@@ -630,6 +647,7 @@ function PortfolioBuilderContent() {
               sections: { ...prev.sections, ...(parsed.sections || {}) },
               profile: sanitizeLegacySampleProfile(parsed.profile, name),
               subjectGrades: sanitizeLegacySubjectGrades(parsed.subjectGrades),
+              design: resolvePortfolioDesign(parsed.design),
             }));
           } else {
             // Initialize fresh portfolio for this logged-in student (blank personal/parent/address fields so students fill their own)
@@ -1258,12 +1276,141 @@ function PortfolioBuilderContent() {
     }
   };
 
+  const design = resolvePortfolioDesign(state.design);
+  const themePrimary = design.primaryColor;
+  const themeSecondary = design.secondaryColor;
+  const themeAccent = design.accentColor;
+  const themePrimaryDark = mixHex(themePrimary, "#000000", 0.22);
+  const isDarkCover = design.coverMode === "dark";
+  const isVibrantCover = design.coverMode === "vibrant";
+  const activeFontCss = getFontCss(design.fontFamily);
+
+  const coverBannerBackground = isDarkCover
+    ? `linear-gradient(135deg, #0b1120 0%, ${mixHex("#0f172a", themeSecondary, 0.58)} 55%, ${mixHex("#0f172a", themePrimary, 0.36)} 100%)`
+    : isVibrantCover
+      ? `linear-gradient(135deg, ${themePrimary} 0%, ${mixHex(themePrimary, themeSecondary, 0.45)} 100%)`
+      : `linear-gradient(135deg, #fffefd 0%, ${mixHex("#ffffff", themePrimary, 0.08)} 52%, ${mixHex("#ffffff", themePrimary, 0.2)} 100%)`;
+
+  const paperTextureStyle: React.CSSProperties =
+    design.paperTexture === "dots"
+      ? {
+          backgroundImage: `radial-gradient(${hexToRgba(themePrimary, 0.12)} 1px, transparent 1px)`,
+          backgroundSize: "16px 16px",
+        }
+      : design.paperTexture === "grid"
+        ? {
+            backgroundImage: `linear-gradient(to right, ${hexToRgba(themePrimary, 0.065)} 1px, transparent 1px), linear-gradient(to bottom, ${hexToRgba(themePrimary, 0.065)} 1px, transparent 1px)`,
+            backgroundSize: "20px 20px",
+          }
+        : {};
+
+  const getBadgeStyleProps = (variant: "primary" | "secondary" = "secondary"): {
+    className: string;
+    style: React.CSSProperties;
+  } => {
+    const baseBg =
+      variant === "primary"
+        ? `linear-gradient(135deg, ${themePrimaryDark}, ${themePrimary})`
+        : themeSecondary;
+    const solidColor = variant === "primary" ? themePrimary : themeSecondary;
+
+    if (design.badgeShape === "minimal") {
+      return {
+        className: "inline-flex items-center gap-1.5 px-1 py-1 font-extrabold text-xs sm:text-sm border-b-2 bg-transparent",
+        style: {
+          color: solidColor,
+          borderBottomColor: themePrimary,
+        },
+      };
+    }
+
+    const shapeCls =
+      design.badgeShape === "pill"
+        ? "rounded-full px-4 py-1.5"
+        : design.badgeShape === "tag"
+          ? "rounded-r-xl rounded-l-sm px-4 py-1.5 border-l-4"
+          : "rounded-xl px-4 py-1.5";
+
+    return {
+      className: `inline-flex items-center gap-1.5 font-bold text-xs sm:text-sm shadow-2xs ${shapeCls}`,
+      style: {
+        background: baseBg,
+        color: getContrastText(solidColor),
+        borderLeftColor: design.badgeShape === "tag" ? themeAccent : undefined,
+      },
+    };
+  };
+
+  const renderStickerBadge = (sticker: AccentSticker) => {
+    if (sticker === "none") return null;
+    const color = isDarkCover || isVibrantCover ? themeAccent : themePrimary;
+    switch (sticker) {
+      case "palette":
+        return (
+          <svg
+            className="absolute -top-3.5 right-3 w-7 h-7 pointer-events-none hidden sm:block drop-shadow-xs"
+            style={{ color }}
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <path d="M12 2C6.49 2 2 6.49 2 12s4.49 10 10 10c1.38 0 2.5-1.12 2.5-2.5 0-.61-.23-1.2-.64-1.67-.08-.1-.13-.21-.13-.33 0-.28.22-.5.5-.5H16c3.31 0 6-2.69 6-6 0-4.96-4.49-9-10-9zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 8 6.5 8 8 8.67 8 9.5 7.33 11 6.5 11zm3-4C8.67 7 8 6.33 8 5.5S8.67 4 9.5 4s1.5.67 1.5 1.5S10.33 7 9.5 7zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 4 14.5 4s1.5.67 1.5 1.5S15.33 7 14.5 7zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 8 17.5 8s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />
+          </svg>
+        );
+      case "crown":
+        return (
+          <svg
+            className="absolute -top-3.5 right-3 w-7 h-7 pointer-events-none hidden sm:block drop-shadow-xs"
+            style={{ color }}
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z" />
+          </svg>
+        );
+      case "star":
+        return (
+          <svg
+            className="absolute -top-3.5 right-3 w-7 h-7 pointer-events-none hidden sm:block drop-shadow-xs"
+            style={{ color }}
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <path d="M12 2l2.9 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l7.1-1.01L12 2z" />
+          </svg>
+        );
+      case "heart":
+        return (
+          <svg
+            className="absolute -top-3.5 right-3 w-7 h-7 pointer-events-none hidden sm:block drop-shadow-xs"
+            style={{ color }}
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+          </svg>
+        );
+      case "sparkle":
+      default:
+        return (
+          <svg
+            className="absolute -top-3.5 right-3 w-7 h-7 pointer-events-none hidden sm:block drop-shadow-2xs"
+            style={{ color }}
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <path d="M12 0C12.8 7.5 16.5 11.2 24 12C16.5 12.8 12.8 16.5 12 24C11.2 16.5 7.5 12.8 0 12C7.5 11.2 11.2 7.5 12 0Z" />
+          </svg>
+        );
+    }
+  };
+
   // Render category section (4.1, 4.2, 4.3)
   const renderCategorySection = (
     catKey: "4.1" | "4.2" | "4.3",
     badgeTitle: string
   ) => {
     const catEntries = state.entries.filter((e) => e.category === catKey);
+    const catBadge = getBadgeStyleProps("secondary");
 
     return (
       <div className="space-y-4 pt-3">
@@ -1271,10 +1418,13 @@ function PortfolioBuilderContent() {
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-2">
               <div className="inline-flex items-center gap-2">
-                <span className="px-4 py-1.5 rounded-lg bg-[#13426b] text-white font-bold text-xs sm:text-sm shadow-2xs">
+                <span className={catBadge.className} style={catBadge.style}>
                   {badgeTitle}
                 </span>
-                <span className="w-5 h-5 rounded-full border border-[#13426b] text-[#13426b] flex items-center justify-center text-[11px] font-serif italic font-bold print:hidden">
+                <span
+                  className="w-5 h-5 rounded-full border flex items-center justify-center text-[11px] font-serif italic font-bold print:hidden"
+                  style={{ borderColor: themeSecondary, color: themeSecondary }}
+                >
                   i
                 </span>
               </div>
@@ -1324,9 +1474,10 @@ function PortfolioBuilderContent() {
                     }
                   }}
                   className={`relative rounded-xl p-3.5 sm:p-4 transition-all break-inside-avoid ${isSelected
-                    ? "border-[2px] border-[#0d9488] bg-white print:border-none"
+                    ? "border-[2px] bg-white print:border-none"
                     : "border-[2px] border-transparent hover:border-slate-200 print:border-none"
                     }`}
+                  style={isSelected ? { borderColor: themePrimary } : undefined}
                 >
                   {/* Floating Dark Action Toolbar (Exact 1:1 TCASFOLIO Replica) */}
                   {isSelected && (
@@ -1509,10 +1660,13 @@ function PortfolioBuilderContent() {
                   {idx === 0 && (
                     <div className="flex items-center justify-between gap-2 mb-3.5">
                       <div className="inline-flex items-center gap-2">
-                        <span className="px-3.5 py-1.5 rounded-lg bg-[#13426b] text-white font-bold text-xs sm:text-sm shadow-2xs">
+                        <span className={catBadge.className} style={catBadge.style}>
                           {badgeTitle}
                         </span>
-                        <span className="w-5 h-5 rounded-full border border-[#13426b] text-[#13426b] flex items-center justify-center text-[11px] font-serif italic font-bold print:hidden">
+                        <span
+                          className="w-5 h-5 rounded-full border flex items-center justify-center text-[11px] font-serif italic font-bold print:hidden"
+                          style={{ borderColor: themeSecondary, color: themeSecondary }}
+                        >
                           i
                         </span>
                       </div>
@@ -1547,7 +1701,13 @@ function PortfolioBuilderContent() {
 
                   {/* Entry Number & Title */}
                   <div className="flex items-center gap-2.5 mb-2">
-                    <span className="w-6 h-6 rounded-full bg-[#f59e0b] text-slate-950 font-extrabold text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                    <span
+                      className="w-6 h-6 rounded-full font-extrabold text-xs flex items-center justify-center shrink-0 shadow-2xs"
+                      style={{
+                        backgroundColor: themeAccent,
+                        color: getContrastText(themeAccent),
+                      }}
+                    >
                       {idx + 1}
                     </span>
                     <input
@@ -1603,7 +1763,7 @@ function PortfolioBuilderContent() {
                         className={`inline-flex items-center gap-1 text-[11.5px] text-slate-700 ${!entry.dateStr ? "print:hidden" : ""
                           }`}
                       >
-                        <span className="font-bold text-[#0d9488]">วันที่:</span>
+                        <span className="font-bold" style={{ color: themePrimaryDark }}>วันที่:</span>
                         <input
                           type="text"
                           value={entry.dateStr}
@@ -1627,14 +1787,14 @@ function PortfolioBuilderContent() {
                     )}
                   </div>
 
-                  {/* Details & Description Area (Exact TCASFOLIO Teal Label + Placeholder) */}
+                  {/* Details & Description Area (Dynamic Theme Label + Placeholder) */}
                   <div className="space-y-1.5 text-xs sm:text-[13px] leading-relaxed">
                     {(entry.awardResult || (isSelected && catKey === "4.1" && entry.title)) && (
                       <div
                         className={`flex flex-wrap items-baseline gap-1.5 ${!entry.awardResult ? "print:hidden" : ""
                           }`}
                       >
-                        <span className="font-bold text-[#0d9488] shrink-0">
+                        <span className="font-bold shrink-0" style={{ color: themePrimaryDark }}>
                           {sysConfig.entryAwardResultLabel || "ผลรางวัล / อันดับ :"}
                         </span>
                         <input
@@ -1649,7 +1809,7 @@ function PortfolioBuilderContent() {
 
                     {/* รายละเอียด : */}
                     <div className="space-y-0.5">
-                      <div className="font-bold text-[#0d9488] text-xs">
+                      <div className="font-bold text-xs" style={{ color: themePrimaryDark }}>
                         {sysConfig.entryDetailLabel || "รายละเอียด :"}
                       </div>
                       <textarea
@@ -1678,7 +1838,7 @@ function PortfolioBuilderContent() {
                     {isImagesVisible && (
                       <div className="pt-2 space-y-1.5">
                         <div className="text-xs text-slate-500 print:hidden">
-                          <strong className="text-[#0d9488]">
+                          <strong style={{ color: themePrimaryDark }}>
                             {sysConfig.entryGalleryLabel || "ภาพประกอบ : สูงสุดไม่เกิน 6 รูป"}
                           </strong>
                         </div>
@@ -1727,7 +1887,25 @@ function PortfolioBuilderContent() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => {
+              setSidebarTab((prev) => (prev === "design" ? "content" : "design"));
+              asideRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            }}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border font-bold text-xs transition-all cursor-pointer no-min-h ${
+              sidebarTab === "design"
+                ? "bg-violet-600 text-white border-violet-600 shadow-xs"
+                : "bg-violet-50 hover:bg-violet-100 text-violet-700 border-violet-200"
+            }`}
+            title="ออกแบบตกแต่งสี ธีม และกรอบหน้าปกเอง"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">ออกแบบสี &amp; ธีม</span>
+            <span className="md:hidden">แต่งสี</span>
+          </button>
+
           <button
             type="button"
             onClick={() => {
@@ -1779,8 +1957,48 @@ function PortfolioBuilderContent() {
       {/* MAIN WORKSPACE: LEFT SIDEBAR + CENTER A4 PREVIEW */}
       {/* ================================================================= */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden print:block">
-        {/* LEFT SIDEBAR: SECTION CHECKBOXES & SETTINGS (Hidden on Print) */}
-        <aside className="w-full lg:w-72 xl:w-80 bg-white border-b lg:border-b-0 lg:border-r border-slate-200 overflow-y-auto p-4 space-y-5 shrink-0 max-h-[38vh] lg:max-h-[calc(100vh-3.5rem)] print:hidden">
+        {/* LEFT SIDEBAR: CONTENT CHECKLIST & DESIGN CUSTOMIZER (Hidden on Print) */}
+        <aside
+          ref={asideRef}
+          className={`w-full lg:w-72 xl:w-80 bg-white border-b lg:border-b-0 lg:border-r border-slate-200 overflow-y-auto p-4 space-y-5 shrink-0 lg:max-h-[calc(100vh-3.5rem)] print:hidden ${
+            sidebarTab === "design" ? "max-h-[46vh]" : "max-h-[38vh]"
+          }`}
+        >
+          {/* Sidebar Mode Switcher */}
+          <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-slate-100 border border-slate-200/80 sticky top-0 z-20">
+            <button
+              type="button"
+              onClick={() => setSidebarTab("content")}
+              className={`py-1.5 px-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer no-min-h ${
+                sidebarTab === "content"
+                  ? "bg-white text-slate-900 shadow-xs"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>เนื้อหาในแฟ้ม</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSidebarTab("design")}
+              className={`py-1.5 px-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer no-min-h ${
+                sidebarTab === "design"
+                  ? "bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-xs"
+                  : "text-slate-600 hover:text-violet-700"
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>ตกแต่งสี &amp; ธีม</span>
+            </button>
+          </div>
+
+          {sidebarTab === "design" ? (
+            <PortfolioDesignPanel
+              design={design}
+              onChange={(nextDesign) => setState((prev) => ({ ...prev, design: nextDesign }))}
+            />
+          ) : (
+            <>
           {/* Target University & Major Box */}
           <div className="space-y-2 pb-4 border-b border-slate-100">
             <div className="flex items-center justify-between">
@@ -2127,6 +2345,8 @@ function PortfolioBuilderContent() {
               </div>
             </div>
           </div>
+            </>
+          )}
         </aside>
 
         {/* ================================================================= */}
@@ -2205,11 +2425,73 @@ function PortfolioBuilderContent() {
             )}
           </div>
 
+          {/* Quick Theme Switcher Bar (Hidden on Print) */}
+          <div className="max-w-[820px] mx-auto bg-white/95 backdrop-blur-xs rounded-xl px-3.5 py-2 shadow-md border border-slate-200/80 flex flex-wrap items-center justify-between gap-2 print:hidden">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[11px] font-extrabold text-slate-700 flex items-center gap-1">
+                <Palette className="w-3.5 h-3.5 text-violet-600" />
+                <span>เปลี่ยนสีธีมด่วน:</span>
+              </span>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {PORTFOLIO_THEME_PRESETS.slice(0, 8).map((preset) => {
+                  const isActive = design.presetId === preset.id;
+                  return (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      onClick={() =>
+                        setState((prev) => ({
+                          ...prev,
+                          design: {
+                            ...resolvePortfolioDesign(prev.design),
+                            ...preset.design,
+                            presetId: preset.id,
+                          },
+                        }))
+                      }
+                      title={`${preset.name} — ${preset.subtitle}`}
+                      className={`w-6 h-6 rounded-full border-2 transition-all cursor-pointer flex items-center justify-center no-min-h ${
+                        isActive
+                          ? "border-slate-900 scale-115 ring-2 ring-slate-900/20"
+                          : "border-white shadow-xs hover:scale-110"
+                      }`}
+                      style={{
+                        background:
+                          preset.design.coverMode === "dark"
+                            ? `linear-gradient(135deg, #0f172a 45%, ${preset.design.primaryColor} 100%)`
+                            : `linear-gradient(135deg, ${preset.design.primaryColor} 0%, ${preset.design.accentColor} 100%)`,
+                      }}
+                    >
+                      {isActive && <Check className="w-3 h-3 text-white drop-shadow" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setSidebarTab("design");
+                asideRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+              }}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-violet-50 hover:bg-violet-100 text-violet-700 border border-violet-200 text-[11px] font-bold transition-colors cursor-pointer no-min-h"
+            >
+              <Sparkles className="w-3 h-3" />
+              <span>ตกแต่งเพิ่มเติม</span>
+            </button>
+          </div>
+
           {/* =============================================================== */}
           {/* A4 DOCUMENT SHEET */}
           {/* =============================================================== */}
           <div
             id="tcasfolio-printable-area"
+            style={{
+              fontFamily: activeFontCss,
+              ["--user-font" as string]: activeFontCss,
+              ...paperTextureStyle,
+            }}
             className="max-w-[820px] mx-auto bg-white rounded-sm shadow-2xl p-5 sm:p-10 space-y-6 text-slate-900 print:shadow-none print:max-w-none print:p-4 print:rounded-none overflow-hidden"
           >
             {/* Top Running Header (shown only when Cover Banner is hidden) */}
@@ -2232,26 +2514,153 @@ function PortfolioBuilderContent() {
             {/* ============================================================= */}
             {state.sections.sec1_cover && (
               <div className="space-y-5">
-                {/* Full-Bleed Orange/Warm Hero Banner Header (Matching Reference Image 1) */}
-                <div className="relative -mx-5 -mt-5 sm:-mx-10 sm:-mt-10 print:-mx-4 print:-mt-4 px-5 sm:px-10 pt-7 sm:pt-9 pb-7 bg-gradient-to-br from-[#fffdfb] via-[#fff5ee] to-[#ffe6d4]/75 overflow-hidden">
-                  {/* Soft Curved Background Arch (Top-Right Sweep) */}
-                  <div className="absolute -top-12 right-0 w-[62%] h-[115%] rounded-bl-[260px] bg-gradient-to-bl from-[#fed7aa]/55 via-[#ffedd5]/45 to-transparent pointer-events-none" />
-                  {/* Thin Decorative Orange Ellipse Ring (Bottom-Right) */}
-                  <div className="hidden sm:block absolute -bottom-16 right-4 w-56 h-36 rounded-full border border-[#f26532]/55 pointer-events-none" />
+                {/* Full-Bleed Customizable Hero Banner Header */}
+                <div
+                  className="relative -mx-5 -mt-5 sm:-mx-10 sm:-mt-10 print:-mx-4 print:-mt-4 px-5 sm:px-10 pt-7 sm:pt-9 pb-7 overflow-hidden"
+                  style={{ background: coverBannerBackground }}
+                >
+                  {/* Decorative Pattern Layer (5 selectable styles) */}
+                  {design.coverPattern === "classic-ribbon" && (
+                    <>
+                      <div
+                        className="absolute -top-12 right-0 w-[62%] h-[115%] rounded-bl-[260px] pointer-events-none"
+                        style={{
+                          background:
+                            isDarkCover || isVibrantCover
+                              ? `linear-gradient(to bottom left, ${hexToRgba(themeAccent, 0.22)}, ${hexToRgba(themePrimary, 0.08)}, transparent)`
+                              : `linear-gradient(to bottom left, ${hexToRgba(themePrimary, 0.22)}, ${hexToRgba(themeAccent, 0.12)}, transparent)`,
+                        }}
+                      />
+                      <div
+                        className="hidden sm:block absolute -bottom-16 right-4 w-56 h-36 rounded-full border pointer-events-none"
+                        style={{
+                          borderColor: isDarkCover || isVibrantCover ? hexToRgba("#ffffff", 0.28) : hexToRgba(themePrimary, 0.5),
+                        }}
+                      />
+                    </>
+                  )}
 
-                  {/* Right Vertical Orange Ribbon Tab ("PORTFOLIO") flush to top-right corner */}
-                  <div className="absolute top-0 right-0 h-40 sm:h-44 w-10 sm:w-11 bg-gradient-to-b from-[#ea580c] to-[#c2410c] rounded-bl-2xl shadow-md flex items-center justify-center select-none pointer-events-none z-20">
-                    <span className="-rotate-90 text-white font-extrabold tracking-[0.2em] text-xs sm:text-sm whitespace-nowrap">
-                      PORTFOLIO
-                    </span>
-                  </div>
+                  {design.coverPattern === "geometric-blocks" && (
+                    <>
+                      <div
+                        className="absolute -top-16 -right-12 w-72 h-72 rounded-3xl rotate-12 pointer-events-none"
+                        style={{
+                          backgroundColor: isDarkCover || isVibrantCover ? hexToRgba("#ffffff", 0.08) : hexToRgba(themePrimary, 0.12),
+                        }}
+                      />
+                      <div
+                        className="absolute -bottom-14 left-12 w-44 h-44 rounded-full pointer-events-none"
+                        style={{
+                          backgroundColor: hexToRgba(themeAccent, isDarkCover || isVibrantCover ? 0.16 : 0.14),
+                        }}
+                      />
+                      <div
+                        className="hidden sm:block absolute top-6 left-1/3 w-10 h-10 rotate-45 border-2 pointer-events-none"
+                        style={{
+                          borderColor: isDarkCover || isVibrantCover ? hexToRgba("#ffffff", 0.25) : hexToRgba(themePrimary, 0.3),
+                        }}
+                      />
+                    </>
+                  )}
+
+                  {design.coverPattern === "grid-studio" && (
+                    <>
+                      <div
+                        className="absolute inset-0 pointer-events-none"
+                        style={{
+                          backgroundImage: `linear-gradient(to right, ${
+                            isDarkCover || isVibrantCover ? "rgba(255,255,255,0.09)" : hexToRgba(themePrimary, 0.11)
+                          } 1px, transparent 1px), linear-gradient(to bottom, ${
+                            isDarkCover || isVibrantCover ? "rgba(255,255,255,0.09)" : hexToRgba(themePrimary, 0.11)
+                          } 1px, transparent 1px)`,
+                          backgroundSize: "24px 24px",
+                        }}
+                      />
+                      <div
+                        className="absolute top-3 left-3 w-5 h-5 border-t-2 border-l-2 pointer-events-none"
+                        style={{ borderColor: isDarkCover || isVibrantCover ? themeAccent : themePrimary }}
+                      />
+                      <div
+                        className="absolute bottom-3 left-3 w-5 h-5 border-b-2 border-l-2 pointer-events-none"
+                        style={{ borderColor: isDarkCover || isVibrantCover ? themeAccent : themePrimary }}
+                      />
+                    </>
+                  )}
+
+                  {design.coverPattern === "wave-artistic" && (
+                    <svg
+                      className="absolute bottom-0 left-0 w-full h-24 pointer-events-none"
+                      viewBox="0 0 1200 160"
+                      preserveAspectRatio="none"
+                    >
+                      <path
+                        d="M0,96 C240,160 480,20 760,96 C980,156 1100,72 1200,48 L1200,160 L0,160 Z"
+                        fill={isDarkCover || isVibrantCover ? hexToRgba("#ffffff", 0.08) : hexToRgba(themePrimary, 0.14)}
+                      />
+                      <path
+                        d="M0,128 C320,64 620,160 940,96 C1060,72 1140,104 1200,120 L1200,160 L0,160 Z"
+                        fill={hexToRgba(themeAccent, isDarkCover || isVibrantCover ? 0.15 : 0.12)}
+                      />
+                    </svg>
+                  )}
+
+                  {design.coverPattern === "minimal-frame" && (
+                    <div
+                      className="absolute inset-3 sm:inset-4 rounded-xl border pointer-events-none"
+                      style={{
+                        borderColor: isDarkCover || isVibrantCover ? hexToRgba("#ffffff", 0.25) : hexToRgba(themePrimary, 0.35),
+                      }}
+                    />
+                  )}
+
+                  {/* Right Vertical Ribbon Tab flush to top-right corner */}
+                  {design.showRibbon && (
+                    <div
+                      className="absolute top-0 right-0 h-40 sm:h-44 w-10 sm:w-11 rounded-bl-2xl shadow-md flex items-center justify-center select-none pointer-events-none z-20"
+                      style={{
+                        background:
+                          isVibrantCover
+                            ? "rgba(0,0,0,0.28)"
+                            : `linear-gradient(to bottom, ${themePrimary}, ${themePrimaryDark})`,
+                      }}
+                    >
+                      <span
+                        className="-rotate-90 font-extrabold tracking-[0.2em] text-xs sm:text-sm whitespace-nowrap"
+                        style={{ color: isVibrantCover ? "#ffffff" : getContrastText(themePrimary) }}
+                      >
+                        {design.ribbonText || "PORTFOLIO"}
+                      </span>
+                    </div>
+                  )}
 
                   {/* Main Flex Row: Left Portrait Photo + Right Title & Personal Info Card */}
-                  <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-stretch gap-5 sm:gap-7 pr-0 sm:pr-10">
-                    {/* Left: Student Portrait Photo */}
+                  <div
+                    className={`relative z-10 flex flex-col sm:flex-row items-center sm:items-stretch gap-5 sm:gap-7 ${
+                      design.showRibbon ? "pr-0 sm:pr-10" : ""
+                    }`}
+                  >
+                    {/* Left: Student Portrait Photo (5 Frame Styles) */}
                     <div
                       onClick={() => triggerImageUpload((url) => updateProfile("photoUrl", url))}
-                      className="w-36 h-40 sm:w-44 sm:h-48 rounded-2xl bg-[#e5e7eb] border-2 border-white shadow-md overflow-hidden flex flex-col items-center justify-center shrink-0 cursor-pointer group relative"
+                      className={`bg-[#e5e7eb] overflow-hidden flex flex-col items-center justify-center shrink-0 cursor-pointer group relative transition-all ${
+                        design.avatarFrame === "circle"
+                          ? "w-36 h-36 sm:w-44 sm:h-44 rounded-full border-4 shadow-lg self-center"
+                          : design.avatarFrame === "arch"
+                            ? "w-36 h-44 sm:w-44 sm:h-52 rounded-t-full rounded-b-2xl border-[3px] shadow-md"
+                            : design.avatarFrame === "polaroid"
+                              ? "w-36 h-44 sm:w-44 sm:h-52 rounded-md p-2 pb-6 bg-white border border-slate-200 shadow-lg sm:-rotate-1"
+                              : design.avatarFrame === "sharp"
+                                ? "w-36 h-40 sm:w-44 sm:h-48 rounded-none border-[3px] shadow-md"
+                                : "w-36 h-40 sm:w-44 sm:h-48 rounded-2xl border-2 shadow-md"
+                      }`}
+                      style={{
+                        borderColor:
+                          design.avatarFrame === "polaroid"
+                            ? "#e2e8f0"
+                            : isDarkCover || isVibrantCover
+                              ? hexToRgba(themeAccent, 0.85)
+                              : "#ffffff",
+                      }}
                       title="คลิกเพื่ออัปโหลดรูปถ่ายผู้สมัคร"
                     >
                       {state.profile.photoUrl ? (
@@ -2260,7 +2669,9 @@ function PortfolioBuilderContent() {
                           <img
                             src={state.profile.photoUrl}
                             alt={state.profile.fullNameTh}
-                            className="w-full h-full object-cover"
+                            className={`w-full h-full object-cover ${
+                              design.avatarFrame === "polaroid" ? "rounded-xs" : ""
+                            }`}
                           />
                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold print:hidden">
                             เปลี่ยนรูปถ่าย
@@ -2277,74 +2688,105 @@ function PortfolioBuilderContent() {
                     {/* Right: PORTFOLIO Heading + แฟ้มสะสมผลงาน + Personal Info Card */}
                     <div className="flex-1 flex flex-col justify-between w-full text-center sm:text-left space-y-3">
                       <div>
-                        <div className="text-4xl sm:text-[42px] font-black tracking-wide text-[#f26532] leading-none">
-                          PORTFOLIO
+                        {design.coverTagline.trim() && (
+                          <div className="mb-1.5 flex justify-center sm:justify-start">
+                            <span
+                              className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-extrabold tracking-wider uppercase shadow-2xs"
+                              style={{
+                                backgroundColor: isDarkCover || isVibrantCover ? themeAccent : hexToRgba(themePrimary, 0.14),
+                                color: isDarkCover || isVibrantCover ? getContrastText(themeAccent) : themePrimaryDark,
+                              }}
+                            >
+                              {design.coverTagline}
+                            </span>
+                          </div>
+                        )}
+                        <div
+                          className="text-4xl sm:text-[42px] font-black tracking-wide leading-none drop-shadow-2xs"
+                          style={{
+                            color: isDarkCover || isVibrantCover ? "#ffffff" : themePrimary,
+                          }}
+                        >
+                          {design.coverTitleText || "PORTFOLIO"}
                         </div>
-                        <div className="text-base sm:text-lg font-bold text-[#1e293b] mt-1.5 flex items-center justify-center sm:justify-start gap-1.5">
+                        <div
+                          className="text-base sm:text-lg font-bold mt-1.5 flex items-center justify-center sm:justify-start gap-1.5"
+                          style={{
+                            color: isDarkCover ? "#e2e8f0" : isVibrantCover ? "rgba(255,255,255,0.94)" : "#1e293b",
+                          }}
+                        >
                           <span>{sysConfig.coverMainTitle || "แฟ้มสะสมผลงาน"}</span>
                           <input
                             type="text"
                             value={state.academicYear}
                             onChange={(e) => setState({ ...state, academicYear: e.target.value })}
-                            className="w-14 font-bold text-[#1e293b] bg-transparent border-b border-transparent focus:border-[#f26532] outline-none"
+                            className="w-14 font-bold bg-transparent border-b border-transparent outline-none"
+                            style={{
+                              color: isDarkCover ? "#ffffff" : isVibrantCover ? "#ffffff" : "#1e293b",
+                            }}
                           />
                         </div>
                       </div>
 
-                      {/* Orange Folder-Tab Personal Summary Box + 4-Point Star Accent */}
+                      {/* Folder-Tab Personal Summary Box + Dynamic Sticker Accent */}
                       <div className="relative text-left">
-                        <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-t-xl bg-gradient-to-r from-[#d9381e] to-[#f26532] text-white font-bold text-xs shadow-2xs">
+                        <div
+                          className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-t-xl font-bold text-xs shadow-2xs"
+                          style={{
+                            background: `linear-gradient(to right, ${themePrimaryDark}, ${themePrimary})`,
+                            color: getContrastText(themePrimary),
+                          }}
+                        >
                           <User className="w-3.5 h-3.5" />
                           <span>{sysConfig.sec1PersonalTitle || "ข้อมูลส่วนตัว"}</span>
                         </div>
-                        <div className="relative bg-white/95 backdrop-blur-xs rounded-b-2xl rounded-tr-2xl border border-[#f26532]/85 p-3.5 sm:p-4 shadow-sm grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-2.5 text-xs sm:text-[13px]">
-                          {/* Decorative 4-Point Orange Star on top-right corner of card */}
-                          <svg
-                            className="absolute -top-3.5 right-3 w-7 h-7 text-[#f26532] pointer-events-none hidden sm:block drop-shadow-2xs"
-                            viewBox="0 0 24 24"
-                            fill="currentColor"
-                          >
-                            <path d="M12 0C12.8 7.5 16.5 11.2 24 12C16.5 12.8 12.8 16.5 12 24C11.2 16.5 7.5 12.8 0 12C7.5 11.2 11.2 7.5 12 0Z" />
-                          </svg>
+                        <div
+                          className="relative bg-white/95 backdrop-blur-xs rounded-b-2xl rounded-tr-2xl border p-3.5 sm:p-4 shadow-sm grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-2.5 text-xs sm:text-[13px]"
+                          style={{
+                            borderColor: isDarkCover ? hexToRgba(themeAccent, 0.75) : hexToRgba(themePrimary, 0.85),
+                          }}
+                        >
+                          {/* Decorative Sticker on top-right corner of card */}
+                          {renderStickerBadge(design.sticker)}
 
                           <div className="flex items-baseline gap-2">
-                            <span className="text-[#f26532] font-bold shrink-0">ชื่อ-นามสกุล</span>
+                            <span className="font-bold shrink-0" style={{ color: themePrimaryDark }}>ชื่อ-นามสกุล</span>
                             <input
                               type="text"
                               value={state.profile.fullNameTh}
                               onChange={(e) => updateProfile("fullNameTh", e.target.value)}
                               placeholder="กรอกชื่อ-นามสกุล..."
-                              className="font-semibold text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:border-solid focus:border-[#f26532] print:border-none placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent outline-none w-full"
+                              className="font-semibold text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:border-solid print:border-none placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent outline-none w-full"
                             />
                           </div>
                           <div className="flex items-baseline gap-2">
-                            <span className="text-[#f26532] font-bold shrink-0">เลขประจำตัว</span>
+                            <span className="font-bold shrink-0" style={{ color: themePrimaryDark }}>เลขประจำตัว</span>
                             <input
                               type="text"
                               value={state.profile.citizenId}
                               onChange={(e) => updateProfile("citizenId", e.target.value)}
                               placeholder="กรอกเลขบัตรประชาชน..."
-                              className="font-semibold text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:border-solid focus:border-[#f26532] print:border-none placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent outline-none w-full"
+                              className="font-semibold text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:border-solid print:border-none placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent outline-none w-full"
                             />
                           </div>
                           <div className="flex items-baseline gap-2">
-                            <span className="text-[#f26532] font-bold shrink-0">สถานศึกษา</span>
+                            <span className="font-bold shrink-0" style={{ color: themePrimaryDark }}>สถานศึกษา</span>
                             <input
                               type="text"
                               value={state.profile.schoolName}
                               onChange={(e) => updateProfile("schoolName", e.target.value)}
                               placeholder="กรอกชื่อโรงเรียน..."
-                              className="font-semibold text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:border-solid focus:border-[#f26532] print:border-none placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent outline-none w-full"
+                              className="font-semibold text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:border-solid print:border-none placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent outline-none w-full"
                             />
                           </div>
                           <div className="flex items-baseline gap-2">
-                            <span className="text-[#f26532] font-bold shrink-0">จังหวัด</span>
+                            <span className="font-bold shrink-0" style={{ color: themePrimaryDark }}>จังหวัด</span>
                             <input
                               type="text"
                               value={state.profile.schoolProvince}
                               onChange={(e) => updateProfile("schoolProvince", e.target.value)}
                               placeholder="กรอกจังหวัด..."
-                              className="font-semibold text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:border-solid focus:border-[#f26532] print:border-none placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent outline-none w-full"
+                              className="font-semibold text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:border-solid print:border-none placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent outline-none w-full"
                             />
                           </div>
                         </div>
@@ -2358,10 +2800,17 @@ function PortfolioBuilderContent() {
                   <div className="text-xs font-extrabold text-slate-800">
                     {sysConfig.appliedMajorLabel || "สาขาวิชาที่สมัคร"}
                   </div>
-                  <div className="flex items-start gap-3 p-3 rounded-xl bg-[#fffaf7] border border-[#f26532]/25">
+                  <div
+                    className="flex items-start gap-3 p-3 rounded-xl border"
+                    style={{
+                      backgroundColor: hexToRgba(themePrimary, 0.055),
+                      borderColor: hexToRgba(themePrimary, 0.28),
+                    }}
+                  >
                     <div
                       onClick={() => setIsUnivLogoPickerOpen(true)}
-                      className="w-13 h-13 rounded-xl bg-white border border-[#f26532]/25 flex items-center justify-center overflow-hidden shrink-0 cursor-pointer group relative p-1 shadow-2xs"
+                      className="w-13 h-13 rounded-xl bg-white border flex items-center justify-center overflow-hidden shrink-0 cursor-pointer group relative p-1 shadow-2xs"
+                      style={{ borderColor: hexToRgba(themePrimary, 0.28) }}
                       title="คลิกเพื่อเลือกตรามหาวิทยาลัย หรืออัปโหลดรูปตราเอง"
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -2375,7 +2824,7 @@ function PortfolioBuilderContent() {
                       </div>
                     </div>
                     <div className="space-y-0.5 text-xs flex-1">
-                      <div className="font-extrabold text-[#c2410c] text-sm">{state.university}</div>
+                      <div className="font-extrabold text-sm" style={{ color: themePrimaryDark }}>{state.university}</div>
                       <div className="font-semibold text-slate-700">{state.faculty} • {state.major}</div>
                       <div className="text-slate-500 text-[11px]">{state.projectRound}</div>
                     </div>
@@ -2384,9 +2833,14 @@ function PortfolioBuilderContent() {
 
                 {/* Section 1 Pill */}
                 <div>
-                  <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-gradient-to-r from-[#d9381e] to-[#f26532] text-white font-bold text-xs shadow-2xs">
-                    {sysConfig.sec1Title || "หมวด 1 • ข้อมูลผู้สมัคร"}
-                  </span>
+                  {(() => {
+                    const sec1Badge = getBadgeStyleProps("primary");
+                    return (
+                      <span className={sec1Badge.className} style={sec1Badge.style}>
+                        {sysConfig.sec1Title || "หมวด 1 • ข้อมูลผู้สมัคร"}
+                      </span>
+                    );
+                  })()}
                 </div>
 
                 {/* Structured Applicant Data Table matching TCASFOLIO */}
@@ -2394,7 +2848,10 @@ function PortfolioBuilderContent() {
                   {/* 1.1 ข้อมูลส่วนตัว */}
                   {state.sections.sec1_personal && (
                     <div>
-                      <div className="bg-slate-100/90 px-3 py-1.5 font-extrabold text-[#13426b] border-b border-slate-300 flex items-center justify-between">
+                      <div
+                        className="px-3 py-1.5 font-extrabold border-b border-slate-300 flex items-center justify-between"
+                        style={{ backgroundColor: hexToRgba(themePrimary, 0.08), color: themeSecondary }}
+                      >
                         <span>{sysConfig.sec1PersonalTitle || "ข้อมูลส่วนตัว"}</span>
                         <span className="text-[10px] font-normal text-slate-500 print:hidden">
                           * แตะที่ช่องว่างเพื่อกรอกข้อมูลจริงของนักเรียน
@@ -2510,7 +2967,10 @@ function PortfolioBuilderContent() {
                   {/* 1.2 ข้อมูลผู้ปกครอง */}
                   {state.sections.sec1_parent && (
                     <div>
-                      <div className="bg-slate-100/90 px-3 py-1.5 font-extrabold text-[#13426b] border-b border-slate-300">
+                      <div
+                        className="px-3 py-1.5 font-extrabold border-b border-slate-300"
+                        style={{ backgroundColor: hexToRgba(themePrimary, 0.08), color: themeSecondary }}
+                      >
                         {sysConfig.sec1ParentTitle || "ข้อมูลผู้ปกครอง"}
                       </div>
                       <div className="p-2.5 grid grid-cols-2 sm:grid-cols-4 gap-2.5 border-b border-slate-300">
@@ -2561,7 +3021,10 @@ function PortfolioBuilderContent() {
                   {/* 1.3 ที่อยู่ติดต่อได้ */}
                   {state.sections.sec1_address && (
                     <div>
-                      <div className="bg-slate-100/90 px-3 py-1.5 font-extrabold text-[#13426b] border-b border-slate-300">
+                      <div
+                        className="px-3 py-1.5 font-extrabold border-b border-slate-300"
+                        style={{ backgroundColor: hexToRgba(themePrimary, 0.08), color: themeSecondary }}
+                      >
                         {sysConfig.sec1AddressTitle || "ที่อยู่ติดต่อได้"}
                       </div>
                       <div className="p-2.5 grid grid-cols-2 sm:grid-cols-5 gap-2.5 border-b border-slate-300">
@@ -2612,7 +3075,10 @@ function PortfolioBuilderContent() {
                   {/* 1.4 ข้อมูลการศึกษา */}
                   {state.sections.sec1_education && (
                     <div>
-                      <div className="bg-slate-100/90 px-3 py-1.5 font-extrabold text-[#13426b] border-b border-slate-300">
+                      <div
+                        className="px-3 py-1.5 font-extrabold border-b border-slate-300"
+                        style={{ backgroundColor: hexToRgba(themePrimary, 0.08), color: themeSecondary }}
+                      >
                         {sysConfig.sec1EducationTitle || "ข้อมูลการศึกษา"}
                       </div>
                       <div className="p-2.5 grid grid-cols-2 gap-2.5 border-b border-slate-200">
@@ -2656,7 +3122,8 @@ function PortfolioBuilderContent() {
                               value={state.profile.gpax4}
                               onChange={(e) => updateProfile("gpax4", e.target.value)}
                               placeholder="0.00"
-                              className="font-extrabold text-[#0d9488] bg-transparent border-b border-dashed border-slate-300 focus:border-solid focus:border-teal-500 print:border-none placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent outline-none w-14"
+                              className="font-extrabold bg-transparent border-b border-dashed border-slate-300 focus:border-solid print:border-none placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent outline-none w-14"
+                              style={{ color: themePrimaryDark }}
                             />
                             {state.profile.gpax4.trim() && (
                               <span className="inline-block ml-1 px-1 rounded bg-emerald-500 text-white text-[9px] font-bold">
@@ -2673,7 +3140,8 @@ function PortfolioBuilderContent() {
                               value={state.profile.gpax5}
                               onChange={(e) => updateProfile("gpax5", e.target.value)}
                               placeholder="0.00"
-                              className="font-extrabold text-[#0d9488] bg-transparent border-b border-dashed border-slate-300 focus:border-solid focus:border-teal-500 print:border-none placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent outline-none w-14"
+                              className="font-extrabold bg-transparent border-b border-dashed border-slate-300 focus:border-solid print:border-none placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent outline-none w-14"
+                              style={{ color: themePrimaryDark }}
                             />
                             {state.profile.gpax5.trim() && (
                               <span className="inline-block ml-1 px-1 rounded bg-emerald-500 text-white text-[9px] font-bold">
@@ -2690,7 +3158,10 @@ function PortfolioBuilderContent() {
                 {/* ผลการเรียน 8 กลุ่มสาระ */}
                 {state.sections.sec1_subjectGrades && (
                   <div className="rounded-xl border border-slate-300 overflow-hidden text-xs">
-                    <div className="bg-slate-100/90 px-3 py-1.5 font-extrabold text-[#13426b] border-b border-slate-300">
+                    <div
+                      className="px-3 py-1.5 font-extrabold border-b border-slate-300"
+                      style={{ backgroundColor: hexToRgba(themePrimary, 0.08), color: themeSecondary }}
+                    >
                       {sysConfig.sec1SubjectGradesTitle || "ผลการเรียนตามกลุ่มสาระการเรียนรู้"}
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-slate-200">
@@ -2711,7 +3182,8 @@ function PortfolioBuilderContent() {
                                 next[i] = { ...next[i], gpa: e.target.value };
                                 setState({ ...state, subjectGrades: next });
                               }}
-                              className="w-14 font-bold text-[#0d9488] text-right bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200 placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent"
+                              className="w-14 font-bold text-right bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200 placeholder:text-slate-300 placeholder:font-normal print:placeholder:text-transparent"
+                              style={{ color: themePrimaryDark }}
                             />
                           </div>
                         </div>
@@ -2783,17 +3255,29 @@ function PortfolioBuilderContent() {
             {/* ============================================================= */}
             {state.sections.sec2_essay && (
               <div className="space-y-3 pt-4 border-t border-slate-200 break-inside-avoid">
-                <span className="inline-block px-4 py-1.5 rounded-full bg-[#13426b] text-white font-bold text-xs sm:text-sm">
-                  {sysConfig.sec2Title || "หมวด 2 • เรียงความ / เหตุผลในการสมัคร"}
-                </span>
-                <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50/40 space-y-2">
+                {(() => {
+                  const sec2Badge = getBadgeStyleProps("secondary");
+                  return (
+                    <span className={sec2Badge.className} style={sec2Badge.style}>
+                      {sysConfig.sec2Title || "หมวด 2 • เรียงความ / เหตุผลในการสมัคร"}
+                    </span>
+                  );
+                })()}
+                <div
+                  className="p-4 rounded-2xl border space-y-2"
+                  style={{
+                    backgroundColor: hexToRgba(themePrimary, 0.035),
+                    borderColor: hexToRgba(themePrimary, 0.2),
+                  }}
+                >
                   <input
                     type="text"
                     value={state.essay.title}
                     onChange={(e) =>
                       setState({ ...state, essay: { ...state.essay, title: e.target.value } })
                     }
-                    className="w-full font-bold text-sm text-[#13426b] bg-transparent border-b border-transparent focus:border-teal-500 outline-none"
+                    className="w-full font-bold text-sm bg-transparent border-b border-transparent outline-none"
+                    style={{ color: themeSecondary }}
                   />
                   <textarea
                     rows={4}
@@ -2814,9 +3298,14 @@ function PortfolioBuilderContent() {
             {state.sections.sec3_attachments && (
               <div className="space-y-3 pt-4 border-t border-slate-200 break-inside-avoid">
                 <div className="flex items-center justify-between">
-                  <span className="inline-block px-4 py-1.5 rounded-full bg-[#13426b] text-white font-bold text-xs sm:text-sm">
-                    {sysConfig.sec3Title || "หมวด 3 • หนังสือรับรอง / เอกสารแนบ"}
-                  </span>
+                  {(() => {
+                    const sec3Badge = getBadgeStyleProps("secondary");
+                    return (
+                      <span className={sec3Badge.className} style={sec3Badge.style}>
+                        {sysConfig.sec3Title || "หมวด 3 • หนังสือรับรอง / เอกสารแนบ"}
+                      </span>
+                    );
+                  })()}
                   <button
                     type="button"
                     onClick={() =>
@@ -2907,9 +3396,14 @@ function PortfolioBuilderContent() {
             {state.sections.sec5_questions && (
               <div className="space-y-4 pt-4 border-t border-slate-200 break-inside-avoid">
                 <div className="flex items-center justify-between">
-                  <span className="inline-block px-4 py-1.5 rounded-full bg-[#13426b] text-white font-bold text-xs sm:text-sm">
-                    {sysConfig.sec5Title || "หมวด 5 - คำถามเพิ่มเติมของหลักสูตร"}
-                  </span>
+                  {(() => {
+                    const sec5Badge = getBadgeStyleProps("secondary");
+                    return (
+                      <span className={sec5Badge.className} style={sec5Badge.style}>
+                        {sysConfig.sec5Title || "หมวด 5 - คำถามเพิ่มเติมของหลักสูตร"}
+                      </span>
+                    );
+                  })()}
                   <button
                     type="button"
                     onClick={() =>
@@ -2937,7 +3431,13 @@ function PortfolioBuilderContent() {
                     <div key={q.id} className="space-y-2 p-3 rounded-xl hover:bg-slate-50/70">
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2.5 flex-1">
-                          <span className="w-6 h-6 rounded-full bg-amber-400 text-slate-950 font-extrabold text-xs flex items-center justify-center shrink-0">
+                          <span
+                            className="w-6 h-6 rounded-full font-extrabold text-xs flex items-center justify-center shrink-0"
+                            style={{
+                              backgroundColor: themeAccent,
+                              color: getContrastText(themeAccent),
+                            }}
+                          >
                             {idx + 1}
                           </span>
                           <input
